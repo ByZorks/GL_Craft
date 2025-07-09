@@ -8,6 +8,7 @@ include_directories(
         ${LIBS_DIR}/glew/include
         ${LIBS_DIR}/glfw/include
         ${LIBS_DIR}/stb
+        ${LIBS_DIR}/glm
 )
 
 link_directories(

@@ -4,12 +4,14 @@
 #include <GLFW/glfw3.h>
 
 #include "IndexBuffer.h"
-#include "OpenGLDebug.h"
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
 #include "VertexArray.h"
 #include "VertexBuffer.h"
+
+#include "glm.hpp"
+#include "gtc/matrix_transform.hpp"
 
 int main(int argc, char *argv[]) {
     if (!glfwInit())
@@ -51,9 +53,31 @@ int main(int argc, char *argv[]) {
     // Index Buffer Object
     const IndexBuffer ibo(indices, sizeof(indices));
 
+    // Projection, View, Model matrices
+    const glm::mat4 projection = glm::perspective(
+        glm::radians(45.0f), // Field of view
+        1280.0f / 720.0f, // Aspect ratio
+        .1f, // Near plane
+        5000.0f // Far plane
+    );
+
+    constexpr glm::mat4 view = glm::translate(
+        glm::mat4(1.0f), // Identity matrix
+        glm::vec3(0.0f, 0.0f, -3.0f) // Translation vector
+    );
+
+    const glm::mat4 model = glm::rotate(
+        glm::mat4(1.0f), // Identity matrix
+        glm::radians(45.0f), // Rotation angle in radians
+        glm::vec3(0.0f, 1.0f, 0.0f) // Rotation axis
+    );
+
+    const glm::mat4 mvp = projection * view * model;
+
     // Shader
     Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
     shader.use();
+    shader.setUniformMat4f("u_MVP", mvp);
 
     const Texture grass_texture("../res/textures/grass_side_n.png");
     grass_texture.bind();
