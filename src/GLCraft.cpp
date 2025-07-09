@@ -31,15 +31,57 @@ int main(int argc, char *argv[]) {
 
     constexpr float vertices[] = {
         // x, y, z, u, v
-        -.5f, .5f, .0f, .0f, 1.0f,
-        .5f, .5f, .0f, 1.0f, 1.0f,
-        .5f, -.5f, .0f, 1.0f, .0f,
-        -.5f, -.5f, .0f , .0f, .0f
+        // Front face
+        -.5f, .5f, .5f, .0f, 1.0f,
+        .5f, .5f, .5f, 1.0f, 1.0f,
+        .5f, -.5f, .5f, 1.0f, .0f,
+        -.5f, -.5f, .5f , .0f, .0f,
+        // Back face
+        -.5f, .5f, -.5f, .0f, 1.0f,
+        .5f, .5f, -.5f, 1.0f, 1.0f,
+        .5f, -.5f, -.5f, 1.0f, .0f,
+        -.5f, -.5f, -.5f, .0f, .0f,
+        // Left face
+        -.5f, .5f, .5f, .0f, 1.0f,
+        -.5f, .5f, -.5f, 1.0f, 1.0f,
+        -.5f, -.5f, -.5f, 1.0f, .0f,
+        -.5f, -.5f, .5f, .0f, .0f,
+        // Right face
+        .5f, .5f, .5f, .0f, 1.0f,
+        .5f, .5f, -.5f, 1.0f, 1.0f,
+        .5f, -.5f, -.5f, 1.0f, .0f,
+        .5f, -.5f, .5f, .0f, .0f,
+        // Top face
+        -.5f, .5f, .5f, .0f, 1.0f,
+        .5f, .5f, .5f, 1.0f, 1.0f,
+        .5f, .5f, -.5f, 1.0f, .0f,
+        -.5f, .5f, -.5f, .0f, .0f,
+        // Bottom face
+        -.5f, -.5f, .5f, .0f, 1.0f,
+        .5f, -.5f, .5f, 1.0f, 1.0f,
+        .5f, -.5f, -.5f, 1.0f, .0f,
+        -.5f, -.5f, -.5f, .0f, .0f,
     };
 
     constexpr unsigned int indices[] = {
+        // Front face
         0, 1, 2,
-        2, 3, 0
+        2, 3, 0,
+        // Back face
+        4, 5, 6,
+        6, 7, 4,
+        // Left face
+        8, 9, 10,
+        10, 11, 8,
+        // Right face
+        12, 13, 14,
+        14, 15, 12,
+        // Top face
+        16, 17, 18,
+        18, 19, 16,
+        // Bottom face
+        20, 21, 22,
+        22, 23, 20
     };
 
     // Vertex Array Object
@@ -61,30 +103,39 @@ int main(int argc, char *argv[]) {
         5000.0f // Far plane
     );
 
-    constexpr glm::mat4 view = glm::translate(
+    glm::mat4 view = glm::translate(
         glm::mat4(1.0f), // Identity matrix
         glm::vec3(0.0f, 0.0f, -3.0f) // Translation vector
     );
 
-    const glm::mat4 model = glm::rotate(
-        glm::mat4(1.0f), // Identity matrix
-        glm::radians(45.0f), // Rotation angle in radians
-        glm::vec3(0.0f, 1.0f, 0.0f) // Rotation axis
+    view = glm::rotate(
+        view, // Apply rotation to the view
+        glm::radians(30.0f), // Rotation angle in radians
+        glm::vec3(1.0f, 0.0f, 0.0f) // Rotation axis
     );
-
-    const glm::mat4 mvp = projection * view * model;
 
     // Shader
     Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
     shader.use();
-    shader.setUniformMat4f("u_MVP", mvp);
 
     const Texture grass_texture("../res/textures/grass_side_n.png");
     grass_texture.bind();
     shader.setUniform1i("u_Texture", 0);
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     while (!glfwWindowShouldClose(window)) {
         Renderer::Clear();
+
+        const auto time = static_cast<float>(glfwGetTime());
+        glm::mat4 model = glm::rotate(
+            glm::mat4(1.0f), // Identity matrix
+            time, // Rotation based on time
+            glm::vec3(0.0f, 1.0f, 0.0f) // Rotation axis
+        );
+
+        glm::mat4 mvp = projection * view * model;
+        shader.setUniformMat4f("u_MVP", mvp);
 
         Renderer::Draw(vao, ibo);
 
