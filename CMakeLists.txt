@@ -29,6 +29,8 @@ add_executable(GL_Craft
         src/VertexArray.cpp
         src/IndexBuffer.cpp
         src/IndexBuffer.h
+        src/Renderer.cpp
+        src/Renderer.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

@@ -5,6 +5,7 @@
 
 #include "IndexBuffer.h"
 #include "OpenGLDebug.h"
+#include "Renderer.h"
 #include "Shader.h"
 #include "VertexArray.h"
 #include "VertexBuffer.h"
@@ -54,11 +55,9 @@ int main(int argc, char *argv[]) {
     shader.setUniform4f("u_Color", 0.2f, 0.3f, 0.8f, 1.0f);
 
     while (!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT);
+        Renderer::Clear();
 
-        vao.Bind();
-        ibo.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+        Renderer::Draw(vao, ibo);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
