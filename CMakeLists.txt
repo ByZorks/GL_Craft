@@ -22,7 +22,9 @@ file(GLOB SOURCES "src/*.cpp")
 add_executable(GL_Craft ${SOURCES}
         src/Shader.cpp
         src/Shader.cpp
-        src/Shader.h)
+        src/Shader.h
+        src/OpenGLDebug.h
+        src/OpenGLDebug.cpp)
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)
 
