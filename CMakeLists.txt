@@ -2,21 +2,30 @@ cmake_minimum_required(VERSION 3.31)
 project(GL_Craft)
 
 set(CMAKE_CXX_STANDARD 23)
+set(LIBS_DIR "${CMAKE_SOURCE_DIR}/libs")
 
+# Include directories
 include_directories(
-        libs/glfw/include
-        libs/glew/include
+        ${LIBS_DIR}/glew/include
+        ${LIBS_DIR}/glfw/include
 )
 
+# Link directories
 link_directories(
-        libs/glfw/lib-mingw-w64
-        libs/glew/lib/Release/x64
+        ${LIBS_DIR}/glew/lib/Release/x64
+        ${LIBS_DIR}/glfw/lib-mingw-w64
 )
 
-add_executable(GL_Craft src/main.cpp)
+# Source files
+file(GLOB SOURCES "src/*.cpp")
 
+add_executable(GL_Craft ${SOURCES})
+
+target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)
+
+# Link OpenGL, GLEW, and GLFW
 target_link_libraries(GL_Craft
         glfw3
-        glew32
+        glew32s
         opengl32
 )
