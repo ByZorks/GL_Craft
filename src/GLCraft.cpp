@@ -5,6 +5,8 @@
 
 #include "OpenGLDebug.h"
 #include "Shader.h"
+#include "VertexArray.h"
+#include "VertexBuffer.h"
 
 int main(int argc, char *argv[]) {
     /* Initialize the library */
@@ -38,15 +40,11 @@ int main(int argc, char *argv[]) {
     };
 
     // Vertex Array Object
-    unsigned int vao;
-    GLCall(glGenVertexArrays(1, &vao));
-    GLCall(glBindVertexArray(vao));
+    const VertexArray vao;
 
     // Buffer
-    unsigned int buffer;
-    GLCall(glGenBuffers(1, &buffer));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-    GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW));
+    const VertexBuffer vbo(vertices, sizeof(vertices));
+    vbo.Bind();
 
     // Attribute Pointer
     GLCall(glEnableVertexAttribArray(0));
@@ -67,7 +65,7 @@ int main(int argc, char *argv[]) {
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        GLCall(glBindVertexArray(vao));
+        vao.Bind();
         GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
         glfwSwapBuffers(window);

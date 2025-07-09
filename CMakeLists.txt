@@ -16,15 +16,18 @@ link_directories(
         ${LIBS_DIR}/glfw/lib-mingw-w64
 )
 
-# Source files
-file(GLOB SOURCES "src/*.cpp")
-
-add_executable(GL_Craft ${SOURCES}
+add_executable(GL_Craft
+        src/GLCraft.cpp
         src/Shader.cpp
         src/Shader.cpp
         src/Shader.h
         src/OpenGLDebug.h
-        src/OpenGLDebug.cpp)
+        src/OpenGLDebug.cpp
+        src/VertexBuffer.h
+        src/VertexBuffer.cpp
+        src/VertexArray.h
+        src/VertexArray.cpp
+)
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)
 
