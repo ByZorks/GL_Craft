@@ -61,6 +61,22 @@ unsigned int Shader::use() {
     return program;
 }
 
+int Shader::getUniformLocation(const std::string &name) {
+    if (m_uniformLocationCache.contains(name)) return m_uniformLocationCache[name];
+
+    GLCall(const int location = glGetUniformLocation(m_programId, name.c_str()));
+    if (location == -1) {
+        std::cerr << "Warning: uniform '" << name << "' doesn't exist or is not used in the shader." << std::endl;
+    }
+
+    m_uniformLocationCache[name] = location;
+    return location;
+}
+
+void Shader::setUniform4f(const std::string &name, const float v0, const float v1, const float v2, const float v3) {
+    GLCall(glUniform4f(getUniformLocation(name), v0, v1, v2, v3));
+}
+
 unsigned int Shader::m_program_id() const {
     return m_programId;
 }

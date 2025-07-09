@@ -10,11 +10,9 @@
 #include "VertexBuffer.h"
 
 int main(int argc, char *argv[]) {
-    /* Initialize the library */
     if (!glfwInit())
         return -1;
 
-    /* Create a windowed mode window and its OpenGL context */
     GLFWwindow *window = glfwCreateWindow(1280, 720, "GLCraft", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
@@ -53,8 +51,7 @@ int main(int argc, char *argv[]) {
     // Shader
     Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
     shader.use();
-    GLCall(const int location = glGetUniformLocation(shader.m_program_id(), "u_Color"));
-    GLCall(glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f));
+    shader.setUniform4f("u_Color", 0.2f, 0.3f, 0.8f, 1.0f);
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
