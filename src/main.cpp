@@ -3,6 +3,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "Shader.h"
+
 int main(int argc, char *argv[])
 {
     /* Initialize the library */
@@ -38,7 +40,8 @@ int main(int argc, char *argv[])
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
-    glfwMakeContextCurrent(window);
+    Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
+    shader.use();
 
     while (!glfwWindowShouldClose(window))
     {
