@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "IndexBuffer.h"
 #include "OpenGLDebug.h"
 #include "Shader.h"
 #include "VertexArray.h"
@@ -41,20 +42,13 @@ int main(int argc, char *argv[]) {
 
     // Vertex Array Object
     const VertexArray vao;
-
-    // Buffer
     const VertexBuffer vbo(vertices, sizeof(vertices));
-    vbo.Bind();
-
-    // Attribute Pointer
-    GLCall(glEnableVertexAttribArray(0));
-    GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr));
+    VertexBufferLayout layout;
+    layout.Push<float>(3); // 3 floats per vertex (x, y, z)
+    vao.AddBuffer(vbo, layout);
 
     // Index Buffer Object
-    unsigned int ibo;
-    GLCall(glGenBuffers(1, &ibo));
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW));
+    const IndexBuffer ibo(indices, sizeof(indices));
 
     // Shader
     Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
@@ -66,6 +60,7 @@ int main(int argc, char *argv[]) {
         glClear(GL_COLOR_BUFFER_BIT);
 
         vao.Bind();
+        ibo.Bind();
         GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
         glfwSwapBuffers(window);
