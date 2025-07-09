@@ -5,16 +5,14 @@
 
 #include "Shader.h"
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     /* Initialize the library */
     if (!glfwInit())
         return -1;
 
     /* Create a windowed mode window and its OpenGL context */
     GLFWwindow *window = glfwCreateWindow(1280, 720, "GLCraft", nullptr, nullptr);
-    if (!window)
-    {
+    if (!window) {
         glfwTerminate();
         return -1;
     }
@@ -27,9 +25,15 @@ int main(int argc, char *argv[])
 
     constexpr float vertices[] = {
         // x, y, z
-        0.0f, .5f, 0.0f,
+        -.5f, .5f, 0.0f,
+        .5f, .5f, 0.0f,
         .5f, -.5f, 0.0f,
-        -.5f, -.5f, 0.0f,
+        -.5f, -.5f, 0.0f
+    };
+
+    constexpr unsigned int indices[] = {
+        0, 1, 2,
+        2, 3, 0
     };
 
     unsigned int buffer;
@@ -40,14 +44,18 @@ int main(int argc, char *argv[])
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
+    unsigned int ibo;
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
     Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
     shader.use();
 
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
