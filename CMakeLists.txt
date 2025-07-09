@@ -19,7 +19,10 @@ link_directories(
 # Source files
 file(GLOB SOURCES "src/*.cpp")
 
-add_executable(GL_Craft ${SOURCES})
+add_executable(GL_Craft ${SOURCES}
+        src/Shader.cpp
+        src/Shader.cpp
+        src/Shader.h)
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)
 
