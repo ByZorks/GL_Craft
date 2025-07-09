@@ -61,6 +61,8 @@ int main(int argc, char *argv[]) {
     // Shader
     Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
     shader.use();
+    GLCall(const int location = glGetUniformLocation(shader.m_program_id(), "u_Color"));
+    GLCall(glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f));
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);

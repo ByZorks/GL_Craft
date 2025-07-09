@@ -11,11 +11,14 @@ private:
     std::string m_fragmentFilePath;
 
 public:
+
     Shader(std::string  vertexPath, std::string  fragmentPath);
 
     ~Shader();
 
     unsigned int use();
+
+    [[nodiscard]] unsigned int m_program_id() const;
 
 private:
     static std::string readFile(const std::string &filePath) ;

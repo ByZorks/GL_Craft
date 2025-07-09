@@ -61,6 +61,10 @@ unsigned int Shader::use() {
     return program;
 }
 
+unsigned int Shader::m_program_id() const {
+    return m_programId;
+}
+
 std::string Shader::readFile(const std::string &filePath) {
     std::ifstream file(filePath);
     if (!file.is_open()) {
