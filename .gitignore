@@ -1,0 +1,6 @@
+# Clion
+.idea/
+*.iml
+
+# Libs
+libs/
