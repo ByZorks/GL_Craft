@@ -32,34 +32,34 @@ int main(int argc, char *argv[]) {
     constexpr float vertices[] = {
         // x, y, z, u, v
         // Front face
-        -.5f, .5f, .5f, .0f, 1.0f,
-        .5f, .5f, .5f, 1.0f, 1.0f,
-        .5f, -.5f, .5f, 1.0f, .0f,
-        -.5f, -.5f, .5f , .0f, .0f,
+        -.5f, .5f, .5f, .333f, 1.0f,
+        .5f, .5f, .5f, .666f, 1.0f,
+        .5f, -.5f, .5f, .666f, .0f,
+        -.5f, -.5f, .5f , .333f, .0f,
         // Back face
-        -.5f, .5f, -.5f, .0f, 1.0f,
-        .5f, .5f, -.5f, 1.0f, 1.0f,
-        .5f, -.5f, -.5f, 1.0f, .0f,
-        -.5f, -.5f, -.5f, .0f, .0f,
+        -.5f, .5f, -.5f, .333f, 1.0f,
+        .5f, .5f, -.5f, .666f, 1.0f,
+        .5f, -.5f, -.5f, .666f, .0f,
+        -.5f, -.5f, -.5f, .333f, .0f,
         // Left face
-        -.5f, .5f, .5f, .0f, 1.0f,
-        -.5f, .5f, -.5f, 1.0f, 1.0f,
-        -.5f, -.5f, -.5f, 1.0f, .0f,
-        -.5f, -.5f, .5f, .0f, .0f,
+        -.5f, .5f, .5f, .333f, 1.0f,
+        -.5f, .5f, -.5f, .666f, 1.0f,
+        -.5f, -.5f, -.5f, .666f, .0f,
+        -.5f, -.5f, .5f, .333f, .0f,
         // Right face
-        .5f, .5f, .5f, .0f, 1.0f,
-        .5f, .5f, -.5f, 1.0f, 1.0f,
-        .5f, -.5f, -.5f, 1.0f, .0f,
-        .5f, -.5f, .5f, .0f, .0f,
+        .5f, .5f, .5f, .333f, 1.0f,
+        .5f, .5f, -.5f, .666f, 1.0f,
+        .5f, -.5f, -.5f, .666f, .0f,
+        .5f, -.5f, .5f, .333f, .0f,
         // Top face
-        -.5f, .5f, .5f, .0f, 1.0f,
+        -.5f, .5f, .5f, .666f, 1.0f,
         .5f, .5f, .5f, 1.0f, 1.0f,
         .5f, .5f, -.5f, 1.0f, .0f,
-        -.5f, .5f, -.5f, .0f, .0f,
+        -.5f, .5f, -.5f, .666f, .0f,
         // Bottom face
         -.5f, -.5f, .5f, .0f, 1.0f,
-        .5f, -.5f, .5f, 1.0f, 1.0f,
-        .5f, -.5f, -.5f, 1.0f, .0f,
+        .5f, -.5f, .5f, .333f, 1.0f,
+        .5f, -.5f, -.5f, .333f, .0f,
         -.5f, -.5f, -.5f, .0f, .0f,
     };
 
@@ -115,10 +115,10 @@ int main(int argc, char *argv[]) {
     );
 
     // Shader
-    Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
+    Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader"); // TODO: ERROR HANDLING
     shader.use();
 
-    const Texture grass_texture("../res/textures/grass_side_n.png");
+    const Texture grass_texture("../res/textures/atlas/texture_atlas.png"); // TODO: ERROR HANDLING
     grass_texture.bind();
     shader.setUniform1i("u_Texture", 0);
 
