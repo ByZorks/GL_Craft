@@ -4,8 +4,13 @@
 #include "VertexArray.h"
 
 class Renderer {
+private:
+    static float m_deltaTime;
+    static float m_lastFrame;
+
 public:
     static void Clear();
+    static float calculateDeltaTime(float currentFrame);
     static void Draw(const VertexArray& vao, const IndexBuffer& ibo);
 
 };

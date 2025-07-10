@@ -33,6 +33,8 @@ add_executable(GL_Craft
         src/Renderer.h
         src/Texture.cpp
         src/Texture.h
+        src/Camera.cpp
+        src/Camera.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

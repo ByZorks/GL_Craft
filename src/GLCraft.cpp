@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "Camera.h"
 #include "IndexBuffer.h"
 #include "Renderer.h"
 #include "Shader.h"
@@ -24,6 +25,12 @@ int main(int argc, char *argv[]) {
     }
 
     glfwMakeContextCurrent(window);
+
+    // Camera
+    Camera camera(1280, 720);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetWindowUserPointer(window, &camera);
+    glfwSetCursorPosCallback(window, Camera::mouseCallback);
 
     if (glewInit() != GLEW_OK) std::cout << "glewInit() failed" << std::endl;
 
@@ -103,16 +110,7 @@ int main(int argc, char *argv[]) {
         5000.0f // Far plane
     );
 
-    glm::mat4 view = glm::translate(
-        glm::mat4(1.0f), // Identity matrix
-        glm::vec3(0.0f, 0.0f, -3.0f) // Translation vector
-    );
-
-    view = glm::rotate(
-        view, // Apply rotation to the view
-        glm::radians(30.0f), // Rotation angle in radians
-        glm::vec3(1.0f, 0.0f, 0.0f) // Rotation axis
-    );
+    constexpr auto model = glm::mat4(1.0f); // Identity matrix for model
 
     // Shader
     Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader"); // TODO: ERROR HANDLING
@@ -127,13 +125,10 @@ int main(int argc, char *argv[]) {
     while (!glfwWindowShouldClose(window)) {
         Renderer::Clear();
 
-        const auto time = static_cast<float>(glfwGetTime());
-        glm::mat4 model = glm::rotate(
-            glm::mat4(1.0f), // Identity matrix
-            time, // Rotation based on time
-            glm::vec3(0.0f, 1.0f, 0.0f) // Rotation axis
-        );
+        float deltaTime = Renderer::calculateDeltaTime(static_cast<float>(glfwGetTime()));
 
+        camera.processInput(window, deltaTime);
+        glm::mat4 view = glm::lookAt(camera.m_camera_pos(), camera.m_camera_pos() + camera.m_camera_front(), camera.m_camera_up());
         glm::mat4 mvp = projection * view * model;
         shader.setUniformMat4f("u_MVP", mvp);
 
