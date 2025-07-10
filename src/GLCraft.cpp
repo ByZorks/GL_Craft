@@ -3,13 +3,11 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "Block.h"
 #include "Camera.h"
-#include "IndexBuffer.h"
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
-#include "VertexArray.h"
-#include "VertexBuffer.h"
 
 #include "glm.hpp"
 #include "gtc/matrix_transform.hpp"
@@ -35,71 +33,8 @@ int main(int argc, char *argv[]) {
     if (glewInit() != GLEW_OK) std::cout << "glewInit() failed" << std::endl;
 
     std::cout << glGetString(GL_VERSION) << std::endl; {
-        constexpr float vertices[] = {
-            // x, y, z, u, v
-            // Front face
-            -.5f, .5f, .5f, .333f, 1.0f,
-            .5f, .5f, .5f, .666f, 1.0f,
-            .5f, -.5f, .5f, .666f, .0f,
-            -.5f, -.5f, .5f, .333f, .0f,
-            // Back face
-            -.5f, .5f, -.5f, .333f, 1.0f,
-            .5f, .5f, -.5f, .666f, 1.0f,
-            .5f, -.5f, -.5f, .666f, .0f,
-            -.5f, -.5f, -.5f, .333f, .0f,
-            // Left face
-            -.5f, .5f, .5f, .333f, 1.0f,
-            -.5f, .5f, -.5f, .666f, 1.0f,
-            -.5f, -.5f, -.5f, .666f, .0f,
-            -.5f, -.5f, .5f, .333f, .0f,
-            // Right face
-            .5f, .5f, .5f, .333f, 1.0f,
-            .5f, .5f, -.5f, .666f, 1.0f,
-            .5f, -.5f, -.5f, .666f, .0f,
-            .5f, -.5f, .5f, .333f, .0f,
-            // Top face
-            -.5f, .5f, .5f, .666f, 1.0f,
-            .5f, .5f, .5f, 1.0f, 1.0f,
-            .5f, .5f, -.5f, 1.0f, .0f,
-            -.5f, .5f, -.5f, .666f, .0f,
-            // Bottom face
-            -.5f, -.5f, .5f, .0f, 1.0f,
-            .5f, -.5f, .5f, .333f, 1.0f,
-            .5f, -.5f, -.5f, .333f, .0f,
-            -.5f, -.5f, -.5f, .0f, .0f,
-        };
 
-        constexpr unsigned int indices[] = {
-            // Front face
-            0, 1, 2,
-            2, 3, 0,
-            // Back face
-            4, 5, 6,
-            6, 7, 4,
-            // Left face
-            8, 9, 10,
-            10, 11, 8,
-            // Right face
-            12, 13, 14,
-            14, 15, 12,
-            // Top face
-            16, 17, 18,
-            18, 19, 16,
-            // Bottom face
-            20, 21, 22,
-            22, 23, 20
-        };
-
-        // Vertex Array Object
-        const VertexArray vao;
-        const VertexBuffer vbo(vertices, sizeof(vertices));
-        VertexBufferLayout layout;
-        layout.Push<float>(3); // x, y, z
-        layout.Push<float>(2); // u, v
-        vao.AddBuffer(vbo, layout);
-
-        // Index Buffer Object
-        const IndexBuffer ibo(indices, sizeof(indices));
+        Block grass(0.0f, 0.0f, 0.0f, .0f);
 
         // Projection, View, Model matrices
         const glm::mat4 projection = glm::perspective(
@@ -122,7 +57,7 @@ int main(int argc, char *argv[]) {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         while (!glfwWindowShouldClose(window)) {
-            Renderer::Clear();
+            Renderer::clear();
 
             float deltaTime = Renderer::calculateDeltaTime(static_cast<float>(glfwGetTime()));
 
@@ -132,7 +67,7 @@ int main(int argc, char *argv[]) {
             glm::mat4 mvp = projection * view * model;
             shader.setUniformMat4f("u_MVP", mvp);
 
-            Renderer::Draw(vao, ibo);
+            Renderer::draw(grass.m_vao(), grass.m_ibo());
 
             glfwSwapBuffers(window);
             glfwPollEvents();

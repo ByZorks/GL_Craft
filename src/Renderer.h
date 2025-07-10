@@ -9,9 +9,9 @@ private:
     static float m_lastFrame;
 
 public:
-    static void Clear();
+    static void clear();
     static float calculateDeltaTime(float currentFrame);
-    static void Draw(const VertexArray& vao, const IndexBuffer& ibo);
+    static void draw(const VertexArray& vao, const IndexBuffer& ibo);
 
 };
 

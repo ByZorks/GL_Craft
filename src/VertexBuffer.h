@@ -6,11 +6,12 @@ private:
     unsigned int m_RendererID = 0;
 
 public:
-    VertexBuffer(const void *data, unsigned int size);
+    VertexBuffer();
     ~VertexBuffer();
 
-    void Bind() const;
-    static void Unbind() ;
+    void init(const void *data, unsigned int size);
+    void bind() const;
+    static void unbind() ;
 
 };
 

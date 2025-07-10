@@ -6,7 +6,7 @@
 float Renderer::m_deltaTime = 0.0f;
 float Renderer::m_lastFrame = 0.0f;
 
-void Renderer::Clear() {
+void Renderer::clear() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -16,8 +16,8 @@ float Renderer::calculateDeltaTime(const float currentFrame) {
     return m_deltaTime;
 }
 
-void Renderer::Draw(const VertexArray& vao, const IndexBuffer& ibo) {
-    vao.Bind();
-    ibo.Bind();
+void Renderer::draw(const VertexArray& vao, const IndexBuffer& ibo) {
+    vao.bind();
+    ibo.bind();
     GLCall(glDrawElements(GL_TRIANGLES, ibo.m_count(), GL_UNSIGNED_INT, nullptr));
 }
