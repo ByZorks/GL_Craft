@@ -54,8 +54,7 @@ int main(int argc, char *argv[]) {
         atlas.bind();
         shader.setUniform1i("u_Texture", 0);
 
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
+        Renderer::init();
         while (!glfwWindowShouldClose(window)) {
             Renderer::clear();
 

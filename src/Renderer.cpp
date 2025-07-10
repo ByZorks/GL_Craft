@@ -6,6 +6,11 @@
 float Renderer::m_deltaTime = 0.0f;
 float Renderer::m_lastFrame = 0.0f;
 
+void Renderer::init() {
+    GLCall(glEnable(GL_DEPTH_TEST));
+    GLCall(glDepthFunc(GL_LESS));
+}
+
 void Renderer::clear() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
