@@ -112,11 +112,11 @@ int main(int argc, char *argv[]) {
         constexpr auto model = glm::mat4(1.0f); // Identity matrix for model
 
         // Shader
-        Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader"); // TODO: ERROR HANDLING
+        Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
         shader.use();
 
-        const Texture grass_texture("../res/textures/atlas/texture_atlas.png"); // TODO: ERROR HANDLING
-        grass_texture.bind();
+        const Texture atlas("../res/textures/atlas/texture_atlas.png");
+        atlas.bind();
         shader.setUniform1i("u_Texture", 0);
 
         glEnable(GL_DEPTH_TEST);

@@ -10,7 +10,7 @@ private:
     int m_Width, m_Height, m_BPP; // BPP: Bytes Per Pixel
 
 public:
-    Texture(std::string filePath);
+    explicit Texture(std::string filePath);
     ~Texture();
 
     void bind(unsigned int slot = 0) const;

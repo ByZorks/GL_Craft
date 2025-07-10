@@ -6,12 +6,17 @@
 #include "GL/glew.h"
 
 #define STB_IMAGE_IMPLEMENTATION
+#include <iostream>
+#include <ostream>
+
 #include "stb_image.h"
 
 Texture::Texture(std::string filePath) : m_RendererID(0), m_FilePath(std::move(filePath)), m_LocalBuffer(nullptr),
                                          m_Width(0), m_Height(0), m_BPP(0) {
     stbi_set_flip_vertically_on_load(1);
+
     m_LocalBuffer = stbi_load(m_FilePath.c_str(), &m_Width, &m_Height, &m_BPP, 4); // 4 for RGBA
+    if (!m_LocalBuffer) std::cerr << "Cannot load texture: " << m_FilePath << std::endl;
 
     GLCall(glGenTextures(1, &m_RendererID));
     GLCall(glBindTexture(GL_TEXTURE_2D, m_RendererID));
