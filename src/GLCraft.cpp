@@ -3,8 +3,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "Block.h"
 #include "Camera.h"
+#include "Chunk.h"
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -30,11 +30,14 @@ int main(int argc, char *argv[]) {
     glfwSetWindowUserPointer(window, &camera);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
 
+    glfwSwapInterval(0); // Disable VSync
+
     if (glewInit() != GLEW_OK) std::cout << "glewInit() failed" << std::endl;
 
     std::cout << glGetString(GL_VERSION) << std::endl; {
 
-        Block grass(0.0f, 0.0f, 0.0f, .0f);
+        Chunk chunk{};
+        chunk.generate();
 
         // Projection, View, Model matrices
         const glm::mat4 projection = glm::perspective(
@@ -68,7 +71,7 @@ int main(int argc, char *argv[]) {
             glm::mat4 mvp = projection * view * model;
             shader.setUniformMat4f("u_MVP", mvp);
 
-            Renderer::draw(grass.m_vao(), grass.m_ibo());
+            Renderer::draw(chunk.m_vao(), chunk.m_ibo());
 
             glfwSwapBuffers(window);
             glfwPollEvents();

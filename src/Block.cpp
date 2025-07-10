@@ -46,22 +46,34 @@ Block::Block(const float x, const float y, const float z, const float index) {
     };
 
     std::copy_n(tempVertices, 120, m_Vertices);
-
-    m_VBO.init(m_Vertices, sizeof(m_Vertices));
-    m_IBO.init(m_Indices, sizeof(m_Indices) / sizeof(unsigned int));
-
-    m_layout.Push<float>(3); // x, y, z
-    m_layout.Push<float>(2); // u, v
-    m_VAO.AddBuffer(m_VBO, m_layout);
 }
 
 Block::~Block() = default;
 
-const VertexArray & Block::m_vao() const {
-    return m_VAO;
+const unsigned int * Block::getIndices() {
+    static const unsigned int indices[36] = {
+        // Front face
+        0, 1, 2,
+        2, 3, 0,
+        // Back face
+        4, 5, 6,
+        6, 7, 4,
+        // Left face
+        8, 9, 10,
+        10, 11, 8,
+        // Right face
+        12, 13, 14,
+        14, 15, 12,
+        // Top face
+        16, 17, 18,
+        18, 19, 16,
+        // Bottom face
+        20, 21, 22,
+        22, 23, 20
+    };
+    return indices;
 }
 
-const IndexBuffer & Block::m_ibo() const {
-    return m_IBO;
+const float * Block::getVertices() const {
+    return m_Vertices;
 }
-
