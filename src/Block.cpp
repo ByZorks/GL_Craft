@@ -3,38 +3,46 @@
 #include <algorithm>
 
 Block::Block(const float x, const float y, const float z, const float index) {
+    constexpr float TEXTURE_OFFSET_0 = 0.0f;
+    constexpr float TEXTURE_OFFSET_33 = 1.0f / 3.0f;
+    constexpr float TEXTURE_OFFSET_66 = 2.0f / 3.0f;
+    constexpr float TEXTURE_OFFSET_100 = 1.0f;
+    constexpr float BLOCK_MIN = 0.0f;
+    constexpr float BLOCK_MAX = 1.0f;
+
+
     float tempVertices[] = {
         // x, y, z, u, v
         // Front face
-        x - .5f, y + .5f, z + .5f, index + .333f, index + 1.0f,
-        x + .5f, y + .5f, z + .5f, index + .666f, index + 1.0f,
-        x + .5f, y - .5f, z + .5f, index + .666f, index + .0f,
-        x - .5f, y - .5f, z + .5f, index + .333f, index + .0f,
+        x - BLOCK_MIN, y + BLOCK_MAX, z + BLOCK_MAX, index + TEXTURE_OFFSET_33, index + TEXTURE_OFFSET_100,
+        x + BLOCK_MAX, y + BLOCK_MAX, z + BLOCK_MAX, index + TEXTURE_OFFSET_66, index + TEXTURE_OFFSET_100,
+        x + BLOCK_MAX, y - BLOCK_MIN, z + BLOCK_MAX, index + TEXTURE_OFFSET_66, index + TEXTURE_OFFSET_0,
+        x - BLOCK_MIN, y - BLOCK_MIN, z + BLOCK_MAX, index + TEXTURE_OFFSET_33, index + TEXTURE_OFFSET_0,
         // Back face
-        x - .5f, y + .5f, z - .5f, index + .333f, index + 1.0f,
-        x + .5f, y + .5f, z - .5f, index + .666f, index + 1.0f,
-        x + .5f, y - .5f, z - .5f, index + .666f, index + .0f,
-        x - .5f, y - .5f, z - .5f, index + .333f, index + .0f,
+        x - BLOCK_MIN, y + BLOCK_MAX, z - BLOCK_MIN, index + TEXTURE_OFFSET_33, index + TEXTURE_OFFSET_100,
+        x + BLOCK_MAX, y + BLOCK_MAX, z - BLOCK_MIN, index + TEXTURE_OFFSET_66, index + TEXTURE_OFFSET_100,
+        x + BLOCK_MAX, y - BLOCK_MIN, z - BLOCK_MIN, index + TEXTURE_OFFSET_66, index + TEXTURE_OFFSET_0,
+        x - BLOCK_MIN, y - BLOCK_MIN, z - BLOCK_MIN, index + TEXTURE_OFFSET_33, index + TEXTURE_OFFSET_0,
         // Left face
-        x - .5f, y + .5f, z + .5f, index + .333f, index + 1.0f,
-        x - .5f, y + .5f, z - .5f, index + .666f, index + 1.0f,
-        x - .5f, y - .5f, z - .5f, index + .666f, index + .0f,
-        x - .5f, y - .5f, z + .5f, index + .333f, index + .0f,
+        x - BLOCK_MIN, y + BLOCK_MAX, z + BLOCK_MAX, index + TEXTURE_OFFSET_33, index + TEXTURE_OFFSET_100,
+        x - BLOCK_MIN, y + BLOCK_MAX, z - BLOCK_MIN, index + TEXTURE_OFFSET_66, index + TEXTURE_OFFSET_100,
+        x - BLOCK_MIN, y - BLOCK_MIN, z - BLOCK_MIN, index + TEXTURE_OFFSET_66, index + TEXTURE_OFFSET_0,
+        x - BLOCK_MIN, y - BLOCK_MIN, z + BLOCK_MAX, index + TEXTURE_OFFSET_33, index + TEXTURE_OFFSET_0,
         // Right face
-        x + .5f, y + .5f, z + .5f, index + .333f, index + 1.0f,
-        x + .5f, y + .5f, z - .5f, index + .666f, index + 1.0f,
-        x + .5f, y - .5f, z - .5f, index + .666f, index + .0f,
-        x + .5f, y - .5f, z + .5f, index + .333f, index + .0f,
+        x + BLOCK_MAX, y + BLOCK_MAX, z + BLOCK_MAX, index + TEXTURE_OFFSET_33, index + TEXTURE_OFFSET_100,
+        x + BLOCK_MAX, y + BLOCK_MAX, z - BLOCK_MIN, index + TEXTURE_OFFSET_66, index + TEXTURE_OFFSET_100,
+        x + BLOCK_MAX, y - BLOCK_MIN, z - BLOCK_MIN, index + TEXTURE_OFFSET_66, index + TEXTURE_OFFSET_0,
+        x + BLOCK_MAX, y - BLOCK_MIN, z + BLOCK_MAX, index + TEXTURE_OFFSET_33, index + TEXTURE_OFFSET_0,
         // Top face
-        x - .5f, y + .5f, z + .5f, index + .666f, index + 1.0f,
-        x + .5f, y + .5f, z + .5f, index + 1.0f, index + 1.0f,
-        x + .5f, y + .5f, z - .5f, index + 1.0f, index + .0f,
-        x - .5f, y + .5f, z - .5f, index + .666f, index + .0f,
+        x - BLOCK_MIN, y + BLOCK_MAX, z + BLOCK_MAX, index + TEXTURE_OFFSET_66, index + TEXTURE_OFFSET_100,
+        x + BLOCK_MAX, y + BLOCK_MAX, z + BLOCK_MAX, index + TEXTURE_OFFSET_100, index + TEXTURE_OFFSET_100,
+        x + BLOCK_MAX, y + BLOCK_MAX, z - BLOCK_MIN, index + TEXTURE_OFFSET_100, index + TEXTURE_OFFSET_0,
+        x - BLOCK_MIN, y + BLOCK_MAX, z - BLOCK_MIN, index + TEXTURE_OFFSET_66, index + TEXTURE_OFFSET_0,
         // Bottom face
-        x - .5f, y - .5f, z + .5f, index + .0f, index + 1.0f,
-        x + .5f, y - .5f, z + .5f, index + .333f, index + 1.0f,
-        x + .5f, y - .5f, z - .5f, index + .333f, index + .0f,
-        x - .5f, y - .5f, z - .5f, index + .0f, index + .0f,
+        x - BLOCK_MIN, y - BLOCK_MIN, z + BLOCK_MAX, index + TEXTURE_OFFSET_0, index + TEXTURE_OFFSET_100,
+        x + BLOCK_MAX, y - BLOCK_MIN, z + BLOCK_MAX, index + TEXTURE_OFFSET_33, index + TEXTURE_OFFSET_100,
+        x + BLOCK_MAX, y - BLOCK_MIN, z - BLOCK_MIN, index + TEXTURE_OFFSET_33, index + TEXTURE_OFFSET_0,
+        x - BLOCK_MIN, y - BLOCK_MIN, z - BLOCK_MIN, index + TEXTURE_OFFSET_0, index + TEXTURE_OFFSET_0,
     };
 
     std::copy_n(tempVertices, 120, m_Vertices);
