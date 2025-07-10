@@ -56,6 +56,8 @@ int main(int argc, char *argv[]) {
 
         Renderer::init();
         while (!glfwWindowShouldClose(window)) {
+            if (glfwGetKey(window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window, true);
+
             Renderer::clear();
 
             float deltaTime = Renderer::calculateDeltaTime(static_cast<float>(glfwGetTime()));
