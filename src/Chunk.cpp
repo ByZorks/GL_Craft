@@ -6,16 +6,20 @@
 Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), m_zStart(z) {
 
 }
+
 Chunk::~Chunk() = default;
 
 void Chunk::generate() {
-    for (int x = m_xStart; x < m_xStart + m_size; x++) {
-        for (int y = m_yStart; y < m_yStart + m_size; y++) {
-            for (int z = m_zStart; z < m_zStart + m_size; z++) {
-                Block block(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), 0.0f);
+    for (int localX = 0; localX < m_size; localX++) {
+        for (int localY = 0; localY < m_size; localY++) {
+            for (int localZ = 0; localZ < m_size; localZ++) {
+                const auto worldX = static_cast<float>(m_xStart + localX);
+                const auto worldY = static_cast<float>(m_yStart + localY);
+                const auto worldZ = static_cast<float>(m_zStart + localZ);
 
+                Block block(worldX, worldY, worldZ, 0.0f);
                 const float* blockVertices = block.getVertices();
-                m_vertices.insert(m_vertices.end(), blockVertices, blockVertices + 120); // 120 floats per block
+                m_vertices.insert(m_vertices.end(), blockVertices, blockVertices + 120);
             }
         }
     }
