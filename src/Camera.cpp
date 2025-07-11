@@ -16,7 +16,7 @@ Camera::Camera(const unsigned int windowWidth,
 }
 
 void Camera::processInput(GLFWwindow *window, const float deltaTime) {
-    const float cameraSpeed = 10.0f * deltaTime;
+    const float cameraSpeed = 20.0f * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         m_cameraPos += cameraSpeed * m_cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)

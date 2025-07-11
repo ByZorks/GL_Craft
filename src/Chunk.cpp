@@ -3,14 +3,15 @@
 #include "Block.h"
 #include "Renderer.h"
 
-Chunk::Chunk() = default;
+Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), m_zStart(z) {
 
+}
 Chunk::~Chunk() = default;
 
 void Chunk::generate() {
-    for (int x = 0; x < m_size; x++) {
-        for (int y = 0; y < m_size; y++) {
-            for (int z = 0; z < m_size; z++) {
+    for (int x = m_xStart; x < m_xStart + m_size; x++) {
+        for (int y = m_yStart; y < m_yStart + m_size; y++) {
+            for (int z = m_zStart; z < m_zStart + m_size; z++) {
                 Block block(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), 0.0f);
 
                 const float* blockVertices = block.getVertices();
@@ -18,8 +19,6 @@ void Chunk::generate() {
             }
         }
     }
-
-    setupBuffers();
 }
 
 void Chunk::setupBuffers() {

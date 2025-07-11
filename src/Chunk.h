@@ -8,6 +8,9 @@
 class Chunk {
 private:
     unsigned int m_size = 16;
+    int m_xStart;
+    int m_yStart;
+    int m_zStart;
     std::vector<float> m_vertices;
     const unsigned int *m_indices{};
     VertexArray m_VAO;
@@ -16,7 +19,7 @@ private:
     VertexBufferLayout m_layout;
 
 public:
-    Chunk();
+    Chunk(int x, int y, int z);
     ~Chunk();
 
     void generate();

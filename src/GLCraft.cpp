@@ -4,12 +4,12 @@
 #include <GLFW/glfw3.h>
 
 #include "Camera.h"
-#include "Chunk.h"
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
 
 #include "glm.hpp"
+#include "World.h"
 #include "gtc/matrix_transform.hpp"
 
 int main(int argc, char *argv[]) {
@@ -36,8 +36,8 @@ int main(int argc, char *argv[]) {
 
     std::cout << glGetString(GL_VERSION) << std::endl; {
 
-        Chunk chunk{};
-        chunk.generate();
+        World world;
+        world.generate();
 
         // Projection, View, Model matrices
         const glm::mat4 projection = glm::perspective(
@@ -63,15 +63,18 @@ int main(int argc, char *argv[]) {
 
             Renderer::clear();
 
-            float deltaTime = Renderer::calculateDeltaTime(static_cast<float>(glfwGetTime()));
+            const float deltaTime = Renderer::calculateDeltaTime(static_cast<float>(glfwGetTime()));
 
             camera.processInput(window, deltaTime);
             glm::mat4 view = glm::lookAt(camera.m_camera_pos(), camera.m_camera_pos() + camera.m_camera_front(),
                                          camera.m_camera_up());
+            view = glm::translate(view, glm::vec3(0.0f, -32.0f, 0.0f));
             glm::mat4 mvp = projection * view * model;
             shader.setUniformMat4f("u_MVP", mvp);
 
-            Renderer::draw(chunk.m_vao(), chunk.m_ibo());
+            for (auto &chunk : world.m_chunks1()) {
+                Renderer::draw(chunk->m_vao(), chunk->m_ibo());
+            }
 
             glfwSwapBuffers(window);
             glfwPollEvents();

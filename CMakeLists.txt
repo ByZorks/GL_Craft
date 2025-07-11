@@ -39,6 +39,8 @@ add_executable(GL_Craft
         src/Block.h
         src/Chunk.cpp
         src/Chunk.h
+        src/World.cpp
+        src/World.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)
