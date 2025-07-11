@@ -7,10 +7,9 @@
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "World.h"
 
 #include "glm.hpp"
-#include "World.h"
-#include "gtc/matrix_transform.hpp"
 
 int main(int argc, char *argv[]) {
     if (!glfwInit())
@@ -39,16 +38,6 @@ int main(int argc, char *argv[]) {
         World world;
         world.generate();
 
-        // Projection, View, Model matrices
-        const glm::mat4 projection = glm::perspective(
-            glm::radians(45.0f), // Field of view
-            1280.0f / 720.0f, // Aspect ratio
-            .1f, // Near plane
-            5000.0f // Far plane
-        );
-
-        constexpr auto model = glm::mat4(1.0f); // Identity matrix for model
-
         // Shader
         Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
         shader.use();
@@ -56,6 +45,10 @@ int main(int argc, char *argv[]) {
         const Texture atlas("../res/textures/atlas/texture_atlas.png");
         atlas.bind();
         shader.setUniform1i("u_Texture", 0);
+
+        // Set up the MVP matrix
+        const glm::mat4 projection = camera.getProjectionMatrix();
+        constexpr auto model = glm::mat4(1.0f);
 
         Renderer::init();
         while (!glfwWindowShouldClose(window)) {
@@ -66,9 +59,8 @@ int main(int argc, char *argv[]) {
             const float deltaTime = Renderer::calculateDeltaTime(static_cast<float>(glfwGetTime()));
 
             camera.processInput(window, deltaTime);
-            glm::mat4 view = glm::lookAt(camera.m_camera_pos(), camera.m_camera_pos() + camera.m_camera_front(),
-                                         camera.m_camera_up());
-            view = glm::translate(view, glm::vec3(0.0f, -32.0f, 0.0f));
+
+            glm::mat4 view = camera.getViewMatrix();
             glm::mat4 mvp = projection * view * model;
             shader.setUniformMat4f("u_MVP", mvp);
 

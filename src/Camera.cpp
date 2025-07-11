@@ -1,10 +1,7 @@
 #include "Camera.h"
 
-#include <iostream>
-#include <ostream>
-
-#include "geometric.hpp"
-#include "detail/func_trigonometric.inl"
+#include "ext/matrix_clip_space.hpp"
+#include "ext/matrix_transform.hpp"
 
 Camera::Camera(const unsigned int windowWidth,
                const unsigned int windowHeight) : m_lastX(static_cast<float>(windowWidth) / 2.0f),
@@ -12,7 +9,12 @@ Camera::Camera(const unsigned int windowWidth,
                                                   m_yaw(-90.0f), m_pitch(0.0f),
                                                   m_firstMouse(true), m_cameraPos(glm::vec3(0.0f, 0.0f, 3.0f)),
                                                   m_cameraFront(glm::vec3(0.0f, 0.0f, -1.0f)),
-                                                  m_cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)) {
+                                                  m_cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
+                                                  m_FOVDegrees(45.f),
+                                                  m_aspectRatio(
+                                                      static_cast<float>(windowWidth) / static_cast<float>(
+                                                          windowHeight)),
+                                                  m_nearPlane(.1f), m_farPlane(5000.0f) {
 }
 
 void Camera::processInput(GLFWwindow *window, const float deltaTime) {
@@ -62,14 +64,12 @@ void Camera::mouseCallback(GLFWwindow *window, const double xpos, const double y
     if (auto *cam = static_cast<Camera *>(glfwGetWindowUserPointer(window))) cam->handleMouse(xpos, ypos);
 }
 
-glm::vec3 Camera::m_camera_pos() const {
-    return m_cameraPos;
+glm::mat4 Camera::getProjectionMatrix() const {
+    return glm::perspective(glm::radians(m_FOVDegrees), m_aspectRatio, m_nearPlane, m_farPlane);
 }
 
-glm::vec3 Camera::m_camera_front() const {
-    return m_cameraFront;
-}
-
-glm::vec3 Camera::m_camera_up() const {
-    return m_cameraUp;
+glm::mat4 Camera::getViewMatrix() const {
+    glm::mat4 view = glm::lookAt(m_cameraPos, m_cameraPos + m_cameraFront, m_cameraUp);
+    view = glm::translate(view, glm::vec3(0.0f, -32.0f, 0.0f));
+    return view;
 }
