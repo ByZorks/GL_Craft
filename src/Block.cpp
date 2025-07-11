@@ -54,22 +54,22 @@ const unsigned int * Block::getIndices() {
     static const unsigned int indices[36] = {
         // Front face
         0, 1, 2,
-        2, 3, 0,
+        0, 2, 3,
         // Back face
-        4, 5, 6,
-        6, 7, 4,
+        4, 7, 6,
+        4, 6, 5,
         // Left face
-        8, 9, 10,
-        10, 11, 8,
+        8, 11, 10,
+        8, 10, 9,
         // Right face
         12, 13, 14,
-        14, 15, 12,
+        12, 14, 15,
         // Top face
-        16, 17, 18,
-        18, 19, 16,
+        16, 19, 18,
+        16, 18, 17,
         // Bottom face
         20, 21, 22,
-        22, 23, 20
+        20, 22, 23
     };
     return indices;
 }
