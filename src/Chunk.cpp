@@ -3,6 +3,8 @@
 #include "Block.h"
 #include "Renderer.h"
 
+unsigned int Chunk::m_size = 16; // Default chunk size
+
 Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), m_zStart(z) {
 
 }
@@ -51,4 +53,8 @@ const VertexArray & Chunk::m_vao() const {
 
 const IndexBuffer & Chunk::m_ibo() const {
     return m_IBO;
+}
+
+unsigned int Chunk::m_size1() {
+    return m_size;
 }

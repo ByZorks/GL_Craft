@@ -7,7 +7,7 @@
 
 class Chunk {
 private:
-    unsigned int m_size = 16;
+    static unsigned int m_size;
     int m_xStart;
     int m_yStart;
     int m_zStart;
@@ -26,8 +26,8 @@ public:
     void setupBuffers();
 
     [[nodiscard]] const VertexArray & m_vao() const;
-
     [[nodiscard]] const IndexBuffer & m_ibo() const;
+    [[nodiscard]] static unsigned int m_size1() ;
 };
 
 #endif //CHUNK_H
