@@ -8,7 +8,6 @@ float Renderer::m_lastFrame = 0.0f;
 
 void Renderer::init() {
     GLCall(glEnable(GL_DEPTH_TEST));
-    GLCall(glDepthFunc(GL_LESS));
 }
 
 void Renderer::clear() {
