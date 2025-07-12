@@ -12,9 +12,9 @@ World::~World() {
 void World::generate() {
     const int chunkSize = static_cast<int>(Chunk::m_size1());
 
-    for (int x = -m_renderDistance * chunkSize; x < m_renderDistance * chunkSize; x += chunkSize) {
+    for (int x = -m_halfWidth * chunkSize; x < m_halfWidth * chunkSize; x += chunkSize) {
         for (int y = 0; y < m_height * chunkSize; y += chunkSize) {
-            for (int z = -m_renderDistance * chunkSize; z < m_renderDistance * chunkSize; z += chunkSize) {
+            for (int z = -m_halfWidth * chunkSize; z < m_halfWidth * chunkSize; z += chunkSize) {
                 m_chunks.push_back(new Chunk(x, y, z));
                 m_chunks.back()->generate();
                 m_chunks.back()->setupBuffers();
@@ -24,7 +24,7 @@ void World::generate() {
 }
 
 unsigned int World::m_size1() const {
-    return m_renderDistance;
+    return m_halfWidth;
 }
 
 const std::vector<Chunk *>& World::m_chunks1() {

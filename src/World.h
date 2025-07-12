@@ -6,7 +6,7 @@
 
 class World {
 private:
-    const int m_renderDistance = 8; // Number of chunk chunks in each dimension (x, z)
+    const int m_halfWidth = 8; // Half the number of chunks in the x and z dimensions
     const unsigned int m_height = 1; // Number of chunk chunks in the y dimension
     std::vector<Chunk*> m_chunks;
 
