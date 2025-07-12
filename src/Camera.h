@@ -1,5 +1,6 @@
 #ifndef CAMERA_H
 #define CAMERA_H
+#include "Frustum.h"
 #include "GLFW/glfw3.h"
 #include "glm.hpp"
 
@@ -19,6 +20,7 @@ public:
 
     [[nodiscard]] glm::mat4 getProjectionMatrix() const ;
     [[nodiscard]] glm::mat4 getViewMatrix() const;
+    static Frustum getFrustum(glm::mat4 modelViewProjecMatrix);
 };
 
 #endif //CAMERA_H

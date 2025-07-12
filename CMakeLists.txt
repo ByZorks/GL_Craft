@@ -41,6 +41,12 @@ add_executable(GL_Craft
         src/Chunk.h
         src/World.cpp
         src/World.h
+        src/Frustum.cpp
+        src/Frustum.h
+        src/Plane.cpp
+        src/Plane.h
+        src/AABB.cpp
+        src/AABB.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

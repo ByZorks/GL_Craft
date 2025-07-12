@@ -2,6 +2,7 @@
 #define CHUNK_H
 #include <vector>
 
+#include "AABB.h"
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 
@@ -17,6 +18,7 @@ private:
     VertexBuffer m_VBO;
     IndexBuffer m_IBO;
     VertexBufferLayout m_layout;
+    AABB m_box;
 
 public:
     Chunk(int x, int y, int z);
@@ -28,6 +30,7 @@ public:
     [[nodiscard]] const VertexArray & m_vao() const;
     [[nodiscard]] const IndexBuffer & m_ibo() const;
     [[nodiscard]] static unsigned int m_size1() ;
+    [[nodiscard]] const AABB & m_box1() const;
 };
 
 #endif //CHUNK_H

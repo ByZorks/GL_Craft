@@ -1,5 +1,6 @@
 #include "Camera.h"
 
+#include "Plane.h"
 #include "ext/matrix_clip_space.hpp"
 #include "ext/matrix_transform.hpp"
 
@@ -14,7 +15,7 @@ Camera::Camera(const unsigned int windowWidth,
                                                   m_aspectRatio(
                                                       static_cast<float>(windowWidth) / static_cast<float>(
                                                           windowHeight)),
-                                                  m_nearPlane(.1f), m_farPlane(5000.0f) {
+                                                  m_nearPlane(.1f), m_farPlane(1024.0f) {
 }
 
 void Camera::processInput(GLFWwindow *window, const float deltaTime) {
@@ -72,4 +73,51 @@ glm::mat4 Camera::getViewMatrix() const {
     glm::mat4 view = glm::lookAt(m_cameraPos, m_cameraPos + m_cameraFront, m_cameraUp);
     view = glm::translate(view, glm::vec3(0.0f, -32.0f, 0.0f));
     return view;
+}
+
+Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
+    constexpr float padding = 1.0f; // Prevent popping
+
+    auto left = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][0],
+                       modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][0],
+                       modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][0],
+                       modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][0]
+    );
+    left.set_m_d(left.m_d1() + padding);
+
+    auto right = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][0],
+                        modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][0],
+                        modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][0],
+                        modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][0]
+    );
+    right.set_m_d(right.m_d1() + padding);
+
+    auto bottom = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][1],
+                         modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][1],
+                         modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][1],
+                         modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][1]
+    );
+    bottom.set_m_d(bottom.m_d1() + padding);
+
+    auto top = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][1],
+                      modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][1],
+                      modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][1],
+                      modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][1]
+    );
+    top.set_m_d(top.m_d1() + padding);
+
+    const auto near = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][2],
+                       modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][2],
+                       modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][2],
+                       modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][2]
+    );
+
+    const auto far = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][2],
+                      modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][2],
+                      modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][2],
+                      modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][2]
+    );
+
+    Frustum frustum(left, right, bottom, top, near, far);
+    return frustum;
 }

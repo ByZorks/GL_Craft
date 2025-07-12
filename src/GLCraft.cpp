@@ -64,9 +64,17 @@ int main(int argc, char *argv[]) {
             glm::mat4 mvp = projection * view * model;
             shader.setUniformMat4f("u_MVP", mvp);
 
-            for (auto &chunk : world.m_chunks1()) {
-                Renderer::draw(chunk->m_vao(), chunk->m_ibo());
+            Frustum frustum = Camera::getFrustum(mvp);
+            int visibleChunks = 0;
+            int totalChunks = 0;
+            for (const auto &chunk : world.m_chunks1()) {
+                totalChunks++;
+                if (frustum.isAABBInFrustum(chunk->m_box1())) {
+                    Renderer::draw(chunk->m_vao(), chunk->m_ibo());
+                    visibleChunks++;
+                }
             }
+            std::cout << "Visible Chunks: " << visibleChunks << " / " << totalChunks << std::endl;
 
             glfwSwapBuffers(window);
             glfwPollEvents();

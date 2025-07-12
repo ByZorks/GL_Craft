@@ -5,8 +5,13 @@
 
 unsigned int Chunk::m_size = 16; // Default chunk size
 
-Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), m_zStart(z) {
-
+Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), m_zStart(z),
+                                                      m_box(AABB(static_cast<float>(x), static_cast<float>(y),
+                                                                 static_cast<float>(z),
+                                                                 static_cast<float>(x) + static_cast<float>(m_size) - 1,
+                                                                 static_cast<float>(y) + static_cast<float>(m_size) - 1,
+                                                                 static_cast<float>(z) + static_cast<float>(m_size) -1
+                                                                 )) {
 }
 
 Chunk::~Chunk() = default;
@@ -20,7 +25,7 @@ void Chunk::generate() {
                 const auto worldZ = static_cast<float>(m_zStart + localZ);
 
                 Block block(worldX, worldY, worldZ, 0.0f);
-                const float* blockVertices = block.getVertices();
+                const float *blockVertices = block.getVertices();
                 m_vertices.insert(m_vertices.end(), blockVertices, blockVertices + 120);
             }
         }
@@ -29,7 +34,7 @@ void Chunk::generate() {
 
 void Chunk::setupBuffers() {
     std::vector<unsigned int> chunkIndices;
-    const unsigned int* blockIndices = Block::getIndices();
+    const unsigned int *blockIndices = Block::getIndices();
 
     // Calculate indices for each block in the chunk
     const unsigned int numBlocks = m_size * m_size * m_size;
@@ -47,14 +52,18 @@ void Chunk::setupBuffers() {
     m_VAO.AddBuffer(m_VBO, m_layout);
 }
 
-const VertexArray & Chunk::m_vao() const {
+const VertexArray &Chunk::m_vao() const {
     return m_VAO;
 }
 
-const IndexBuffer & Chunk::m_ibo() const {
+const IndexBuffer &Chunk::m_ibo() const {
     return m_IBO;
 }
 
 unsigned int Chunk::m_size1() {
     return m_size;
+}
+
+const AABB & Chunk::m_box1() const {
+    return m_box;
 }
