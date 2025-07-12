@@ -47,9 +47,10 @@ void Chunk::setupBuffers() {
     m_VBO.init(m_vertices.data(), sizeof(float) * m_vertices.size());
     m_IBO.init(chunkIndices.data(), chunkIndices.size());
 
-    m_layout.Push<float>(3); // x, y, z
-    m_layout.Push<float>(2); // u, v
-    m_VAO.AddBuffer(m_VBO, m_layout);
+    VertexBufferLayout chunkLayout;
+    chunkLayout.Push<float>(3); // x, y, z
+    chunkLayout.Push<float>(2); // u, v
+    m_VAO.AddBuffer(m_VBO, chunkLayout);
 }
 
 const VertexArray &Chunk::m_vao() const {

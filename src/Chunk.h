@@ -9,15 +9,12 @@
 class Chunk {
 private:
     static unsigned int m_size;
-    int m_xStart;
-    int m_yStart;
-    int m_zStart;
+    int m_xStart, m_yStart, m_zStart;
     std::vector<float> m_vertices;
     const unsigned int *m_indices{};
     VertexArray m_VAO;
     VertexBuffer m_VBO;
     IndexBuffer m_IBO;
-    VertexBufferLayout m_layout;
     AABB m_box;
 
 public:
