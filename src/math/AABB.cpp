@@ -16,5 +16,5 @@ AABB::AABB(const float xMin, const float yMin, const float zMin, const float xMa
 AABB::~AABB() = default;
 
 glm::vec3 AABB::getCorner(const int index) const {
-    return m_corners[index].m_position;
+    return m_corners[index];
 }

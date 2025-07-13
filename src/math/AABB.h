@@ -2,13 +2,9 @@
 #define AABB_H
 #include "vec3.hpp"
 
-struct Corner {
-    glm::vec3 m_position;
-};
-
 class AABB {
 private:
-    Corner m_corners[8]{};
+    glm::vec3 m_corners[8];
 
 public:
     AABB(float xMin, float yMin, float zMin, float xMax, float yMax, float zMax);
