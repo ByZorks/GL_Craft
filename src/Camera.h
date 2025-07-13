@@ -1,5 +1,6 @@
 #ifndef CAMERA_H
 #define CAMERA_H
+#include "Chunk.h"
 #include "Frustum.h"
 #include "GLFW/glfw3.h"
 #include "glm.hpp"
@@ -17,6 +18,7 @@ public:
     void processInput(GLFWwindow *window, float deltaTime);
     void handleMouse(double xpos, double ypos);
     static void mouseCallback(GLFWwindow *window, double xpos, double ypos);
+    float distanceToCamera(const Chunk& chunk) const;
 
     [[nodiscard]] glm::mat4 getProjectionMatrix() const ;
     [[nodiscard]] glm::mat4 getViewMatrix() const;

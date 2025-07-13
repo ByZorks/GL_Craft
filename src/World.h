@@ -4,6 +4,8 @@
 #include "Chunk.h"
 #include <vector>
 
+#include "Camera.h"
+
 class World {
 private:
     const int m_halfWidth = 8; // Half the number of chunks in the x and z dimensions
@@ -15,6 +17,7 @@ public:
     ~World();
 
     void generate();
+    void sortChunks(Camera& camera);
 
     [[nodiscard]] unsigned int m_size1() const;
 

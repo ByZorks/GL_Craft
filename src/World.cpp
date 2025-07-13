@@ -1,5 +1,7 @@
 #include "World.h"
 
+#include <algorithm>
+
 World::World() = default;
 
 World::~World() {
@@ -21,6 +23,12 @@ void World::generate() {
             }
         }
     }
+}
+
+void World::sortChunks(Camera &camera) {
+    std::ranges::sort(m_chunks, [camera](const Chunk *a, const Chunk *b) {
+        return camera.distanceToCamera(*a) < camera.distanceToCamera(*b);
+    });
 }
 
 unsigned int World::m_size1() const {

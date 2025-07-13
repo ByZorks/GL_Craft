@@ -1,5 +1,7 @@
 #include "Camera.h"
 
+#include <cmath>
+
 #include "Plane.h"
 #include "ext/matrix_clip_space.hpp"
 #include "ext/matrix_transform.hpp"
@@ -63,6 +65,17 @@ void Camera::handleMouse(const double xpos, const double ypos) {
 
 void Camera::mouseCallback(GLFWwindow *window, const double xpos, const double ypos) {
     if (auto *cam = static_cast<Camera *>(glfwGetWindowUserPointer(window))) cam->handleMouse(xpos, ypos);
+}
+
+float Camera::distanceToCamera(const Chunk& chunk) const {
+    const auto x = static_cast<float>(chunk.m_x_start());
+    const auto y = static_cast<float>(chunk.m_y_start());
+    const auto z = static_cast<float>(chunk.m_z_start());
+    const auto size = static_cast<float>(Chunk::m_size1());
+    const glm::vec3 position(x, y, z);
+    const glm::vec3 center = position + glm::vec3(x + size, y + size, z + size) * 0.5f;
+
+    return glm::distance(m_cameraPos, center);
 }
 
 glm::mat4 Camera::getProjectionMatrix() const {

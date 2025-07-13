@@ -28,6 +28,9 @@ public:
     [[nodiscard]] const IndexBuffer & m_ibo() const;
     [[nodiscard]] static unsigned int m_size1() ;
     [[nodiscard]] const AABB & m_box1() const;
+    [[nodiscard]] int m_x_start() const;
+    [[nodiscard]] int m_y_start() const;
+    [[nodiscard]] int m_z_start() const;
 };
 
 #endif //CHUNK_H

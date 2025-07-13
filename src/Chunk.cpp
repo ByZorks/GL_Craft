@@ -68,3 +68,15 @@ unsigned int Chunk::m_size1() {
 const AABB & Chunk::m_box1() const {
     return m_box;
 }
+
+int Chunk::m_x_start() const {
+    return m_xStart;
+}
+
+int Chunk::m_y_start() const {
+    return m_yStart;
+}
+
+int Chunk::m_z_start() const {
+    return m_zStart;
+}
