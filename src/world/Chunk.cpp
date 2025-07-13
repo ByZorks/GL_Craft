@@ -17,22 +17,71 @@ Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), 
 Chunk::~Chunk() = default;
 
 void Chunk::generate() {
+    bool blockPresent[m_size][m_size][m_size] = {false};
+
     for (int localX = 0; localX < m_size; localX++) {
         for (int localY = 0; localY < m_size; localY++) {
             for (int localZ = 0; localZ < m_size; localZ++) {
+                blockPresent[localX][localY][localZ] = true;
+            }
+        }
+    }
+
+    for (int localX = 0; localX < m_size; localX++) {
+        for (int localY = 0; localY < m_size; localY++) {
+            for (int localZ = 0; localZ < m_size; localZ++) {
+                if (!blockPresent[localX][localY][localZ]) {
+                    continue; // Skip empty positions
+                }
+
                 const auto worldX = static_cast<float>(m_xStart + localX);
                 const auto worldY = static_cast<float>(m_yStart + localY);
                 const auto worldZ = static_cast<float>(m_zStart + localZ);
 
                 Block block(worldX, worldY, worldZ, 0.0f);
-                block.addFace(TOP);
-                block.addFace(BOTTOM);
-                block.addFace(FRONT);
-                block.addFace(BACK);
-                block.addFace(LEFT);
-                block.addFace(RIGHT);
-                const float *blockVertices = block.getVertices();
-                m_vertices.insert(m_vertices.end(), blockVertices, blockVertices + 120);
+
+                constexpr unsigned int verticesPerFace = 4;
+                // Check all 6 directions and add faces if no adjacent block
+                // TOP face (Y+1)
+                if (localY + 1 >= m_size || !blockPresent[localX][localY + 1][localZ]) {
+                    block.addFace(TOP);
+                    m_blockFaceData.push_back({TOP, verticesPerFace});
+                }
+
+                // BOTTOM face (Y-1)
+                if (localY - 1 < 0 || !blockPresent[localX][localY - 1][localZ]) {
+                    block.addFace(BOTTOM);
+                    m_blockFaceData.push_back({BOTTOM, verticesPerFace});
+                }
+
+                // FRONT face (Z+1)
+                if (localZ + 1 >= m_size || !blockPresent[localX][localY][localZ + 1]) {
+                    block.addFace(FRONT);
+                    m_blockFaceData.push_back({FRONT, verticesPerFace});
+                }
+
+                // BACK face (Z-1)
+                if (localZ - 1 < 0 || !blockPresent[localX][localY][localZ - 1]) {
+                    block.addFace(BACK);
+                    m_blockFaceData.push_back({BACK, verticesPerFace});
+                }
+
+                // RIGHT face (X+1)
+                if (localX + 1 >= m_size || !blockPresent[localX + 1][localY][localZ]) {
+                    block.addFace(RIGHT);
+                    m_blockFaceData.push_back({RIGHT, verticesPerFace});
+                }
+
+                // LEFT face (X-1)
+                if (localX - 1 < 0 || !blockPresent[localX - 1][localY][localZ]) {
+                    block.addFace(LEFT);
+                    m_blockFaceData.push_back({LEFT, verticesPerFace});
+                }
+
+                // Add block vertices to the chunk's vertex list
+                const float* blockVertices = block.getVertices();
+                const unsigned int vertexCount = block.getVertexCount() * 5; // 5 components per vertex
+                m_vertices.insert(m_vertices.end(), blockVertices, blockVertices + vertexCount);
             }
         }
     }
@@ -40,26 +89,38 @@ void Chunk::generate() {
 
 void Chunk::setupBuffers() {
     std::vector<unsigned int> chunkIndices;
+    unsigned int vertexOffset = 0;
 
-    // Create a temporary block to get the base indices pattern
-    Block tempBlock(0.0f, 0.0f, 0.0f, 0.0f);
-    tempBlock.addFace(TOP);
-    tempBlock.addFace(BOTTOM);
-    tempBlock.addFace(FRONT);
-    tempBlock.addFace(BACK);
-    tempBlock.addFace(LEFT);
-    tempBlock.addFace(RIGHT);
+    for (const auto&[faceType, vertexCount] : m_blockFaceData) {
+        unsigned int baseIdx = vertexOffset;
 
-    const unsigned int* baseIndices = tempBlock.getIndices();
-    const unsigned int indicesPerBlock = tempBlock.getIndexCount();
+        switch (faceType) {
+            case FRONT:
+            case RIGHT:
+            case TOP:
+                chunkIndices.push_back(baseIdx);
+                chunkIndices.push_back(baseIdx + 1);
+                chunkIndices.push_back(baseIdx + 2);
 
-    // Calculate indices for each block in the chunk
-    const unsigned int numBlocks = m_size * m_size * m_size;
-    for (unsigned int i = 0; i < numBlocks; i++) {
-        for (unsigned int j = 0; j < indicesPerBlock; j++) {
-            constexpr unsigned int verticesPerBlock = 24;
-            chunkIndices.push_back(baseIndices[j] + i * verticesPerBlock);
+                chunkIndices.push_back(baseIdx);
+                chunkIndices.push_back(baseIdx + 2);
+                chunkIndices.push_back(baseIdx + 3);
+                break;
+
+            case BACK:
+            case LEFT:
+            case BOTTOM:
+                chunkIndices.push_back(baseIdx);
+                chunkIndices.push_back(baseIdx + 2);
+                chunkIndices.push_back(baseIdx + 1);
+
+                chunkIndices.push_back(baseIdx);
+                chunkIndices.push_back(baseIdx + 3);
+                chunkIndices.push_back(baseIdx + 2);
+                break;
         }
+
+        vertexOffset += vertexCount;
     }
 
     m_VBO.init(m_vertices.data(), sizeof(float) * m_vertices.size());

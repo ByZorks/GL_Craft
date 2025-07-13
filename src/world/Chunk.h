@@ -2,9 +2,15 @@
 #define CHUNK_H
 #include <vector>
 
+#include "Block.h"
 #include "../math/AABB.h"
 #include "../gl/IndexBuffer.h"
 #include "../gl/VertexArray.h"
+
+struct BlockFaceData {
+    face faceType;
+    unsigned int vertexCount;
+};
 
 class Chunk {
 private:
@@ -12,6 +18,7 @@ private:
     int m_xStart, m_yStart, m_zStart;
     std::vector<float> m_vertices;
     const unsigned int *m_indices{};
+    std::vector<BlockFaceData> m_blockFaceData;
     VertexArray m_VAO;
     VertexBuffer m_VBO;
     IndexBuffer m_IBO;
