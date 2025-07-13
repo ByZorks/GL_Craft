@@ -1,7 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
-#include "IndexBuffer.h"
-#include "VertexArray.h"
+#include "../gl/IndexBuffer.h"
+#include "../gl/VertexArray.h"
 
 class Renderer {
 private:

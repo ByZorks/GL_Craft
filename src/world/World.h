@@ -4,7 +4,7 @@
 #include "Chunk.h"
 #include <vector>
 
-#include "Camera.h"
+#include "../render/Camera.h"
 
 class World {
 private:

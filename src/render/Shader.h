@@ -6,9 +6,6 @@
 #include "fwd.hpp"
 #include "GL/glew.h"
 
-#include "glm.hpp"
-#include "gtc/matrix_transform.hpp"
-
 class Shader {
 private:
     unsigned int m_programId = 0;

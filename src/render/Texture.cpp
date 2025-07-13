@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "OpenGLDebug.h"
+#include "../core/OpenGLDebug.h"
 #include "GL/glew.h"
 
 #define STB_IMAGE_IMPLEMENTATION

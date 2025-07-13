@@ -1,7 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
-#include "Chunk.h"
-#include "Frustum.h"
+#include "../world/Chunk.h"
+#include "../math/Frustum.h"
 #include "GLFW/glfw3.h"
 #include "glm.hpp"
 

@@ -1,7 +1,7 @@
 #include "Chunk.h"
 
 #include "Block.h"
-#include "Renderer.h"
+#include "../render/Renderer.h"
 
 unsigned int Chunk::m_size = 16; // Default chunk size
 

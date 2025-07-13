@@ -1,6 +1,6 @@
 #include "IndexBuffer.h"
 
-#include "OpenGLDebug.h"
+#include "../core/OpenGLDebug.h"
 #include "GL/glew.h"
 
 IndexBuffer::IndexBuffer() = default;

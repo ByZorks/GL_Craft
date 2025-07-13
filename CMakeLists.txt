@@ -17,36 +17,36 @@ link_directories(
 )
 
 add_executable(GL_Craft
-        src/GLCraft.cpp
-        src/Shader.cpp
-        src/Shader.cpp
-        src/Shader.h
-        src/OpenGLDebug.h
-        src/OpenGLDebug.cpp
-        src/VertexBuffer.h
-        src/VertexBuffer.cpp
-        src/VertexArray.h
-        src/VertexArray.cpp
-        src/IndexBuffer.cpp
-        src/IndexBuffer.h
-        src/Renderer.cpp
-        src/Renderer.h
-        src/Texture.cpp
-        src/Texture.h
-        src/Camera.cpp
-        src/Camera.h
-        src/Block.cpp
-        src/Block.h
-        src/Chunk.cpp
-        src/Chunk.h
-        src/World.cpp
-        src/World.h
-        src/Frustum.cpp
-        src/Frustum.h
-        src/Plane.cpp
-        src/Plane.h
-        src/AABB.cpp
-        src/AABB.h
+        src/core/GLCraft.cpp
+        src/render/Shader.cpp
+        src/render/Shader.cpp
+        src/render/Shader.h
+        src/core/OpenGLDebug.h
+        src/core/OpenGLDebug.cpp
+        src/gl/VertexBuffer.h
+        src/gl/VertexBuffer.cpp
+        src/gl/VertexArray.h
+        src/gl/VertexArray.cpp
+        src/gl/IndexBuffer.cpp
+        src/gl/IndexBuffer.h
+        src/render/Renderer.cpp
+        src/render/Renderer.h
+        src/render/Texture.cpp
+        src/render/Texture.h
+        src/render/Camera.cpp
+        src/render/Camera.h
+        src/world/Block.cpp
+        src/world/Block.h
+        src/world/Chunk.cpp
+        src/world/Chunk.h
+        src/world/World.cpp
+        src/world/World.h
+        src/math/Frustum.cpp
+        src/math/Frustum.h
+        src/math/Plane.cpp
+        src/math/Plane.h
+        src/math/AABB.cpp
+        src/math/AABB.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

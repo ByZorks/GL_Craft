@@ -1,7 +1,3 @@
-//
-// Created by David on 12/07/2025.
-//
-
 #include "Plane.h"
 
 #include <cmath>

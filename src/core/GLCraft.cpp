@@ -4,11 +4,11 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "Camera.h"
-#include "Renderer.h"
-#include "Shader.h"
-#include "Texture.h"
-#include "World.h"
+#include "../render/Camera.h"
+#include "../render/Renderer.h"
+#include "../render/Shader.h"
+#include "../render/Texture.h"
+#include "../world/World.h"
 
 #include "glm.hpp"
 

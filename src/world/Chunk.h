@@ -2,9 +2,9 @@
 #define CHUNK_H
 #include <vector>
 
-#include "AABB.h"
-#include "IndexBuffer.h"
-#include "VertexArray.h"
+#include "../math/AABB.h"
+#include "../gl/IndexBuffer.h"
+#include "../gl/VertexArray.h"
 
 class Chunk {
 private:

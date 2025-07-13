@@ -1,6 +1,6 @@
 #include "Renderer.h"
 
-#include "OpenGLDebug.h"
+#include "../core/OpenGLDebug.h"
 #include "GL/glew.h"
 
 float Renderer::m_deltaTime = 0.0f;
