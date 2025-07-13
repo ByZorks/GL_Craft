@@ -25,6 +25,12 @@ void Chunk::generate() {
                 const auto worldZ = static_cast<float>(m_zStart + localZ);
 
                 Block block(worldX, worldY, worldZ, 0.0f);
+                block.addFace(TOP);
+                block.addFace(BOTTOM);
+                block.addFace(FRONT);
+                block.addFace(BACK);
+                block.addFace(LEFT);
+                block.addFace(RIGHT);
                 const float *blockVertices = block.getVertices();
                 m_vertices.insert(m_vertices.end(), blockVertices, blockVertices + 120);
             }
@@ -34,13 +40,25 @@ void Chunk::generate() {
 
 void Chunk::setupBuffers() {
     std::vector<unsigned int> chunkIndices;
-    const unsigned int *blockIndices = Block::getIndices();
+
+    // Create a temporary block to get the base indices pattern
+    Block tempBlock(0.0f, 0.0f, 0.0f, 0.0f);
+    tempBlock.addFace(TOP);
+    tempBlock.addFace(BOTTOM);
+    tempBlock.addFace(FRONT);
+    tempBlock.addFace(BACK);
+    tempBlock.addFace(LEFT);
+    tempBlock.addFace(RIGHT);
+
+    const unsigned int* baseIndices = tempBlock.getIndices();
+    const unsigned int indicesPerBlock = tempBlock.getIndexCount();
 
     // Calculate indices for each block in the chunk
     const unsigned int numBlocks = m_size * m_size * m_size;
-    for (int i = 0; i < numBlocks; i++) {
-        for (int j = 0; j < 36; j++) {
-            chunkIndices.push_back(blockIndices[j] + i * 24); // 24 vertices per block
+    for (unsigned int i = 0; i < numBlocks; i++) {
+        for (unsigned int j = 0; j < indicesPerBlock; j++) {
+            constexpr unsigned int verticesPerBlock = 24;
+            chunkIndices.push_back(baseIndices[j] + i * verticesPerBlock);
         }
     }
 

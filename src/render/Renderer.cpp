@@ -9,7 +9,7 @@ float Renderer::m_lastFrame = 0.0f;
 void Renderer::init() {
     GLCall(glEnable(GL_DEPTH_TEST));
     GLCall(glEnable(GL_CULL_FACE));
-    GLCall(glFrontFace(GL_CW));
+    GLCall(glFrontFace(GL_CCW));
 }
 
 void Renderer::clear() {
