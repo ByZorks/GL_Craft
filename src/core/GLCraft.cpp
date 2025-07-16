@@ -52,6 +52,8 @@ int main(int argc, char *argv[]) {
         const glm::mat4 projection = camera.getProjectionMatrix();
         constexpr auto model = glm::mat4(1.0f);
 
+        const float renderDistance = 16.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
+
         Renderer::init();
         while (!glfwWindowShouldClose(window)) {
             if (glfwGetKey(window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window, true);
@@ -71,6 +73,7 @@ int main(int argc, char *argv[]) {
             unsigned int totalChunks = 0;
             for (const auto &chunk : world.m_chunks1() | std::views::values) {
                 totalChunks++;
+                if (camera.distanceToCamera(*chunk) > renderDistance) continue;
                 if (frustum.isAABBInFrustum(chunk->m_box1())) {
                     Renderer::draw(chunk->m_vao(), chunk->m_ibo());
                     visibleChunksCount++;
