@@ -7,6 +7,8 @@
 #include "../gl/IndexBuffer.h"
 #include "../gl/VertexArray.h"
 
+class World;
+
 struct BlockFaceData {
     face faceType;
     unsigned int vertexCount;
@@ -19,6 +21,7 @@ private:
     std::vector<float> m_vertices;
     const unsigned int *m_indices{};
     std::vector<BlockFaceData> m_blockFaceData;
+    bool m_blockPresent[16][16][16] = {{{false}}}; // 16x16x16 chunk size
     VertexArray m_VAO;
     VertexBuffer m_VBO;
     IndexBuffer m_IBO;
@@ -28,8 +31,10 @@ public:
     Chunk(int x, int y, int z);
     ~Chunk();
 
-    void generate();
+    void generateVoxelData();
+    void generateMeshData(const World * world);
     void setupBuffers();
+    static bool isBlockPresentInWorld(float worldX, float worldY, float worldZ, const World *world) ;
 
     [[nodiscard]] const VertexArray & m_vao() const;
     [[nodiscard]] const IndexBuffer & m_ibo() const;
@@ -38,6 +43,7 @@ public:
     [[nodiscard]] int m_x_start() const;
     [[nodiscard]] int m_y_start() const;
     [[nodiscard]] int m_z_start() const;
+    [[nodiscard]] bool isBlockPresentInLocal(int localX, int localY, int localZ) const;
 };
 
 #endif //CHUNK_H

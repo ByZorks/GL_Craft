@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <ostream>
+#include <ranges>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) {
     std::cout << glGetString(GL_VERSION) << std::endl; {
 
         World world;
-        world.generate();
+        world.createChunks();
 
         // Shader
         Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) {
             std::vector<Chunk * > visibleChunks;
             int visibleChunksCount = 0;
             int totalChunks = 0;
-            for (const auto &chunk : world.m_chunks1()) {
+            for (const auto &chunk : world.m_chunks1() | std::views::values) {
                 totalChunks++;
                 if (frustum.isAABBInFrustum(chunk->m_box1())) {
                     visibleChunks.push_back(chunk);
