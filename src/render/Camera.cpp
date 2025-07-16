@@ -64,7 +64,10 @@ void Camera::handleMouse(const double xpos, const double ypos) {
 }
 
 void Camera::mouseCallback(GLFWwindow *window, const double xpos, const double ypos) {
-    if (auto *cam = static_cast<Camera *>(glfwGetWindowUserPointer(window))) cam->handleMouse(xpos, ypos);
+    auto* cam = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+    if (!cam || !cam->m_inputEnabled) return;
+
+    cam->handleMouse(xpos, ypos);
 }
 
 float Camera::distanceToCamera(const Chunk& chunk) const {
@@ -76,6 +79,15 @@ float Camera::distanceToCamera(const Chunk& chunk) const {
     const glm::vec3 center = position + glm::vec3(x + size, y + size, z + size) * 0.5f;
 
     return glm::distance(m_cameraPos, center);
+}
+
+void Camera::resetMousePosition(GLFWwindow *window) {
+    int width = 0;
+    int height = 0;
+    glfwGetFramebufferSize(window, &width, &height);
+    m_lastX = static_cast<float>(width) / 2.0f;
+    m_lastY = static_cast<float>(height) / 2.0f;
+    m_firstMouse = true;
 }
 
 glm::mat4 Camera::getProjectionMatrix() const {
@@ -131,4 +143,12 @@ Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
 
     Frustum frustum(left, right, bottom, top, near, far);
     return frustum;
+}
+
+bool Camera::m_input_enabled() const {
+    return m_inputEnabled;
+}
+
+void Camera::set_m_input_enabled(const bool m_input_enabled) {
+    this->m_inputEnabled = m_input_enabled;
 }

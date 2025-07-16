@@ -13,6 +13,9 @@
 
 #include "glm.hpp"
 
+#include "imgui.h"
+#include "../ui/DebugUI.h"
+
 int main(int argc, char *argv[]) {
     if (!glfwInit())
         return -1;
@@ -35,7 +38,9 @@ int main(int argc, char *argv[]) {
 
     if (glewInit() != GLEW_OK) std::cout << "glewInit() failed" << std::endl;
 
-    std::cout << glGetString(GL_VERSION) << std::endl; {
+    std::cout << glGetString(GL_VERSION) << std::endl;
+
+    {
 
         World world;
         world.createChunks();
@@ -52,22 +57,32 @@ int main(int argc, char *argv[]) {
         const glm::mat4 projection = camera.getProjectionMatrix();
         constexpr auto model = glm::mat4(1.0f);
 
-        const float renderDistance = 16.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
+        float renderDistance = 16.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
+
+        // Debug UI
+        DebugUI debugUI(window);
+        const ImGuiIO& io = ImGui::GetIO();
 
         Renderer::init();
         while (!glfwWindowShouldClose(window)) {
             if (glfwGetKey(window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window, true);
 
+            // Handle tab key for UI mode
+            debugUI.processInput(window, camera);
+
             Renderer::clear();
+            DebugUI::newFrame();
 
+            // Update camera position and view matrix
             const float deltaTime = Renderer::calculateDeltaTime(static_cast<float>(glfwGetTime()));
-
-            camera.processInput(window, deltaTime);
-
+            if (camera.m_input_enabled() && !io.WantCaptureKeyboard) {
+                camera.processInput(window, deltaTime);
+            }
             glm::mat4 view = camera.getViewMatrix();
             glm::mat4 mvp = projection * view * model;
             shader.setUniformMat4f("u_MVP", mvp);
 
+            // Render the world
             Frustum frustum = Camera::getFrustum(mvp);
             unsigned int visibleChunksCount = 0;
             unsigned int totalChunks = 0;
@@ -80,7 +95,10 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            std::cout << "Visible Chunks: " << visibleChunksCount << " / " << totalChunks << std::endl;
+            if (debugUI.isUIMode()) {
+                DebugUI::render(visibleChunksCount, totalChunks, renderDistance);
+            }
+            DebugUI::draw();
 
             glfwSwapBuffers(window);
             glfwPollEvents();

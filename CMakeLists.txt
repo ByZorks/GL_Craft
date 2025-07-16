@@ -3,12 +3,14 @@ project(GL_Craft)
 
 set(CMAKE_CXX_STANDARD 23)
 set(LIBS_DIR "${CMAKE_SOURCE_DIR}/libs")
+set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/libs/imgui) # Adjust this path to where you have ImGui
 
 include_directories(
         ${LIBS_DIR}/glew/include
         ${LIBS_DIR}/glfw/include
         ${LIBS_DIR}/stb
         ${LIBS_DIR}/glm
+        ${LIBS_DIR}/imgui
 )
 
 link_directories(
@@ -47,6 +49,14 @@ add_executable(GL_Craft
         src/math/Plane.h
         src/math/AABB.cpp
         src/math/AABB.h
+        ${IMGUI_DIR}/imgui.cpp
+        ${IMGUI_DIR}/imgui_draw.cpp
+        ${IMGUI_DIR}/imgui_tables.cpp
+        ${IMGUI_DIR}/imgui_widgets.cpp
+        ${IMGUI_DIR}/imgui_impl_glfw.cpp
+        ${IMGUI_DIR}/imgui_impl_opengl3.cpp
+        src/ui/DebugUI.cpp
+        src/ui/DebugUI.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)
