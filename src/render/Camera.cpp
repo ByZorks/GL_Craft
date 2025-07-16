@@ -99,7 +99,7 @@ glm::mat4 Camera::getViewMatrix() const {
 }
 
 Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
-    constexpr float padding = 1.0f; // Prevent popping
+    constexpr float padding = 2.0f; // Prevent popping
 
     auto left = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][0],
                        modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][0],
