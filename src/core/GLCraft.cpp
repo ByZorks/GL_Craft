@@ -67,27 +67,17 @@ int main(int argc, char *argv[]) {
             shader.setUniformMat4f("u_MVP", mvp);
 
             Frustum frustum = Camera::getFrustum(mvp);
-            std::vector<Chunk * > visibleChunks;
-            int visibleChunksCount = 0;
-            int totalChunks = 0;
+            unsigned int visibleChunksCount = 0;
+            unsigned int totalChunks = 0;
             for (const auto &chunk : world.m_chunks1() | std::views::values) {
                 totalChunks++;
                 if (frustum.isAABBInFrustum(chunk->m_box1())) {
-                    visibleChunks.push_back(chunk);
+                    Renderer::draw(chunk->m_vao(), chunk->m_ibo());
                     visibleChunksCount++;
                 }
             }
 
-            std::ranges::sort(visibleChunks, [camera](const Chunk *a, const Chunk *b) {
-                return camera.distanceToCamera(*a) < camera.distanceToCamera(*b);
-            });
-
-            for (const auto &chunk : visibleChunks) {
-                Renderer::draw(chunk->m_vao(), chunk->m_ibo());
-            }
-
             std::cout << "Visible Chunks: " << visibleChunksCount << " / " << totalChunks << std::endl;
-
 
             glfwSwapBuffers(window);
             glfwPollEvents();

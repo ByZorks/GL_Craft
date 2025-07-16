@@ -11,19 +11,6 @@ World::~World() {
     m_chunks.clear();
 }
 
-Chunk & World::generateMeshDataOfChunk(int x, int y, int z) {
-    const auto key = std::make_tuple(x, y, z);
-    if (m_chunks.contains(key)) {
-        m_chunks[key]->generateMeshData(this);
-        return *m_chunks[key];
-    }
-
-    // Should never happen, but if it does, we create a new chunk
-    auto *newChunk = new Chunk(x, y, z);
-    m_chunks[key] = newChunk;
-    return *newChunk;
-}
-
 Chunk * World::getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const {
     if (const auto key = std::make_tuple(chunkBaseX, chunkBaseY, chunkBaseZ); m_chunks.contains(key)) {
         return m_chunks.at(key);
@@ -38,20 +25,17 @@ void World::createChunks() {
     for (int x = -m_halfWidth * chunkSize; x < m_halfWidth * chunkSize; x += chunkSize) {
         for (int y = 0; y < m_height * chunkSize; y += chunkSize) {
             for (int z = -m_halfWidth * chunkSize; z < m_halfWidth * chunkSize; z += chunkSize) {
-                m_chunks[std::make_tuple(x, y, z)] = new Chunk(x, y, z);
-                m_chunks[std::make_tuple(x, y, z)]->generateVoxelData();
+                auto* chunk = new Chunk(x, y, z);
+                chunk->generateVoxelData();
+                m_chunks[std::make_tuple(x, y, z)] = chunk;
             }
         }
     }
 
-    // Second pass: generate mesh data for each chunk
-    for (int x = -m_halfWidth * chunkSize; x < m_halfWidth * chunkSize; x += chunkSize) {
-        for (int y = 0; y < m_height * chunkSize; y += chunkSize) {
-            for (int z = -m_halfWidth * chunkSize; z < m_halfWidth * chunkSize; z += chunkSize) {
-                m_chunks[std::make_tuple(x, y, z)]->generateMeshData(this);
-                m_chunks[std::make_tuple(x, y, z)]->setupBuffers();
-            }
-        }
+    // Second pass: generate mesh data for each chunk and set up buffers
+    for (const auto &chunk: m_chunks | std::views::values) {
+        chunk->generateMeshData(this);
+        chunk->setupBuffers();
     }
 }
 

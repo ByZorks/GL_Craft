@@ -33,7 +33,6 @@ public:
     World();
     ~World();
 
-    Chunk& generateMeshDataOfChunk(int x, int y, int z);
     Chunk* getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const;
     void createChunks();
 

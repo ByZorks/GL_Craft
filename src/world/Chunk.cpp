@@ -33,6 +33,9 @@ void Chunk::generateVoxelData() {
 void Chunk::generateMeshData(const World * world) {
     if (!world) throw std::runtime_error("World pointer is null in Chunk::generateMeshData");
 
+    constexpr unsigned int verticesPerFace = 4;
+    m_vertices.reserve(6 * verticesPerFace * m_size * m_size * m_size); // 6 faces, 4 vertices per face, 16x16x16 blocks
+
     for (int localX = 0; localX < m_size; localX++) {
         for (int localY = 0; localY < m_size; localY++) {
             for (int localZ = 0; localZ < m_size; localZ++) {
@@ -46,7 +49,6 @@ void Chunk::generateMeshData(const World * world) {
 
                 Block block(worldX, worldY, worldZ, 0.0f);
 
-                constexpr unsigned int verticesPerFace = 4;
                 // Check all 6 directions and add faces if no adjacent block
                 // TOP face (Y+1)
                 if (!isBlockPresentInWorld(worldX, worldY + 1, worldZ, world)) {
