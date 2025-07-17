@@ -41,10 +41,6 @@ int main(int argc, char *argv[]) {
     std::cout << glGetString(GL_VERSION) << std::endl;
 
     {
-
-        World world;
-        world.createChunks();
-
         // Shader
         Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
         shader.use();
@@ -57,12 +53,12 @@ int main(int argc, char *argv[]) {
         const glm::mat4 projection = camera.getProjectionMatrix();
         constexpr auto model = glm::mat4(1.0f);
 
-        float renderDistance = 16.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
-
         // Debug UI
         DebugUI debugUI(window);
         const ImGuiIO& io = ImGui::GetIO();
 
+        float renderDistance = 8.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
+        World world;
         Renderer::init();
         while (!glfwWindowShouldClose(window)) {
             if (glfwGetKey(window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window, true);
@@ -81,6 +77,9 @@ int main(int argc, char *argv[]) {
             glm::mat4 view = camera.getViewMatrix();
             glm::mat4 mvp = projection * view * model;
             shader.setUniformMat4f("u_MVP", mvp);
+
+            // Chunks generation
+            world.updateChunks(camera, renderDistance);
 
             // Render the world
             Frustum frustum = Camera::getFrustum(mvp);

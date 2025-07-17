@@ -14,6 +14,13 @@ struct BlockFaceData {
     unsigned int vertexCount;
 };
 
+enum status {
+    NOT_GENERATED = 0,
+    GENERATED = 1,
+    MESH_GENERATED = 2,
+    BUFFERS_SETUP = 3
+};
+
 class Chunk {
 private:
     static unsigned int m_size;
@@ -22,6 +29,7 @@ private:
     const unsigned int *m_indices{};
     std::vector<BlockFaceData> m_blockFaceData;
     bool m_blockPresent[16][16][16] = {{{false}}}; // 16x16x16 chunk size
+    status m_status = NOT_GENERATED;
     VertexArray m_VAO;
     VertexBuffer m_VBO;
     IndexBuffer m_IBO;
@@ -44,6 +52,7 @@ public:
     [[nodiscard]] int m_y_start() const;
     [[nodiscard]] int m_z_start() const;
     [[nodiscard]] bool isBlockPresentInLocal(int localX, int localY, int localZ) const;
+    [[nodiscard]] status m_status1() const;
 };
 
 #endif //CHUNK_H

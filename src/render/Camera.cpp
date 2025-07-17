@@ -10,7 +10,7 @@ Camera::Camera(const unsigned int windowWidth,
                const unsigned int windowHeight) : m_lastX(static_cast<float>(windowWidth) / 2.0f),
                                                   m_lastY(static_cast<float>(windowHeight) / 2.0f),
                                                   m_yaw(-90.0f), m_pitch(0.0f),
-                                                  m_firstMouse(true), m_cameraPos(glm::vec3(0.0f, 3 * 16, .0f)),
+                                                  m_firstMouse(true), m_cameraPos(glm::vec3(0.0f, 1 * 16 + 5, .0f)),
                                                   m_cameraFront(glm::vec3(0.0f, 0.0f, -1.0f)),
                                                   m_cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
                                                   m_FOVDegrees(45.f),
@@ -151,4 +151,8 @@ bool Camera::m_input_enabled() const {
 
 void Camera::set_m_input_enabled(const bool m_input_enabled) {
     this->m_inputEnabled = m_input_enabled;
+}
+
+glm::vec3 Camera::m_camera_pos() const {
+    return m_cameraPos;
 }

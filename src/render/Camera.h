@@ -25,10 +25,9 @@ public:
     [[nodiscard]] glm::mat4 getProjectionMatrix() const ;
     [[nodiscard]] glm::mat4 getViewMatrix() const;
     static Frustum getFrustum(glm::mat4 modelViewProjecMatrix);
-
     [[nodiscard]] bool m_input_enabled() const;
-
     void set_m_input_enabled(bool m_input_enabled);
+    [[nodiscard]] glm::vec3 m_camera_pos() const;
 };
 
 #endif //CAMERA_H

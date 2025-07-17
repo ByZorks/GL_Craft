@@ -28,6 +28,7 @@ void Chunk::generateVoxelData() {
             }
         }
     }
+    m_status = GENERATED;
 }
 
 void Chunk::generateMeshData(const World * world) {
@@ -93,6 +94,8 @@ void Chunk::generateMeshData(const World * world) {
             }
         }
     }
+
+    m_status = MESH_GENERATED;
 }
 
 void Chunk::setupBuffers() {
@@ -138,6 +141,8 @@ void Chunk::setupBuffers() {
     chunkLayout.Push<float>(3); // x, y, z
     chunkLayout.Push<float>(2); // u, v
     m_VAO.AddBuffer(m_VBO, chunkLayout);
+
+    m_status = BUFFERS_SETUP;
 }
 
 bool Chunk::isBlockPresentInWorld(const float worldX, const float worldY, const float worldZ, const World *world) {
@@ -194,4 +199,8 @@ bool Chunk::isBlockPresentInLocal(const int localX, const int localY, const int 
             localY >= 0 && localY < m_size &&
             localZ >= 0 && localZ < m_size) &&
            m_blockPresent[localX][localY][localZ];
+}
+
+status Chunk::m_status1() const {
+    return m_status;
 }

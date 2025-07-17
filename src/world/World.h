@@ -6,6 +6,10 @@
 #include "Chunk.h"
 #include <vector>
 
+#include "vec2.hpp"
+
+class Camera;
+
 // Custom hash for std::tuple<int, int, int>
 template<>
 struct std::hash<std::tuple<int, int, int>> {
@@ -25,19 +29,19 @@ struct std::hash<std::tuple<int, int, int>> {
 
 class World {
 private:
-    const int m_halfWidth = 8; // Half the number of chunks in the x and z dimensions
-    const unsigned int m_height = 2; // Number of chunk chunks in the y dimension
-    std::unordered_map<std::tuple<int, int, int>, Chunk*> m_chunks;
-
+    std::unordered_map<std::tuple<int, int, int>, Chunk*> m_loadedChunks;
+    glm::vec2 m_lastCameraChunkPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
 public:
     World();
     ~World();
 
     Chunk* getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const;
-    void createChunks();
+    void updateChunks(const Camera &camera, float renderDistanceInBlocks = 8.0f * static_cast<float>(Chunk::m_size1()));
 
-    [[nodiscard]] unsigned int m_size1() const;
     [[nodiscard]] std::unordered_map<std::tuple<int, int, int>, Chunk *> & m_chunks1();
+
+private:
+    void unloadDistantChunks(glm::vec3 cameraChunkPos, int renderDistance);
 };
 
 #endif //WORLD_H
