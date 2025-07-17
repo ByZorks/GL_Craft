@@ -17,7 +17,7 @@ public:
 
     static void newFrame();
 
-    static void render(unsigned int visibleChunks, unsigned int totalChunks, float& renderDistance);
+    static void render(unsigned int visibleChunks, unsigned int totalChunks, float& renderDistance, const Camera &camera);
     static void draw();
 
     void processInput(GLFWwindow* window, Camera& camera);

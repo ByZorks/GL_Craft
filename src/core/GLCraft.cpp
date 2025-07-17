@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
             }
 
             if (debugUI.isUIMode()) {
-                DebugUI::render(visibleChunksCount, totalChunks, renderDistance);
+                DebugUI::render(visibleChunksCount, totalChunks, renderDistance, camera);
             }
             DebugUI::draw();
 
