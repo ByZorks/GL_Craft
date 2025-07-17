@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
         DebugUI debugUI(window);
         const ImGuiIO& io = ImGui::GetIO();
 
-        float renderDistance = 8.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
+        float renderDistance = 24.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
         World world;
         Renderer::init();
         while (!glfwWindowShouldClose(window)) {

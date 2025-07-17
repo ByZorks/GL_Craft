@@ -3,7 +3,7 @@ project(GL_Craft)
 
 set(CMAKE_CXX_STANDARD 23)
 set(LIBS_DIR "${CMAKE_SOURCE_DIR}/libs")
-set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/libs/imgui) # Adjust this path to where you have ImGui
+set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/libs/imgui)
 
 include_directories(
         ${LIBS_DIR}/glew/include
@@ -11,6 +11,7 @@ include_directories(
         ${LIBS_DIR}/stb
         ${LIBS_DIR}/glm
         ${LIBS_DIR}/imgui
+        ${LIBS_DIR}/fastNoiseLite
 )
 
 link_directories(

@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "vec2.hpp"
+#include "FastNoiseLite.h"
 
 class Camera;
 
@@ -31,6 +32,8 @@ class World {
 private:
     std::unordered_map<std::tuple<int, int, int>, Chunk*> m_loadedChunks;
     glm::vec2 m_lastCameraChunkPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
+    FastNoiseLite m_noiseGenerator;
+
 public:
     World();
     ~World();

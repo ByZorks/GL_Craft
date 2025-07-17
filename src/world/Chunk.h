@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Block.h"
+#include "FastNoiseLite.h"
 #include "../math/AABB.h"
 #include "../gl/IndexBuffer.h"
 #include "../gl/VertexArray.h"
@@ -39,7 +40,7 @@ public:
     Chunk(int x, int y, int z);
     ~Chunk();
 
-    void generateVoxelData();
+    void generateVoxelData(const FastNoiseLite& noiseGenerator);
     void generateMeshData(const World * world);
     void setupBuffers();
     static bool isBlockPresentInWorld(float worldX, float worldY, float worldZ, const World *world) ;

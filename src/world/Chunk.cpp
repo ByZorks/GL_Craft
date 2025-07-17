@@ -20,11 +20,20 @@ Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), 
 
 Chunk::~Chunk() = default;
 
-void Chunk::generateVoxelData() {
+void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
     for (int localX = 0; localX < m_size; localX++) {
-        for (int localY = 0; localY < m_size; localY++) {
-            for (int localZ = 0; localZ < m_size; localZ++) {
-                m_blockPresent[localX][localY][localZ] = true;
+        for (int localZ = 0; localZ < m_size; localZ++) {
+            const auto worldX = static_cast<float>(m_xStart + localX);
+            const auto worldZ = static_cast<float>(m_zStart + localZ);
+
+            // Calculate height for this specific block column
+            const float noiseValue = (noiseGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
+            const int columnHeight = static_cast<int>(noiseValue * 100.0f); // Scale to world height [0, 100]
+
+            for (int localY = 0; localY < m_size; localY++) {
+                if (const int worldY = m_yStart + localY; worldY < columnHeight) {
+                    m_blockPresent[localX][localY][localZ] = true;
+                }
             }
         }
     }

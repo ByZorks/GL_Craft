@@ -1,10 +1,16 @@
 #include "World.h"
 
+#include <iostream>
 #include <ranges>
 
 #include "../render/Camera.h"
 
-World::World() = default;
+World::World() {
+    m_noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    m_noiseGenerator.SetFrequency(.01f);
+    m_noiseGenerator.SetFractalType(FastNoiseLite::FractalType_FBm);
+    m_noiseGenerator.SetFractalOctaves(4);
+}
 
 World::~World() {
     for (const auto &chunk: m_loadedChunks | std::views::values) {
@@ -44,21 +50,28 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     for (int x = -renderDistanceInChunks; x <= renderDistanceInChunks; x++) {
         for (int z = -renderDistanceInChunks; z <= renderDistanceInChunks; z++) {
             const int chunkX = cameraWorldX + x * chunkSize;
-            constexpr int chunkY = 0; // World is flat, so Y is always 0
             const int chunkZ = cameraWorldZ + z * chunkSize;
 
-            const glm::vec3 chunkPos(chunkX, chunkY, chunkZ);
-            // Check if the chunk is within the circular render distance
-            if (const float distance = glm::distance(cameraChunkPos, chunkPos); distance > renderDistanceInBlocks) {
-                continue;
+            constexpr int maxChunkY = 100;
+
+            for (int y = 0; y * chunkSize <= maxChunkY; y++) {
+                const int chunkY = y * chunkSize;
+                const glm::vec3 chunkPos(chunkX, chunkY, chunkZ);
+
+                // Check if the chunk is within the render distance
+                if (const float distance = glm::distance(cameraChunkPos, chunkPos); distance > renderDistanceInBlocks) {
+                    continue;
+                }
+
+                const std::tuple<int, int, int> existingChunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
+                if (m_loadedChunks.contains(existingChunkKey)) {
+                    continue;
+                }
+
+                auto* chunk = new Chunk(chunkX, chunkY, chunkZ);
+                chunk->generateVoxelData(m_noiseGenerator);
+                m_loadedChunks[existingChunkKey] = chunk;
             }
-
-            std::tuple<int, int, int> chunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
-            if (m_loadedChunks.contains(chunkKey)) continue;
-
-            auto* chunk = new Chunk(chunkX, chunkY, chunkZ);
-            chunk->generateVoxelData();
-            m_loadedChunks[chunkKey] = chunk;
         }
     }
 
