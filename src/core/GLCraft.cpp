@@ -84,13 +84,12 @@ int main(int argc, char *argv[]) {
             auto t2 = std::chrono::high_resolution_clock::now();
 
             auto ms_int = duration_cast<std::chrono::milliseconds>(t2 - t1);
-            if (ms_int.count() > 0) std::cout << "[updateChunks]" << ms_int.count() << "ms\n";
+            if (ms_int.count() > 0) std::cout << "[updateChunks] " << ms_int.count() << "ms\n";
 
             // Render the world
             Frustum frustum = Camera::getFrustum(mvp);
             unsigned int visibleChunksCount = 0;
             std::vector<Chunk*> chunksToRender = world.getChunksToRender();
-            unsigned int totalChunks = chunksToRender.size();
             for (const auto &chunk : chunksToRender) {
                 if (camera.distanceToCamera(*chunk) > renderDistance) continue;
                 if (frustum.isAABBInFrustum(chunk->m_box1())) {
@@ -100,6 +99,7 @@ int main(int argc, char *argv[]) {
             }
 
             if (debugUI.isUIMode()) {
+                unsigned int totalChunks = chunksToRender.size();
                 DebugUI::render(visibleChunksCount, totalChunks, renderDistance, camera);
             }
             DebugUI::draw();

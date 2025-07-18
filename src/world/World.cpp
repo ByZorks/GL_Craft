@@ -33,8 +33,7 @@ Chunk *World::getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const {
 
 void World::updateChunks(const Camera &camera, const float renderDistanceInBlocks) {
     const int chunkSize = static_cast<int>(Chunk::m_size1());
-    const int renderDistanceInChunks = static_cast<int>(renderDistanceInBlocks) / chunkSize + 1;
-    // +1 to include the next chunk after the render distance
+    const int renderDistanceInChunks = static_cast<int>(renderDistanceInBlocks) / chunkSize + 1; // +1 to include the next chunk after the render distance
     const glm::vec3 cameraPos = camera.m_camera_pos();
 
     // Calculate which chunk the camera is in
@@ -57,7 +56,6 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     std::vector<std::thread> threads;
 
     // First pass: generate voxel data for each chunk
-    auto t1 = std::chrono::high_resolution_clock::now();
     ThreadSafeQueue<Chunk *> chunkQueue;
     for (int x = -renderDistanceInChunks; x <= renderDistanceInChunks; x++) {
         for (int z = -renderDistanceInChunks; z <= renderDistanceInChunks; z++) {
@@ -105,14 +103,7 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     }
     threads.clear();
 
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
-    if (ms_int.count() > 0) {
-        std::cout << "[updateChunks] Voxel data generation took " << ms_int.count() << "ms\n";
-    }
-
     // Second pass: generate mesh data for each chunk
-    t1 = std::chrono::high_resolution_clock::now();
     ThreadSafeQueue<Chunk *> meshQueue;
     std::vector<Chunk *> chunksToProcess;
     chunksToProcess.reserve(m_loadedChunks.size());
@@ -148,14 +139,7 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
         if (thread.joinable()) thread.join();
     }
 
-    t2 = std::chrono::high_resolution_clock::now();
-    ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
-    if (ms_int.count() > 0) {
-        std::cout << "[updateChunks] Mesh data generation took " << ms_int.count() << "ms\n";
-    }
-
     // Third pass: set up buffers for each chunk
-    t1 = std::chrono::high_resolution_clock::now();
     {
         std::lock_guard lock(m_chunksMutex);
         for (auto *chunk: m_loadedChunks | std::views::values) {
@@ -164,11 +148,6 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
                 chunk->setupBuffers();
             }
         }
-    }
-    t2 = std::chrono::high_resolution_clock::now();
-    ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
-    if (ms_int.count() > 0) {
-        std::cout << "[updateChunks] Buffer setup took " << ms_int.count() << "ms\n";
     }
 }
 

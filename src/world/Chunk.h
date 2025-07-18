@@ -1,5 +1,6 @@
 #ifndef CHUNK_H
 #define CHUNK_H
+#include <unordered_map>
 #include <vector>
 
 #include "Block.h"
@@ -7,6 +8,7 @@
 #include "../math/AABB.h"
 #include "../gl/IndexBuffer.h"
 #include "../gl/VertexArray.h"
+#include "../utils/CustomHash.h"
 
 class World;
 
@@ -27,9 +29,9 @@ private:
     static unsigned int m_size;
     int m_xStart, m_yStart, m_zStart;
     std::vector<float> m_vertices;
-    const unsigned int *m_indices{};
     std::vector<BlockFaceData> m_blockFaceData;
     bool m_blockPresent[16][16][16] = {{{false}}}; // 16x16x16 chunk size
+    std::unordered_map<std::tuple<int, int, int>, const Chunk*> m_adjacentChunks;
     Status m_status = Status::NOT_GENERATED;
     VertexArray m_VAO;
     VertexBuffer m_VBO;
@@ -43,7 +45,6 @@ public:
     void generateVoxelData(const FastNoiseLite& noiseGenerator);
     void generateMeshData(const World * world);
     void setupBuffers();
-    static bool isBlockPresentInWorld(float worldX, float worldY, float worldZ, const World *world) ;
 
     [[nodiscard]] const VertexArray & m_vao() const;
     [[nodiscard]] const IndexBuffer & m_ibo() const;
@@ -57,6 +58,8 @@ public:
 
 private:
     void addBlockFaces(float worldX, float worldY, float worldZ, BlockType blockType, const World *world);
+    bool isBlockPresentInWorld(float worldX, float worldY, float worldZ, const World *world);
+    bool isBlockPresentInAnotherChunk(float worldX, float worldY, float worldZ, const World *world);
 };
 
 #endif //CHUNK_H

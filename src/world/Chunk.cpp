@@ -43,7 +43,6 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
 }
 
 void Chunk::generateMeshData(const World * world) {
-    auto t1 = std::chrono::high_resolution_clock::now();
     if (!world) throw std::runtime_error("World pointer is null in Chunk::generateMeshData");
 
     for (int localX = 0; localX < m_size; localX++) {
@@ -57,7 +56,6 @@ void Chunk::generateMeshData(const World * world) {
                 const auto worldY = static_cast<float>(m_yStart + localY);
                 const auto worldZ = static_cast<float>(m_zStart + localZ);
 
-                // Block block(worldX, worldY, worldZ);
                 BlockType blockType;
                 if (worldY > 80) blockType = BlockType::STONE;
                 else if (worldY > 60) blockType = BlockType::GRASS;
@@ -73,12 +71,6 @@ void Chunk::generateMeshData(const World * world) {
     m_vertices.shrink_to_fit();
 
     m_status = Status::MESH_GENERATED;
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
-    if (ms_int.count() > 0) {
-        std::cout << "[generateMeshData] Chunk at (" << m_xStart << ", " << m_yStart << ", " << m_zStart
-                  << ") generated in " << ms_int.count() << "ms\n";
-    }
 }
 
 void Chunk::setupBuffers() {
@@ -132,25 +124,19 @@ void Chunk::setupBuffers() {
 }
 
 bool Chunk::isBlockPresentInWorld(const float worldX, const float worldY, const float worldZ, const World *world) {
-    if (!world) throw std::runtime_error("World pointer is null in Chunk::isBlockPresent");
+    const int localX = static_cast<int>(worldX) - m_xStart;
+    const int localY = static_cast<int>(worldY) - m_yStart;
+    const int localZ = static_cast<int>(worldZ) - m_zStart;
 
-    const int blockX = static_cast<int>(std::floor(worldX));
-    const int blockY = static_cast<int>(std::floor(worldY));
-    const int blockZ = static_cast<int>(std::floor(worldZ));
-
-    const int chunkSize = static_cast<int>(m_size);
-    const int chunkX = static_cast<int>(std::floor(static_cast<float>(blockX) / static_cast<float>(chunkSize))) * chunkSize;
-    const int chunkY = static_cast<int>(std::floor(static_cast<float>(blockY) / static_cast<float>(chunkSize))) * chunkSize;
-    const int chunkZ = static_cast<int>(std::floor(static_cast<float>(blockZ) / static_cast<float>(chunkSize))) * chunkSize;
-
-    if (const Chunk* chunk = world->getChunk(chunkX, chunkY, chunkZ)) {
-        const int localX = blockX - chunkX;
-        const int localY = blockY - chunkY;
-        const int localZ = blockZ - chunkZ;
-        return chunk->isBlockPresentInLocal(localX, localY, localZ);
+    // Check if the block is within the chunk's local coordinates
+    if (localX >= 0 && localX < m_size &&
+        localY >= 0 && localY < m_size &&
+        localZ >= 0 && localZ < m_size) {
+        return isBlockPresentInLocal(localX, localY, localZ);
     }
-    return false;
 
+    // If the block is outside the local chunk coordinates, check if it exists in another chunk
+    return isBlockPresentInAnotherChunk(worldX, worldY, worldZ, world);
 }
 
 const VertexArray &Chunk::m_vao() const {
@@ -223,4 +209,25 @@ void Chunk::addBlockFaces(const float worldX, const float worldY, const float wo
             m_blockFaceData.push_back({faceOrder[i], 4});
         }
     }
+}
+
+bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY, const float worldZ, const World *world) {
+    const int chunkSize = static_cast<int>(m_size);
+    const int chunkX = static_cast<int>(std::floor(static_cast<float>(worldX) / static_cast<float>(chunkSize))) * chunkSize;
+    const int chunkY = static_cast<int>(std::floor(static_cast<float>(worldY) / static_cast<float>(chunkSize))) * chunkSize;
+    const int chunkZ = static_cast<int>(std::floor(static_cast<float>(worldZ) / static_cast<float>(chunkSize))) * chunkSize;
+
+    const std::tuple<int, int, int> chunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
+    const int localX = static_cast<int>(worldX) - chunkX;
+    const int localY = static_cast<int>(worldY) - chunkY;
+    const int localZ = static_cast<int>(worldZ) - chunkZ;
+    if (m_adjacentChunks.contains(chunkKey)) {
+        return m_adjacentChunks[chunkKey]->isBlockPresentInLocal(localX, localY, localZ);
+    }
+
+    if (const Chunk* chunk = world->getChunk(chunkX, chunkY, chunkZ)) {
+        m_adjacentChunks[chunkKey] = chunk;
+        return chunk->isBlockPresentInLocal(localX, localY, localZ);
+    }
+    return false;
 }
