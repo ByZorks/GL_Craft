@@ -12,17 +12,25 @@ enum face : unsigned int {
     BOTTOM
 };
 
+enum BlockType {
+    DIRT,
+    GRASS,
+    STONE,
+    WATER
+};
+
 class Block {
 private:
-    float m_x, m_y, m_z, m_index;
+    float m_x, m_y, m_z, m_columnIndex;
     std::vector<float> m_vertices;
     std::vector<unsigned int> m_indices;
     std::unordered_set<face> m_addedFaces;
 
 public:
-    Block(float x, float y, float z, float index);
+    Block(float x, float y, float z);
     ~Block();
 
+    void setType(BlockType type);
     void addFace(face face);
 
     [[nodiscard]] const float* getVertices() const;

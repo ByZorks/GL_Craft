@@ -57,7 +57,17 @@ void Chunk::generateMeshData(const World * world) {
                 const auto worldY = static_cast<float>(m_yStart + localY);
                 const auto worldZ = static_cast<float>(m_zStart + localZ);
 
-                Block block(worldX, worldY, worldZ, 0.0f);
+                Block block(worldX, worldY, worldZ);
+                if (worldY > 80) {
+                    block.setType(STONE);
+                } else if (worldY > 60) {
+                    block.setType(GRASS);
+                } else if (worldY == 60) {
+                    block.setType(WATER);
+                } else {
+                    block.setType(STONE);
+                }
+
 
                 // Check all 6 directions and add faces if no adjacent block
                 // TOP face (Y+1)
