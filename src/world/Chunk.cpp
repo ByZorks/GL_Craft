@@ -16,6 +16,8 @@ Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), 
                                                                  static_cast<float>(y) + static_cast<float>(m_size) - 1,
                                                                  static_cast<float>(z) + static_cast<float>(m_size) -1
                                                                  )) {
+    m_vertices.reserve(6 * 4 * m_size * m_size * m_size); // 6 faces, 4 vertices per face, 16x16x16 blocks
+    m_blockFaceData.reserve(6 * m_size * m_size * m_size); // 6 faces per block, 16x16x16 blocks
 }
 
 Chunk::~Chunk() = default;
@@ -37,14 +39,12 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
             }
         }
     }
-    m_status = GENERATED;
+    m_status = Status::GENERATED;
 }
 
 void Chunk::generateMeshData(const World * world) {
+    auto t1 = std::chrono::high_resolution_clock::now();
     if (!world) throw std::runtime_error("World pointer is null in Chunk::generateMeshData");
-
-    constexpr unsigned int verticesPerFace = 4;
-    m_vertices.reserve(6 * verticesPerFace * m_size * m_size * m_size); // 6 faces, 4 vertices per face, 16x16x16 blocks
 
     for (int localX = 0; localX < m_size; localX++) {
         for (int localY = 0; localY < m_size; localY++) {
@@ -57,77 +57,42 @@ void Chunk::generateMeshData(const World * world) {
                 const auto worldY = static_cast<float>(m_yStart + localY);
                 const auto worldZ = static_cast<float>(m_zStart + localZ);
 
-                Block block(worldX, worldY, worldZ);
-                if (worldY > 80) {
-                    block.setType(STONE);
-                } else if (worldY > 60) {
-                    block.setType(GRASS);
-                } else if (worldY == 60) {
-                    block.setType(WATER);
-                } else {
-                    block.setType(STONE);
-                }
+                // Block block(worldX, worldY, worldZ);
+                BlockType blockType;
+                if (worldY > 80) blockType = BlockType::STONE;
+                else if (worldY > 60) blockType = BlockType::GRASS;
+                else if (worldY == 60) blockType = BlockType::WATER;
+                else blockType = BlockType::STONE;
 
-
-                // Check all 6 directions and add faces if no adjacent block
-                // TOP face (Y+1)
-                if (!isBlockPresentInWorld(worldX, worldY + 1, worldZ, world)) {
-                    block.addFace(TOP);
-                    m_blockFaceData.push_back({TOP, verticesPerFace});
-                }
-
-                // BOTTOM face (Y-1)
-                if (!isBlockPresentInWorld(worldX, worldY - 1, worldZ, world)) {
-                    block.addFace(BOTTOM);
-                    m_blockFaceData.push_back({BOTTOM, verticesPerFace});
-                }
-
-                // FRONT face (Z+1)
-                if (!isBlockPresentInWorld(worldX, worldY, worldZ + 1, world)) {
-                    block.addFace(FRONT);
-                    m_blockFaceData.push_back({FRONT, verticesPerFace});
-                }
-
-                // BACK face (Z-1)
-                if (!isBlockPresentInWorld(worldX, worldY, worldZ - 1, world)) {
-                    block.addFace(BACK);
-                    m_blockFaceData.push_back({BACK, verticesPerFace});
-                }
-
-                // RIGHT face (X+1)
-                if (!isBlockPresentInWorld(worldX + 1, worldY, worldZ, world)) {
-                    block.addFace(RIGHT);
-                    m_blockFaceData.push_back({RIGHT, verticesPerFace});
-                }
-
-                // LEFT face (X-1)
-                if (!isBlockPresentInWorld(worldX - 1, worldY, worldZ, world)) {
-                    block.addFace(LEFT);
-                    m_blockFaceData.push_back({LEFT, verticesPerFace});
-                }
-
-                // Add block vertices to the chunk's vertex list
-                const float* blockVertices = block.getVertices();
-                const unsigned int vertexCount = block.getVertexCount() * 5; // 5 components per vertex
-                m_vertices.insert(m_vertices.end(), blockVertices, blockVertices + vertexCount);
+                addBlockFaces(worldX, worldY, worldZ, blockType, world);
             }
         }
     }
 
-    m_status = MESH_GENERATED;
+    m_blockFaceData.shrink_to_fit();
+    m_vertices.shrink_to_fit();
+
+    m_status = Status::MESH_GENERATED;
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+    if (ms_int.count() > 0) {
+        std::cout << "[generateMeshData] Chunk at (" << m_xStart << ", " << m_yStart << ", " << m_zStart
+                  << ") generated in " << ms_int.count() << "ms\n";
+    }
 }
 
 void Chunk::setupBuffers() {
     std::vector<unsigned int> chunkIndices;
+    chunkIndices.reserve(m_blockFaceData.size() * 6); // 6 indices per face (2 triangles)
     unsigned int vertexOffset = 0;
 
     for (const auto&[faceType, vertexCount] : m_blockFaceData) {
         unsigned int baseIdx = vertexOffset;
 
         switch (faceType) {
-            case BACK:
-            case LEFT:
-            case TOP:
+            case Face::BACK:
+            case Face::LEFT:
+            case Face::TOP:
                 chunkIndices.push_back(baseIdx);
                 chunkIndices.push_back(baseIdx + 1);
                 chunkIndices.push_back(baseIdx + 2);
@@ -137,9 +102,9 @@ void Chunk::setupBuffers() {
                 chunkIndices.push_back(baseIdx + 3);
                 break;
 
-            case FRONT:
-            case RIGHT:
-            case BOTTOM:
+            case Face::FRONT:
+            case Face::RIGHT:
+            case Face::BOTTOM:
                 chunkIndices.push_back(baseIdx);
                 chunkIndices.push_back(baseIdx + 2);
                 chunkIndices.push_back(baseIdx + 1);
@@ -153,6 +118,8 @@ void Chunk::setupBuffers() {
         vertexOffset += vertexCount;
     }
 
+    chunkIndices.shrink_to_fit();
+
     m_VBO.init(m_vertices.data(), sizeof(float) * m_vertices.size());
     m_IBO.init(chunkIndices.data(), chunkIndices.size());
 
@@ -161,7 +128,7 @@ void Chunk::setupBuffers() {
     chunkLayout.Push<float>(2); // u, v
     m_VAO.AddBuffer(m_VBO, chunkLayout);
 
-    m_status = BUFFERS_SETUP;
+    m_status = Status::BUFFERS_SETUP;
 }
 
 bool Chunk::isBlockPresentInWorld(const float worldX, const float worldY, const float worldZ, const World *world) {
@@ -183,6 +150,7 @@ bool Chunk::isBlockPresentInWorld(const float worldX, const float worldY, const 
         return chunk->isBlockPresentInLocal(localX, localY, localZ);
     }
     return false;
+
 }
 
 const VertexArray &Chunk::m_vao() const {
@@ -220,6 +188,39 @@ bool Chunk::isBlockPresentInLocal(const int localX, const int localY, const int 
            m_blockPresent[localX][localY][localZ];
 }
 
-status Chunk::m_status1() const {
+Status Chunk::m_status1() const {
     return m_status;
+}
+
+void Chunk::addBlockFaces(const float worldX, const float worldY, const float worldZ, const BlockType blockType, const World *world) {
+    float columnIndex;
+    switch (blockType) {
+        case BlockType::DIRT: columnIndex = 0; break;
+        case BlockType::GRASS: columnIndex = 3; break;
+        case BlockType::STONE: columnIndex = 6; break;
+        case BlockType::WATER: columnIndex = 9; break;
+        default: throw std::invalid_argument("Invalid block type");
+    }
+
+    constexpr float TEXTURE_WIDTH = 1.0f / 12.0f;
+    const float u_base = columnIndex * TEXTURE_WIDTH;
+
+    constexpr Face faceOrder[6] = {Face::TOP, Face::BOTTOM, Face::FRONT, Face::BACK, Face::RIGHT, Face::LEFT};
+
+    const bool faces[6] = {
+        !isBlockPresentInWorld(worldX, worldY + 1, worldZ, world), // TOP
+        !isBlockPresentInWorld(worldX, worldY - 1, worldZ, world), // BOTTOM
+        !isBlockPresentInWorld(worldX, worldY, worldZ + 1, world), // FRONT
+        !isBlockPresentInWorld(worldX, worldY, worldZ - 1, world), // BACK
+        !isBlockPresentInWorld(worldX + 1, worldY, worldZ, world), // RIGHT
+        !isBlockPresentInWorld(worldX - 1, worldY, worldZ, world)  // LEFT
+    };
+
+    for (int i = 0; i < 6; i++) {
+        if (faces[i]) {
+            std::vector<float> faceVertices = Block::addFaceVertices(faceOrder[i], worldX, worldY, worldZ, u_base);
+            m_vertices.insert(m_vertices.end(), faceVertices.begin(), faceVertices.end());
+            m_blockFaceData.push_back({faceOrder[i], 4});
+        }
+    }
 }

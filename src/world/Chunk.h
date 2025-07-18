@@ -11,11 +11,11 @@
 class World;
 
 struct BlockFaceData {
-    face faceType;
+    Face faceType;
     unsigned int vertexCount;
 };
 
-enum status {
+enum class Status {
     NOT_GENERATED = 0,
     GENERATED = 1,
     MESH_GENERATED = 2,
@@ -30,7 +30,7 @@ private:
     const unsigned int *m_indices{};
     std::vector<BlockFaceData> m_blockFaceData;
     bool m_blockPresent[16][16][16] = {{{false}}}; // 16x16x16 chunk size
-    status m_status = NOT_GENERATED;
+    Status m_status = Status::NOT_GENERATED;
     VertexArray m_VAO;
     VertexBuffer m_VBO;
     IndexBuffer m_IBO;
@@ -53,7 +53,10 @@ public:
     [[nodiscard]] int m_y_start() const;
     [[nodiscard]] int m_z_start() const;
     [[nodiscard]] bool isBlockPresentInLocal(int localX, int localY, int localZ) const;
-    [[nodiscard]] status m_status1() const;
+    [[nodiscard]] Status m_status1() const;
+
+private:
+    void addBlockFaces(float worldX, float worldY, float worldZ, BlockType blockType, const World *world);
 };
 
 #endif //CHUNK_H

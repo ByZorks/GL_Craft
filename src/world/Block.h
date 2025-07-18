@@ -3,7 +3,7 @@
 #include <unordered_set>
 #include <vector>
 
-enum face : unsigned int {
+enum class Face : unsigned int {
     FRONT = 0,
     BACK,
     LEFT,
@@ -12,7 +12,7 @@ enum face : unsigned int {
     BOTTOM
 };
 
-enum BlockType {
+enum class BlockType {
     DIRT,
     GRASS,
     STONE,
@@ -24,14 +24,16 @@ private:
     float m_x, m_y, m_z, m_columnIndex;
     std::vector<float> m_vertices;
     std::vector<unsigned int> m_indices;
-    std::unordered_set<face> m_addedFaces;
+    std::unordered_set<Face> m_addedFaces;
 
 public:
     Block(float x, float y, float z);
     ~Block();
 
     void setType(BlockType type);
-    void addFace(face face);
+    void addFace(Face face);
+
+    static std::vector<float> addFaceVertices(Face face, float worldX, float worldY, float worldZ, float u_base);
 
     [[nodiscard]] const float* getVertices() const;
     unsigned int getVertexCount() const;

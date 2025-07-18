@@ -58,6 +58,7 @@ add_executable(GL_Craft
         ${IMGUI_DIR}/imgui_impl_opengl3.cpp
         src/ui/DebugUI.cpp
         src/ui/DebugUI.h
+        src/utils/ThreadSafeQueue.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)
