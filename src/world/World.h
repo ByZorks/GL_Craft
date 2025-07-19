@@ -28,6 +28,8 @@ public:
     void updateChunks(const Camera &camera, float renderDistanceInBlocks = 8.0f * static_cast<float>(Chunk::m_size1()));
     std::vector<Chunk*> getChunksToRender();
 
+    [[nodiscard]] const FastNoiseLite & m_noise_generator() const;
+
 private:
     void unloadDistantChunks(glm::vec3 cameraChunkPos, int renderDistance);
     static void processChunk(Chunk *chunk, const World *world);

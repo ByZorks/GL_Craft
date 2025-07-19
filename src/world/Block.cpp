@@ -12,18 +12,23 @@ Block::~Block() = default;
 
 void Block::setType(const BlockType type) {
     switch (type) {
-        case BlockType::DIRT:
+        case BlockType::BEDROCK:
             m_columnIndex = 0;
             break;
-        case BlockType::GRASS:
+        case BlockType::DIRT:
             m_columnIndex = 3;
             break;
-        case BlockType::STONE:
+        case BlockType::GRASS:
             m_columnIndex = 6;
             break;
-        case BlockType::WATER:
+        case BlockType::STONE:
             m_columnIndex = 9;
             break;
+        case BlockType::WATER:
+            m_columnIndex = 12;
+            break;
+        default:
+            throw std::runtime_error("Block::setType: invalid block type");
     }
 }
 
@@ -35,7 +40,7 @@ void Block::addFace(const Face face) {
     m_addedFaces.insert(face);
 
     // Constants for texture coordinates and block dimensions
-    constexpr float TEXTURE_WIDTH = 1.0f / 12.0f;
+    constexpr float TEXTURE_WIDTH = 1.0f / 15.0f;
     constexpr float TEXTURE_OFFSET_0 = 0.0f;
     constexpr float TEXTURE_OFFSET_33 = TEXTURE_WIDTH;
     constexpr float TEXTURE_OFFSET_66 = TEXTURE_WIDTH * 2.0f;
@@ -120,15 +125,15 @@ void Block::addFace(const Face face) {
     m_vertices.shrink_to_fit();
 }
 
-std::vector<float> Block::addFaceVertices(const Face face, const float worldX, const float worldY, const float worldZ, const float u_base) {
-    constexpr float c_texture_width = 1.0f / 12.0f;
+std::vector<float> Block::addFaceVertices(const Face face, BlockType type, const float worldX, const float worldY, const float worldZ, const float u_base) {
+    constexpr float c_texture_width = 1.0f / 15.0f;
     constexpr float c_texture_offset_0 = 0.0f;
     constexpr float c_texture_offset_33 = c_texture_width;
     constexpr float c_texture_offset_66 = c_texture_width * 2.0f;
     constexpr float c_texture_offset_100 = c_texture_width * 3.0f;
     constexpr float c_texture_v_max = 1.0f;
     constexpr float c_block_min = 0.0f;
-    constexpr float c_block_max = 1.0f;
+    float c_block_max = 1.0f;
     constexpr float v_base = 0.0f; // Blocks are on a single texture row
 
     std::vector<float> vertices;
@@ -176,12 +181,23 @@ std::vector<float> Block::addFaceVertices(const Face face, const float worldX, c
             break;
         }
         case Face::TOP: {
-            std::vector topVertices = {
-                worldX - c_block_min, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max,
-                worldX + c_block_max, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_100, v_base + c_texture_v_max,
-                worldX + c_block_max, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_100, v_base + c_texture_offset_0,
-                worldX - c_block_min, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0
-            };
+            std::vector<float> topVertices;
+            topVertices.reserve(4 * 5); // Reserve space for 4 vertices, 5 components per vertex
+            if (type == BlockType::WATER) {
+                topVertices = {
+                    worldX - c_block_min, worldY + c_block_max - 0.2f, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max,
+                    worldX + c_block_max, worldY + c_block_max - 0.2f, worldZ + c_block_max, u_base + c_texture_offset_100, v_base + c_texture_v_max,
+                    worldX + c_block_max, worldY + c_block_max - 0.2f, worldZ - c_block_min, u_base + c_texture_offset_100, v_base + c_texture_offset_0,
+                    worldX - c_block_min, worldY + c_block_max - 0.2f, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0
+                };
+            } else {
+                topVertices = {
+                    worldX - c_block_min, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max,
+                    worldX + c_block_max, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_100, v_base + c_texture_v_max,
+                    worldX + c_block_max, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_100, v_base + c_texture_offset_0,
+                    worldX - c_block_min, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0
+                };
+            }
             vertices.insert(vertices.end(), topVertices.begin(), topVertices.end());
             break;
         }

@@ -13,6 +13,7 @@ enum class Face : unsigned int {
 };
 
 enum class BlockType {
+    BEDROCK,
     DIRT,
     GRASS,
     STONE,
@@ -33,7 +34,7 @@ public:
     void setType(BlockType type);
     void addFace(Face face);
 
-    static std::vector<float> addFaceVertices(Face face, float worldX, float worldY, float worldZ, float u_base);
+    static std::vector<float> addFaceVertices(Face face, BlockType type, float worldX, float worldY, float worldZ, float u_base);
 
     [[nodiscard]] const float* getVertices() const;
     unsigned int getVertexCount() const;

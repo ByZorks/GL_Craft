@@ -58,6 +58,11 @@ public:
 
 private:
     void addBlockFaces(float worldX, float worldY, float worldZ, BlockType blockType, const World *world);
+
+    bool shouldDrawFace(float nx, float ny, float nz, bool currentTransparent, const World *world);
+    static bool isTransparent(BlockType blockType);
+    BlockType getBlockTypeAt(float x, float y, float z, const World *world);
+
     bool isBlockPresentInWorld(float worldX, float worldY, float worldZ, const World *world);
     bool isBlockPresentInAnotherChunk(float worldX, float worldY, float worldZ, const World *world);
 };

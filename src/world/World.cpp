@@ -162,6 +162,10 @@ std::vector<Chunk *> World::getChunksToRender() {
     return chunks;
 }
 
+const FastNoiseLite & World::m_noise_generator() const {
+    return m_noiseGenerator;
+}
+
 void World::unloadDistantChunks(const glm::vec3 cameraChunkPos, const int renderDistance) {
     std::lock_guard lock(m_chunksMutex);
     const auto maxDistance = static_cast<float>(renderDistance);

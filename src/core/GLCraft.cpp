@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
     {
         // Shader
-        Shader shader("../res/shaders/vertex.shader", "../res/shaders/fragment.shader");
+        Shader shader("../res/shaders/block.vert", "../res/shaders/block.frag");
         shader.use();
 
         const Texture atlas("../res/textures/atlas/texture_atlas.png");

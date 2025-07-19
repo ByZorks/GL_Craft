@@ -33,7 +33,8 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
             const int columnHeight = static_cast<int>(noiseValue * 100.0f); // Scale to world height [0, 100]
 
             for (int localY = 0; localY < m_size; localY++) {
-                if (const int worldY = m_yStart + localY; worldY < columnHeight) {
+                const int worldY = m_yStart + localY;
+                if (worldY < columnHeight || worldY == 60) {
                     m_blockPresent[localX][localY][localZ] = true;
                 }
             }
@@ -55,11 +56,14 @@ void Chunk::generateMeshData(const World * world) {
                 const auto worldX = static_cast<float>(m_xStart + localX);
                 const auto worldY = static_cast<float>(m_yStart + localY);
                 const auto worldZ = static_cast<float>(m_zStart + localZ);
+                const float noiseValue = (world->m_noise_generator().GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
+                const float columnHeight = noiseValue * 100.0f; // Scale to world height [0, 100]
 
                 BlockType blockType;
                 if (worldY > 80) blockType = BlockType::STONE;
                 else if (worldY > 60) blockType = BlockType::GRASS;
-                else if (worldY == 60) blockType = BlockType::WATER;
+                else if (worldY >= columnHeight && worldY == 60) blockType = BlockType::WATER;
+                else if (worldY == 0) blockType = BlockType::BEDROCK;
                 else blockType = BlockType::STONE;
 
                 addBlockFaces(worldX, worldY, worldZ, blockType, world);
@@ -181,34 +185,70 @@ Status Chunk::m_status1() const {
 void Chunk::addBlockFaces(const float worldX, const float worldY, const float worldZ, const BlockType blockType, const World *world) {
     float columnIndex;
     switch (blockType) {
-        case BlockType::DIRT: columnIndex = 0; break;
-        case BlockType::GRASS: columnIndex = 3; break;
-        case BlockType::STONE: columnIndex = 6; break;
-        case BlockType::WATER: columnIndex = 9; break;
+        case BlockType::BEDROCK: columnIndex = 0; break;
+        case BlockType::DIRT: columnIndex = 3; break;
+        case BlockType::GRASS: columnIndex = 6; break;
+        case BlockType::STONE: columnIndex = 9; break;
+        case BlockType::WATER: columnIndex = 12; break;
         default: throw std::invalid_argument("Invalid block type");
     }
 
-    constexpr float TEXTURE_WIDTH = 1.0f / 12.0f;
+    constexpr float TEXTURE_WIDTH = 1.0f / 15.0f;
     const float u_base = columnIndex * TEXTURE_WIDTH;
 
     constexpr Face faceOrder[6] = {Face::TOP, Face::BOTTOM, Face::FRONT, Face::BACK, Face::RIGHT, Face::LEFT};
 
+    const bool currentBlockTransparent = isTransparent(blockType);
+
     const bool faces[6] = {
-        !isBlockPresentInWorld(worldX, worldY + 1, worldZ, world), // TOP
-        !isBlockPresentInWorld(worldX, worldY - 1, worldZ, world), // BOTTOM
-        !isBlockPresentInWorld(worldX, worldY, worldZ + 1, world), // FRONT
-        !isBlockPresentInWorld(worldX, worldY, worldZ - 1, world), // BACK
-        !isBlockPresentInWorld(worldX + 1, worldY, worldZ, world), // RIGHT
-        !isBlockPresentInWorld(worldX - 1, worldY, worldZ, world)  // LEFT
+        // TOP
+        (currentBlockTransparent) || shouldDrawFace(worldX, worldY + 1, worldZ, currentBlockTransparent, world),
+
+        // BOTTOM
+        shouldDrawFace(worldX, worldY - 1, worldZ, currentBlockTransparent, world),
+
+        // FRONT
+        shouldDrawFace(worldX, worldY, worldZ + 1, currentBlockTransparent, world),
+
+        // BACK
+        shouldDrawFace(worldX, worldY, worldZ - 1, currentBlockTransparent, world),
+
+        // RIGHT
+        shouldDrawFace(worldX + 1, worldY, worldZ, currentBlockTransparent, world),
+
+        // LEFT
+        shouldDrawFace(worldX - 1, worldY, worldZ, currentBlockTransparent, world)
     };
 
     for (int i = 0; i < 6; i++) {
         if (faces[i]) {
-            std::vector<float> faceVertices = Block::addFaceVertices(faceOrder[i], worldX, worldY, worldZ, u_base);
+            std::vector<float> faceVertices = Block::addFaceVertices(faceOrder[i], blockType, worldX, worldY, worldZ, u_base);
             m_vertices.insert(m_vertices.end(), faceVertices.begin(), faceVertices.end());
             m_blockFaceData.push_back({faceOrder[i], 4});
         }
     }
+}
+
+bool Chunk::shouldDrawFace(const float nx, const float ny, const float nz, const bool currentTransparent,  const World *world) {
+    return !isBlockPresentInWorld(nx, ny, nz, world) ||
+           (isBlockPresentInWorld(nx, ny, nz, world) && isTransparent(getBlockTypeAt(nx, ny, nz, world)) && !currentTransparent);
+}
+
+bool Chunk::isTransparent(const BlockType blockType) {
+    return blockType == BlockType::WATER;
+}
+
+BlockType Chunk::getBlockTypeAt(const float x, const float y, const float z, const World *world) {
+    if (!isBlockPresentInWorld(x, y, z, world)) return BlockType::WATER; // Air is transparent
+
+    const float noiseValue = (world->m_noise_generator().GetNoise(x, z) + 1.0f) / 2.0f;
+    const float columnHeight = noiseValue * 100.0f;
+
+    if (y > 80) return BlockType::STONE;
+    else if (y > 60) return BlockType::GRASS;
+    else if (y >= columnHeight && y == 60) return BlockType::WATER;
+    else if (y == 0) return BlockType::BEDROCK;
+    else return BlockType::STONE;
 }
 
 bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY, const float worldZ, const World *world) {
