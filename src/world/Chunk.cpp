@@ -89,30 +89,16 @@ void Chunk::setupBuffers() {
     for (const auto&[faceType, vertexCount] : m_blockFaceData) {
         unsigned int baseIdx = vertexOffset;
 
-        switch (faceType) {
-            case Face::BACK:
-            case Face::LEFT:
-            case Face::TOP:
-                chunkIndices.push_back(baseIdx);
-                chunkIndices.push_back(baseIdx + 1);
-                chunkIndices.push_back(baseIdx + 2);
-
-                chunkIndices.push_back(baseIdx);
-                chunkIndices.push_back(baseIdx + 2);
-                chunkIndices.push_back(baseIdx + 3);
-                break;
-
-            case Face::FRONT:
-            case Face::RIGHT:
-            case Face::BOTTOM:
-                chunkIndices.push_back(baseIdx);
-                chunkIndices.push_back(baseIdx + 2);
-                chunkIndices.push_back(baseIdx + 1);
-
-                chunkIndices.push_back(baseIdx);
-                chunkIndices.push_back(baseIdx + 3);
-                chunkIndices.push_back(baseIdx + 2);
-                break;
+        if (faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP) {
+            chunkIndices.insert(chunkIndices.end(), {
+                baseIdx, baseIdx + 1, baseIdx + 2,
+                baseIdx, baseIdx + 2, baseIdx + 3
+            });
+        } else {
+            chunkIndices.insert(chunkIndices.end(), {
+                baseIdx, baseIdx + 2, baseIdx + 1,
+                baseIdx, baseIdx + 3, baseIdx + 2
+            });
         }
 
         vertexOffset += vertexCount;
