@@ -61,7 +61,7 @@ private:
     void addBlockFaces(float worldX, float worldY, float worldZ, BlockType blockType, const World &world);
 
     bool shouldDrawFace(float nx, float ny, float nz, bool currentTransparent, const World &world);
-    BlockType getBlockTypeAt(float worldX, float worldY, float worldZ) const;
+    BlockType getBlockTypeAt(float worldX, float worldY, float worldZ, const World &world);
     BlockType getBlockTypeAtLocal(int localX, int localY, int localZ) const;
 
     bool isBlockPresentInWorld(float worldX, float worldY, float worldZ, const World &world);

@@ -31,12 +31,14 @@ void Block::setType(const BlockType type) {
     }
 }
 
-BlockType Block::getBlockType(const int y) {
+BlockType Block::getBlockType(const int y, const int columnHeight) {
+    if (y < 0) return BlockType::UNKNOWN; // Invalid height
     if (y == 0) return BlockType::BEDROCK;
     if (y < 60) return BlockType::STONE;
-    if (y == 60) return BlockType::WATER;
+    if (y == 60 && y > columnHeight) return BlockType::WATER;
     if (y < 80) return BlockType::GRASS;
-    return BlockType::STONE;
+    if (y < 100) return BlockType::STONE;
+    return BlockType::UNKNOWN;
 }
 
 float Block::getTextureColumnIndex(const BlockType type) {
@@ -134,5 +136,5 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<f
 }
 
 bool Block::isTransparent(const BlockType type) {
-    return type == BlockType::WATER;
+    return type == BlockType::WATER || type == BlockType::AIR;
 }

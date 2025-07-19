@@ -13,11 +13,13 @@ enum class Face : unsigned int {
 };
 
 enum class BlockType {
+    AIR,
     BEDROCK,
     DIRT,
     GRASS,
     STONE,
-    WATER
+    WATER,
+    UNKNOWN
 };
 
 class Block {
@@ -30,7 +32,7 @@ public:
 
     void setType(BlockType type);
 
-    static BlockType getBlockType(int y);
+    static BlockType getBlockType(int y, int columnHeight);
     static float getTextureColumnIndex(BlockType type);
     static void addFaceVertices(Face face, BlockType type, std::vector<float> *vertices, float worldX, float worldY, float worldZ, float u_base);
     static bool isTransparent(BlockType type);
