@@ -3,8 +3,8 @@
 layout(location = 0) out vec4 color;
 
 in vec2 v_texCoord;
+flat in vec3 v_normal;
 
-uniform vec4 u_Color;
 uniform sampler2D u_Texture;
 
 void main() {
@@ -17,5 +17,15 @@ void main() {
 //        texColor.a = 0.7;
 //    }
 
-    color = texColor;
+    float lighting = 1.0;
+    if (v_normal == vec3(0.0, 1.0, 0.0)) {
+        lighting = 1.0; // Top face is fully lit
+    } else if (v_normal == vec3(0.0, -1.0, 0.0)) {
+        lighting = 0.4; // Bottom face is dimly lit
+    } else {
+        lighting = 0.7; // Side faces are moderately lit
+    }
+    vec3 shaded = texColor.rgb * lighting;
+
+    color = vec4(shaded, texColor.a);
 }

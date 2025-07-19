@@ -125,7 +125,7 @@ void Block::addFace(const Face face) {
     m_vertices.shrink_to_fit();
 }
 
-std::vector<float> Block::addFaceVertices(const Face face, BlockType type, const float worldX, const float worldY, const float worldZ, const float u_base) {
+std::vector<float> Block::addFaceVertices(const Face face, const BlockType type, const float worldX, const float worldY, const float worldZ, const float u_base) {
     constexpr float c_texture_width = 1.0f / 15.0f;
     constexpr float c_texture_offset_0 = 0.0f;
     constexpr float c_texture_offset_33 = c_texture_width;
@@ -133,49 +133,49 @@ std::vector<float> Block::addFaceVertices(const Face face, BlockType type, const
     constexpr float c_texture_offset_100 = c_texture_width * 3.0f;
     constexpr float c_texture_v_max = 1.0f;
     constexpr float c_block_min = 0.0f;
-    float c_block_max = 1.0f;
+    constexpr float c_block_max = 1.0f;
     constexpr float v_base = 0.0f; // Blocks are on a single texture row
 
     std::vector<float> vertices;
-    vertices.reserve(4 * 5); // Reserve space for 4 vertices, 5 components per vertex
+    vertices.reserve(4 * 8); // Reserve space for 4 vertices, 5 components per vertex
     switch (face) {
         case Face::FRONT: {
-            // Front face vertices (x, y, z, u, v)
+            // Front face vertices (x, y, z, u, v, normalX, normalY, normalZ)
             std::vector frontVertices = {
-                worldX - c_block_min, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max,
-                worldX + c_block_max, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max,
-                worldX + c_block_max, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_offset_0,
-                worldX - c_block_min, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_offset_0
+                worldX - c_block_min, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max, 0.f, 0.f, -1.f,
+                worldX + c_block_max, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max, 0.f, 0.f, -1.f,
+                worldX + c_block_max, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_offset_0, 0.f, 0.f, -1.f,
+                worldX - c_block_min, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_offset_0, 0.f, 0.f, -1.f,
             };
             vertices.insert(vertices.end(), frontVertices.begin(), frontVertices.end());
             break;
         }
         case Face::BACK: {
             std::vector backVertices = {
-                worldX - c_block_min, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_33, v_base + c_texture_v_max,
-                worldX + c_block_max, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_v_max,
-                worldX + c_block_max, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0,
-                worldX - c_block_min, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_33, v_base + c_texture_offset_0
+                worldX - c_block_min, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_33, v_base + c_texture_v_max, 0.f, 0.f, 1.f,
+                worldX + c_block_max, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_v_max, 0.f, 0.f, 1.f,
+                worldX + c_block_max, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0, 0.f, 0.f, 1.f,
+                worldX - c_block_min, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_33, v_base + c_texture_offset_0, 0.f, 0.f, 1.f,
             };
             vertices.insert(vertices.end(), backVertices.begin(), backVertices.end());
             break;
         }
         case Face::LEFT: {
             std::vector leftVertices = {
-                worldX - c_block_min, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max,
-                worldX - c_block_min, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_v_max,
-                worldX - c_block_min, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0,
-                worldX - c_block_min, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_offset_0
+                worldX - c_block_min, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max, -1.f, 0.f, 0.f,
+                worldX - c_block_min, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_v_max, -1.f, 0.f, 0.f,
+                worldX - c_block_min, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0, -1.f, 0.f, 0.f,
+                worldX - c_block_min, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_offset_0, -1.f, 0.f, 0.f
             };
             vertices.insert(vertices.end(), leftVertices.begin(), leftVertices.end());
             break;
         }
         case Face::RIGHT: {
             std::vector rightVertices = {
-                worldX + c_block_max, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max,
-                worldX + c_block_max, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_v_max,
-                worldX + c_block_max, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0,
-                worldX + c_block_max, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_offset_0
+                worldX + c_block_max, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max, 1.f, 0.f, 0.f,
+                worldX + c_block_max, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_v_max, 1.f, 0.f, 0.f,
+                worldX + c_block_max, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0, 1.f, 0.f, 0.f,
+                worldX + c_block_max, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_offset_0, 1.f, 0.f, 0.f,
             };
             vertices.insert(vertices.end(), rightVertices.begin(), rightVertices.end());
             break;
@@ -185,17 +185,17 @@ std::vector<float> Block::addFaceVertices(const Face face, BlockType type, const
             topVertices.reserve(4 * 5); // Reserve space for 4 vertices, 5 components per vertex
             if (type == BlockType::WATER) {
                 topVertices = {
-                    worldX - c_block_min, worldY + c_block_max - 0.2f, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max,
-                    worldX + c_block_max, worldY + c_block_max - 0.2f, worldZ + c_block_max, u_base + c_texture_offset_100, v_base + c_texture_v_max,
-                    worldX + c_block_max, worldY + c_block_max - 0.2f, worldZ - c_block_min, u_base + c_texture_offset_100, v_base + c_texture_offset_0,
-                    worldX - c_block_min, worldY + c_block_max - 0.2f, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0
+                    worldX - c_block_min, worldY + c_block_max - 0.2f, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max, 0.f, 1.f, 0.f,
+                    worldX + c_block_max, worldY + c_block_max - 0.2f, worldZ + c_block_max, u_base + c_texture_offset_100, v_base + c_texture_v_max, 0.f, 1.f, 0.f,
+                    worldX + c_block_max, worldY + c_block_max - 0.2f, worldZ - c_block_min, u_base + c_texture_offset_100, v_base + c_texture_offset_0, 0.f, 1.f, 0.f,
+                    worldX - c_block_min, worldY + c_block_max - 0.2f, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0, 0.f, 1.f, 0.f,
                 };
             } else {
                 topVertices = {
-                    worldX - c_block_min, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max,
-                    worldX + c_block_max, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_100, v_base + c_texture_v_max,
-                    worldX + c_block_max, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_100, v_base + c_texture_offset_0,
-                    worldX - c_block_min, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0
+                    worldX - c_block_min, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max, 0.f, 1.f, 0.f,
+                    worldX + c_block_max, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_100, v_base + c_texture_v_max, 0.f, 1.f, 0.f,
+                    worldX + c_block_max, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_100, v_base + c_texture_offset_0, 0.f, 1.f, 0.f,
+                    worldX - c_block_min, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0, 0.f, 1.f, 0.f,
                 };
             }
             vertices.insert(vertices.end(), topVertices.begin(), topVertices.end());
@@ -203,10 +203,10 @@ std::vector<float> Block::addFaceVertices(const Face face, BlockType type, const
         }
         case Face::BOTTOM: {
             std::vector bottomVertices = {
-                worldX - c_block_min, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_0, v_base + c_texture_v_max,
-                worldX + c_block_max, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max,
-                worldX + c_block_max, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_33, v_base + c_texture_offset_0,
-                worldX - c_block_min, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_0, v_base + c_texture_offset_0
+                worldX - c_block_min, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_0, v_base + c_texture_v_max, 0.f, -1.f, 0.f,
+                worldX + c_block_max, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max, 0.f, -1.f, 0.f,
+                worldX + c_block_max, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_33, v_base + c_texture_offset_0, 0.f, -1.f, 0.f,
+                worldX - c_block_min, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_0, v_base + c_texture_offset_0, 0.f, -1.f, 0.f,
             };
             vertices.insert(vertices.end(), bottomVertices.begin(), bottomVertices.end());
             break;

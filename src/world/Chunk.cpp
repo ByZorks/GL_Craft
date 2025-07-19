@@ -122,6 +122,7 @@ void Chunk::setupBuffers() {
     VertexBufferLayout chunkLayout;
     chunkLayout.Push<float>(3); // x, y, z
     chunkLayout.Push<float>(2); // u, v
+    chunkLayout.Push<float>(3); // nx, ny, nz (normal vector)
     m_VAO.AddBuffer(m_VBO, chunkLayout);
 
     m_status = Status::BUFFERS_SETUP;
