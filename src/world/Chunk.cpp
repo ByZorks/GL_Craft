@@ -16,7 +16,7 @@ Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), 
                                                                  static_cast<float>(y) + static_cast<float>(m_size) - 1,
                                                                  static_cast<float>(z) + static_cast<float>(m_size) -1
                                                                  )) {
-    m_vertices.reserve(6 * 4 * m_size * m_size * m_size); // 6 faces, 4 vertices per face, 16x16x16 blocks
+    m_vertices.reserve(6 * 4 * 8 * m_size * m_size * m_size); // 6 faces, 4 vertices per face, 8 components per vertex, 16x16x16 blocks
     m_blockFaceData.reserve(6 * m_size * m_size * m_size); // 6 faces per block, 16x16x16 blocks
 }
 
@@ -46,6 +46,13 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
 void Chunk::generateMeshData(const World * world) {
     if (!world) throw std::runtime_error("World pointer is null in Chunk::generateMeshData");
 
+    float noiseCache[m_size][m_size];
+    for (int i = 0; i < m_size; i++) {
+        for (int j = 0; j < m_size; j++) {
+            noiseCache[i][j] = -1.0f;
+        }
+    }
+
     for (int localX = 0; localX < m_size; localX++) {
         for (int localY = 0; localY < m_size; localY++) {
             for (int localZ = 0; localZ < m_size; localZ++) {
@@ -56,7 +63,11 @@ void Chunk::generateMeshData(const World * world) {
                 const auto worldX = static_cast<float>(m_xStart + localX);
                 const auto worldY = static_cast<float>(m_yStart + localY);
                 const auto worldZ = static_cast<float>(m_zStart + localZ);
-                const float noiseValue = (world->m_noise_generator().GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
+                float noiseValue = noiseCache[localX][localZ];
+                if (noiseValue == -1.0f) {
+                    noiseValue = (world->m_noise_generator().GetNoise(worldX, worldZ) + 1.0f) / 2.0f;
+                    noiseCache[localX][localZ] = noiseValue;
+                }
                 const float columnHeight = noiseValue * 100.0f; // Scale to world height [0, 100]
 
                 BlockType blockType;
@@ -246,10 +257,10 @@ BlockType Chunk::getBlockTypeAt(const float x, const float y, const float z, con
     const float columnHeight = noiseValue * 100.0f;
 
     if (y > 80) return BlockType::STONE;
-    else if (y > 60) return BlockType::GRASS;
-    else if (y >= columnHeight && y == 60) return BlockType::WATER;
-    else if (y == 0) return BlockType::BEDROCK;
-    else return BlockType::STONE;
+    if (y > 60) return BlockType::GRASS;
+    if (y >= columnHeight && y == 60) return BlockType::WATER;
+    if (y == 0) return BlockType::BEDROCK;
+    return BlockType::STONE;
 }
 
 bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY, const float worldZ, const World *world) {
