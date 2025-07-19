@@ -15,8 +15,10 @@ Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), 
                                                                  static_cast<float>(y) + static_cast<float>(m_size) - 1,
                                                                  static_cast<float>(z) + static_cast<float>(m_size) -1
                                                                  )) {
-    m_vertices.reserve(6 * 4 * 8 * m_size * m_size * m_size); // 6 faces, 4 vertices per face, 8 components per vertex, 16x16x16 blocks
-    m_blockFaceData.reserve(6 * m_size * m_size * m_size); // 6 faces per block, 16x16x16 blocks
+    constexpr size_t max_faces = 6 * 16 * 16 * 16;
+    constexpr size_t avg_faces = max_faces / 4; // Assuming each block has a quarter of the maximum faces
+    m_vertices.reserve(avg_faces * 4 * 8); // avg_faces * 4 vertices_per_face * 8 floats_per_vertex
+    m_blockFaceData.reserve(avg_faces);
 }
 
 Chunk::~Chunk() = default;
