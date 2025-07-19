@@ -32,6 +32,7 @@ private:
     std::vector<BlockFaceData> m_blockFaceData;
     bool m_blockPresent[16][16][16] = {{{false}}}; // 16x16x16 chunk size
     std::unordered_map<std::tuple<int, int, int>, const Chunk*> m_adjacentChunks;
+    BlockType m_blockType[16][16][16] = {{{BlockType::STONE}}}; // Default block type
     Status m_status = Status::NOT_GENERATED;
     VertexArray m_VAO;
     VertexBuffer m_VBO;
@@ -60,8 +61,8 @@ private:
     void addBlockFaces(float worldX, float worldY, float worldZ, BlockType blockType, const World &world);
 
     bool shouldDrawFace(float nx, float ny, float nz, bool currentTransparent, const World &world);
-    static bool isTransparent(BlockType blockType);
-    BlockType getBlockTypeAt(float x, float y, float z, const World &world);
+    BlockType getBlockTypeAt(float worldX, float worldY, float worldZ) const;
+    BlockType getBlockTypeAtLocal(int localX, int localY, int localZ) const;
 
     bool isBlockPresentInWorld(float worldX, float worldY, float worldZ, const World &world);
     bool isBlockPresentInAnotherChunk(float worldX, float worldY, float worldZ, const World &world);

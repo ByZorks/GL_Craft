@@ -31,6 +31,27 @@ void Block::setType(const BlockType type) {
     }
 }
 
+BlockType Block::getBlockType(const int y) {
+    if (y == 0) return BlockType::BEDROCK;
+    if (y < 60) return BlockType::STONE;
+    if (y == 60) return BlockType::WATER;
+    if (y < 80) return BlockType::GRASS;
+    return BlockType::STONE;
+}
+
+float Block::getTextureColumnIndex(const BlockType type) {
+    float columnIndex;
+    switch (type) {
+        case BlockType::BEDROCK: columnIndex = 0; break;
+        case BlockType::DIRT: columnIndex = 3; break;
+        case BlockType::GRASS: columnIndex = 6; break;
+        case BlockType::STONE: columnIndex = 9; break;
+        case BlockType::WATER: columnIndex = 12; break;
+        default: throw std::invalid_argument("Invalid block type");
+    }
+    return columnIndex;
+}
+
 void Block::addFaceVertices(const Face face, const BlockType type, std::vector<float> *vertices, const float worldX, const float worldY, const float worldZ, const float u_base) {
     constexpr float c_texture_width = 1.0f / 15.0f;
     constexpr float c_texture_offset_0 = 0.0f;
@@ -110,4 +131,8 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<f
         default:
             throw std::invalid_argument("Invalid face type");
     }
+}
+
+bool Block::isTransparent(const BlockType type) {
+    return type == BlockType::WATER;
 }

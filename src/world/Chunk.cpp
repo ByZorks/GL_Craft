@@ -24,8 +24,8 @@ Chunk::~Chunk() = default;
 
 void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
     for (int localX = 0; localX < m_size; localX++) {
+        const auto worldX = static_cast<float>(m_xStart + localX);
         for (int localZ = 0; localZ < m_size; localZ++) {
-            const auto worldX = static_cast<float>(m_xStart + localX);
             const auto worldZ = static_cast<float>(m_zStart + localZ);
 
             // Calculate height for this specific block column
@@ -36,6 +36,7 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
                 const int worldY = m_yStart + localY;
                 if (worldY < columnHeight || worldY == 60) {
                     m_blockPresent[localX][localY][localZ] = true;
+                    m_blockType[localX][localY][localZ] = Block::getBlockType(worldY);
                 }
             }
         }
@@ -46,37 +47,21 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
 void Chunk::generateMeshData(const World &world) {
     std::vector noiseCache(m_size, std::vector(m_size, -1.0f));
 
-    for (int localY = 0; localY < m_size; localY++) {
+    for (int localX = 0; localX < m_size; localX++) {
+        const auto worldX = static_cast<float>(m_xStart + localX);
+
         for (int localZ = 0; localZ < m_size; localZ++) {
-            for (int localX = 0; localX < m_size; localX++) {
-                if (!isBlockPresentInLocal(localX, localY, localZ)) {
-                    continue;
-                }
+            const auto worldZ = static_cast<float>(m_zStart + localZ);
 
-                const auto worldX = static_cast<float>(m_xStart + localX);
+            for (int localY = 0; localY < m_size; localY++) {
+                if (!isBlockPresentInLocal(localX, localY, localZ)) continue;
+
                 const auto worldY = static_cast<float>(m_yStart + localY);
-                const auto worldZ = static_cast<float>(m_zStart + localZ);
-                float noiseValue = noiseCache[localX][localZ];
-                if (noiseValue == -1.0f) {
-                    noiseValue = (world.m_noise_generator().GetNoise(worldX, worldZ) + 1.0f) / 2.0f;
-                    noiseCache[localX][localZ] = noiseValue;
-                }
-                const float columnHeight = noiseValue * 100.0f; // Scale to world height [0, 100]
 
-                BlockType blockType;
-                if (worldY > 80) blockType = BlockType::STONE;
-                else if (worldY > 60) blockType = BlockType::GRASS;
-                else if (worldY >= columnHeight && worldY == 60) blockType = BlockType::WATER;
-                else if (worldY == 0) blockType = BlockType::BEDROCK;
-                else blockType = BlockType::STONE;
-
-                addBlockFaces(worldX, worldY, worldZ, blockType, world);
+                addBlockFaces(worldX, worldY, worldZ, m_blockType[localX][localY][localZ], world);
             }
         }
     }
-
-    m_blockFaceData.shrink_to_fit();
-    m_vertices.shrink_to_fit();
 
     m_status = Status::MESH_GENERATED;
 }
@@ -103,8 +88,6 @@ void Chunk::setupBuffers() {
 
         vertexOffset += vertexCount;
     }
-
-    chunkIndices.shrink_to_fit();
 
     m_VBO.init(m_vertices.data(), sizeof(float) * m_vertices.size());
     m_IBO.init(chunkIndices.data(), chunkIndices.size());
@@ -174,22 +157,13 @@ Status Chunk::m_status1() const {
 }
 
 void Chunk::addBlockFaces(const float worldX, const float worldY, const float worldZ, const BlockType blockType, const World &world) {
-    float columnIndex;
-    switch (blockType) {
-        case BlockType::BEDROCK: columnIndex = 0; break;
-        case BlockType::DIRT: columnIndex = 3; break;
-        case BlockType::GRASS: columnIndex = 6; break;
-        case BlockType::STONE: columnIndex = 9; break;
-        case BlockType::WATER: columnIndex = 12; break;
-        default: throw std::invalid_argument("Invalid block type");
-    }
-
+    const float columnIndex = Block::getTextureColumnIndex(blockType);
     constexpr float TEXTURE_WIDTH = 1.0f / 15.0f;
     const float u_base = columnIndex * TEXTURE_WIDTH;
 
     constexpr Face faceOrder[6] = {Face::TOP, Face::BOTTOM, Face::FRONT, Face::BACK, Face::RIGHT, Face::LEFT};
 
-    const bool currentBlockTransparent = isTransparent(blockType);
+    const bool currentBlockTransparent = Block::isTransparent(blockType);
 
     const bool faces[6] = {
         // TOP
@@ -215,25 +189,42 @@ void Chunk::addBlockFaces(const float worldX, const float worldY, const float wo
 }
 
 bool Chunk::shouldDrawFace(const float nx, const float ny, const float nz, const bool currentTransparent, const World &world) {
-    return !isBlockPresentInWorld(nx, ny, nz, world) ||
-           (isBlockPresentInWorld(nx, ny, nz, world) && isTransparent(getBlockTypeAt(nx, ny, nz, world)) && !currentTransparent);
+    const bool isBlockPresent = isBlockPresentInWorld(nx, ny, nz, world);
+    return !isBlockPresent || (Block::isTransparent(getBlockTypeAt(nx, ny, nz)) && !currentTransparent);
 }
 
-bool Chunk::isTransparent(const BlockType blockType) {
-    return blockType == BlockType::WATER;
+BlockType Chunk::getBlockTypeAt(const float worldX, const float worldY, const float worldZ) const {
+    const int localX = static_cast<int>(worldX) - m_xStart;
+    const int localY = static_cast<int>(worldY) - m_yStart;
+    const int localZ = static_cast<int>(worldZ) - m_zStart;
+
+    if (localX >= 0 && localX < m_size &&
+        localY >= 0 && localY < m_size &&
+        localZ >= 0 && localZ < m_size) {
+        return m_blockType[localX][localY][localZ];
+        }
+
+    // If not local
+    const int chunkSize = static_cast<int>(m_size);
+    const int chunkX = static_cast<int>(std::floor(static_cast<float>(worldX) / static_cast<float>(chunkSize))) * chunkSize;
+    const int chunkY = static_cast<int>(std::floor(static_cast<float>(worldY) / static_cast<float>(chunkSize))) * chunkSize;
+    const int chunkZ = static_cast<int>(std::floor(static_cast<float>(worldZ) / static_cast<float>(chunkSize))) * chunkSize;
+
+    const std::tuple<int, int, int> chunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
+    if (m_adjacentChunks.contains(chunkKey)) {
+        return m_adjacentChunks.at(chunkKey)->getBlockTypeAtLocal(localX, localY, localZ);
+    }
+
+    return BlockType::BEDROCK;
 }
 
-BlockType Chunk::getBlockTypeAt(const float x, const float y, const float z, const World &world) {
-    if (!isBlockPresentInWorld(x, y, z, world)) return BlockType::WATER; // Air is transparent
-
-    const float noiseValue = (world.m_noise_generator().GetNoise(x, z) + 1.0f) / 2.0f;
-    const float columnHeight = noiseValue * 100.0f;
-
-    if (y > 80) return BlockType::STONE;
-    if (y > 60) return BlockType::GRASS;
-    if (y >= columnHeight && y == 60) return BlockType::WATER;
-    if (y == 0) return BlockType::BEDROCK;
-    return BlockType::STONE;
+BlockType Chunk::getBlockTypeAtLocal(const int localX, const int localY, const int localZ) const {
+    if (localX >= 0 && localX < m_size &&
+        localY >= 0 && localY < m_size &&
+        localZ >= 0 && localZ < m_size) {
+        return m_blockType[localX][localY][localZ];
+    }
+    return BlockType::BEDROCK;
 }
 
 bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY, const float worldZ, const World &world) {
