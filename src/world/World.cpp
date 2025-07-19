@@ -130,7 +130,7 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     for (unsigned int i = 0; i < numThreads; ++i) {
         threads.emplace_back([&]() {
             while (Chunk *chunk = meshQueue.pop()) {
-                chunk->generateMeshData(this);
+                chunk->generateMeshData(*this);
             }
         });
     }
@@ -151,10 +151,11 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     }
 }
 
-std::vector<Chunk *> World::getChunksToRender() {
-    std::vector<Chunk *> chunks;
+const std::vector<Chunk*>& World::getChunksToRender() {
+    thread_local std::vector<Chunk*> chunks;
+    chunks.clear();
     std::lock_guard lock(m_chunksMutex);
-    for (const auto &chunk: m_loadedChunks | std::views::values) {
+    for (const auto& chunk : m_loadedChunks | std::views::values) {
         if (chunk->m_status1() == Status::BUFFERS_SETUP) {
             chunks.push_back(chunk);
         }
@@ -166,7 +167,7 @@ const FastNoiseLite & World::m_noise_generator() const {
     return m_noiseGenerator;
 }
 
-void World::unloadDistantChunks(const glm::vec3 cameraChunkPos, const int renderDistance) {
+void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const int renderDistance) {
     std::lock_guard lock(m_chunksMutex);
     const auto maxDistance = static_cast<float>(renderDistance);
 
@@ -184,7 +185,7 @@ void World::unloadDistantChunks(const glm::vec3 cameraChunkPos, const int render
 
 void World::processChunk(Chunk *chunk, const World *world) {
     if (chunk->m_status1() < Status::MESH_GENERATED) {
-        chunk->generateMeshData(world);
+        chunk->generateMeshData(*world);
     }
     if (chunk->m_status1() < Status::BUFFERS_SETUP) {
         chunk->setupBuffers();

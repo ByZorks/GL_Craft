@@ -43,19 +43,12 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
     m_status = Status::GENERATED;
 }
 
-void Chunk::generateMeshData(const World * world) {
-    if (!world) throw std::runtime_error("World pointer is null in Chunk::generateMeshData");
+void Chunk::generateMeshData(const World &world) {
+    std::vector noiseCache(m_size, std::vector(m_size, -1.0f));
 
-    float noiseCache[m_size][m_size];
-    for (int i = 0; i < m_size; i++) {
-        for (int j = 0; j < m_size; j++) {
-            noiseCache[i][j] = -1.0f;
-        }
-    }
-
-    for (int localX = 0; localX < m_size; localX++) {
-        for (int localY = 0; localY < m_size; localY++) {
-            for (int localZ = 0; localZ < m_size; localZ++) {
+    for (int localY = 0; localY < m_size; localY++) {
+        for (int localZ = 0; localZ < m_size; localZ++) {
+            for (int localX = 0; localX < m_size; localX++) {
                 if (!isBlockPresentInLocal(localX, localY, localZ)) {
                     continue;
                 }
@@ -65,7 +58,7 @@ void Chunk::generateMeshData(const World * world) {
                 const auto worldZ = static_cast<float>(m_zStart + localZ);
                 float noiseValue = noiseCache[localX][localZ];
                 if (noiseValue == -1.0f) {
-                    noiseValue = (world->m_noise_generator().GetNoise(worldX, worldZ) + 1.0f) / 2.0f;
+                    noiseValue = (world.m_noise_generator().GetNoise(worldX, worldZ) + 1.0f) / 2.0f;
                     noiseCache[localX][localZ] = noiseValue;
                 }
                 const float columnHeight = noiseValue * 100.0f; // Scale to world height [0, 100]
@@ -139,7 +132,7 @@ void Chunk::setupBuffers() {
     m_status = Status::BUFFERS_SETUP;
 }
 
-bool Chunk::isBlockPresentInWorld(const float worldX, const float worldY, const float worldZ, const World *world) {
+bool Chunk::isBlockPresentInWorld(const float worldX, const float worldY, const float worldZ, const World &world) {
     const int localX = static_cast<int>(worldX) - m_xStart;
     const int localY = static_cast<int>(worldY) - m_yStart;
     const int localZ = static_cast<int>(worldZ) - m_zStart;
@@ -194,7 +187,7 @@ Status Chunk::m_status1() const {
     return m_status;
 }
 
-void Chunk::addBlockFaces(const float worldX, const float worldY, const float worldZ, const BlockType blockType, const World *world) {
+void Chunk::addBlockFaces(const float worldX, const float worldY, const float worldZ, const BlockType blockType, const World &world) {
     float columnIndex;
     switch (blockType) {
         case BlockType::BEDROCK: columnIndex = 0; break;
@@ -235,7 +228,7 @@ void Chunk::addBlockFaces(const float worldX, const float worldY, const float wo
     }
 }
 
-bool Chunk::shouldDrawFace(const float nx, const float ny, const float nz, const bool currentTransparent,  const World *world) {
+bool Chunk::shouldDrawFace(const float nx, const float ny, const float nz, const bool currentTransparent, const World &world) {
     return !isBlockPresentInWorld(nx, ny, nz, world) ||
            (isBlockPresentInWorld(nx, ny, nz, world) && isTransparent(getBlockTypeAt(nx, ny, nz, world)) && !currentTransparent);
 }
@@ -244,10 +237,10 @@ bool Chunk::isTransparent(const BlockType blockType) {
     return blockType == BlockType::WATER;
 }
 
-BlockType Chunk::getBlockTypeAt(const float x, const float y, const float z, const World *world) {
+BlockType Chunk::getBlockTypeAt(const float x, const float y, const float z, const World &world) {
     if (!isBlockPresentInWorld(x, y, z, world)) return BlockType::WATER; // Air is transparent
 
-    const float noiseValue = (world->m_noise_generator().GetNoise(x, z) + 1.0f) / 2.0f;
+    const float noiseValue = (world.m_noise_generator().GetNoise(x, z) + 1.0f) / 2.0f;
     const float columnHeight = noiseValue * 100.0f;
 
     if (y > 80) return BlockType::STONE;
@@ -257,7 +250,7 @@ BlockType Chunk::getBlockTypeAt(const float x, const float y, const float z, con
     return BlockType::STONE;
 }
 
-bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY, const float worldZ, const World *world) {
+bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY, const float worldZ, const World &world) {
     const int chunkSize = static_cast<int>(m_size);
     const int chunkX = static_cast<int>(std::floor(static_cast<float>(worldX) / static_cast<float>(chunkSize))) * chunkSize;
     const int chunkY = static_cast<int>(std::floor(static_cast<float>(worldY) / static_cast<float>(chunkSize))) * chunkSize;
@@ -271,7 +264,7 @@ bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY,
         return m_adjacentChunks[chunkKey]->isBlockPresentInLocal(localX, localY, localZ);
     }
 
-    if (const Chunk* chunk = world->getChunk(chunkX, chunkY, chunkZ)) {
+    if (const Chunk* chunk = world.getChunk(chunkX, chunkY, chunkZ)) {
         m_adjacentChunks[chunkKey] = chunk;
         return chunk->isBlockPresentInLocal(localX, localY, localZ);
     }

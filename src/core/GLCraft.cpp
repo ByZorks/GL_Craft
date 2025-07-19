@@ -89,17 +89,16 @@ int main(int argc, char *argv[]) {
             // Render the world
             Frustum frustum = Camera::getFrustum(mvp);
             unsigned int visibleChunksCount = 0;
-            std::vector<Chunk*> chunksToRender = world.getChunksToRender();
-            for (const auto &chunk : chunksToRender) {
-                if (camera.distanceToCamera(*chunk) > renderDistance) continue;
+            world.forEachRenderableChunk([&](const Chunk *chunk) {
+                if (camera.distanceToCamera(*chunk) > renderDistance) return;
                 if (frustum.isAABBInFrustum(chunk->m_box1())) {
                     Renderer::draw(chunk->m_vao(), chunk->m_ibo());
                     visibleChunksCount++;
                 }
-            }
+            });
 
             if (debugUI.isUIMode()) {
-                unsigned int totalChunks = chunksToRender.size();
+                unsigned int totalChunks = world.getChunksToRender().size();
                 DebugUI::render(visibleChunksCount, totalChunks, renderDistance, camera);
             }
             DebugUI::draw();

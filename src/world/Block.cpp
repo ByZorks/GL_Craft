@@ -47,7 +47,14 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<f
 
     // Helper lambda to add a vertex directly
     auto addVertex = [&vertices](float x, float y, float z, float u, float v, float nx, float ny, float nz) {
-        vertices->insert(vertices->end(), {x, y, z, u, v, nx, ny, nz});
+        vertices->emplace_back(x);
+        vertices->emplace_back(y);
+        vertices->emplace_back(z);
+        vertices->emplace_back(u);
+        vertices->emplace_back(v);
+        vertices->emplace_back(nx);
+        vertices->emplace_back(ny);
+        vertices->emplace_back(nz);
     };
 
     switch (face) {

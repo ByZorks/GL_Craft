@@ -2,6 +2,7 @@
 #define WORLD_H
 
 #include <mutex>
+#include <ranges>
 #include <unordered_map>
 
 #include "Chunk.h"
@@ -26,12 +27,21 @@ public:
 
     Chunk* getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const;
     void updateChunks(const Camera &camera, float renderDistanceInBlocks = 8.0f * static_cast<float>(Chunk::m_size1()));
-    std::vector<Chunk*> getChunksToRender();
+    const std::vector<Chunk*> & getChunksToRender();
+    template<typename Callback>
+    void forEachRenderableChunk(Callback&& callback) const {
+        std::lock_guard lock(m_chunksMutex);
+        for (const auto& chunk : m_loadedChunks | std::views::values) {
+            if (chunk->m_status1() == Status::BUFFERS_SETUP) {
+                callback(chunk);
+            }
+        }
+    }
 
     [[nodiscard]] const FastNoiseLite & m_noise_generator() const;
 
 private:
-    void unloadDistantChunks(glm::vec3 cameraChunkPos, int renderDistance);
+    void unloadDistantChunks(const glm::vec3 &cameraChunkPos, int renderDistance);
     static void processChunk(Chunk *chunk, const World *world);
 };
 

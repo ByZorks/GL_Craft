@@ -1,4 +1,12 @@
 #include "Camera.h"
+#include "Camera.h"
+#include "Camera.h"
+#include "Camera.h"
+#include "Camera.h"
+#include "Camera.h"
+#include "Camera.h"
+#include "Camera.h"
+#include "Camera.h"
 
 #include <cmath>
 
@@ -94,7 +102,7 @@ glm::mat4 Camera::getProjectionMatrix() const {
 }
 
 glm::mat4 Camera::getViewMatrix() const {
-    return glm::lookAt(m_cameraPos, m_cameraPos + m_cameraFront, m_cameraUp);;
+    return glm::lookAt(m_cameraPos, m_cameraPos + m_cameraFront, m_cameraUp);
 }
 
 Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
