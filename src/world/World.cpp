@@ -56,6 +56,7 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     std::vector<std::thread> threads;
 
     // First pass: generate voxel data for each chunk
+    auto t1 = std::chrono::high_resolution_clock::now();
     ThreadSafeQueue<Chunk *> chunkQueue;
     for (int x = -renderDistanceInChunks; x <= renderDistanceInChunks; x++) {
         for (int z = -renderDistanceInChunks; z <= renderDistanceInChunks; z++) {
@@ -102,8 +103,14 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
         if (thread.joinable()) thread.join();
     }
     threads.clear();
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+    if (ms_int.count() > 0) {
+        std::cout << "[generateVoxelData] " << ms_int.count() << "ms\n";
+    }
 
     // Second pass: generate mesh data for each chunk
+    t1 = std::chrono::high_resolution_clock::now();
     ThreadSafeQueue<Chunk *> meshQueue;
     std::vector<Chunk *> chunksToProcess;
     chunksToProcess.reserve(m_loadedChunks.size());
@@ -138,8 +145,14 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     for (auto &thread: threads) {
         if (thread.joinable()) thread.join();
     }
+    t2 = std::chrono::high_resolution_clock::now();
+    ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+    if (ms_int.count() > 0) {
+        std::cout << "[generateMeshData] " << ms_int.count() << "ms\n";
+    }
 
     // Third pass: set up buffers for each chunk
+    t1 = std::chrono::high_resolution_clock::now();
     {
         std::lock_guard lock(m_chunksMutex);
         for (auto *chunk: m_loadedChunks | std::views::values) {
@@ -148,6 +161,11 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
                 chunk->setupBuffers();
             }
         }
+    }
+    t2 = std::chrono::high_resolution_clock::now();
+    ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+    if (ms_int.count() > 0) {
+        std::cout << "[setupBuffers] " << ms_int.count() << "ms\n";
     }
 }
 
