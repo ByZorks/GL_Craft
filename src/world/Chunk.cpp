@@ -214,28 +214,22 @@ void Chunk::addBlockFaces(const float worldX, const float worldY, const float wo
 
     const bool faces[6] = {
         // TOP
-        (currentBlockTransparent) || shouldDrawFace(worldX, worldY + 1, worldZ, currentBlockTransparent, world),
-
+        shouldDrawFace(worldX, worldY + 1, worldZ, currentBlockTransparent, world),
         // BOTTOM
         shouldDrawFace(worldX, worldY - 1, worldZ, currentBlockTransparent, world),
-
         // FRONT
         shouldDrawFace(worldX, worldY, worldZ + 1, currentBlockTransparent, world),
-
         // BACK
         shouldDrawFace(worldX, worldY, worldZ - 1, currentBlockTransparent, world),
-
         // RIGHT
         shouldDrawFace(worldX + 1, worldY, worldZ, currentBlockTransparent, world),
-
         // LEFT
         shouldDrawFace(worldX - 1, worldY, worldZ, currentBlockTransparent, world)
     };
 
     for (int i = 0; i < 6; i++) {
         if (faces[i]) {
-            std::vector<float> faceVertices = Block::addFaceVertices(faceOrder[i], blockType, worldX, worldY, worldZ, u_base);
-            m_vertices.insert(m_vertices.end(), faceVertices.begin(), faceVertices.end());
+            Block::addFaceVertices(faceOrder[i], blockType, &m_vertices, worldX, worldY, worldZ, u_base);
             m_blockFaceData.push_back({faceOrder[i], 4});
         }
     }

@@ -30,7 +30,7 @@ public:
 
     void setType(BlockType type);
 
-    static std::vector<float> addFaceVertices(Face face, BlockType type, float worldX, float worldY, float worldZ, float u_base);
+    static void addFaceVertices(Face face, BlockType type, std::vector<float> *vertices, float worldX, float worldY, float worldZ, float u_base);
 };
 
 #endif //BLOCK_H

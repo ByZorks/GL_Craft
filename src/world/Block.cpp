@@ -31,7 +31,7 @@ void Block::setType(const BlockType type) {
     }
 }
 
-std::vector<float> Block::addFaceVertices(const Face face, const BlockType type, const float worldX, const float worldY, const float worldZ, const float u_base) {
+void Block::addFaceVertices(const Face face, const BlockType type, std::vector<float> *vertices, const float worldX, const float worldY, const float worldZ, const float u_base) {
     constexpr float c_texture_width = 1.0f / 15.0f;
     constexpr float c_texture_offset_0 = 0.0f;
     constexpr float c_texture_offset_33 = c_texture_width;
@@ -42,12 +42,12 @@ std::vector<float> Block::addFaceVertices(const Face face, const BlockType type,
     constexpr float c_block_max = 1.0f;
     constexpr float v_base = 0.0f;
 
-    std::vector<float> vertices;
-    vertices.reserve(4*8); // 4 vertices * 8 components per vertex
+    // std::vector<float> vertices;
+    vertices->reserve(vertices->size() + 4*8); // 4 vertices * 8 components per vertex
 
     // Helper lambda to add a vertex directly
     auto addVertex = [&vertices](float x, float y, float z, float u, float v, float nx, float ny, float nz) {
-        vertices.insert(vertices.end(), {x, y, z, u, v, nx, ny, nz});
+        vertices->insert(vertices->end(), {x, y, z, u, v, nx, ny, nz});
     };
 
     switch (face) {
@@ -103,6 +103,4 @@ std::vector<float> Block::addFaceVertices(const Face face, const BlockType type,
         default:
             throw std::invalid_argument("Invalid face type");
     }
-
-    return vertices;
 }
