@@ -9,9 +9,9 @@
 
 World::World() {
     m_noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    m_noiseGenerator.SetFrequency(.01f);
+    m_noiseGenerator.SetFrequency(.007f);
     m_noiseGenerator.SetFractalType(FastNoiseLite::FractalType_FBm);
-    m_noiseGenerator.SetFractalOctaves(4);
+    m_noiseGenerator.SetFractalOctaves(6);
 
     m_loadedChunks.reserve(16 * 16 * 16); // Reserve space for 4096 chunks initially
 }
@@ -59,13 +59,12 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     auto t1 = std::chrono::high_resolution_clock::now();
     ThreadSafeQueue<Chunk *> chunkQueue;
     for (int x = -renderDistanceInChunks; x <= renderDistanceInChunks; x++) {
+        const int chunkX = cameraWorldX + x * chunkSize;
+
         for (int z = -renderDistanceInChunks; z <= renderDistanceInChunks; z++) {
-            const int chunkX = cameraWorldX + x * chunkSize;
             const int chunkZ = cameraWorldZ + z * chunkSize;
 
-            constexpr int maxChunkY = 100;
-
-            for (int y = 0; y * chunkSize <= maxChunkY; y++) {
+            for (int y = 0; y * chunkSize <= 200; y++) {
                 const int chunkY = y * chunkSize;
                 const glm::vec3 chunkPos(chunkX, chunkY, chunkZ);
 

@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     if (!glfwInit())
         return -1;
 
-    GLFWwindow *window = glfwCreateWindow(1280, 720, "GLCraft", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(1920, 1080, "GLCraft", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     glfwMakeContextCurrent(window);
 
     // Camera
-    Camera camera(1280, 720);
+    Camera camera(1920, 1080);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(window, &camera);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);

@@ -1,7 +1,6 @@
 #include "Chunk.h"
 
 #include <cmath>
-#include <iostream>
 
 #include "Block.h"
 #include "World.h"
@@ -23,20 +22,28 @@ Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), 
 Chunk::~Chunk() = default;
 
 void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
+    constexpr int waterLevel = 62;
+    constexpr int baseHeight = 60;
+    constexpr float maxHeight = 200.0f; // Max height variation
+
     for (int localX = 0; localX < m_size; localX++) {
         const auto worldX = static_cast<float>(m_xStart + localX);
+
         for (int localZ = 0; localZ < m_size; localZ++) {
             const auto worldZ = static_cast<float>(m_zStart + localZ);
 
-            // Calculate height for this specific block column
-            const float noiseValue = (noiseGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
-            const int columnHeight = static_cast<int>(noiseValue * 100.0f); // Scale to world height [0, 100]
+            const float normalizedNoise = (noiseGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
+            const float terrainShape = std::pow(normalizedNoise, 4.5f); // Create more plains and sharper mountains
+            const int columnHeight = baseHeight + static_cast<int>(terrainShape * maxHeight); // Scale to world height
 
             for (int localY = 0; localY < m_size; localY++) {
                 const int worldY = m_yStart + localY;
-                if (worldY < columnHeight || worldY == 60) {
+                if (worldY <= columnHeight) {
                     m_blockPresent[localX][localY][localZ] = true;
                     m_blockType[localX][localY][localZ] = Block::getBlockType(worldY, columnHeight);
+                } else if (worldY < waterLevel) {
+                    m_blockPresent[localX][localY][localZ] = true;
+                    m_blockType[localX][localY][localZ] = BlockType::WATER;
                 }
             }
         }
@@ -157,6 +164,7 @@ Status Chunk::m_status1() const {
 }
 
 void Chunk::addBlockFaces(const float worldX, const float worldY, const float worldZ, const BlockType blockType, const World &world) {
+    if (blockType == BlockType::UNKNOWN) return;
     const float columnIndex = Block::getTextureColumnIndex(blockType);
     constexpr float TEXTURE_WIDTH = 1.0f / 15.0f;
     const float u_base = columnIndex * TEXTURE_WIDTH;

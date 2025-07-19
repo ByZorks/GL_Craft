@@ -32,12 +32,11 @@ void Block::setType(const BlockType type) {
 }
 
 BlockType Block::getBlockType(const int y, const int columnHeight) {
-    if (y < 0) return BlockType::UNKNOWN; // Invalid height
+    if (y < 0) return BlockType::UNKNOWN;
     if (y == 0) return BlockType::BEDROCK;
-    if (y < 60) return BlockType::STONE;
-    if (y == 60 && y > columnHeight) return BlockType::WATER;
-    if (y < 80) return BlockType::GRASS;
-    if (y < 100) return BlockType::STONE;
+    if (y < columnHeight - 4) return BlockType::STONE;
+    if (y < columnHeight) return BlockType::DIRT;
+    if (y == columnHeight) return BlockType::GRASS;
     return BlockType::UNKNOWN;
 }
 
