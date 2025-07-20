@@ -7,6 +7,8 @@
 #include "../render/Camera.h"
 #include "../utils/ThreadSafeQueue.h"
 
+unsigned int World::s_numberOfThreads = std::max(1u, std::thread::hardware_concurrency());
+
 World::World() {
     m_noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
     m_noiseGenerator.SetFrequency(.007f);
@@ -33,26 +35,28 @@ Chunk *World::getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const {
 
 void World::updateChunks(const Camera &camera, const float renderDistanceInBlocks) {
     const int chunkSize = static_cast<int>(Chunk::m_size1());
-    const int renderDistanceInChunks = static_cast<int>(renderDistanceInBlocks) / chunkSize + 1; // +1 to include the next chunk after the render distance
+    const int renderDistanceInChunks = static_cast<int>(renderDistanceInBlocks) / chunkSize;
     const glm::vec3 cameraPos = camera.m_camera_pos();
 
     // Calculate which chunk the camera is in
     const int cameraChunkX = static_cast<int>(std::floor(cameraPos.x / static_cast<float>(chunkSize)));
+    const int cameraChunkY = static_cast<int>(std::floor(cameraPos.y / static_cast<float>(chunkSize)));
     const int cameraChunkZ = static_cast<int>(std::floor(cameraPos.z / static_cast<float>(chunkSize)));
 
-    if (m_lastCameraChunkPos.x == static_cast<float>(cameraChunkX) && m_lastCameraChunkPos.y == static_cast<float>(
-            cameraChunkZ)) {
+    if (m_lastCameraChunkPos.x == static_cast<float>(cameraChunkX) &&
+        m_lastCameraChunkPos.y == static_cast<float>(cameraChunkY) &&
+        m_lastCameraChunkPos.z == static_cast<float>(cameraChunkZ)) {
         return; // Camera hasn't moved to a new chunk, no need to update
     }
-    m_lastCameraChunkPos = {cameraChunkX, cameraChunkZ};
+    m_lastCameraChunkPos = {cameraChunkX, cameraChunkY, cameraChunkZ};
 
     const int cameraWorldX = cameraChunkX * chunkSize;
+    const int cameraWorldY = cameraChunkY * chunkSize;
     const int cameraWorldZ = cameraChunkZ * chunkSize;
-    const glm::vec3 cameraChunkPos(cameraWorldX, 0, cameraWorldZ);
+    const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
     unloadDistantChunks(cameraChunkPos, static_cast<int>(renderDistanceInBlocks));
 
-    const unsigned int numThreads = std::max(1u, std::thread::hardware_concurrency());
     std::vector<std::thread> threads;
 
     // First pass: generate voxel data for each chunk
@@ -64,17 +68,19 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
         for (int z = -renderDistanceInChunks; z <= renderDistanceInChunks; z++) {
             const int chunkZ = cameraWorldZ + z * chunkSize;
 
-            for (int y = 0; y * chunkSize <= 200; y++) {
-                const int chunkY = y * chunkSize;
+            for (int y = -renderDistanceInChunks; y <= renderDistanceInChunks; y++) {
+                const int chunkY = cameraWorldY + y * chunkSize;
+                if (chunkY < 0 || chunkY > 200) continue; // World height limit
                 const glm::vec3 chunkPos(chunkX, chunkY, chunkZ);
 
                 // Check if the chunk is within the render distance
-                if (const float distance = glm::distance(cameraChunkPos, chunkPos); distance > renderDistanceInBlocks) {
+                if (glm::distance(cameraChunkPos, chunkPos) > renderDistanceInBlocks) {
                     continue;
                 }
 
                 const std::tuple<int, int, int> existingChunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
-                bool chunkExists = false; {
+                bool chunkExists = false;
+                {
                     std::lock_guard lock(m_chunksMutex);
                     chunkExists = m_loadedChunks.contains(existingChunkKey);
                 }
@@ -90,8 +96,8 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     }
 
     chunkQueue.done();
-    for (unsigned int i = 0; i < numThreads; ++i) {
-        threads.emplace_back([&]() {
+    for (unsigned int i = 0; i < s_numberOfThreads; ++i) {
+        threads.emplace_back([this, &chunkQueue] {
             while (Chunk *chunk = chunkQueue.pop()) {
                 chunk->generateVoxelData(m_noiseGenerator);
             }
@@ -111,30 +117,23 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     // Second pass: generate mesh data for each chunk
     t1 = std::chrono::high_resolution_clock::now();
     ThreadSafeQueue<Chunk *> meshQueue;
-    std::vector<Chunk *> chunksToProcess;
-    chunksToProcess.reserve(m_loadedChunks.size());
     {
         std::lock_guard lock(m_chunksMutex);
-        for (const auto &chunk: m_loadedChunks | std::views::values) {
-            chunksToProcess.push_back(chunk);
-        }
-    }
+        for (auto &chunk: m_loadedChunks | std::views::values) {
+            const glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
+            if (glm::distance(cameraChunkPos, chunkPos) > renderDistanceInBlocks - static_cast<float>(chunkSize)) {
+                continue;
+            }
 
-    for (const auto &chunk: chunksToProcess) {
-        const glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
-        if (const float distance = glm::distance(cameraChunkPos, chunkPos);
-            distance > renderDistanceInBlocks - static_cast<float>(chunkSize)) {
-            continue;
-        }
-
-        if (chunk->m_status1() < Status::MESH_GENERATED) {
-            meshQueue.push(chunk);
+            if (chunk->m_status1() < Status::MESH_GENERATED) {
+                meshQueue.push(chunk);
+            }
         }
     }
 
     meshQueue.done();
-    for (unsigned int i = 0; i < numThreads; ++i) {
-        threads.emplace_back([&]() {
+    for (unsigned int i = 0; i < s_numberOfThreads; ++i) {
+        threads.emplace_back([this, &meshQueue] {
             while (Chunk *chunk = meshQueue.pop()) {
                 chunk->generateMeshData(*this);
             }

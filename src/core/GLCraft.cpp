@@ -79,12 +79,7 @@ int main(int argc, char *argv[]) {
             shader.setUniformMat4f("u_MVP", mvp);
 
             // Chunks generation
-            auto t1 = std::chrono::high_resolution_clock::now();
             world.updateChunks(camera, renderDistance);
-            auto t2 = std::chrono::high_resolution_clock::now();
-
-            auto ms_int = duration_cast<std::chrono::milliseconds>(t2 - t1);
-            if (ms_int.count() > 0) std::cout << "[updateChunks] " << ms_int.count() << "ms\n";
 
             // Render the world
             Frustum frustum = Camera::getFrustum(mvp);
