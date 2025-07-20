@@ -1,7 +1,11 @@
 #ifndef OPENGLDEBUG_H
 #define OPENGLDEBUG_H
 
-#define ASSERT(x) if (!(x)) __debugbreak();
+#ifdef _WIN32
+    #define ASSERT(x) if (!(x)) __debugbreak();
+#else
+    #define ASSERT(x) if (!(x)) __builtin_trap();  // Utilisé sous Linux
+#endif
 #define GLCall(x) GLClearError();\
 x;\
 ASSERT(GLLogCall(#x, __FILE__, __LINE__))
