@@ -78,21 +78,15 @@ void Chunk::setupBuffers() {
     chunkIndices.reserve(m_blockFaceData.size() * 6); // 6 indices per face (2 triangles)
     unsigned int vertexOffset = 0;
 
-    for (const auto&[faceType, vertexCount] : m_blockFaceData) {
-        unsigned int baseIdx = vertexOffset;
-
-        if (faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP) {
-            chunkIndices.insert(chunkIndices.end(), {
-                baseIdx, baseIdx + 1, baseIdx + 2,
-                baseIdx, baseIdx + 2, baseIdx + 3
-            });
-        } else {
-            chunkIndices.insert(chunkIndices.end(), {
-                baseIdx, baseIdx + 2, baseIdx + 1,
-                baseIdx, baseIdx + 3, baseIdx + 2
-            });
+    for (const auto& [faceType, vertexCount] : m_blockFaceData) {
+        constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
+        constexpr unsigned int faceIndicesCW[6]  = {0, 1, 2, 0, 2, 3};
+        const unsigned int* indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
+            ? faceIndicesCW
+            : faceIndicesCCW;
+        for (int i = 0; i < 6; ++i) {
+            chunkIndices.push_back(vertexOffset + indices[i]);
         }
-
         vertexOffset += vertexCount;
     }
 
@@ -166,50 +160,50 @@ Status Chunk::m_status1() const {
 void Chunk::addBlockFaces(const float worldX, const float worldY, const float worldZ, const BlockType blockType, const World &world) {
     if (blockType == BlockType::AIR) return;
 
-    constexpr Face faceOrder[6] = {Face::TOP, Face::BOTTOM, Face::FRONT, Face::BACK, Face::RIGHT, Face::LEFT};
-
     const bool currentBlockTransparent = Block::isTransparent(blockType);
 
-    const bool faces[6] = {
-        // TOP
-        shouldDrawFace(worldX, worldY + 1, worldZ, currentBlockTransparent, world),
-        // BOTTOM
-        shouldDrawFace(worldX, worldY - 1, worldZ, currentBlockTransparent, world),
-        // FRONT
-        shouldDrawFace(worldX, worldY, worldZ + 1, currentBlockTransparent, world),
-        // BACK
-        shouldDrawFace(worldX, worldY, worldZ - 1, currentBlockTransparent, world),
-        // RIGHT
-        shouldDrawFace(worldX + 1, worldY, worldZ, currentBlockTransparent, world),
-        // LEFT
-        shouldDrawFace(worldX - 1, worldY, worldZ, currentBlockTransparent, world)
-    };
-
-    for (int i = 0; i < 6; i++) {
-        if (faces[i]) {
-            Block::addFaceVertices(faceOrder[i], blockType, m_vertices, worldX, worldY, worldZ);
-            m_blockFaceData.push_back({faceOrder[i], 4});
-        }
+    if (shouldDrawFace(worldX, worldY + 1, worldZ, currentBlockTransparent, world)) {
+        Block::addFaceVertices(Face::TOP, blockType, m_vertices, worldX, worldY, worldZ);
+        m_blockFaceData.emplace_back(Face::TOP, 4);
+    }
+    if (shouldDrawFace(worldX, worldY - 1, worldZ, currentBlockTransparent, world)) {
+        Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, worldX, worldY, worldZ);
+        m_blockFaceData.emplace_back(Face::BOTTOM, 4);
+    }
+    if (shouldDrawFace(worldX, worldY, worldZ + 1, currentBlockTransparent, world)) {
+        Block::addFaceVertices(Face::FRONT, blockType, m_vertices, worldX, worldY, worldZ);
+        m_blockFaceData.emplace_back(Face::FRONT, 4);
+    }
+    if (shouldDrawFace(worldX, worldY, worldZ - 1, currentBlockTransparent, world)) {
+        Block::addFaceVertices(Face::BACK, blockType, m_vertices, worldX, worldY, worldZ);
+        m_blockFaceData.emplace_back(Face::BACK, 4);
+    }
+    if (shouldDrawFace(worldX + 1, worldY, worldZ, currentBlockTransparent, world)) {
+        Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, worldX, worldY, worldZ);
+        m_blockFaceData.emplace_back(Face::RIGHT, 4);
+    }
+    if (shouldDrawFace(worldX - 1, worldY, worldZ, currentBlockTransparent, world)) {
+        Block::addFaceVertices(Face::LEFT, blockType, m_vertices, worldX, worldY, worldZ);
+        m_blockFaceData.emplace_back(Face::LEFT, 4);
     }
 }
 
 bool Chunk::shouldDrawFace(const float nx, const float ny, const float nz, const bool currentTransparent, const World &world) {
-    const BlockType neighborType = getBlockTypeAt(nx, ny, nz, world);
-    const bool neighborTransparent = Block::isTransparent(neighborType);
-
     if (!isBlockPresentInWorld(nx, ny, nz, world)) {
         return true; // Air block, always draw face
     }
 
-    if (neighborTransparent && !currentTransparent) {
-        return true; // Solid block next to a transparent one
-    }
+    const BlockType neighborType = getBlockTypeAt(nx, ny, nz, world);
 
+    // Don't draw faces between water blocks
     if (currentTransparent && neighborType == BlockType::WATER) {
-        return false; // Don't draw faces between water blocks
+        return false;
     }
 
-    return false; // Face is hidden by another solid block
+    const bool neighborTransparent = Block::isTransparent(neighborType);
+
+    // Draw face if neighbor is transparent and current block is solid
+    return neighborTransparent && !currentTransparent;
 }
 
 BlockType Chunk::getBlockTypeAt(const float worldX, const float worldY, const float worldZ, const World &world) {
@@ -233,11 +227,13 @@ BlockType Chunk::getBlockTypeAt(const float worldX, const float worldY, const fl
     const int neighborLocalY = static_cast<int>(worldY) - chunkY;
     const int neighborLocalZ = static_cast<int>(worldZ) - chunkZ;
 
+    // Check cache first
     const std::tuple<int, int, int> chunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
-    if (m_adjacentChunks.contains(chunkKey)) {
-        return m_adjacentChunks.at(chunkKey)->getBlockTypeAtLocal(neighborLocalX, neighborLocalY, neighborLocalZ);
+    if (const auto it = m_adjacentChunks.find(chunkKey); it != m_adjacentChunks.end()) {
+        return it->second->getBlockTypeAtLocal(neighborLocalX, neighborLocalY, neighborLocalZ);
     }
 
+    // Get chunk from world and cache it
     if (const Chunk* chunk = world.getChunk(chunkX, chunkY, chunkZ)) {
         m_adjacentChunks[chunkKey] = chunk;
         return chunk->getBlockTypeAtLocal(neighborLocalX, neighborLocalY, neighborLocalZ);
@@ -265,8 +261,9 @@ bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY,
     const int localX = static_cast<int>(worldX) - chunkX;
     const int localY = static_cast<int>(worldY) - chunkY;
     const int localZ = static_cast<int>(worldZ) - chunkZ;
-    if (m_adjacentChunks.contains(chunkKey)) {
-        return m_adjacentChunks[chunkKey]->isBlockPresentInLocal(localX, localY, localZ);
+
+    if (const auto it = m_adjacentChunks.find(chunkKey); it != m_adjacentChunks.end()) {
+        return it->second->isBlockPresentInLocal(localX, localY, localZ);
     }
 
     if (const Chunk* chunk = world.getChunk(chunkX, chunkY, chunkZ)) {
