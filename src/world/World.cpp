@@ -58,6 +58,7 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     unloadDistantChunks(cameraChunkPos, static_cast<int>(renderDistanceInBlocks));
 
     std::vector<std::thread> threads;
+    threads.reserve(s_numberOfThreads);
 
     // First pass: generate voxel data for each chunk
     auto t1 = std::chrono::high_resolution_clock::now();

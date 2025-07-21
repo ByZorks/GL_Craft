@@ -47,6 +47,8 @@ public:
     static BlockType getBlockType(int y, int columnHeight);
     static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, float block_startX, float block_startY, float block_startZ);
     static bool isTransparent(BlockType type);
+
+private:
     static float getTextureU(BlockType type, Face face);
 };
 
