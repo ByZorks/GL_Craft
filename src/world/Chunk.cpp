@@ -17,7 +17,7 @@ Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), 
                                                                  )) {
     constexpr size_t max_faces = 6 * 16 * 16 * 16;
     constexpr size_t avg_faces = max_faces / 4; // Assuming each block has a quarter of the maximum faces
-    m_vertices.reserve(avg_faces * 4 * 8); // avg_faces * 4 vertices_per_face * 8 floats_per_vertex
+    m_vertices.reserve(avg_faces * 4); // avg_faces * 4 vertices per face
     m_blockFaceData.reserve(avg_faces);
 }
 
@@ -98,7 +98,7 @@ void Chunk::setupBuffers() {
         vertexOffset += vertexCount;
     }
 
-    m_VBO.init(m_vertices.data(), sizeof(float) * m_vertices.size());
+    m_VBO.init(m_vertices.data(), m_vertices.size() * sizeof(BlockVertex));
     m_IBO.init(chunkIndices.data(), chunkIndices.size());
 
     VertexBufferLayout chunkLayout;
@@ -166,10 +166,7 @@ Status Chunk::m_status1() const {
 }
 
 void Chunk::addBlockFaces(const float worldX, const float worldY, const float worldZ, const BlockType blockType, const World &world) {
-    if (blockType == BlockType::UNKNOWN) return;
-    const float columnIndex = Block::getTextureColumnIndex(blockType);
-    constexpr float TEXTURE_WIDTH = 1.0f / 15.0f;
-    const float u_base = columnIndex * TEXTURE_WIDTH;
+    if (blockType == BlockType::AIR) return;
 
     constexpr Face faceOrder[6] = {Face::TOP, Face::BOTTOM, Face::FRONT, Face::BACK, Face::RIGHT, Face::LEFT};
 
@@ -192,7 +189,7 @@ void Chunk::addBlockFaces(const float worldX, const float worldY, const float wo
 
     for (int i = 0; i < 6; i++) {
         if (faces[i]) {
-            Block::addFaceVertices(faceOrder[i], blockType, &m_vertices, worldX, worldY, worldZ, u_base);
+            Block::addFaceVertices(faceOrder[i], blockType, m_vertices, worldX, worldY, worldZ);
             m_blockFaceData.push_back({faceOrder[i], 4});
         }
     }
@@ -248,7 +245,7 @@ BlockType Chunk::getBlockTypeAt(const float worldX, const float worldY, const fl
         return chunk->getBlockTypeAtLocal(neighborLocalX, neighborLocalY, neighborLocalZ);
     }
 
-    return BlockType::UNKNOWN;
+    return BlockType::AIR;
 }
 
 BlockType Chunk::getBlockTypeAtLocal(const int localX, const int localY, const int localZ) const {
@@ -257,7 +254,7 @@ BlockType Chunk::getBlockTypeAtLocal(const int localX, const int localY, const i
         localZ >= 0 && localZ < m_size) {
         return m_blockType[localX][localY][localZ];
     }
-    return BlockType::UNKNOWN;
+    return BlockType::AIR;
 }
 
 bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY, const float worldZ, const World &world) {

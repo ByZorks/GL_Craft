@@ -28,7 +28,7 @@ class Chunk {
 private:
     static unsigned int m_size;
     int m_xStart, m_yStart, m_zStart;
-    std::vector<float> m_vertices;
+    std::vector<BlockVertex> m_vertices;
     std::vector<BlockFaceData> m_blockFaceData;
     bool m_blockPresent[16][16][16] = {{{false}}}; // 16x16x16 chunk size
     std::unordered_map<std::tuple<int, int, int>, const Chunk*> m_adjacentChunks;
