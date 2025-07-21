@@ -54,8 +54,6 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
 }
 
 void Chunk::generateMeshData(const World &world) {
-    std::vector noiseCache(m_size, std::vector(m_size, -1.0f));
-
     for (int localX = 0; localX < m_size; localX++) {
         const auto worldX = static_cast<float>(m_xStart + localX);
 
