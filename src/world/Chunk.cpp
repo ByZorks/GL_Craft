@@ -50,7 +50,8 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
             }
         }
     }
-    m_status = Status::GENERATED;
+
+    m_status = Status::VOXEL_GENERATED;
 }
 
 void Chunk::generateMeshData(const World &world) {

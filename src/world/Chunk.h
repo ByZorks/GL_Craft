@@ -19,7 +19,7 @@ struct BlockFaceData {
 
 enum class Status {
     NOT_GENERATED = 0,
-    GENERATED = 1,
+    VOXEL_GENERATED = 1,
     MESH_GENERATED = 2,
     BUFFERS_SETUP = 3
 };
