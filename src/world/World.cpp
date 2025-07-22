@@ -17,13 +17,10 @@ World::World(): m_threadPool(std::max(1u, std::thread::hardware_concurrency())) 
 }
 
 World::~World() {
-    for (const auto &chunk: m_loadedChunks | std::views::values) {
-        delete chunk;
-    }
     m_loadedChunks.clear();
 }
 
-Chunk *World::getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const {
+std::shared_ptr<Chunk> World::getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const {
     std::lock_guard lock(m_chunksMutex);
     if (const auto key = std::make_tuple(chunkBaseX, chunkBaseY, chunkBaseZ); m_loadedChunks.contains(key)) {
         return m_loadedChunks.at(key);
@@ -57,7 +54,7 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
 
     // First pass: generate voxel data for each chunk
     std::vector<std::future<void>> chunkGenerationFutures;
-    chunkGenerationFutures.reserve(renderDistanceInChunks * renderDistanceInChunks * renderDistanceInChunks);
+    chunkGenerationFutures.reserve(renderDistanceInChunks*2 * renderDistanceInChunks*2 * renderDistanceInChunks*2);
     auto t1 = std::chrono::high_resolution_clock::now();
     for (int x = -renderDistanceInChunks; x <= renderDistanceInChunks; x++) {
         const int chunkX = cameraWorldX + x * chunkSize;
@@ -83,13 +80,13 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
                 if (chunkExists) continue;
 
                 // Create a new chunk if it doesn't exist
-                auto *chunk = new Chunk(chunkX, chunkY, chunkZ);
+                const auto chunk_ptr = std::make_shared<Chunk>(chunkX, chunkY, chunkZ);
                 chunkGenerationFutures.push_back(m_threadPool.enqueue([=, this] {
                     {
                         std::lock_guard lock(m_chunksMutex);
-                        m_loadedChunks[existingChunkKey] = chunk;
+                        m_loadedChunks[existingChunkKey] = chunk_ptr;
                     }
-                    chunk->generateVoxelData(m_noiseGenerator);
+                    chunk_ptr->generateVoxelData(m_noiseGenerator);
                 }));
             }
         }
@@ -108,7 +105,7 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     t1 = std::chrono::high_resolution_clock::now();
     {
         std::lock_guard lock(m_chunksMutex);
-        for (auto &chunk: m_loadedChunks | std::views::values) {
+        for (const auto &chunk: m_loadedChunks | std::views::values) {
             const glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
             if (glm::distance(cameraChunkPos, chunkPos) > renderDistanceInBlocks - static_cast<float>(chunkSize)) {
                 continue;
@@ -117,51 +114,42 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
             if (chunk->m_status1() == Status::VOXEL_GENERATED) {
                 chunkGenerationFutures.push_back(m_threadPool.enqueue([=, this] {
                     chunk->generateMeshData(*this);
+                    if (chunk->m_status1() < Status::BUFFERS_SETUP) {
+                        m_chunksToRender.push(chunk);
+                    }
                 }));
             }
         }
     }
-
-    for (auto &f : chunkGenerationFutures) f.get();
 
     t2 = std::chrono::high_resolution_clock::now();
     ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
     if (ms_int.count() > 0) {
         std::cout << "[generateMeshData] " << ms_int.count() << "ms\n";
     }
-
-    // Third pass: set up buffers for each chunk
-    t1 = std::chrono::high_resolution_clock::now();
-    {
-        std::lock_guard lock(m_chunksMutex);
-        for (auto *chunk: m_loadedChunks | std::views::values) {
-            if (chunk->m_status1() == Status::MESH_GENERATED) {
-                chunk->setupBuffers();
-            }
-        }
-    }
-
-    t2 = std::chrono::high_resolution_clock::now();
-    ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
-    if (ms_int.count() > 0) {
-        std::cout << "[setupBuffers] " << ms_int.count() << "ms\n";
-    }
 }
 
-const std::vector<Chunk*>& World::getChunksToRender() {
-    thread_local std::vector<Chunk*> chunks;
-    chunks.clear();
-    std::lock_guard lock(m_chunksMutex);
-    for (const auto& chunk : m_loadedChunks | std::views::values) {
-        if (chunk->m_status1() == Status::BUFFERS_SETUP) {
-            chunks.push_back(chunk);
+void World::processRenderQueue() {
+    if (m_chunksToRender.empty()) return;
+    int processedCount = 0;
+    constexpr int maxToProcessPerFrame = 4;
+    while (processedCount < maxToProcessPerFrame) {
+        std::shared_ptr<Chunk> chunkToSetup = m_chunksToRender.pop();
+        if (chunkToSetup == nullptr) break;
+
+        if (chunkToSetup && chunkToSetup->m_status1() == Status::MESH_GENERATED) {
+            chunkToSetup->setupBuffers();
         }
+        processedCount++;
     }
-    return chunks;
 }
 
 const FastNoiseLite & World::m_noise_generator() const {
     return m_noiseGenerator;
+}
+
+const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & World::m_loaded_chunks() const {
+    return m_loadedChunks;
 }
 
 void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const int renderDistance) {
@@ -169,22 +157,12 @@ void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const int rende
     const auto maxDistance = static_cast<float>(renderDistance);
 
     for (auto it = m_loadedChunks.begin(); it != m_loadedChunks.end();) {
-        const Chunk *chunk = it->second;
+        const std::shared_ptr<Chunk> chunk = it->second;
         if (glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
             glm::distance(cameraChunkPos, chunkPos) > maxDistance) {
-            delete chunk;
             it = m_loadedChunks.erase(it);
         } else {
             ++it;
         }
-    }
-}
-
-void World::processChunk(Chunk *chunk, const World *world) {
-    if (chunk->m_status1() < Status::MESH_GENERATED) {
-        chunk->generateMeshData(*world);
-    }
-    if (chunk->m_status1() < Status::BUFFERS_SETUP) {
-        chunk->setupBuffers();
     }
 }

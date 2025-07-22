@@ -235,9 +235,9 @@ BlockType Chunk::getBlockTypeAt(const float worldX, const float worldY, const fl
     }
 
     // Get chunk from world and cache it
-    if (const Chunk* chunk = world.getChunk(chunkX, chunkY, chunkZ)) {
-        m_adjacentChunks[chunkKey] = chunk;
-        return chunk->getBlockTypeAtLocal(neighborLocalX, neighborLocalY, neighborLocalZ);
+    if (const std::shared_ptr<Chunk> chunk_ptr = world.getChunk(chunkX, chunkY, chunkZ)) {
+        m_adjacentChunks[chunkKey] = chunk_ptr;
+        return chunk_ptr->getBlockTypeAtLocal(neighborLocalX, neighborLocalY, neighborLocalZ);
     }
 
     return BlockType::AIR;
@@ -267,7 +267,7 @@ bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY,
         return it->second->isBlockPresentInLocal(localX, localY, localZ);
     }
 
-    if (const Chunk* chunk = world.getChunk(chunkX, chunkY, chunkZ)) {
+    if (const std::shared_ptr<Chunk> chunk = world.getChunk(chunkX, chunkY, chunkZ)) {
         m_adjacentChunks[chunkKey] = chunk;
         return chunk->isBlockPresentInLocal(localX, localY, localZ);
     }

@@ -84,16 +84,17 @@ int main(int argc, char *argv[]) {
             // Render the world
             Frustum frustum = Camera::getFrustum(mvp);
             unsigned int visibleChunksCount = 0;
-            world.forEachRenderableChunk([&](const Chunk *chunk) {
-                if (camera.distanceToCamera(*chunk) > renderDistance) return;
-                if (!frustum.isAABBInFrustum(chunk->m_box1())) return;
+            world.processRenderQueue(); // Process chunks that are ready to be rendered
+            world.forEachRenderableChunk([&](const std::shared_ptr<Chunk> &chunk_ptr) {
+                if (camera.distanceToCamera(*chunk_ptr) > renderDistance) return;
+                if (!frustum.isAABBInFrustum(chunk_ptr->m_box1())) return;
 
-                Renderer::draw(chunk->m_vao(), chunk->m_ibo());
+                Renderer::draw(chunk_ptr->m_vao(), chunk_ptr->m_ibo());
                 visibleChunksCount++;
             });
 
             if (debugUI.isUIMode()) {
-                unsigned int totalChunks = world.getChunksToRender().size();
+                unsigned int totalChunks = world.m_loaded_chunks().size();
                 DebugUI::render(visibleChunksCount, totalChunks, renderDistance, camera);
             }
             DebugUI::draw();

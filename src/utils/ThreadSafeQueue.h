@@ -28,13 +28,15 @@ public:
         condVar_.notify_all();
     }
 
+    [[nodiscard]] bool empty() {
+        std::lock_guard lk(mutex_);
+        return queue_.empty();
+    }
+
     T pop() {
         std::unique_lock lk(mutex_);
+        if (queue_.empty()) return nullptr;
         condVar_.wait(lk, [&]{ return done_ || !queue_.empty(); });
-        if (queue_.empty()) {
-            // plus rien à faire, on signale la fin
-            return nullptr;
-        }
         T item = queue_.front();
         queue_.pop();
         return item;

@@ -1,5 +1,6 @@
 #ifndef CHUNK_H
 #define CHUNK_H
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -31,7 +32,7 @@ private:
     std::vector<BlockVertex> m_vertices;
     std::vector<BlockFaceData> m_blockFaceData;
     bool m_blockPresent[16][16][16] = {{{false}}}; // 16x16x16 chunk size
-    std::unordered_map<std::tuple<int, int, int>, const Chunk*> m_adjacentChunks;
+    std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> m_adjacentChunks;
     BlockType m_blockType[16][16][16] = {{{BlockType::AIR}}}; // Default block type
     Status m_status = Status::NOT_GENERATED;
     VertexArray m_VAO;

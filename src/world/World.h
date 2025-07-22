@@ -1,49 +1,61 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+#include <iostream>
 #include <mutex>
 #include <ranges>
 #include <unordered_map>
 
 #include "Chunk.h"
-#include <vector>
 
 #include "vec2.hpp"
 #include "FastNoiseLite.h"
 #include "../render/ThreadPool.h"
+#include "../utils/ThreadSafeQueue.h"
 
 class Camera;
 
 class World {
 private:
-    std::unordered_map<std::tuple<int, int, int>, Chunk*> m_loadedChunks;
+    std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> m_loadedChunks;
     mutable std::mutex m_chunksMutex;
     glm::vec3 m_lastCameraChunkPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
     FastNoiseLite m_noiseGenerator;
     ThreadPool m_threadPool;
+    ThreadSafeQueue<std::shared_ptr<Chunk>> m_chunksToRender;
 
 public:
     World();
     ~World();
 
-    Chunk* getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const;
+    std::shared_ptr<Chunk> getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const;
     void updateChunks(const Camera &camera, float renderDistanceInBlocks = 8.0f * static_cast<float>(Chunk::m_size1()));
-    const std::vector<Chunk*> & getChunksToRender();
+    void processRenderQueue();
     template<typename Callback>
-    void forEachRenderableChunk(Callback&& callback) const;
+    void forEachRenderableChunk(Callback&& callback);
 
     [[nodiscard]] const FastNoiseLite & m_noise_generator() const;
+    [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
 
 private:
     void unloadDistantChunks(const glm::vec3 &cameraChunkPos, int renderDistance);
-    static void processChunk(Chunk *chunk, const World *world);
 };
 
 template<typename Callback>
-void World::forEachRenderableChunk(Callback &&callback) const {
+void World::forEachRenderableChunk(Callback &&callback) {
+    // Process chunks that are ready to be rendered
+    std::shared_ptr<Chunk> chunkToSetup;
+    constexpr int maxToProcessPerFrame = 4;
+    for (int i = 0; i < maxToProcessPerFrame && ((chunkToSetup = m_chunksToRender.pop())); ++i) {
+        if (chunkToSetup && chunkToSetup->m_status1() == Status::MESH_GENERATED) {
+            chunkToSetup->setupBuffers();
+        }
+    }
+
+    // Call the callback for each chunk that is ready to be rendered
     std::lock_guard lock(m_chunksMutex);
     for (const auto& chunk : m_loadedChunks | std::views::values) {
-        if (chunk->m_status1() == Status::BUFFERS_SETUP) {
+        if (chunk && chunk->m_status1() == Status::BUFFERS_SETUP) {
             callback(chunk);
         }
     }
