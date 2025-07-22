@@ -10,16 +10,17 @@
 
 #include "vec2.hpp"
 #include "FastNoiseLite.h"
+#include "../render/ThreadPool.h"
 
 class Camera;
 
 class World {
 private:
     std::unordered_map<std::tuple<int, int, int>, Chunk*> m_loadedChunks;
+    mutable std::mutex m_chunksMutex;
     glm::vec3 m_lastCameraChunkPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
     FastNoiseLite m_noiseGenerator;
-    mutable std::mutex m_chunksMutex;
-    static unsigned int s_numberOfThreads;
+    ThreadPool m_threadPool;
 
 public:
     World();

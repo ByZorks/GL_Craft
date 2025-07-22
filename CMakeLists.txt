@@ -61,6 +61,8 @@ add_executable(GL_Craft
         src/ui/DebugUI.h
         src/utils/ThreadSafeQueue.h
         src/utils/CustomHash.h
+        src/render/ThreadPool.h
+        src/render/ThreadPool.cpp
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

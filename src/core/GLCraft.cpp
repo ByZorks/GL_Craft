@@ -86,10 +86,10 @@ int main(int argc, char *argv[]) {
             unsigned int visibleChunksCount = 0;
             world.forEachRenderableChunk([&](const Chunk *chunk) {
                 if (camera.distanceToCamera(*chunk) > renderDistance) return;
-                if (frustum.isAABBInFrustum(chunk->m_box1())) {
-                    Renderer::draw(chunk->m_vao(), chunk->m_ibo());
-                    visibleChunksCount++;
-                }
+                if (!frustum.isAABBInFrustum(chunk->m_box1())) return;
+
+                Renderer::draw(chunk->m_vao(), chunk->m_ibo());
+                visibleChunksCount++;
             });
 
             if (debugUI.isUIMode()) {
