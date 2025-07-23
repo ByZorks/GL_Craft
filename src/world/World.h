@@ -42,6 +42,7 @@ private:
 
 template<typename Callback>
 void World::forEachRenderableChunk(Callback &&callback) {
+    auto t1 = std::chrono::high_resolution_clock::now();
     // Process chunks that are ready to be rendered
     std::shared_ptr<Chunk> chunkToSetup;
     constexpr int maxToProcessPerFrame = 4;
@@ -57,6 +58,12 @@ void World::forEachRenderableChunk(Callback &&callback) {
         if (chunk && chunk->m_status1() == Status::BUFFERS_SETUP) {
             callback(chunk);
         }
+    }
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+    if (ms_int.count() > 0) {
+        std::cout << "[forEachRenderableChunk] " << ms_int.count() << "ms\n";
     }
 }
 

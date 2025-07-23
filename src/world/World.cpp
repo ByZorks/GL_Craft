@@ -29,41 +29,36 @@ std::shared_ptr<Chunk> World::getChunk(int chunkBaseX, int chunkBaseY, int chunk
 }
 
 void World::updateChunks(const Camera &camera, const float renderDistanceInBlocks) {
-    const int chunkSize = static_cast<int>(Chunk::m_size1());
-    const int renderDistanceInChunks = static_cast<int>(renderDistanceInBlocks) / chunkSize;
-    const glm::vec3 cameraPos = camera.m_camera_pos();
-
     // Calculate which chunk the camera is in
-    const int cameraChunkX = static_cast<int>(std::floor(cameraPos.x / static_cast<float>(chunkSize)));
-    const int cameraChunkY = static_cast<int>(std::floor(cameraPos.y / static_cast<float>(chunkSize)));
-    const int cameraChunkZ = static_cast<int>(std::floor(cameraPos.z / static_cast<float>(chunkSize)));
+    const int cameraChunkX = camera.m_camera_pos().x / Chunk::m_size1();
+    const int cameraChunkY = camera.m_camera_pos().y / Chunk::m_size1();
+    const int cameraChunkZ = camera.m_camera_pos().z / Chunk::m_size1();
 
-    if (m_lastCameraChunkPos.x == static_cast<float>(cameraChunkX) &&
-        m_lastCameraChunkPos.y == static_cast<float>(cameraChunkY) &&
-        m_lastCameraChunkPos.z == static_cast<float>(cameraChunkZ)) {
+    if (m_lastCameraChunkPos.x == cameraChunkX &&
+        m_lastCameraChunkPos.y == cameraChunkY &&
+        m_lastCameraChunkPos.z == cameraChunkZ) {
         return; // Camera hasn't moved to a new chunk, no need to update
     }
     m_lastCameraChunkPos = {cameraChunkX, cameraChunkY, cameraChunkZ};
 
-    const int cameraWorldX = cameraChunkX * chunkSize;
-    const int cameraWorldY = cameraChunkY * chunkSize;
-    const int cameraWorldZ = cameraChunkZ * chunkSize;
+    const int cameraWorldX = cameraChunkX * Chunk::m_size1();
+    const int cameraWorldY = cameraChunkY * Chunk::m_size1();
+    const int cameraWorldZ = cameraChunkZ * Chunk::m_size1();
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
     unloadDistantChunks(cameraChunkPos, static_cast<int>(renderDistanceInBlocks));
 
     // First pass: generate voxel data for each chunk
-    std::vector<std::future<void>> chunkGenerationFutures;
-    chunkGenerationFutures.reserve(renderDistanceInChunks*2 * renderDistanceInChunks*2 * renderDistanceInChunks*2);
+    const int renderDistanceInChunks = renderDistanceInBlocks / Chunk::m_size1();
     auto t1 = std::chrono::high_resolution_clock::now();
     for (int x = -renderDistanceInChunks; x <= renderDistanceInChunks; x++) {
-        const int chunkX = cameraWorldX + x * chunkSize;
+        const int chunkX = cameraWorldX + x * Chunk::m_size1();
 
         for (int z = -renderDistanceInChunks; z <= renderDistanceInChunks; z++) {
-            const int chunkZ = cameraWorldZ + z * chunkSize;
+            const int chunkZ = cameraWorldZ + z * Chunk::m_size1();
 
             for (int y = -renderDistanceInChunks; y <= renderDistanceInChunks; y++) {
-                const int chunkY = cameraWorldY + y * chunkSize;
+                const int chunkY = cameraWorldY + y * Chunk::m_size1();
                 if (chunkY < 0 || chunkY > 200) continue; // World height limit
                 const glm::vec3 chunkPos(chunkX, chunkY, chunkZ);
 
@@ -81,19 +76,16 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
 
                 // Create a new chunk if it doesn't exist
                 const auto chunk_ptr = std::make_shared<Chunk>(chunkX, chunkY, chunkZ);
-                chunkGenerationFutures.push_back(m_threadPool.enqueue([=, this] {
+                m_threadPool.enqueue([=, this] {
                     {
                         std::lock_guard lock(m_chunksMutex);
                         m_loadedChunks[existingChunkKey] = chunk_ptr;
                     }
                     chunk_ptr->generateVoxelData(m_noiseGenerator);
-                }));
+                });
             }
         }
     }
-
-    for (auto &f : chunkGenerationFutures) f.get();
-    chunkGenerationFutures.clear();
 
     auto t2 = std::chrono::high_resolution_clock::now();
     auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
@@ -106,18 +98,18 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     {
         std::lock_guard lock(m_chunksMutex);
         for (const auto &chunk: m_loadedChunks | std::views::values) {
-            const glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
-            if (glm::distance(cameraChunkPos, chunkPos) > renderDistanceInBlocks - static_cast<float>(chunkSize)) {
+            if (const glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
+                glm::distance(cameraChunkPos, chunkPos) > renderDistanceInBlocks - Chunk::m_size1()) {
                 continue;
             }
 
             if (chunk->m_status1() == Status::VOXEL_GENERATED) {
-                chunkGenerationFutures.push_back(m_threadPool.enqueue([=, this] {
-                    chunk->generateMeshData(*this);
+                m_threadPool.enqueue([chunk, this] {
+                    chunk->generateMeshData();
                     if (chunk->m_status1() < Status::BUFFERS_SETUP) {
                         m_chunksToRender.push(chunk);
                     }
-                }));
+                });
             }
         }
     }
@@ -139,12 +131,10 @@ const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & Wo
 
 void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const int renderDistance) {
     std::lock_guard lock(m_chunksMutex);
-    const auto maxDistance = static_cast<float>(renderDistance);
-
     for (auto it = m_loadedChunks.begin(); it != m_loadedChunks.end();) {
         const std::shared_ptr<Chunk> chunk = it->second;
         if (glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
-            glm::distance(cameraChunkPos, chunkPos) > maxDistance) {
+            glm::distance(cameraChunkPos, chunkPos) > renderDistance) {
             it = m_loadedChunks.erase(it);
         } else {
             ++it;
