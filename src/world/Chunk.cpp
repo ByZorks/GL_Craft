@@ -24,26 +24,23 @@ Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), 
 Chunk::~Chunk() = default;
 
 void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
-    constexpr int waterLevel = 62;
-    constexpr int baseHeight = 60;
-    constexpr float maxHeight = 200.0f; // Max height variation
-
-    for (int localX = 0; localX < m_size; localX++) {
+    for (int localX = 0; localX < m_size + 2; localX++) { // +2 for boundary checks
         const auto worldX = static_cast<float>(m_xStart + localX);
 
-        for (int localZ = 0; localZ < m_size; localZ++) {
+        for (int localZ = 0; localZ < m_size + 2; localZ++) {
+            constexpr float maxHeight = 200.0f;
+            constexpr int baseHeight = 60;
             const auto worldZ = static_cast<float>(m_zStart + localZ);
 
             const float normalizedNoise = (noiseGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
             const float terrainShape = std::pow(normalizedNoise, 4.5f); // Create more plains and sharper mountains
             const int columnHeight = baseHeight + static_cast<int>(terrainShape * maxHeight); // Scale to world height
 
-            for (int localY = 0; localY < m_size; localY++) {
-                const int worldY = m_yStart + localY;
-                if (worldY <= columnHeight) {
+            for (int localY = 0; localY < m_size + 2; localY++) {
+                if (const int worldY = m_yStart + localY; worldY <= columnHeight) {
                     m_blockPresent[localX][localY][localZ] = true;
                     m_blockType[localX][localY][localZ] = Block::getBlockType(worldY, columnHeight);
-                } else if (worldY < waterLevel) {
+                } else if (constexpr int waterLevel = 62; worldY < waterLevel) {
                     m_blockPresent[localX][localY][localZ] = true;
                     m_blockType[localX][localY][localZ] = BlockType::WATER;
                 }
@@ -54,19 +51,13 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
     m_status = Status::VOXEL_GENERATED;
 }
 
-void Chunk::generateMeshData(const World &world) {
+void Chunk::generateMeshData() {
     for (int localX = 0; localX < m_size; localX++) {
-        const auto worldX = static_cast<float>(m_xStart + localX);
-
         for (int localZ = 0; localZ < m_size; localZ++) {
-            const auto worldZ = static_cast<float>(m_zStart + localZ);
-
             for (int localY = 0; localY < m_size; localY++) {
-                if (!isBlockPresentInLocal(localX, localY, localZ)) continue;
+                if (!isBlockPresent(localX, localY, localZ)) continue;
 
-                const auto worldY = static_cast<float>(m_yStart + localY);
-
-                addBlockFaces(worldX, worldY, worldZ, m_blockType[localX][localY][localZ], world);
+                addBlockFaces(localX, localY, localZ, m_blockType[localX+1][localY+1][localZ+1]);
             }
         }
     }
@@ -103,22 +94,6 @@ void Chunk::setupBuffers() {
     m_status = Status::BUFFERS_SETUP;
 }
 
-bool Chunk::isBlockPresentInWorld(const float worldX, const float worldY, const float worldZ, const World &world) {
-    const int localX = static_cast<int>(worldX) - m_xStart;
-    const int localY = static_cast<int>(worldY) - m_yStart;
-    const int localZ = static_cast<int>(worldZ) - m_zStart;
-
-    // Check if the block is within the chunk's local coordinates
-    if (localX >= 0 && localX < m_size &&
-        localY >= 0 && localY < m_size &&
-        localZ >= 0 && localZ < m_size) {
-        return isBlockPresentInLocal(localX, localY, localZ);
-    }
-
-    // If the block is outside the local chunk coordinates, check if it exists in another chunk
-    return isBlockPresentInAnotherChunk(worldX, worldY, worldZ, world);
-}
-
 const VertexArray &Chunk::m_vao() const {
     return m_VAO;
 }
@@ -147,54 +122,55 @@ int Chunk::m_z_start() const {
     return m_zStart;
 }
 
-bool Chunk::isBlockPresentInLocal(const int localX, const int localY, const int localZ) const {
-    return (localX >= 0 && localX < m_size &&
-            localY >= 0 && localY < m_size &&
-            localZ >= 0 && localZ < m_size) &&
-           m_blockPresent[localX][localY][localZ];
+bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {
+    return m_blockPresent[localX+1][localY+1][localZ+1];
 }
 
 Status Chunk::m_status1() const {
     return m_status;
 }
 
-void Chunk::addBlockFaces(const float worldX, const float worldY, const float worldZ, const BlockType blockType, const World &world) {
+void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const BlockType blockType) {
     if (blockType == BlockType::AIR) return;
 
     const bool currentBlockTransparent = Block::isTransparent(blockType);
 
-    if (shouldDrawFace(worldX, worldY + 1, worldZ, currentBlockTransparent, world)) {
+    const int worldX = m_xStart + localX;
+    const int worldY = m_yStart + localY;
+    const int worldZ = m_zStart + localZ;
+
+    if (shouldDrawFace(localX, localY + 1, localZ, currentBlockTransparent)) {
         Block::addFaceVertices(Face::TOP, blockType, m_vertices, worldX, worldY, worldZ);
         m_blockFaceData.emplace_back(Face::TOP, 4);
     }
-    if (shouldDrawFace(worldX, worldY - 1, worldZ, currentBlockTransparent, world)) {
+    if (shouldDrawFace(localX, localY - 1, localZ, currentBlockTransparent)) {
         Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, worldX, worldY, worldZ);
         m_blockFaceData.emplace_back(Face::BOTTOM, 4);
     }
-    if (shouldDrawFace(worldX, worldY, worldZ + 1, currentBlockTransparent, world)) {
+    if (shouldDrawFace(localX, localY, localZ + 1, currentBlockTransparent)) {
         Block::addFaceVertices(Face::FRONT, blockType, m_vertices, worldX, worldY, worldZ);
         m_blockFaceData.emplace_back(Face::FRONT, 4);
     }
-    if (shouldDrawFace(worldX, worldY, worldZ - 1, currentBlockTransparent, world)) {
+    if (shouldDrawFace(localX, localY, localZ - 1, currentBlockTransparent)) {
         Block::addFaceVertices(Face::BACK, blockType, m_vertices, worldX, worldY, worldZ);
         m_blockFaceData.emplace_back(Face::BACK, 4);
     }
-    if (shouldDrawFace(worldX + 1, worldY, worldZ, currentBlockTransparent, world)) {
+    if (shouldDrawFace(localX + 1, localY, localZ, currentBlockTransparent)) {
         Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, worldX, worldY, worldZ);
         m_blockFaceData.emplace_back(Face::RIGHT, 4);
     }
-    if (shouldDrawFace(worldX - 1, worldY, worldZ, currentBlockTransparent, world)) {
+    if (shouldDrawFace(localX - 1, localY, localZ, currentBlockTransparent)) {
         Block::addFaceVertices(Face::LEFT, blockType, m_vertices, worldX, worldY, worldZ);
         m_blockFaceData.emplace_back(Face::LEFT, 4);
     }
 }
 
-bool Chunk::shouldDrawFace(const float nx, const float ny, const float nz, const bool currentTransparent, const World &world) {
-    if (!isBlockPresentInWorld(nx, ny, nz, world)) {
+bool Chunk::shouldDrawFace(const int localX, const int localY, const int localZ, const bool currentTransparent) const {
+    if (!isBlockPresent(localX, localY, localZ)) {
         return true; // Air block, always draw face
     }
 
-    const BlockType neighborType = getBlockTypeAt(nx, ny, nz, world);
+    const BlockType neighborType = getBlockType(localX, localY, localZ);
 
     // Don't draw faces between water blocks
     if (currentTransparent && neighborType == BlockType::WATER) {
@@ -207,69 +183,6 @@ bool Chunk::shouldDrawFace(const float nx, const float ny, const float nz, const
     return neighborTransparent && !currentTransparent;
 }
 
-BlockType Chunk::getBlockTypeAt(const float worldX, const float worldY, const float worldZ, const World &world) {
-    const int localX = static_cast<int>(worldX) - m_xStart;
-    const int localY = static_cast<int>(worldY) - m_yStart;
-    const int localZ = static_cast<int>(worldZ) - m_zStart;
-
-    if (localX >= 0 && localX < m_size &&
-        localY >= 0 && localY < m_size &&
-        localZ >= 0 && localZ < m_size) {
-        return m_blockType[localX][localY][localZ];
-    }
-
-    // If not local
-    const int chunkSize = static_cast<int>(m_size);
-    const int chunkX = static_cast<int>(std::floor(worldX / static_cast<float>(chunkSize))) * chunkSize;
-    const int chunkY = static_cast<int>(std::floor(worldY / static_cast<float>(chunkSize))) * chunkSize;
-    const int chunkZ = static_cast<int>(std::floor(worldZ / static_cast<float>(chunkSize))) * chunkSize;
-
-    const int neighborLocalX = static_cast<int>(worldX) - chunkX;
-    const int neighborLocalY = static_cast<int>(worldY) - chunkY;
-    const int neighborLocalZ = static_cast<int>(worldZ) - chunkZ;
-
-    // Check cache first
-    const std::tuple<int, int, int> chunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
-    if (const auto it = m_adjacentChunks.find(chunkKey); it != m_adjacentChunks.end()) {
-        return it->second->getBlockTypeAtLocal(neighborLocalX, neighborLocalY, neighborLocalZ);
-    }
-
-    // Get chunk from world and cache it
-    if (const std::shared_ptr<Chunk> chunk_ptr = world.getChunk(chunkX, chunkY, chunkZ)) {
-        m_adjacentChunks[chunkKey] = chunk_ptr;
-        return chunk_ptr->getBlockTypeAtLocal(neighborLocalX, neighborLocalY, neighborLocalZ);
-    }
-
-    return BlockType::AIR;
-}
-
-BlockType Chunk::getBlockTypeAtLocal(const int localX, const int localY, const int localZ) const {
-    if (localX >= 0 && localX < m_size &&
-        localY >= 0 && localY < m_size &&
-        localZ >= 0 && localZ < m_size) {
-        return m_blockType[localX][localY][localZ];
-    }
-    return BlockType::AIR;
-}
-
-bool Chunk::isBlockPresentInAnotherChunk(const float worldX, const float worldY, const float worldZ, const World &world) {
-    const int chunkSize = static_cast<int>(m_size);
-    const int chunkX = static_cast<int>(std::floor(static_cast<float>(worldX) / static_cast<float>(chunkSize))) * chunkSize;
-    const int chunkY = static_cast<int>(std::floor(static_cast<float>(worldY) / static_cast<float>(chunkSize))) * chunkSize;
-    const int chunkZ = static_cast<int>(std::floor(static_cast<float>(worldZ) / static_cast<float>(chunkSize))) * chunkSize;
-
-    const std::tuple<int, int, int> chunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
-    const int localX = static_cast<int>(worldX) - chunkX;
-    const int localY = static_cast<int>(worldY) - chunkY;
-    const int localZ = static_cast<int>(worldZ) - chunkZ;
-
-    if (const auto it = m_adjacentChunks.find(chunkKey); it != m_adjacentChunks.end()) {
-        return it->second->isBlockPresentInLocal(localX, localY, localZ);
-    }
-
-    if (const std::shared_ptr<Chunk> chunk = world.getChunk(chunkX, chunkY, chunkZ)) {
-        m_adjacentChunks[chunkKey] = chunk;
-        return chunk->isBlockPresentInLocal(localX, localY, localZ);
-    }
-    return false;
+BlockType Chunk::getBlockType(const int localX, const int localY, const int localZ) const {
+    return m_blockType[localX+1][localY+1][localZ+1];
 }
