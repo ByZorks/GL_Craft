@@ -1,7 +1,6 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <iostream>
 #include <mutex>
 #include <ranges>
 #include <unordered_map>
@@ -26,7 +25,6 @@ public:
     World();
     ~World();
 
-    std::shared_ptr<Chunk> getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const;
     void updateChunks(Camera &camera, float renderDistanceInBlocks = 8.0f * static_cast<float>(Chunk::m_size1()));
     template<typename Callback>
     void forEachRenderableChunk(Callback&& callback);
@@ -35,6 +33,8 @@ public:
     [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
 
 private:
+    void generateVoxelDataForEachChunks(float renderDistanceInBlocks, int cameraWorldX, int cameraWorldY, int cameraWorldZ, const glm::vec3 &cameraChunkPos);
+    void generateMeshDataForEachChunks(const glm::vec3 &cameraChunkPos, float renderDistanceInBlocks);
     void unloadDistantChunks(const glm::vec3 &cameraChunkPos, int renderDistance);
 };
 
