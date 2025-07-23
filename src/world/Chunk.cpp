@@ -28,12 +28,12 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
         const auto worldX = static_cast<float>(m_xStart + localX);
 
         for (int localZ = 0; localZ < m_size + 2; localZ++) {
-            constexpr float maxHeight = 200.0f;
+            constexpr float maxHeight = 256.0f;
             constexpr int baseHeight = 60;
             const auto worldZ = static_cast<float>(m_zStart + localZ);
 
             const float normalizedNoise = (noiseGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
-            const float terrainShape = std::pow(normalizedNoise, 4.5f); // Create more plains and sharper mountains
+            const float terrainShape = std::pow(normalizedNoise, 4.6f); // Create more plains and sharper mountains
             const int columnHeight = baseHeight + static_cast<int>(terrainShape * maxHeight); // Scale to world height
 
             for (int localY = 0; localY < m_size + 2; localY++) {

@@ -9,9 +9,10 @@
 
 World::World(): m_threadPool(std::max(1u, std::thread::hardware_concurrency() - 1)) {
     m_noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    m_noiseGenerator.SetFrequency(.007f);
+    m_noiseGenerator.SetFrequency(.0055f);
     m_noiseGenerator.SetFractalType(FastNoiseLite::FractalType_FBm);
     m_noiseGenerator.SetFractalOctaves(6);
+    m_noiseGenerator.SetFractalLacunarity(2.2f);
 
     m_loadedChunks.reserve(16 * 16 * 16); // Reserve space for 4096 chunks initially
 }
@@ -58,7 +59,7 @@ void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, c
 
             for (int y = -renderDistanceInChunks; y <= renderDistanceInChunks; y++) {
                 const int chunkY = cameraWorldY + y * Chunk::m_size1();
-                if (chunkY < 0 || chunkY > 200) continue; // World height limit
+                if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
                 // Check if the chunk is within the render distance
                 const glm::vec3 chunkPos(chunkX, chunkY, chunkZ);
