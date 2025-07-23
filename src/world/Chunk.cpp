@@ -135,9 +135,9 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 
     const bool currentBlockTransparent = Block::isTransparent(blockType);
 
-    const int worldX = m_xStart + localX;
-    const int worldY = m_yStart + localY;
-    const int worldZ = m_zStart + localZ;
+    const auto worldX = static_cast<float>(m_xStart + localX);
+    const auto worldY = static_cast<float>(m_yStart + localY);
+    const auto worldZ = static_cast<float>(m_zStart + localZ);
 
     if (shouldDrawFace(localX, localY + 1, localZ, currentBlockTransparent)) {
         Block::addFaceVertices(Face::TOP, blockType, m_vertices, worldX, worldY, worldZ);

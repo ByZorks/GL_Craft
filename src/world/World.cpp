@@ -24,9 +24,10 @@ World::~World() {
 void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
     if (!camera.hasCameraChangedChunk()) return;
 
-    const int cameraWorldX = floor(camera.m_camera_pos().x / Chunk::m_size1()) * Chunk::m_size1();
-    const int cameraWorldY = floor(camera.m_camera_pos().y / Chunk::m_size1()) * Chunk::m_size1();
-    const int cameraWorldZ = floor(camera.m_camera_pos().z / Chunk::m_size1()) * Chunk::m_size1();
+    const int chunkSize = static_cast<int>(Chunk::m_size1());
+    const int cameraWorldX = static_cast<int>(std::floor(camera.m_camera_pos().x / static_cast<float>(chunkSize))) * chunkSize;
+    const int cameraWorldY = static_cast<int>(std::floor(camera.m_camera_pos().y / static_cast<float>(chunkSize))) * chunkSize;
+    const int cameraWorldZ = static_cast<int>(std::floor(camera.m_camera_pos().z / static_cast<float>(chunkSize))) * chunkSize;
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
     unloadDistantChunks(cameraChunkPos, static_cast<int>(renderDistanceInBlocks));
@@ -49,16 +50,16 @@ const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & Wo
 void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, const int cameraWorldX,
                                           const int cameraWorldY, const int cameraWorldZ, const glm::vec3 &cameraChunkPos) {
     std::vector<std::tuple<int, int, int, float>> chunksToProcess;
-    const int renderDistanceInChunks = renderDistanceInBlocks / Chunk::m_size1();
+    const int renderDistanceInChunks = static_cast<int>(renderDistanceInBlocks / static_cast<float>(Chunk::m_size1()));
     const auto t1 = std::chrono::high_resolution_clock::now();
     for (int x = -renderDistanceInChunks; x <= renderDistanceInChunks; x++) {
-        const int chunkX = cameraWorldX + x * Chunk::m_size1();
+        const int chunkX = cameraWorldX + static_cast<int>(x * Chunk::m_size1());
 
         for (int z = -renderDistanceInChunks; z <= renderDistanceInChunks; z++) {
-            const int chunkZ = cameraWorldZ + z * Chunk::m_size1();
+            const int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::m_size1());
 
             for (int y = -renderDistanceInChunks; y <= renderDistanceInChunks; y++) {
-                const int chunkY = cameraWorldY + y * Chunk::m_size1();
+                const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::m_size1());
                 if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
                 // Check if the chunk is within the render distance
@@ -102,7 +103,7 @@ void World::generateMeshDataForEachChunks(const glm::vec3 &cameraChunkPos, const
         std::lock_guard lock(m_chunksMutex);
         for (const auto &chunk: m_loadedChunks | std::views::values) {
             if (const glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
-                glm::distance(cameraChunkPos, chunkPos) > renderDistanceInBlocks - Chunk::m_size1()) {
+                glm::distance(cameraChunkPos, chunkPos) > renderDistanceInBlocks - static_cast<float>(Chunk::m_size1())) {
                 continue;
             }
 
@@ -126,7 +127,7 @@ void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const int rende
     for (auto it = m_loadedChunks.begin(); it != m_loadedChunks.end();) {
         const std::shared_ptr<Chunk> chunk = it->second;
         if (glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
-            glm::distance(cameraChunkPos, chunkPos) > renderDistance) {
+            glm::distance(cameraChunkPos, chunkPos) > static_cast<float>(renderDistance)) {
             it = m_loadedChunks.erase(it);
         } else {
             ++it;
