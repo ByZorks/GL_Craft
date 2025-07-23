@@ -22,9 +22,9 @@ link_directories(
 
 add_executable(GL_Craft
         src/core/GLCraft.cpp
-        src/render/Shader.cpp
-        src/render/Shader.cpp
-        src/render/Shader.h
+        src/gl/Shader.cpp
+        src/gl/Shader.cpp
+        src/gl/Shader.h
         src/core/OpenGLDebug.h
         src/core/OpenGLDebug.cpp
         src/gl/VertexBuffer.h
@@ -35,8 +35,8 @@ add_executable(GL_Craft
         src/gl/IndexBuffer.h
         src/render/Renderer.cpp
         src/render/Renderer.h
-        src/render/Texture.cpp
-        src/render/Texture.h
+        src/gl/Texture.cpp
+        src/gl/Texture.h
         src/render/Camera.cpp
         src/render/Camera.h
         src/world/Block.cpp

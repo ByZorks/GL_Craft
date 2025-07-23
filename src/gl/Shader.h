@@ -14,7 +14,7 @@ private:
     std::pmr::unordered_map<std::string, int> m_uniformLocationCache;
 
 public:
-    Shader(std::string  vertexPath, std::string  fragmentPath);
+    Shader(std::string vertexPath, std::string fragmentPath);
     ~Shader();
 
     unsigned int use();
@@ -27,7 +27,6 @@ public:
 
 private:
     static std::string readFile(const std::string &filePath);
-
     static unsigned int compile(GLenum shaderType, const std::string& shader);
 };
 

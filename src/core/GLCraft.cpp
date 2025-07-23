@@ -1,14 +1,12 @@
-#include <algorithm>
 #include <iostream>
 #include <ostream>
-#include <ranges>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
-#include "../render/Shader.h"
-#include "../render/Texture.h"
+#include "../gl/Shader.h"
+#include "../gl/Texture.h"
 #include "../world/World.h"
 
 #include "glm.hpp"
@@ -29,7 +27,6 @@ int main(int argc, char *argv[]) {
         glfwTerminate();
         return -1;
     }
-
     glfwMakeContextCurrent(window);
 
     // Camera
