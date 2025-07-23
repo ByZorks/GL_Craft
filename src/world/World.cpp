@@ -129,21 +129,6 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     }
 }
 
-void World::processRenderQueue() {
-    if (m_chunksToRender.empty()) return;
-    int processedCount = 0;
-    constexpr int maxToProcessPerFrame = 4;
-    while (processedCount < maxToProcessPerFrame) {
-        std::shared_ptr<Chunk> chunkToSetup = m_chunksToRender.pop();
-        if (chunkToSetup == nullptr) break;
-
-        if (chunkToSetup && chunkToSetup->m_status1() == Status::MESH_GENERATED) {
-            chunkToSetup->setupBuffers();
-        }
-        processedCount++;
-    }
-}
-
 const FastNoiseLite & World::m_noise_generator() const {
     return m_noiseGenerator;
 }

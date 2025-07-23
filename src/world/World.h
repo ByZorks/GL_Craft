@@ -30,7 +30,6 @@ public:
 
     std::shared_ptr<Chunk> getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const;
     void updateChunks(const Camera &camera, float renderDistanceInBlocks = 8.0f * static_cast<float>(Chunk::m_size1()));
-    void processRenderQueue();
     template<typename Callback>
     void forEachRenderableChunk(Callback&& callback);
 

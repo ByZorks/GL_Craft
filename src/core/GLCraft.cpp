@@ -84,7 +84,6 @@ int main(int argc, char *argv[]) {
             // Render the world
             Frustum frustum = Camera::getFrustum(mvp);
             unsigned int visibleChunksCount = 0;
-            world.processRenderQueue(); // Process chunks that are ready to be rendered
             world.forEachRenderableChunk([&](const std::shared_ptr<Chunk> &chunk_ptr) {
                 if (camera.distanceToCamera(*chunk_ptr) > renderDistance) return;
                 if (!frustum.isAABBInFrustum(chunk_ptr->m_box1())) return;
