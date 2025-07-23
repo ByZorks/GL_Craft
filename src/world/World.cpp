@@ -28,22 +28,12 @@ std::shared_ptr<Chunk> World::getChunk(int chunkBaseX, int chunkBaseY, int chunk
     return nullptr;
 }
 
-void World::updateChunks(const Camera &camera, const float renderDistanceInBlocks) {
-    // Calculate which chunk the camera is in
-    const int cameraChunkX = camera.m_camera_pos().x / Chunk::m_size1();
-    const int cameraChunkY = camera.m_camera_pos().y / Chunk::m_size1();
-    const int cameraChunkZ = camera.m_camera_pos().z / Chunk::m_size1();
+void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
+    if (!camera.hasCameraChangedChunk()) return;
 
-    if (m_lastCameraChunkPos.x == cameraChunkX &&
-        m_lastCameraChunkPos.y == cameraChunkY &&
-        m_lastCameraChunkPos.z == cameraChunkZ) {
-        return; // Camera hasn't moved to a new chunk, no need to update
-    }
-    m_lastCameraChunkPos = {cameraChunkX, cameraChunkY, cameraChunkZ};
-
-    const int cameraWorldX = cameraChunkX * Chunk::m_size1();
-    const int cameraWorldY = cameraChunkY * Chunk::m_size1();
-    const int cameraWorldZ = cameraChunkZ * Chunk::m_size1();
+    const int cameraWorldX = floor(camera.m_camera_pos().x / Chunk::m_size1()) * Chunk::m_size1();
+    const int cameraWorldY = floor(camera.m_camera_pos().y / Chunk::m_size1()) * Chunk::m_size1();
+    const int cameraWorldZ = floor(camera.m_camera_pos().z / Chunk::m_size1()) * Chunk::m_size1();
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
     unloadDistantChunks(cameraChunkPos, static_cast<int>(renderDistanceInBlocks));

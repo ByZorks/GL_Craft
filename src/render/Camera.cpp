@@ -89,6 +89,22 @@ void Camera::resetMousePosition(GLFWwindow *window) {
     m_firstMouse = true;
 }
 
+bool Camera::hasCameraChangedChunk() {
+    // Calculate which chunk the camera is in
+    const int cameraChunkX = floor(m_cameraPos.x / Chunk::m_size1());
+    const int cameraChunkY = floor(m_cameraPos.y / Chunk::m_size1());
+    const int cameraChunkZ = floor(m_cameraPos.z / Chunk::m_size1());
+
+    if (m_lastCameraChunkPos.x == cameraChunkX &&
+        m_lastCameraChunkPos.y == cameraChunkY &&
+        m_lastCameraChunkPos.z == cameraChunkZ) {
+        return false; // Camera hasn't moved to a new chunk, no need to update
+    }
+
+    m_lastCameraChunkPos = {cameraChunkX, cameraChunkY, cameraChunkZ};
+    return true; // Camera has changed chunk
+}
+
 glm::mat4 Camera::getProjectionMatrix() const {
     return glm::perspective(glm::radians(m_FOVDegrees), m_aspectRatio, m_nearPlane, m_farPlane);
 }

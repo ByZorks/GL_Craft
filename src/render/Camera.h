@@ -13,6 +13,7 @@ private:
     bool m_firstMouse;
     glm::vec3 m_cameraPos, m_cameraFront, m_cameraUp;
     float m_FOVDegrees, m_aspectRatio, m_nearPlane, m_farPlane;
+    glm::vec3 m_lastCameraChunkPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
 
 public:
     Camera(unsigned int windowWidth, unsigned int windowHeight);
@@ -21,6 +22,7 @@ public:
     static void mouseCallback(GLFWwindow *window, double xpos, double ypos);
     [[nodiscard]] float distanceToCamera(const Chunk& chunk) const;
     void resetMousePosition(GLFWwindow *window);
+    bool hasCameraChangedChunk();
 
     [[nodiscard]] glm::mat4 getProjectionMatrix() const ;
     [[nodiscard]] glm::mat4 getViewMatrix() const;

@@ -8,7 +8,6 @@
 
 #include "Chunk.h"
 
-#include "vec2.hpp"
 #include "FastNoiseLite.h"
 #include "../render/ThreadPool.h"
 #include "../utils/ThreadSafeQueue.h"
@@ -19,7 +18,6 @@ class World {
 private:
     std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> m_loadedChunks;
     mutable std::mutex m_chunksMutex;
-    glm::vec3 m_lastCameraChunkPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
     FastNoiseLite m_noiseGenerator;
     ThreadPool m_threadPool;
     ThreadSafeQueue<std::shared_ptr<Chunk>> m_chunksToRender;
@@ -29,7 +27,7 @@ public:
     ~World();
 
     std::shared_ptr<Chunk> getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const;
-    void updateChunks(const Camera &camera, float renderDistanceInBlocks = 8.0f * static_cast<float>(Chunk::m_size1()));
+    void updateChunks(Camera &camera, float renderDistanceInBlocks = 8.0f * static_cast<float>(Chunk::m_size1()));
     template<typename Callback>
     void forEachRenderableChunk(Callback&& callback);
 
@@ -42,7 +40,6 @@ private:
 
 template<typename Callback>
 void World::forEachRenderableChunk(Callback &&callback) {
-    auto t1 = std::chrono::high_resolution_clock::now();
     // Process chunks that are ready to be rendered
     std::shared_ptr<Chunk> chunkToSetup;
     constexpr int maxToProcessPerFrame = 10;
@@ -58,12 +55,6 @@ void World::forEachRenderableChunk(Callback &&callback) {
         if (chunk && chunk->m_status1() == Status::BUFFERS_SETUP) {
             callback(chunk);
         }
-    }
-
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
-    if (ms_int.count() > 0) {
-        std::cout << "[forEachRenderableChunk] " << ms_int.count() << "ms\n";
     }
 }
 
