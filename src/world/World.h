@@ -45,7 +45,7 @@ void World::forEachRenderableChunk(Callback &&callback) {
     auto t1 = std::chrono::high_resolution_clock::now();
     // Process chunks that are ready to be rendered
     std::shared_ptr<Chunk> chunkToSetup;
-    constexpr int maxToProcessPerFrame = 4;
+    constexpr int maxToProcessPerFrame = 10;
     for (int i = 0; i < maxToProcessPerFrame && ((chunkToSetup = m_chunksToRender.pop())); ++i) {
         if (chunkToSetup && chunkToSetup->m_status1() == Status::MESH_GENERATED) {
             chunkToSetup->setupBuffers();
