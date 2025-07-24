@@ -16,7 +16,8 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_noiseGenerator.SetFractalOctaves(6);
     m_noiseGenerator.SetFractalLacunarity(2.2f);
 
-    m_loadedChunks.reserve(16 * 16 * 16); // Reserve space for 4096 chunks initially
+    m_loadedChunks.reserve(static_cast<std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>>::size_type>(
+        Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance) * 2); // Approximate reserve size based on render distance
 }
 
 World::~World() {
@@ -56,38 +57,48 @@ void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, c
     const int r2 = r * r;
 
     const auto t1 = std::chrono::high_resolution_clock::now();
-    // Generate chunks in a spherical area
+    // Pre-compute offsets for a circle of chunks around the camera position
+    struct Offset { int x, z, maxY; };
+    std::vector<Offset> circleOffsets;
+    circleOffsets.reserve(static_cast<std::vector<Offset>::size_type>(std::numbers::pi * static_cast<double>(r2)));
     for (int x = -r; x <= r; x++) {
-        const int dx2 = x * x;
-        const int maxZ = static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - dx2))));
-        const int chunkX = cameraWorldX + static_cast<int>(x * Chunk::m_size1());
-
-        for (int z = -maxZ; z <= maxZ; z++) {
-            const int dz2 = z * z;
-            const int rem = r2 - dx2 - dz2;
-            const int maxY = static_cast<int>(std::floor(std::sqrt(static_cast<float>(rem))));
-            const int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::m_size1());
-
-            for (int y = -maxY; y <= maxY; y++) {
-                const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::m_size1());
-                if (chunkY < 0 || chunkY > 256) continue; // World height limit
-                chunksToProcess.emplace_back(chunkX, chunkY, chunkZ);
+        for (int z = -r; z <= r; z++) {
+            if (const int d2 = x*x + z*z; d2 <= r2) {
+                circleOffsets.push_back({x, z,
+                    static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))});
             }
         }
     }
 
-    for (const auto& [chunkX, chunkY, chunkZ] : chunksToProcess) {
-        const std::tuple<int, int, int> existingChunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
-        std::shared_ptr<Chunk> chunk_ptr;
-        {
-            std::lock_guard lock(m_chunksMutex);
-            if (m_loadedChunks.contains(existingChunkKey)) continue;
-            chunk_ptr = std::make_shared<Chunk>(chunkX, chunkY, chunkZ);
-            m_loadedChunks[existingChunkKey] = chunk_ptr;
+
+    // Sort offsets by distance
+    std::sort(circleOffsets.begin(), circleOffsets.end(),
+              [&](auto &a, auto &b) {
+                  return a.x*a.x + a.z*a.z
+                   > b.x*b.x + b.z*b.z;
+              });
+
+    // Generate chunks
+    for (auto [x,z, maxY] : circleOffsets) {
+        int chunkX = cameraWorldX + static_cast<int>(x * Chunk::m_size1());
+        int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::m_size1());
+
+        for (int y = -maxY; y <= maxY; y++) {
+            const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::m_size1());
+            if (chunkY < 0 || chunkY > 256) continue; // World height limit
+
+            const std::tuple<int, int, int> existingChunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
+            std::shared_ptr<Chunk> chunk_ptr;
+            {
+                std::lock_guard lock(m_chunksMutex);
+                if (m_loadedChunks.contains(existingChunkKey)) continue;
+                chunk_ptr = std::make_shared<Chunk>(chunkX, chunkY, chunkZ);
+                m_loadedChunks[existingChunkKey] = chunk_ptr;
+            }
+            m_threadPool.enqueue([=, this] {
+                chunk_ptr->generateVoxelData(m_noiseGenerator);
+            });
         }
-        m_threadPool.enqueue([=, this] {
-            chunk_ptr->generateVoxelData(m_noiseGenerator);
-        });
     }
 
     const auto t2 = std::chrono::high_resolution_clock::now();
