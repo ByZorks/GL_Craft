@@ -51,35 +51,32 @@ const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & Wo
 
 void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, const int cameraWorldX,
                                           const int cameraWorldY, const int cameraWorldZ, const glm::vec3 &cameraChunkPos) {
-    std::vector<std::tuple<int, int, int, float>> chunksToProcess;
-    const int renderDistanceInChunks = static_cast<int>(renderDistanceInBlocks / static_cast<float>(Chunk::m_size1()));
+    std::vector<std::tuple<int, int, int>> chunksToProcess;
+    const int r = static_cast<int>(renderDistanceInBlocks / static_cast<float>(Chunk::m_size1()));
+    const int r2 = r * r;
+
     const auto t1 = std::chrono::high_resolution_clock::now();
-    for (int x = -renderDistanceInChunks; x <= renderDistanceInChunks; x++) {
+    // Generate chunks in a spherical area
+    for (int x = -r; x <= r; x++) {
+        const int dx2 = x * x;
+        const int maxZ = static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - dx2))));
         const int chunkX = cameraWorldX + static_cast<int>(x * Chunk::m_size1());
 
-        for (int z = -renderDistanceInChunks; z <= renderDistanceInChunks; z++) {
+        for (int z = -maxZ; z <= maxZ; z++) {
+            const int dz2 = z * z;
+            const int rem = r2 - dx2 - dz2;
+            const int maxY = static_cast<int>(std::floor(std::sqrt(static_cast<float>(rem))));
             const int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::m_size1());
 
-            for (int y = -renderDistanceInChunks; y <= renderDistanceInChunks; y++) {
+            for (int y = -maxY; y <= maxY; y++) {
                 const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::m_size1());
                 if (chunkY < 0 || chunkY > 256) continue; // World height limit
-
-                // Check if the chunk is within the render distance
-                const glm::vec3 chunkPos(chunkX, chunkY, chunkZ);
-                if (float distance = glm::distance(cameraChunkPos, chunkPos);
-                    distance <= renderDistanceInBlocks) {
-                    chunksToProcess.emplace_back(chunkX, chunkY, chunkZ, distance);
-                }
+                chunksToProcess.emplace_back(chunkX, chunkY, chunkZ);
             }
         }
     }
 
-    // Sort chunks by distance from the camera (closer chunks first)
-    std::sort(chunksToProcess.begin(), chunksToProcess.end(), [](const auto& a, const auto& b) {
-        return std::get<3>(a) > std::get<3>(b);
-    });
-
-    for (const auto& [chunkX, chunkY, chunkZ, distance] : chunksToProcess) {
+    for (const auto& [chunkX, chunkY, chunkZ] : chunksToProcess) {
         const std::tuple<int, int, int> existingChunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
         std::shared_ptr<Chunk> chunk_ptr;
         {
