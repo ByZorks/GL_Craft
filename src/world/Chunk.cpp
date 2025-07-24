@@ -43,6 +43,8 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
                 } else if (constexpr int waterLevel = 62; worldY < waterLevel) {
                     m_blockPresent[localX][localY][localZ] = true;
                     m_blockType[localX][localY][localZ] = BlockType::WATER;
+                } else {
+                    break;
                 }
             }
         }

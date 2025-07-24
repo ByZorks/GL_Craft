@@ -7,7 +7,7 @@
 #include "../render/Camera.h"
 #include "../utils/ThreadSafeQueue.h"
 
-World::World(): m_threadPool(std::max(1u, std::thread::hardware_concurrency() - 1)) {
+World::World(): m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
     m_noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
     m_noiseGenerator.SetFrequency(.0055f);
     m_noiseGenerator.SetFractalType(FastNoiseLite::FractalType_FBm);
@@ -51,14 +51,17 @@ void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, c
                                           const int cameraWorldY, const int cameraWorldZ, const glm::vec3 &cameraChunkPos) {
     std::vector<std::tuple<int, int, int, float>> chunksToProcess;
     const int renderDistanceInChunks = static_cast<int>(renderDistanceInBlocks / static_cast<float>(Chunk::m_size1()));
+    const int cameraChunkX = static_cast<int>(cameraWorldX / Chunk::m_size1());
+    const int cameraChunkY = static_cast<int>(cameraWorldY / Chunk::m_size1());
+    const int cameraChunkZ = static_cast<int>(cameraWorldZ / Chunk::m_size1());
     const auto t1 = std::chrono::high_resolution_clock::now();
-    for (int x = -renderDistanceInChunks; x <= renderDistanceInChunks; x++) {
+    for (int x = cameraChunkX - renderDistanceInChunks; x <= cameraChunkX + renderDistanceInChunks; x++) {
         const int chunkX = cameraWorldX + static_cast<int>(x * Chunk::m_size1());
 
-        for (int z = -renderDistanceInChunks; z <= renderDistanceInChunks; z++) {
+        for (int z = cameraChunkZ - renderDistanceInChunks; z <= cameraChunkZ + renderDistanceInChunks; z++) {
             const int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::m_size1());
 
-            for (int y = -renderDistanceInChunks; y <= renderDistanceInChunks; y++) {
+            for (int y = cameraChunkY - renderDistanceInChunks; y <= cameraChunkY + renderDistanceInChunks; y++) {
                 const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::m_size1());
                 if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
