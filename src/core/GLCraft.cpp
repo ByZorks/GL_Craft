@@ -89,6 +89,10 @@ int main(int argc, char *argv[]) {
                 if (camera.distanceToCamera(*chunk_ptr) > renderDistance) return;
                 if (!frustum.isAABBInFrustum(chunk_ptr->m_box1())) return;
 
+                shader.setUniform3f("u_ChunkOffset",
+                                    static_cast<float>(chunk_ptr->m_x_start()),
+                                    static_cast<float>(chunk_ptr->m_y_start()),
+                                    static_cast<float>(chunk_ptr->m_z_start()));
                 Renderer::draw(chunk_ptr->m_vao(), chunk_ptr->m_ibo());
                 visibleChunksCount++;
             });

@@ -137,32 +137,32 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 
     const bool currentBlockTransparent = Block::isTransparent(blockType);
 
-    const auto worldX = static_cast<float>(m_xStart + localX);
-    const auto worldY = static_cast<float>(m_yStart + localY);
-    const auto worldZ = static_cast<float>(m_zStart + localZ);
+    const auto localXf = static_cast<float>(localX);
+    const auto localYf = static_cast<float>(localY);
+    const auto localZf = static_cast<float>(localZ);
 
     if (shouldDrawFace(localX, localY + 1, localZ, currentBlockTransparent)) {
-        Block::addFaceVertices(Face::TOP, blockType, m_vertices, worldX, worldY, worldZ);
+        Block::addFaceVertices(Face::TOP, blockType, m_vertices, localXf, localYf, localZf);
         m_blockFaceData.emplace_back(Face::TOP, 4);
     }
     if (shouldDrawFace(localX, localY - 1, localZ, currentBlockTransparent)) {
-        Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, worldX, worldY, worldZ);
+        Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, localXf, localYf, localZf);
         m_blockFaceData.emplace_back(Face::BOTTOM, 4);
     }
     if (shouldDrawFace(localX, localY, localZ + 1, currentBlockTransparent)) {
-        Block::addFaceVertices(Face::FRONT, blockType, m_vertices, worldX, worldY, worldZ);
+        Block::addFaceVertices(Face::FRONT, blockType, m_vertices, localXf, localYf, localZf);
         m_blockFaceData.emplace_back(Face::FRONT, 4);
     }
     if (shouldDrawFace(localX, localY, localZ - 1, currentBlockTransparent)) {
-        Block::addFaceVertices(Face::BACK, blockType, m_vertices, worldX, worldY, worldZ);
+        Block::addFaceVertices(Face::BACK, blockType, m_vertices, localXf, localYf, localZf);
         m_blockFaceData.emplace_back(Face::BACK, 4);
     }
     if (shouldDrawFace(localX + 1, localY, localZ, currentBlockTransparent)) {
-        Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, worldX, worldY, worldZ);
+        Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, localXf, localYf, localZf);
         m_blockFaceData.emplace_back(Face::RIGHT, 4);
     }
     if (shouldDrawFace(localX - 1, localY, localZ, currentBlockTransparent)) {
-        Block::addFaceVertices(Face::LEFT, blockType, m_vertices, worldX, worldY, worldZ);
+        Block::addFaceVertices(Face::LEFT, blockType, m_vertices, localXf, localYf, localZf);
         m_blockFaceData.emplace_back(Face::LEFT, 4);
     }
 }
