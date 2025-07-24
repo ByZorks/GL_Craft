@@ -56,8 +56,8 @@ public:
 
 private:
     void addBlockFaces(int localX, int localY, int localZ, BlockType blockType);
-    bool shouldDrawFace(int localX, int localY, int localZ, bool currentTransparent) const;
-    BlockType getBlockType(int localX, int localY, int localZ) const;
+    [[nodiscard]] bool shouldDrawFace(int localX, int localY, int localZ, bool currentTransparent) const;
+    [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const;
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const;
 };
 

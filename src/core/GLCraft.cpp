@@ -97,8 +97,7 @@ int main(int argc, char *argv[]) {
             });
 
             if (debugUI.isUIMode()) {
-                unsigned int totalChunks = world.m_loaded_chunks().size();
-                DebugUI::render(visibleChunksCount, totalChunks, Renderer::m_renderDistance, camera);
+                DebugUI::render(visibleChunksCount, world.m_loaded_chunks().size(), Renderer::m_renderDistance, camera);
             }
             DebugUI::draw();
 

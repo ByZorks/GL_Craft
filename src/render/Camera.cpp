@@ -91,9 +91,10 @@ void Camera::resetMousePosition(GLFWwindow *window) {
 
 bool Camera::hasCameraChangedChunk() {
     // Calculate which chunk the camera is in
-    const int cameraChunkX = floor(m_cameraPos.x / Chunk::m_size1());
-    const int cameraChunkY = floor(m_cameraPos.y / Chunk::m_size1());
-    const int cameraChunkZ = floor(m_cameraPos.z / Chunk::m_size1());
+    const auto chunkSize = static_cast<float>(Chunk::m_size1());
+    const float cameraChunkX = std::floor(m_cameraPos.x / chunkSize);
+    const float cameraChunkY = std::floor(m_cameraPos.y / chunkSize);
+    const float cameraChunkZ = std::floor(m_cameraPos.z / chunkSize);
 
     if (m_lastCameraChunkPos.x == cameraChunkX &&
         m_lastCameraChunkPos.y == cameraChunkY &&
