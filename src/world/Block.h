@@ -30,8 +30,7 @@ struct BlockVertex {
 
 class Block {
 private:
-    float m_x, m_y, m_z, m_columnIndex;
-    static constexpr float s_textureWidth = 255.f / 4.f;
+    float m_x, m_y, m_z;
     static constexpr uint8_t s_textureColumn[6][3] = {
         // [side, top, bottom]
         {0, 0, 0}, // AIR

@@ -1,15 +1,12 @@
 #ifndef CHUNK_H
 #define CHUNK_H
-#include <memory>
-#include <unordered_map>
 #include <vector>
 
 #include "Block.h"
 #include "FastNoiseLite.h"
-#include "../math/AABB.h"
 #include "../gl/IndexBuffer.h"
 #include "../gl/VertexArray.h"
-#include "../utils/CustomHash.h"
+#include "../math/AABB.h"
 
 class World;
 
@@ -31,9 +28,7 @@ private:
     int m_x, m_y, m_z;
     std::vector<BlockVertex> m_vertices;
     std::vector<BlockFaceData> m_blockFaceData;
-    bool m_blockPresent[18][18][18] = {{{false}}}; // 16x16x16 chunk size + 2 for boundary checks
-    std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> m_adjacentChunks;
-    BlockType m_blockType[18][18][18] = {{{BlockType::AIR}}}; // Default block type
+    BlockType m_blockType[18][18][18] = {{{BlockType::AIR}}}; // 16x16x16 chunk size + 2 for boundary checks
     Status m_status = Status::NOT_GENERATED;
     VertexArray m_VAO;
     VertexBuffer m_VBO;

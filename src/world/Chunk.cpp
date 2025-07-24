@@ -38,10 +38,8 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
 
             for (int localY = 0; localY < m_size + 2; localY++) {
                 if (const int worldY = m_y + localY; worldY <= columnHeight) {
-                    m_blockPresent[localX][localY][localZ] = true;
                     m_blockType[localX][localY][localZ] = Block::getBlockType(worldY, columnHeight);
                 } else if (constexpr int waterLevel = 62; worldY < waterLevel) {
-                    m_blockPresent[localX][localY][localZ] = true;
                     m_blockType[localX][localY][localZ] = BlockType::WATER;
                 } else {
                     break;
@@ -125,7 +123,7 @@ int Chunk::m_z_start() const {
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {
-    return m_blockPresent[localX+1][localY+1][localZ+1];
+    return m_blockType[localX+1][localY+1][localZ+1] != BlockType::AIR;
 }
 
 Status Chunk::m_status1() const {

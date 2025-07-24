@@ -9,6 +9,7 @@
 
 #include "FastNoiseLite.h"
 #include "../render/ThreadPool.h"
+#include "../utils/CustomHash.h"
 #include "../utils/ThreadSafeQueue.h"
 
 class Camera;

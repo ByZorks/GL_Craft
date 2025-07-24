@@ -7,7 +7,8 @@
 #include "../render/Camera.h"
 #include "../utils/ThreadSafeQueue.h"
 
-World::World(): m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
+
+World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
     m_noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
     m_noiseGenerator.SetFrequency(.0055f);
     m_noiseGenerator.SetFractalType(FastNoiseLite::FractalType_FBm);
