@@ -8,7 +8,7 @@
 
 unsigned int Chunk::m_size = 16; // Default chunk size
 
-Chunk::Chunk(const int x, const int y, const int z) : m_xStart(x), m_yStart(y), m_zStart(z),
+Chunk::Chunk(const int x, const int y, const int z) : m_x(x), m_y(y), m_z(z),
                                                       m_box(AABB(static_cast<float>(x), static_cast<float>(y),
                                                                  static_cast<float>(z),
                                                                  static_cast<float>(x) + static_cast<float>(m_size) - 1,
@@ -25,19 +25,19 @@ Chunk::~Chunk() = default;
 
 void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
     for (int localX = 0; localX < m_size + 2; localX++) { // +2 for boundary checks
-        const auto worldX = static_cast<float>(m_xStart + localX);
+        const auto worldX = static_cast<float>(m_x + localX);
 
         for (int localZ = 0; localZ < m_size + 2; localZ++) {
             constexpr float maxHeight = 256.0f;
             constexpr int baseHeight = 60;
-            const auto worldZ = static_cast<float>(m_zStart + localZ);
+            const auto worldZ = static_cast<float>(m_z + localZ);
 
             const float normalizedNoise = (noiseGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
             const float terrainShape = std::pow(normalizedNoise, 4.6f); // Create more plains and sharper mountains
             const int columnHeight = baseHeight + static_cast<int>(terrainShape * maxHeight); // Scale to world height
 
             for (int localY = 0; localY < m_size + 2; localY++) {
-                if (const int worldY = m_yStart + localY; worldY <= columnHeight) {
+                if (const int worldY = m_y + localY; worldY <= columnHeight) {
                     m_blockPresent[localX][localY][localZ] = true;
                     m_blockType[localX][localY][localZ] = Block::getBlockType(worldY, columnHeight);
                 } else if (constexpr int waterLevel = 62; worldY < waterLevel) {
@@ -88,9 +88,9 @@ void Chunk::setupBuffers() {
     m_IBO.init(chunkIndices.data(), chunkIndices.size());
 
     VertexBufferLayout chunkLayout;
-    chunkLayout.Push<float>(3); // x, y, z
-    chunkLayout.Push<float>(2); // u, v
-    chunkLayout.Push<float>(3); // nx, ny, nz (normal vector)
+    chunkLayout.Push<unsigned char>(3); // x, y, z
+    chunkLayout.Push<unsigned char>(2, true); // u, v
+    chunkLayout.Push<unsigned char>(3); // nx, ny, nz (normal vector)
     m_VAO.AddBuffer(m_VBO, chunkLayout);
 
     m_status = Status::BUFFERS_SETUP;
@@ -113,15 +113,15 @@ const AABB & Chunk::m_box1() const {
 }
 
 int Chunk::m_x_start() const {
-    return m_xStart;
+    return m_x;
 }
 
 int Chunk::m_y_start() const {
-    return m_yStart;
+    return m_y;
 }
 
 int Chunk::m_z_start() const {
-    return m_zStart;
+    return m_z;
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {

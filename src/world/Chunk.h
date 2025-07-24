@@ -28,7 +28,7 @@ enum class Status {
 class Chunk {
 private:
     static unsigned int m_size;
-    int m_xStart, m_yStart, m_zStart;
+    int m_x, m_y, m_z;
     std::vector<BlockVertex> m_vertices;
     std::vector<BlockFaceData> m_blockFaceData;
     bool m_blockPresent[18][18][18] = {{{false}}}; // 16x16x16 chunk size + 2 for boundary checks
