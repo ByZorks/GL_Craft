@@ -29,15 +29,24 @@ struct BlockVertex {
 class Block {
 private:
     float m_x, m_y, m_z, m_columnIndex;
-    static constexpr float s_textureWidth = 1.0f / 7.0f;
+    static constexpr float s_textureWidth = 1.f / 4.f;
     static constexpr float s_textureIndicesU[6][3] = {
         // [side, top, bottom]
         {0, 0, 0}, // AIR
         {0, 0, 0}, // BEDROCK
         {s_textureWidth, s_textureWidth, s_textureWidth}, // DIRT
         {2 * s_textureWidth, 3 * s_textureWidth, s_textureWidth}, // GRASS
-        {4 * s_textureWidth, 4 * s_textureWidth, 4 * s_textureWidth}, // STONE
-        {5 * s_textureWidth, 6 * s_textureWidth, 6 * s_textureWidth} // WATER
+        {0, 0, 0}, // STONE
+        {s_textureWidth, 2 * s_textureWidth, 2 * s_textureWidth} // WATER
+    };
+    static constexpr float s_textureIndicesV[6][3] = {
+        // [side, top, bottom]
+        {3 * s_textureWidth, 3 * s_textureWidth, 3 * s_textureWidth}, // AIR
+        {3 * s_textureWidth, 3 * s_textureWidth, 3 * s_textureWidth}, // BEDROCK
+        {3 * s_textureWidth, 3 * s_textureWidth, 3 * s_textureWidth}, // DIRT
+        {3 * s_textureWidth, 3 * s_textureWidth, 3 * s_textureWidth}, // GRASS
+        {2 * s_textureWidth, 2 * s_textureWidth, 2 * s_textureWidth}, // STONE
+        {2 * s_textureWidth, 2 * s_textureWidth, 2 * s_textureWidth} // WATER
     };
 
 public:
@@ -50,6 +59,7 @@ public:
 
 private:
     static float getTextureU(BlockType type, Face face);
+    static float getTextureV(BlockType type, Face face);
 };
 
 #endif //BLOCK_H

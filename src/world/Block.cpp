@@ -22,8 +22,6 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
     const float block_endX = block_startX + 1.0f;
     const float block_endY = block_startY + 1.0f;
     const float block_endZ = block_startZ + 1.0f;
-    constexpr float v_start = 0.0f;
-    constexpr float v_end = 1.0f;
 
     vertices.reserve(vertices.size() + 4);
 
@@ -36,6 +34,8 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
         case Face::FRONT: {
             const float u_start = getTextureU(type, face);
             const float u_end = u_start + s_textureWidth;
+            const float v_start = getTextureV(type, face);
+            const float v_end = v_start + s_textureWidth;
             constexpr float normal[3] = {0.f, 0.f, -1.f};
             addVertex(block_startX, block_endY, block_endZ, u_start, v_end, normal);
             addVertex(block_endX, block_endY, block_endZ, u_end, v_end, normal);
@@ -46,6 +46,8 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
         case Face::BACK: {
             const float u_start = getTextureU(type, face);
             const float u_end = u_start + s_textureWidth;
+            const float v_start = getTextureV(type, face);
+            const float v_end = v_start + s_textureWidth;
             constexpr float normal[3] = {0.f, 0.f, 1.f};
             addVertex(block_startX, block_endY, block_startZ, u_start, v_end, normal);
             addVertex(block_endX, block_endY, block_startZ, u_end, v_end, normal);
@@ -56,6 +58,8 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
         case Face::LEFT: {
             const float u_start = getTextureU(type, face);
             const float u_end = u_start + s_textureWidth;
+            const float v_start = getTextureV(type, face);
+            const float v_end = v_start + s_textureWidth;
             constexpr float normal[3] = {-1.f, 0.f, 0.f};
             addVertex(block_startX, block_endY, block_endZ, u_start, v_end, normal);
             addVertex(block_startX, block_endY, block_startZ, u_end, v_end, normal);
@@ -66,6 +70,8 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
         case Face::RIGHT: {
             const float u_start = getTextureU(type, face);
             const float u_end = u_start + s_textureWidth;
+            const float v_start = getTextureV(type, face);
+            const float v_end = v_start + s_textureWidth;
             constexpr float normal[3] = {1.f, 0.f, 0.f};
             addVertex(block_endX, block_endY, block_endZ, u_start, v_end, normal);
             addVertex(block_endX, block_endY, block_startZ, u_end, v_end, normal);
@@ -76,6 +82,8 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
         case Face::TOP: {
             const float u_start = getTextureU(type, face);
             const float u_end = u_start + s_textureWidth;
+            const float v_start = getTextureV(type, face);
+            const float v_end = v_start + s_textureWidth;
             constexpr float normal[3] = {0.f, 1.f, 0.f};
             const float topY = type == BlockType::WATER ? block_endY - 0.2f : block_endY;
             addVertex(block_startX, topY, block_endZ, u_end, v_end, normal);
@@ -87,6 +95,8 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
         case Face::BOTTOM: {
             const float u_start = getTextureU(type, face);
             const float u_end = u_start + s_textureWidth;
+            const float v_start = getTextureV(type, face);
+            const float v_end = v_start + s_textureWidth;
             constexpr float normal[3] = {0.f, -1.f, 0.f};
             addVertex(block_startX, block_startY, block_endZ, u_start, v_end, normal);
             addVertex(block_endX, block_startY, block_endZ, u_end, v_end, normal);
@@ -107,4 +117,10 @@ float Block::getTextureU(BlockType type, const Face face) {
     const int typeIndex = static_cast<int>(type);
     const int faceIndex = face == Face::TOP ? 1 : face == Face::BOTTOM ? 2 : 0;
     return s_textureIndicesU[typeIndex][faceIndex];
+}
+
+float Block::getTextureV(BlockType type, const Face face) {
+    const int typeIndex = static_cast<int>(type);
+    const int faceIndex = face == Face::TOP ? 1 : face == Face::BOTTOM ? 2 : 0;
+    return s_textureIndicesV[typeIndex][faceIndex];
 }
