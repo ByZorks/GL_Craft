@@ -43,6 +43,8 @@ public:
     void generateMeshData();
     void setupBuffers();
 
+    [[nodiscard]] bool hasVisibleFaces() const;
+
     [[nodiscard]] const VertexArray & m_vao() const;
     [[nodiscard]] const IndexBuffer & m_ibo() const;
     [[nodiscard]] static unsigned int m_size1() ;

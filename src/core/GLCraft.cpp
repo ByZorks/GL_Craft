@@ -58,7 +58,6 @@ int main(int argc, char *argv[]) {
         DebugUI debugUI(window);
         const ImGuiIO& io = ImGui::GetIO();
 
-        float renderDistance = 16.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
         World world;
         Renderer::init();
         while (!glfwWindowShouldClose(window)) {
@@ -80,13 +79,13 @@ int main(int argc, char *argv[]) {
             shader.setUniformMat4f("u_MVP", mvp);
 
             // Chunks generation
-            world.updateChunks(camera, renderDistance);
+            world.updateChunks(camera, Renderer::m_renderDistance);
 
             // Render the world
             Frustum frustum = Camera::getFrustum(mvp);
             unsigned int visibleChunksCount = 0;
             world.forEachRenderableChunk([&](const std::shared_ptr<Chunk> &chunk_ptr) {
-                if (camera.distanceToCamera(*chunk_ptr) > renderDistance) return;
+                if (camera.distanceToCamera(*chunk_ptr) > Renderer::m_renderDistance) return;
                 if (!frustum.isAABBInFrustum(chunk_ptr->m_box1())) return;
 
                 shader.setUniform3f("u_ChunkOffset",
@@ -99,7 +98,7 @@ int main(int argc, char *argv[]) {
 
             if (debugUI.isUIMode()) {
                 unsigned int totalChunks = world.m_loaded_chunks().size();
-                DebugUI::render(visibleChunksCount, totalChunks, renderDistance, camera);
+                DebugUI::render(visibleChunksCount, totalChunks, Renderer::m_renderDistance, camera);
             }
             DebugUI::draw();
 

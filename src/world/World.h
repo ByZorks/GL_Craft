@@ -8,6 +8,7 @@
 #include "Chunk.h"
 
 #include "FastNoiseLite.h"
+#include "../math/Frustum.h"
 #include "../render/ThreadPool.h"
 #include "../utils/CustomHash.h"
 #include "../utils/ThreadSafeQueue.h"
@@ -26,7 +27,7 @@ public:
     World();
     ~World();
 
-    void updateChunks(Camera &camera, float renderDistanceInBlocks = 8.0f * static_cast<float>(Chunk::m_size1()));
+    void updateChunks(Camera &camera, float renderDistanceInBlocks);
     template<typename Callback>
     void forEachRenderableChunk(Callback&& callback);
 

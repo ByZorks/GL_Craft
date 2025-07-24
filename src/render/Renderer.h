@@ -9,6 +9,8 @@ private:
     static float m_lastFrame;
 
 public:
+    static float m_renderDistance;
+
     static void init();
     static void clear();
     static float calculateDeltaTime(float currentFrame);

@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "../render/Camera.h"
+#include "../render/Renderer.h"
 #include "../utils/ThreadSafeQueue.h"
 
 
@@ -111,7 +112,7 @@ void World::generateMeshDataForEachChunks(const glm::vec3 &cameraChunkPos, const
             if (chunk->m_status1() == Status::VOXEL_GENERATED) {
                 m_threadPool.enqueue([chunk, this] {
                     chunk->generateMeshData();
-                    m_chunksToRender.push(chunk);
+                    if (chunk->hasVisibleFaces()) m_chunksToRender.push(chunk);
                 });
             }
         }

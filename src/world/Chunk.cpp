@@ -94,6 +94,10 @@ void Chunk::setupBuffers() {
     m_status = Status::BUFFERS_SETUP;
 }
 
+bool Chunk::hasVisibleFaces() const {
+    return !m_vertices.empty() && !m_blockFaceData.empty();
+}
+
 const VertexArray &Chunk::m_vao() const {
     return m_VAO;
 }

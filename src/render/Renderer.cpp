@@ -1,10 +1,12 @@
 #include "Renderer.h"
 
 #include "../core/OpenGLDebug.h"
+#include "../world/Chunk.h"
 #include "GL/glew.h"
 
 float Renderer::m_deltaTime = 0.0f;
 float Renderer::m_lastFrame = 0.0f;
+float Renderer::m_renderDistance = 16.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
 
 void Renderer::init() {
     GLCall(glEnable(GL_DEPTH_TEST));

@@ -8,7 +8,7 @@ Frustum::Frustum(const Plane &left, const Plane &right, const Plane &bottom, con
 
 Frustum::~Frustum() = default;
 
-bool Frustum::isAABBInFrustum(const AABB &box) {
+bool Frustum::isAABBInFrustum(const AABB &box) const {
     for (const auto& plane : m_planes) {
         int out = 0;
         for (int i = 0; i < 8; ++i) {
