@@ -110,15 +110,15 @@ const AABB & Chunk::m_box1() const {
     return m_box;
 }
 
-int Chunk::m_x_start() const {
+int Chunk::m_x1() const {
     return m_x;
 }
 
-int Chunk::m_y_start() const {
+int Chunk::m_y1() const {
     return m_y;
 }
 
-int Chunk::m_z_start() const {
+int Chunk::m_z1() const {
     return m_z;
 }
 

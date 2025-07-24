@@ -103,7 +103,7 @@ void World::generateMeshDataForEachChunks(const glm::vec3 &cameraChunkPos, const
     {
         std::lock_guard lock(m_chunksMutex);
         for (const auto &chunk: m_loadedChunks | std::views::values) {
-            if (const glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
+            if (const glm::vec3 chunkPos(chunk->m_x1(), chunk->m_y1(), chunk->m_z1());
                 glm::distance(cameraChunkPos, chunkPos) > renderDistanceInBlocks - static_cast<float>(Chunk::m_size1())) {
                 continue;
             }
@@ -127,7 +127,7 @@ void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const int rende
     std::lock_guard lock(m_chunksMutex);
     for (auto it = m_loadedChunks.begin(); it != m_loadedChunks.end();) {
         const std::shared_ptr<Chunk> chunk = it->second;
-        if (glm::vec3 chunkPos(chunk->m_x_start(), chunk->m_y_start(), chunk->m_z_start());
+        if (glm::vec3 chunkPos(chunk->m_x1(), chunk->m_y1(), chunk->m_z1());
             glm::distance(cameraChunkPos, chunkPos) > static_cast<float>(renderDistance)) {
             it = m_loadedChunks.erase(it);
         } else {

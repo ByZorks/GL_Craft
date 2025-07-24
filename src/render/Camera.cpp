@@ -71,9 +71,9 @@ void Camera::mouseCallback(GLFWwindow *window, const double xpos, const double y
 }
 
 float Camera::distanceToCamera(const Chunk& chunk) const {
-    const auto x = static_cast<float>(chunk.m_x_start());
-    const auto y = static_cast<float>(chunk.m_y_start());
-    const auto z = static_cast<float>(chunk.m_z_start());
+    const auto x = static_cast<float>(chunk.m_x1());
+    const auto y = static_cast<float>(chunk.m_y1());
+    const auto z = static_cast<float>(chunk.m_z1());
     const auto size = static_cast<float>(Chunk::m_size1());
     const glm::vec3 farCorner(x + size - 1, y + size - 1, z + size - 1);
 

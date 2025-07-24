@@ -90,9 +90,9 @@ int main(int argc, char *argv[]) {
                 if (!frustum.isAABBInFrustum(chunk_ptr->m_box1())) return;
 
                 shader.setUniform3f("u_ChunkOffset",
-                                    static_cast<float>(chunk_ptr->m_x_start()),
-                                    static_cast<float>(chunk_ptr->m_y_start()),
-                                    static_cast<float>(chunk_ptr->m_z_start()));
+                                    static_cast<float>(chunk_ptr->m_x1()),
+                                    static_cast<float>(chunk_ptr->m_y1()),
+                                    static_cast<float>(chunk_ptr->m_z1()));
                 Renderer::draw(chunk_ptr->m_vao(), chunk_ptr->m_ibo());
                 visibleChunksCount++;
             });
