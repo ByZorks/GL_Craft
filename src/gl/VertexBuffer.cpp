@@ -6,7 +6,9 @@
 VertexBuffer::VertexBuffer() = default;
 
 VertexBuffer::~VertexBuffer() {
-    GLCall(glDeleteBuffers(1, &m_RendererID));
+    if (m_RendererID != 0) {
+        GLCall(glDeleteBuffers(1, &m_RendererID));
+    }
 }
 
 void VertexBuffer::init(const void *data, const unsigned int size) {
