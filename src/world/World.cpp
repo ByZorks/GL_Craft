@@ -36,7 +36,7 @@ void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
 
     unloadDistantChunks(cameraChunkPos, renderDistanceInBlocks);
 
-    generateDataForEachChunks(renderDistanceInBlocks, cameraWorldX, cameraWorldY, cameraWorldZ, cameraChunkPos);
+    generateDataForEachChunks(renderDistanceInBlocks, cameraWorldX, cameraWorldY, cameraWorldZ);
 }
 
 const FastNoiseLite & World::m_noise_generator() const {
@@ -48,8 +48,7 @@ const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & Wo
 }
 
 void World::generateDataForEachChunks(const float renderDistanceInBlocks, const int cameraWorldX,
-                                          const int cameraWorldY, const int cameraWorldZ, const glm::vec3 &cameraChunkPos) {
-    std::vector<std::tuple<int, int, int>> chunksToProcess;
+                                          const int cameraWorldY, const int cameraWorldZ) {
     const int r = static_cast<int>(renderDistanceInBlocks / static_cast<float>(Chunk::m_size1()));
     const int r2 = r * r;
 
