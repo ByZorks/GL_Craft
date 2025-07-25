@@ -36,7 +36,7 @@ void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
 
     unloadDistantChunks(cameraChunkPos, renderDistanceInBlocks);
 
-    generateVoxelDataForEachChunks(renderDistanceInBlocks, cameraWorldX, cameraWorldY, cameraWorldZ, cameraChunkPos);
+    generateDataForEachChunks(renderDistanceInBlocks, cameraWorldX, cameraWorldY, cameraWorldZ, cameraChunkPos);
 }
 
 const FastNoiseLite & World::m_noise_generator() const {
@@ -47,7 +47,7 @@ const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & Wo
     return m_loadedChunks;
 }
 
-void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, const int cameraWorldX,
+void World::generateDataForEachChunks(const float renderDistanceInBlocks, const int cameraWorldX,
                                           const int cameraWorldY, const int cameraWorldZ, const glm::vec3 &cameraChunkPos) {
     std::vector<std::tuple<int, int, int>> chunksToProcess;
     const int r = static_cast<int>(renderDistanceInBlocks / static_cast<float>(Chunk::m_size1()));
@@ -102,7 +102,7 @@ void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, c
 
     const auto t2 = std::chrono::high_resolution_clock::now();
     if (const auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1); ms_int.count() > 0) {
-        std::cout << "[generateVoxelData] " << ms_int.count() << "ms\n";
+        std::cout << "[generateData] " << ms_int.count() << "ms\n";
     }
 }
 

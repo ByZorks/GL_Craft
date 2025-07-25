@@ -35,7 +35,7 @@ public:
     [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
 
 private:
-    void generateVoxelDataForEachChunks(float renderDistanceInBlocks, int cameraWorldX, int cameraWorldY, int cameraWorldZ, const glm::vec3 &cameraChunkPos);
+    void generateDataForEachChunks(float renderDistanceInBlocks, int cameraWorldX, int cameraWorldY, int cameraWorldZ, const glm::vec3 &cameraChunkPos);
     void unloadDistantChunks(const glm::vec3 &cameraChunkPos, float renderDistance);
 };
 
