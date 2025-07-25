@@ -11,7 +11,7 @@
 
 #include "stb_image.h"
 
-Texture::Texture(std::string filePath) : m_RendererID(0), m_FilePath(std::move(filePath)), m_LocalBuffer(nullptr),
+Texture::Texture(std::string filePath) : m_FilePath(std::move(filePath)), m_LocalBuffer(nullptr),
                                          m_Width(0), m_Height(0), m_BPP(0) {
     stbi_set_flip_vertically_on_load(1);
 
@@ -33,7 +33,9 @@ Texture::Texture(std::string filePath) : m_RendererID(0), m_FilePath(std::move(f
 }
 
 Texture::~Texture() {
-    GLCall(glDeleteTextures(1, &m_RendererID));
+    if (m_RendererID != 0) {
+        GLCall(glDeleteTextures(1, &m_RendererID));
+    }
 }
 
 void Texture::bind(const unsigned int slot) const {

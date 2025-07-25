@@ -6,7 +6,9 @@
 IndexBuffer::IndexBuffer() = default;
 
 IndexBuffer::~IndexBuffer() {
-    GLCall(glDeleteBuffers(1, &m_rendererID));
+    if (m_rendererID != 0) {
+        GLCall(glDeleteBuffers(1, &m_rendererID));
+    }
 }
 
 void IndexBuffer::init(const unsigned int *data, const unsigned int count) {
