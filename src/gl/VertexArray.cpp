@@ -9,9 +9,7 @@ VertexArray::VertexArray() {
 }
 
 VertexArray::~VertexArray() {
-    if (m_RendererID != 0) {
-        GLCall(glDeleteVertexArrays(1, &m_RendererID));
-    }
+    GLCall(glDeleteVertexArrays(1, &m_RendererID));
 }
 
 void VertexArray::AddBuffer(const VertexBuffer &vb, const VertexBufferLayout &layout) const {
