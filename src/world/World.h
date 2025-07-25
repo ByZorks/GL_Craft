@@ -20,7 +20,7 @@ private:
     ThreadPool m_threadPool;
     mutable std::mutex m_chunksMutex;
     std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> m_loadedChunks;
-    ThreadSafeQueue<std::shared_ptr<Chunk>> m_chunksToRender;
+    ThreadSafeQueue<std::weak_ptr<Chunk>> m_chunksToRender;
     FastNoiseLite m_noiseGenerator;
 
 public:
@@ -36,18 +36,17 @@ public:
 
 private:
     void generateVoxelDataForEachChunks(float renderDistanceInBlocks, int cameraWorldX, int cameraWorldY, int cameraWorldZ, const glm::vec3 &cameraChunkPos);
-    void unloadDistantChunks(const glm::vec3 &cameraChunkPos, int renderDistance);
+    void unloadDistantChunks(const glm::vec3 &cameraChunkPos, float renderDistance);
 };
 
 template<typename Callback>
 void World::forEachRenderableChunk(Callback &&callback) {
     // Process chunks that are ready to be rendered
-    std::shared_ptr<Chunk> chunkToSetup;
     constexpr int maxToProcessPerFrame = 10;
-    for (int i = 0; i < maxToProcessPerFrame && ((chunkToSetup = m_chunksToRender.pop())); ++i) {
-        if (chunkToSetup && chunkToSetup->m_status1() == Status::MESH_GENERATED) {
-            chunkToSetup->setupBuffers();
-        }
+    for (int i = 0; i < maxToProcessPerFrame; ++i) {
+        const std::shared_ptr<Chunk> p_chunk = m_chunksToRender.pop().lock();
+        if (!p_chunk || p_chunk->m_status1() != Status::MESH_GENERATED) break;
+        p_chunk->setupBuffers();
     }
 
     // Call the callback for each chunk that is ready to be rendered

@@ -40,7 +40,7 @@ public:
 
     T pop() {
         std::unique_lock lk(mutex_);
-        if (queue_.empty()) return nullptr;
+        if (queue_.empty()) return T{};
         T item = queue_.front();
         queue_.pop();
         return item;
@@ -54,6 +54,13 @@ public:
         T item = queue_.front();
         queue_.pop();
         return item;
+    }
+
+    void clear() {
+        std::lock_guard lk(mutex_);
+        while (!queue_.empty()) {
+            queue_.pop();
+        }
     }
 
 private:

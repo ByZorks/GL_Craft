@@ -22,7 +22,7 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
 
 World::~World() {
     m_loadedChunks.clear();
-    while (m_chunksToRender.pop());
+    m_chunksToRender.clear();
 }
 
 void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
@@ -34,7 +34,7 @@ void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
     const int cameraWorldZ = static_cast<int>(std::floor(camera.m_camera_pos().z / static_cast<float>(chunkSize))) * chunkSize;
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
-    unloadDistantChunks(cameraChunkPos, static_cast<int>(renderDistanceInBlocks));
+    unloadDistantChunks(cameraChunkPos, renderDistanceInBlocks);
 
     generateVoxelDataForEachChunks(renderDistanceInBlocks, cameraWorldX, cameraWorldY, cameraWorldZ, cameraChunkPos);
 }
@@ -106,15 +106,10 @@ void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, c
     }
 }
 
-void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const int renderDistance) {
+void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const float renderDistance) {
     std::lock_guard lock(m_chunksMutex);
-    for (auto it = m_loadedChunks.begin(); it != m_loadedChunks.end(); ) {
-        auto [x, y, z] = it->first;
-        if (const float dist = glm::distance(glm::vec3(x, y, z), cameraChunkPos); dist > static_cast<float>(renderDistance)) {
-            it->second->~Chunk();
-            it = m_loadedChunks.erase(it);
-        } else {
-            ++it;
-        }
-    }
+    std::erase_if(m_loadedChunks, [&](const auto &pair) {
+        auto [x, y, z] = pair.first;
+        return glm::distance(glm::vec3(x, y, z), cameraChunkPos) > renderDistance;
+    });
 }
