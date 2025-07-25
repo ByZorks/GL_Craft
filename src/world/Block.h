@@ -4,8 +4,8 @@
 
 #include "GL/glew.h"
 
-enum class Face : unsigned int {
-    FRONT = 0,
+enum class Face : uint8_t {
+    FRONT,
     BACK,
     LEFT,
     RIGHT,
@@ -13,7 +13,7 @@ enum class Face : unsigned int {
     BOTTOM
 };
 
-enum class BlockType : unsigned int {
+enum class BlockType : uint8_t {
     AIR,
     BEDROCK,
     DIRT,

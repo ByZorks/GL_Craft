@@ -12,14 +12,14 @@ class World;
 
 struct BlockFaceData {
     Face faceType;
-    unsigned int vertexCount;
+    uint8_t vertexCount;
 };
 
-enum class Status {
-    NOT_GENERATED = 0,
-    VOXEL_GENERATED = 1,
-    MESH_GENERATED = 2,
-    BUFFERS_SETUP = 3
+enum class Status : uint8_t {
+    NOT_GENERATED,
+    VOXEL_GENERATED,
+    MESH_GENERATED,
+    BUFFERS_SETUP
 };
 
 class Chunk {
