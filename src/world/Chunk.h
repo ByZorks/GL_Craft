@@ -28,7 +28,7 @@ private:
     int m_x, m_y, m_z;
     std::vector<BlockVertex> m_vertices;
     std::vector<BlockFaceData> m_blockFaceData;
-    BlockType m_blockType[18][18][18] = {{{BlockType::AIR}}}; // 16x16x16 chunk size + 2 for boundary checks
+    std::vector<BlockType> m_blockType;
     Status m_status = Status::NOT_GENERATED;
     VertexArray m_VAO;
     VertexBuffer m_VBO;
@@ -43,6 +43,9 @@ public:
     void generateMeshData();
     void setupBuffers();
 
+    static int index(int x, int y, int z);
+
+    [[nodiscard]] bool hasBlocks();
     [[nodiscard]] bool hasVisibleFaces() const;
 
     [[nodiscard]] const VertexArray & m_vao() const;

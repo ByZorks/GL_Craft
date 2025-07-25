@@ -20,6 +20,7 @@ Chunk::Chunk(const int x, const int y, const int z) : m_x(x), m_y(y), m_z(z),
     constexpr size_t avg_faces = max_faces / 4; // Assuming each block has a quarter of the maximum faces
     m_vertices.reserve(avg_faces * 4); // avg_faces * 4 vertices per face
     m_blockFaceData.reserve(avg_faces);
+    m_blockType.resize((m_size + 2) * (m_size + 2) * (m_size + 2), BlockType::AIR); // +2 for boundary checks
 }
 
 Chunk::~Chunk() {
@@ -44,9 +45,9 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
 
             for (int localY = 0; localY < m_size + 2; localY++) {
                 if (const int worldY = m_y + localY; worldY <= columnHeight) {
-                    m_blockType[localX][localY][localZ] = Block::getBlockType(worldY, columnHeight);
+                    m_blockType[index(localX, localY, localZ)] = Block::getBlockType(worldY, columnHeight);
                 } else if (constexpr int waterLevel = 62; worldY < waterLevel) {
-                    m_blockType[localX][localY][localZ] = BlockType::WATER;
+                    m_blockType[index(localX, localY, localZ)] = BlockType::WATER;
                 } else {
                     break;
                 }
@@ -63,7 +64,7 @@ void Chunk::generateMeshData() {
             for (int localY = 0; localY < m_size; localY++) {
                 if (!isBlockPresent(localX, localY, localZ)) continue;
 
-                addBlockFaces(localX, localY, localZ, m_blockType[localX+1][localY+1][localZ+1]);
+                addBlockFaces(localX, localY, localZ, m_blockType[index(localX+1, localY+1, localZ+1)]);
             }
         }
     }
@@ -105,6 +106,19 @@ void Chunk::setupBuffers() {
     m_status = Status::BUFFERS_SETUP;
 }
 
+int Chunk::index(const int x, const int y, const int z) {
+    const int stride = static_cast<int>(m_size) + 2;
+    return x * stride * stride + y * stride + z;
+}
+
+bool Chunk::hasBlocks() {
+    if (std::any_of(m_blockType.begin(), m_blockType.end(), [](const BlockType type) { return type != BlockType::AIR; })) {
+        m_blockType.clear();
+        return true;
+    }
+    return false;
+}
+
 bool Chunk::hasVisibleFaces() const {
     return !m_vertices.empty() && !m_blockFaceData.empty();
 }
@@ -138,7 +152,7 @@ int Chunk::m_z1() const {
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {
-    return m_blockType[localX+1][localY+1][localZ+1] != BlockType::AIR;
+    return m_blockType[index(localX+1, localY+1, localZ+1)] != BlockType::AIR;
 }
 
 Status Chunk::m_status1() const {
@@ -199,5 +213,5 @@ bool Chunk::shouldDrawFace(const int localX, const int localY, const int localZ,
 }
 
 BlockType Chunk::getBlockType(const int localX, const int localY, const int localZ) const {
-    return m_blockType[localX+1][localY+1][localZ+1];
+    return m_blockType[index(localX+1, localY+1, localZ+1)];
 }
