@@ -36,11 +36,7 @@ void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
 
     unloadDistantChunks(cameraChunkPos, static_cast<int>(renderDistanceInBlocks));
 
-    // First pass: generate voxel data for each chunk
     generateVoxelDataForEachChunks(renderDistanceInBlocks, cameraWorldX, cameraWorldY, cameraWorldZ, cameraChunkPos);
-
-    // Second pass: generate mesh data for each chunk
-    // generateMeshDataForEachChunks(cameraChunkPos, renderDistanceInBlocks);
 }
 
 const FastNoiseLite & World::m_noise_generator() const {
@@ -112,10 +108,10 @@ void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, c
 
 void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const int renderDistance) {
     std::lock_guard lock(m_chunksMutex);
-    for (auto it = m_loadedChunks.begin(); it != m_loadedChunks.end();) {
-        const std::shared_ptr<Chunk> chunk = it->second;
-        if (glm::vec3 chunkPos(chunk->m_x1(), chunk->m_y1(), chunk->m_z1());
-            glm::distance(cameraChunkPos, chunkPos) > static_cast<float>(renderDistance)) {
+    for (auto it = m_loadedChunks.begin(); it != m_loadedChunks.end(); ) {
+        auto [x, y, z] = it->first;
+        if (const float dist = glm::distance(glm::vec3(x, y, z), cameraChunkPos); dist > static_cast<float>(renderDistance)) {
+            it->second->~Chunk();
             it = m_loadedChunks.erase(it);
         } else {
             ++it;

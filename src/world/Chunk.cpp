@@ -1,6 +1,7 @@
 #include "Chunk.h"
 
 #include <cmath>
+#include <iostream>
 
 #include "Block.h"
 #include "World.h"
@@ -21,7 +22,12 @@ Chunk::Chunk(const int x, const int y, const int z) : m_x(x), m_y(y), m_z(z),
     m_blockFaceData.reserve(avg_faces);
 }
 
-Chunk::~Chunk() = default;
+Chunk::~Chunk() {
+    m_vertices.clear();
+    m_vertices.shrink_to_fit();
+    m_blockFaceData.clear();
+    m_blockFaceData.shrink_to_fit();
+}
 
 void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
     for (int localX = 0; localX < m_size + 2; localX++) { // +2 for boundary checks
@@ -60,6 +66,11 @@ void Chunk::generateMeshData() {
                 addBlockFaces(localX, localY, localZ, m_blockType[localX+1][localY+1][localZ+1]);
             }
         }
+    }
+
+    if (!hasVisibleFaces()) {
+        m_blockFaceData.shrink_to_fit();
+        m_vertices.shrink_to_fit();
     }
 
     m_status = Status::MESH_GENERATED;
