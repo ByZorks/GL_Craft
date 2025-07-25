@@ -17,11 +17,12 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_noiseGenerator.SetFractalLacunarity(2.2f);
 
     m_loadedChunks.reserve(static_cast<std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>>::size_type>(
-        Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance) * 2); // Approximate reserve size based on render distance
+        Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance) * 2);
 }
 
 World::~World() {
     m_loadedChunks.clear();
+    while (m_chunksToRender.pop());
 }
 
 void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
@@ -39,7 +40,7 @@ void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
     generateVoxelDataForEachChunks(renderDistanceInBlocks, cameraWorldX, cameraWorldY, cameraWorldZ, cameraChunkPos);
 
     // Second pass: generate mesh data for each chunk
-    generateMeshDataForEachChunks(cameraChunkPos, renderDistanceInBlocks);
+    // generateMeshDataForEachChunks(cameraChunkPos, renderDistanceInBlocks);
 }
 
 const FastNoiseLite & World::m_noise_generator() const {
@@ -75,7 +76,7 @@ void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, c
     std::sort(circleOffsets.begin(), circleOffsets.end(),
               [&](auto &a, auto &b) {
                   return a.x*a.x + a.z*a.z
-                   > b.x*b.x + b.z*b.z;
+                   < b.x*b.x + b.z*b.z;
               });
 
     // Generate chunks
@@ -88,15 +89,17 @@ void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, c
             if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
             const std::tuple<int, int, int> existingChunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
-            std::shared_ptr<Chunk> chunk_ptr;
+            std::shared_ptr<Chunk> p_chunk;
             {
                 std::lock_guard lock(m_chunksMutex);
                 if (m_loadedChunks.contains(existingChunkKey)) continue;
-                chunk_ptr = std::make_shared<Chunk>(chunkX, chunkY, chunkZ);
-                m_loadedChunks[existingChunkKey] = chunk_ptr;
+                p_chunk = std::make_shared<Chunk>(chunkX, chunkY, chunkZ);
+                m_loadedChunks[existingChunkKey] = p_chunk;
             }
             m_threadPool.enqueue([=, this] {
-                chunk_ptr->generateVoxelData(m_noiseGenerator);
+                p_chunk->generateVoxelData(m_noiseGenerator);
+                p_chunk->generateMeshData();
+                if (p_chunk->hasVisibleFaces()) m_chunksToRender.push(p_chunk);
             });
         }
     }
@@ -104,31 +107,6 @@ void World::generateVoxelDataForEachChunks(const float renderDistanceInBlocks, c
     const auto t2 = std::chrono::high_resolution_clock::now();
     if (const auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1); ms_int.count() > 0) {
         std::cout << "[generateVoxelData] " << ms_int.count() << "ms\n";
-    }
-}
-
-void World::generateMeshDataForEachChunks(const glm::vec3 &cameraChunkPos, const float renderDistanceInBlocks) {
-    const auto t1 = std::chrono::high_resolution_clock::now();
-    {
-        std::lock_guard lock(m_chunksMutex);
-        for (const auto &chunk: m_loadedChunks | std::views::values) {
-            if (const glm::vec3 chunkPos(chunk->m_x1(), chunk->m_y1(), chunk->m_z1());
-                glm::distance(cameraChunkPos, chunkPos) > renderDistanceInBlocks - static_cast<float>(Chunk::m_size1())) {
-                continue;
-            }
-
-            if (chunk->m_status1() == Status::VOXEL_GENERATED) {
-                m_threadPool.enqueue([chunk, this] {
-                    chunk->generateMeshData();
-                    if (chunk->hasVisibleFaces()) m_chunksToRender.push(chunk);
-                });
-            }
-        }
-    }
-
-    const auto t2 = std::chrono::high_resolution_clock::now();
-    if (const auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1); ms_int.count() > 0) {
-        std::cout << "[generateMeshData] " << ms_int.count() << "ms\n";
     }
 }
 

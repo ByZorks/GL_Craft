@@ -17,11 +17,11 @@ class Camera;
 
 class World {
 private:
-    std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> m_loadedChunks;
-    mutable std::mutex m_chunksMutex;
-    FastNoiseLite m_noiseGenerator;
     ThreadPool m_threadPool;
+    mutable std::mutex m_chunksMutex;
+    std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> m_loadedChunks;
     ThreadSafeQueue<std::shared_ptr<Chunk>> m_chunksToRender;
+    FastNoiseLite m_noiseGenerator;
 
 public:
     World();
@@ -36,7 +36,6 @@ public:
 
 private:
     void generateVoxelDataForEachChunks(float renderDistanceInBlocks, int cameraWorldX, int cameraWorldY, int cameraWorldZ, const glm::vec3 &cameraChunkPos);
-    void generateMeshDataForEachChunks(const glm::vec3 &cameraChunkPos, float renderDistanceInBlocks);
     void unloadDistantChunks(const glm::vec3 &cameraChunkPos, int renderDistance);
 };
 
