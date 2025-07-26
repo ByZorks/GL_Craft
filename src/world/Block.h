@@ -54,7 +54,7 @@ public:
     Block(float x, float y, float z);
     ~Block();
 
-    static BlockType getBlockType(int y, int columnHeight);
+    static BlockType getBlockType(float y, float columnHeight, float caveShape, float caveThreshold);
     static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, float block_startX, float block_startY, float block_startZ);
     static bool isTransparent(BlockType type);
 

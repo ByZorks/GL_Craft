@@ -10,11 +10,19 @@
 
 
 World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
-    m_noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    m_noiseGenerator.SetFrequency(.0055f);
-    m_noiseGenerator.SetFractalType(FastNoiseLite::FractalType_FBm);
-    m_noiseGenerator.SetFractalOctaves(6);
-    m_noiseGenerator.SetFractalLacunarity(2.2f);
+    m_terrainHeightGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    m_terrainHeightGenerator.SetFrequency(.0055f);
+    m_terrainHeightGenerator.SetFractalType(FastNoiseLite::FractalType_FBm);
+    m_terrainHeightGenerator.SetFractalOctaves(6);
+    m_terrainHeightGenerator.SetFractalLacunarity(2.2f);
+
+    m_caveGenerator.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    m_caveGenerator.SetFrequency(.018f);
+    m_caveGenerator.SetFractalType(FastNoiseLite::FractalType_Ridged);
+    m_caveGenerator.SetFractalOctaves(6);
+    m_caveGenerator.SetFractalLacunarity(1.29f);
+    m_caveGenerator.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
+    m_caveGenerator.SetDomainWarpAmp(9.f);
 
     m_loadedChunks.reserve(static_cast<std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>>::size_type>(
         Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance) * 2);
@@ -40,7 +48,7 @@ void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
 }
 
 const FastNoiseLite & World::m_noise_generator() const {
-    return m_noiseGenerator;
+    return m_terrainHeightGenerator;
 }
 
 const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & World::m_loaded_chunks() const {
@@ -92,7 +100,7 @@ void World::generateDataForEachChunks(const float renderDistanceInBlocks, const 
                 m_loadedChunks[existingChunkKey] = p_chunk;
             }
             m_threadPool.enqueue([=, this] {
-                p_chunk->generateVoxelData(m_noiseGenerator);
+                p_chunk->generateVoxelData(m_terrainHeightGenerator, m_caveGenerator);
                 p_chunk->generateMeshData();
                 if (!p_chunk->hasVisibleFaces()) return;
                 m_chunksToRender.push(p_chunk);

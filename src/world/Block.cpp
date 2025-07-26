@@ -1,5 +1,6 @@
 #include "Block.h"
 
+#include <iostream>
 #include <stdexcept>
 
 #include "Chunk.h"
@@ -9,12 +10,15 @@ Block::Block(const float x, const float y, const float z) : m_x(x), m_y(y), m_z(
 
 Block::~Block() = default;
 
-BlockType Block::getBlockType(const int y, const int columnHeight) {
-    if (y < 0) return BlockType::AIR;
-    if (y == 0) return BlockType::BEDROCK;
-    if (y < columnHeight - 4) return BlockType::STONE;
-    if (y < columnHeight) return BlockType::DIRT;
-    if (y == columnHeight) return BlockType::GRASS;
+BlockType Block::getBlockType(const float y, const float columnHeight, const float caveShape, const float caveThreshold) {
+    const int yf = static_cast<int>(std::floor(y));
+    const int columnHeightf = static_cast<int>(std::floor(columnHeight));
+    if (yf < 1) return BlockType::AIR;
+    if (yf == 1) return BlockType::BEDROCK;
+    if (caveShape > caveThreshold - 0.1f && caveShape < caveThreshold + 0.1f) return BlockType::AIR;
+    if (yf == columnHeightf) return BlockType::GRASS;
+    if (yf < columnHeightf - 4) return BlockType::STONE;
+    if (yf < columnHeightf) return BlockType::DIRT;
     return BlockType::AIR;
 }
 

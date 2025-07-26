@@ -30,7 +30,7 @@ Chunk::~Chunk() {
     m_blockFaceData.shrink_to_fit();
 }
 
-void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
+void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator, const FastNoiseLite& caveGenerator) {
     for (int localX = 0; localX < m_size + 2; localX++) { // +2 for boundary checks
         const auto worldX = static_cast<float>(m_x + localX);
 
@@ -41,11 +41,18 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator) {
 
             const float normalizedNoise = (noiseGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
             const float terrainShape = std::pow(normalizedNoise, 4.6f); // Create more plains and sharper mountains
-            const int columnHeight = baseHeight + static_cast<int>(terrainShape * maxHeight); // Scale to world height
+            const float columnHeight = baseHeight + terrainShape * maxHeight; // Scale to world height
 
             for (int localY = 0; localY < m_size + 2; localY++) {
-                if (const int worldY = m_y + localY; worldY <= columnHeight) {
-                    m_blockType[index(localX, localY, localZ)] = Block::getBlockType(worldY, columnHeight);
+                const auto worldY = static_cast<float>(m_y + localY);
+
+                const float normalized3DNoise = (caveGenerator.GetNoise(worldX, worldY, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
+                constexpr float baseCaveThreshold = 0.82f;
+                const float surfaceModifier = 1.0f - std::clamp((worldY - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
+                const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
+
+                if (worldY <= columnHeight) {
+                    m_blockType[index(localX, localY, localZ)] = Block::getBlockType(worldY, columnHeight, normalized3DNoise, caveThreshold);
                 } else if (constexpr int waterLevel = 62; worldY < waterLevel) {
                     m_blockType[index(localX, localY, localZ)] = BlockType::WATER;
                 } else {

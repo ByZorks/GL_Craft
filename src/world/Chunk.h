@@ -39,7 +39,7 @@ public:
     Chunk(int x, int y, int z);
     ~Chunk();
 
-    void generateVoxelData(const FastNoiseLite& noiseGenerator);
+    void generateVoxelData(const FastNoiseLite& noiseGenerator, const FastNoiseLite& caveGenerator);
     void generateMeshData();
     void setupBuffers();
 

@@ -21,7 +21,8 @@ private:
     mutable std::mutex m_chunksMutex;
     std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> m_loadedChunks;
     ThreadSafeQueue<std::weak_ptr<Chunk>> m_chunksToRender;
-    FastNoiseLite m_noiseGenerator;
+    FastNoiseLite m_terrainHeightGenerator;
+    FastNoiseLite m_caveGenerator;
 
 public:
     World();
