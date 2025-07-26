@@ -8,7 +8,6 @@
 #include "../render/Renderer.h"
 #include "../utils/ThreadSafeQueue.h"
 
-
 World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
     m_terrainHeightGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
     m_terrainHeightGenerator.SetFrequency(.0055f);
@@ -25,7 +24,7 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_caveGenerator.SetDomainWarpAmp(9.f);
 
     m_loadedChunks.reserve(static_cast<std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>>::size_type>(
-        Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance) * 2);
+        Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f)); // Estimation based on testing
 }
 
 World::~World() {
@@ -60,7 +59,6 @@ void World::generateDataForEachChunks(const float renderDistanceInBlocks, const 
     const int r = static_cast<int>(renderDistanceInBlocks / static_cast<float>(Chunk::m_size1()));
     const int r2 = r * r;
 
-    const auto t1 = std::chrono::high_resolution_clock::now();
     // Pre-compute offsets for a circle of chunks around the camera position
     struct Offset { int x, z, maxY; };
     std::vector<Offset> circleOffsets;
@@ -73,7 +71,6 @@ void World::generateDataForEachChunks(const float renderDistanceInBlocks, const 
             }
         }
     }
-
 
     // Sort offsets by distance
     std::sort(circleOffsets.begin(), circleOffsets.end(),
@@ -91,26 +88,13 @@ void World::generateDataForEachChunks(const float renderDistanceInBlocks, const 
             const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::m_size1());
             if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
-            const std::tuple<int, int, int> existingChunkKey = std::make_tuple(chunkX, chunkY, chunkZ);
-            std::shared_ptr<Chunk> p_chunk;
+            const std::tuple<int, int, int> key = std::make_tuple(chunkX, chunkY, chunkZ);
             {
                 std::lock_guard lock(m_chunksMutex);
-                if (m_loadedChunks.contains(existingChunkKey)) continue;
-                p_chunk = std::make_shared<Chunk>(chunkX, chunkY, chunkZ);
-                m_loadedChunks[existingChunkKey] = p_chunk;
+                if (m_loadedChunks.contains(key)) continue;
             }
-            m_threadPool.enqueue([=, this] {
-                p_chunk->generateVoxelData(m_terrainHeightGenerator, m_caveGenerator);
-                p_chunk->generateMeshData();
-                if (!p_chunk->hasVisibleFaces()) return;
-                m_chunksToRender.push(p_chunk);
-            });
+            m_chunksToRender.push(key);
         }
-    }
-
-    const auto t2 = std::chrono::high_resolution_clock::now();
-    if (const auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1); ms_int.count() > 0) {
-        std::cout << "[generateData] " << ms_int.count() << "ms\n";
     }
 }
 
