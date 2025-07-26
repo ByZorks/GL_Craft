@@ -1,6 +1,6 @@
 #include "ThreadPool.h"
 
-ThreadPool::ThreadPool(const size_t numThreads) : m_stop(false) {
+ThreadPool::ThreadPool(const size_t numThreads) : m_stop(false), m_numThreads(numThreads) {
     for (size_t i = 0; i < numThreads; ++i) {
         m_workers.emplace_back([this] {
             while (true) {
@@ -25,4 +25,8 @@ ThreadPool::~ThreadPool() {
     for (std::thread &worker : m_workers)
         if (worker.joinable())
             worker.join();
+}
+
+size_t ThreadPool::m_num_threads() const {
+    return m_numThreads;
 }

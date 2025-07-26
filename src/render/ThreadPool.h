@@ -17,6 +17,8 @@ public:
     template<typename F, typename... Args>
     auto enqueue(F &&f, Args &&... args) -> std::future<decltype(f(args...))>;
 
+    [[nodiscard]] size_t m_num_threads() const;
+
 private:
     std::vector<std::thread> m_workers;
     std::queue<std::function<void()> > m_tasks;
@@ -24,6 +26,7 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_condition;
     std::atomic<bool> m_stop;
+    size_t m_numThreads;
 };
 
 template<typename F, typename... Args>
