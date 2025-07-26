@@ -10,6 +10,7 @@ struct VertexBufferElement {
     unsigned int type;
     unsigned int count;
     unsigned char normalized;
+    bool isInteger;
 
     static unsigned int GetSizeOfType(const unsigned int type) {
         switch (type) {
@@ -38,6 +39,11 @@ public:
         throw std::runtime_error("Unsupported type for VertexBufferLayout::Push");
     }
 
+    template<typename T>
+    void PushInt(unsigned int count, bool normalized = false) {
+        throw std::runtime_error("Unsupported type for VertexBufferLayout::PushInt");
+    }
+
     [[nodiscard]] std::vector<VertexBufferElement> m_elements() const {
         return m_Elements;
     }
@@ -62,6 +68,12 @@ inline void VertexBufferLayout::Push<unsigned int>(const unsigned int count, con
 template<>
 inline void VertexBufferLayout::Push<unsigned char>(const unsigned int count, const bool normalized) {
     m_Elements.push_back({GL_UNSIGNED_BYTE, count, static_cast<unsigned char>(normalized)});
+    m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE) * count;
+}
+
+template<>
+inline void VertexBufferLayout::PushInt<unsigned char>(const unsigned int count, const bool normalized) {
+    m_Elements.push_back({GL_UNSIGNED_BYTE, count, static_cast<unsigned char>(normalized), true}); // ⚠️ isInteger = true
     m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE) * count;
 }
 

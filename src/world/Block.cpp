@@ -26,16 +26,14 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
     vertices.reserve(vertices.size() + 4);
 
     // Helper lambda to add a vertex directly
-    auto addVertex = [&vertices](const float x, const float y, const float z, const uint8_t u, const uint8_t v, const int8_t normal[3]) {
+    auto addVertex = [&vertices](const float x, const float y, const float z, const uint8_t u, const uint8_t v, const uint8_t faceIndex) {
         vertices.emplace_back(BlockVertex{
             static_cast<uint8_t>(x),
             static_cast<uint8_t>(y),
             static_cast<uint8_t>(z),
             u,
             v,
-            normal[0],
-            normal[1],
-            normal[2]
+            faceIndex
         });
     };
 
@@ -45,11 +43,11 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr int8_t normal[3] = {0, 0, -1};
-            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, normal);
-            addVertex(block_endX, block_endY, block_endZ, u_end, v_end, normal);
-            addVertex(block_endX, block_startY, block_endZ, u_end, v_start, normal);
-            addVertex(block_startX, block_startY, block_endZ, u_start, v_start, normal);
+            constexpr uint8_t faceIndex = 0;
+            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, faceIndex);
+            addVertex(block_endX, block_endY, block_endZ, u_end, v_end, faceIndex);
+            addVertex(block_endX, block_startY, block_endZ, u_end, v_start, faceIndex);
+            addVertex(block_startX, block_startY, block_endZ, u_start, v_start, faceIndex);
             break;
         }
         case Face::BACK: {
@@ -57,7 +55,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr int8_t normal[3] = {0, 0, 1};
+            constexpr uint8_t normal = 1;
             addVertex(block_startX, block_endY, block_startZ, u_start, v_end, normal);
             addVertex(block_endX, block_endY, block_startZ, u_end, v_end, normal);
             addVertex(block_endX, block_startY, block_startZ, u_end, v_start, normal);
@@ -69,7 +67,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr int8_t normal[3] = {-1, 0, 0};
+            constexpr uint8_t normal = 2;
             addVertex(block_startX, block_endY, block_endZ, u_start, v_end, normal);
             addVertex(block_startX, block_endY, block_startZ, u_end, v_end, normal);
             addVertex(block_startX, block_startY, block_startZ, u_end, v_start, normal);
@@ -81,7 +79,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr int8_t normal[3] = {1, 0, 0};
+            constexpr uint8_t normal = 3;
             addVertex(block_endX, block_endY, block_endZ, u_start, v_end, normal);
             addVertex(block_endX, block_endY, block_startZ, u_end, v_end, normal);
             addVertex(block_endX, block_startY, block_startZ, u_end, v_start, normal);
@@ -93,7 +91,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr int8_t normal[3] = {0, 1, 0};
+            constexpr uint8_t normal = 4;
             const float topY = type == BlockType::WATER ? block_endY - 0.2f : block_endY;
             addVertex(block_startX, topY, block_endZ, u_end, v_end, normal);
             addVertex(block_endX, topY, block_endZ, u_start , v_end, normal);
@@ -106,7 +104,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr int8_t normal[3] = {0, -1, 0};
+            constexpr uint8_t normal = 5;
             addVertex(block_startX, block_startY, block_endZ, u_start, v_end, normal);
             addVertex(block_endX, block_startY, block_endZ, u_end, v_end, normal);
             addVertex(block_endX, block_startY, block_startZ, u_end, v_start, normal);

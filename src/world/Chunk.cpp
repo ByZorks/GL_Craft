@@ -100,7 +100,7 @@ void Chunk::setupBuffers() {
     VertexBufferLayout chunkLayout;
     chunkLayout.Push<unsigned char>(3); // x, y, z
     chunkLayout.Push<unsigned char>(2, true); // u, v
-    chunkLayout.Push<unsigned char>(3); // nx, ny, nz (normal vector)
+    chunkLayout.PushInt<unsigned char>(1); // face
     m_VAO.AddBuffer(m_VBO, chunkLayout);
 
     m_status = Status::BUFFERS_SETUP;

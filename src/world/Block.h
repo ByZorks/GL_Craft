@@ -25,7 +25,7 @@ enum class BlockType : uint8_t {
 struct BlockVertex {
     uint8_t x, y, z; // Position in world coordinates
     uint8_t texCol, texRow; // Texture coordinates
-    int8_t nx, ny, nz; // Normal vector components
+    uint8_t face;
 };
 
 class Block {
