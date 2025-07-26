@@ -13,7 +13,7 @@ Camera::Camera(const unsigned int windowWidth,
                                                   m_firstMouse(true), m_cameraPos(glm::vec3(0.0f, 110, .0f)),
                                                   m_cameraFront(glm::vec3(0.0f, 0.0f, -1.0f)),
                                                   m_cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
-                                                  m_FOVDegrees(45.f),
+                                                  m_FOVDegrees(70.f),
                                                   m_aspectRatio(
                                                       static_cast<float>(windowWidth) / static_cast<float>(
                                                           windowHeight)),
