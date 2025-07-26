@@ -93,8 +93,10 @@ void World::generateDataForEachChunks(const float renderDistanceInBlocks, const 
             }
             m_threadPool.enqueue([=, this] {
                 p_chunk->generateVoxelData(m_noiseGenerator);
+                if (!p_chunk->hasBlocks()) return;
                 p_chunk->generateMeshData();
-                if (p_chunk->hasVisibleFaces()) m_chunksToRender.push(p_chunk);
+                if (!p_chunk->hasVisibleFaces()) return;
+                m_chunksToRender.push(p_chunk);
             });
         }
     }
