@@ -1,17 +1,22 @@
 #include "VertexArray.h"
 
+#include <iostream>
+#include <thread>
+
 #include "../core/OpenGLDebug.h"
 #include "GL/glew.h"
 
-VertexArray::VertexArray() {
-    GLCall(glGenVertexArrays(1, &m_RendererID));
-    GLCall(glBindVertexArray(m_RendererID));
-}
+VertexArray::VertexArray() = default;
 
 VertexArray::~VertexArray() {
     if (m_RendererID != 0) {
         GLCall(glDeleteVertexArrays(1, &m_RendererID));
     }
+}
+
+void VertexArray::init() {
+    GLCall(glGenVertexArrays(1, &m_RendererID));
+    GLCall(glBindVertexArray(m_RendererID));
 }
 
 void VertexArray::AddBuffer(const VertexBuffer &vb, const VertexBufferLayout &layout) const {

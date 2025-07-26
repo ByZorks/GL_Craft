@@ -108,6 +108,7 @@ void Chunk::setupBuffers() {
     chunkLayout.Push<unsigned char>(3); // x, y, z
     chunkLayout.Push<unsigned char>(2, true); // u, v
     chunkLayout.PushInt<unsigned char>(1); // face
+    m_VAO.init();
     m_VAO.AddBuffer(m_VBO, chunkLayout);
 
     m_status = Status::BUFFERS_SETUP;
