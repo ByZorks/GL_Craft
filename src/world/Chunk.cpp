@@ -53,7 +53,7 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator, const FastNoi
 
                 if (worldY <= columnHeight) {
                     m_blockType[index(localX, localY, localZ)] = Block::getBlockType(worldY, columnHeight, normalized3DNoise, caveThreshold);
-                } else if (constexpr int waterLevel = 62; worldY < waterLevel) {
+                } else if (constexpr int waterLevel = 63; worldY < waterLevel) {
                     m_blockType[index(localX, localY, localZ)] = BlockType::WATER;
                 } else {
                     break;
