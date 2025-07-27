@@ -29,6 +29,8 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
 
 World::~World() {
     m_loadedChunks.clear();
+    m_chunksToGenerate.clear();
+    m_chunksToDelete.clear();
     m_chunksToRender.clear();
 }
 
@@ -89,17 +91,13 @@ void World::generateDataForEachChunks(const float renderDistanceInBlocks, const 
             if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
             const std::tuple<int, int, int> key = std::make_tuple(chunkX, chunkY, chunkZ);
-            {
-                std::lock_guard lock(m_chunksMutex);
-                if (m_loadedChunks.contains(key)) continue;
-            }
-            m_chunksToRender.push(key);
+            if (m_loadedChunks.contains(key)) continue;
+            m_chunksToGenerate.push(key);
         }
     }
 }
 
 void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const float renderDistance) {
-    std::lock_guard lock(m_chunksMutex);
     std::erase_if(m_loadedChunks, [&](const auto &pair) {
         auto [x, y, z] = pair.first;
         return glm::distance(glm::vec3(x, y, z), cameraChunkPos) > renderDistance;
