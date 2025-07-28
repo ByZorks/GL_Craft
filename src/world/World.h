@@ -56,8 +56,8 @@ void World::forEachRenderableChunk(Callback &&callback) {
         std::tuple<int, int, int> key = m_chunksToGenerate.pop();
         m_threadPool.enqueue([this, key] {
             const auto p_chunk = std::make_shared<Chunk>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
-            p_chunk->generateVoxelData(m_terrainHeightGenerator, m_caveGenerator);
-            p_chunk->generateMeshData();
+            p_chunk->generateVoxel(m_terrainHeightGenerator, m_caveGenerator);
+            p_chunk->generateMesh();
             if (!p_chunk->hasVisibleFaces()) {
                 m_chunksToDelete.push(p_chunk);
                 return;

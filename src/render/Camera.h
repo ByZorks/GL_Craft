@@ -20,7 +20,7 @@ public:
     void processInput(GLFWwindow *window, float deltaTime);
     void handleMouse(double xpos, double ypos);
     static void mouseCallback(GLFWwindow *window, double xpos, double ypos);
-    [[nodiscard]] float distanceToCamera(const Chunk& chunk) const;
+    [[nodiscard]] float distanceToCamera(const Mesh& mesh) const;
     void resetMousePosition(GLFWwindow *window);
     bool hasCameraChangedChunk();
 

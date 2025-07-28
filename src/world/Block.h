@@ -13,6 +13,11 @@ enum class Face : uint8_t {
     BOTTOM
 };
 
+struct BlockFaceData {
+    Face faceType;
+    uint8_t vertexCount;
+};
+
 enum class BlockType : uint8_t {
     AIR,
     BEDROCK,

@@ -63,6 +63,8 @@ add_executable(GL_Craft
         src/utils/CustomHash.h
         src/render/ThreadPool.h
         src/render/ThreadPool.cpp
+        src/world/Mesh.h
+        src/world/Mesh.cpp
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

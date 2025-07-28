@@ -70,11 +70,11 @@ void Camera::mouseCallback(GLFWwindow *window, const double xpos, const double y
     cam->handleMouse(xpos, ypos);
 }
 
-float Camera::distanceToCamera(const Chunk& chunk) const {
-    const auto x = static_cast<float>(chunk.m_x1());
-    const auto y = static_cast<float>(chunk.m_y1());
-    const auto z = static_cast<float>(chunk.m_z1());
-    const auto size = static_cast<float>(Chunk::m_size1());
+float Camera::distanceToCamera(const Mesh& mesh) const {
+    const auto x = static_cast<float>(mesh.m_x1());
+    const auto y = static_cast<float>(mesh.m_y1());
+    const auto z = static_cast<float>(mesh.m_z1());
+    constexpr auto size = static_cast<float>(Chunk::SIZE);
     const glm::vec3 farCorner(x + size - 1, y + size - 1, z + size - 1);
 
     return glm::distance(m_cameraPos, farCorner);
@@ -91,7 +91,7 @@ void Camera::resetMousePosition(GLFWwindow *window) {
 
 bool Camera::hasCameraChangedChunk() {
     // Calculate which chunk the camera is in
-    const auto chunkSize = static_cast<float>(Chunk::m_size1());
+    constexpr auto chunkSize = static_cast<float>(Chunk::SIZE);
     const float cameraChunkX = std::floor(m_cameraPos.x / chunkSize);
     const float cameraChunkY = std::floor(m_cameraPos.y / chunkSize);
     const float cameraChunkZ = std::floor(m_cameraPos.z / chunkSize);

@@ -3,38 +3,26 @@
 #include <cmath>
 #include <iostream>
 
-#include "Block.h"
 #include "World.h"
 #include "../render/Renderer.h"
 
-unsigned int Chunk::m_size = 16; // Default chunk size
-
-Chunk::Chunk(const int x, const int y, const int z) : m_x(x), m_y(y), m_z(z),
-                                                      m_box(AABB(static_cast<float>(x), static_cast<float>(y),
-                                                                 static_cast<float>(z),
-                                                                 static_cast<float>(x) + static_cast<float>(m_size) - 1,
-                                                                 static_cast<float>(y) + static_cast<float>(m_size) - 1,
-                                                                 static_cast<float>(z) + static_cast<float>(m_size) -1
-                                                                 )) {
+Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z) {
     constexpr size_t max_faces = 6 * 16 * 16 * 16;
     constexpr size_t avg_faces = max_faces / 4; // Assuming each block has a quarter of the maximum faces
     m_vertices.reserve(avg_faces * 4); // avg_faces * 4 vertices per face
     m_blockFaceData.reserve(avg_faces);
-    m_blockType.resize((m_size + 2) * (m_size + 2) * (m_size + 2), BlockType::AIR); // +2 for boundary checks
+    m_blockType.resize((Chunk::SIZE + 2) * (Chunk::SIZE + 2) * (Chunk::SIZE + 2), BlockType::AIR); // +2 for boundary checks
 }
 
 Chunk::~Chunk() {
-    m_vertices.clear();
-    m_vertices.shrink_to_fit();
-    m_blockFaceData.clear();
-    m_blockFaceData.shrink_to_fit();
+    m_vegetations.clear();
 }
 
-void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator, const FastNoiseLite& caveGenerator) {
-    for (int localX = 0; localX < m_size + 2; localX++) { // +2 for boundary checks
+void Chunk::generateVoxel(const FastNoiseLite& noiseGenerator, const FastNoiseLite& surfaceVegetationGenerator, const FastNoiseLite& caveGenerator) {
+    for (int localX = 0; localX < Chunk::SIZE + 2; localX++) { // +2 for boundary checks
         const auto worldX = static_cast<float>(m_x + localX);
 
-        for (int localZ = 0; localZ < m_size + 2; localZ++) {
+        for (int localZ = 0; localZ < Chunk::SIZE + 2; localZ++) {
             constexpr float maxHeight = 256.0f;
             constexpr int baseHeight = 60;
             const auto worldZ = static_cast<float>(m_z + localZ);
@@ -43,7 +31,7 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator, const FastNoi
             const float terrainShape = std::pow(normalizedNoise, 4.6f); // Create more plains and sharper mountains
             const float columnHeight = baseHeight + terrainShape * maxHeight; // Scale to world height
 
-            for (int localY = 0; localY < m_size + 2; localY++) {
+            for (int localY = 0; localY < Chunk::SIZE + 2; localY++) {
                 const auto worldY = static_cast<float>(m_y + localY);
 
                 const float normalized3DNoise = (caveGenerator.GetNoise(worldX, worldY, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
@@ -65,10 +53,10 @@ void Chunk::generateVoxelData(const FastNoiseLite& noiseGenerator, const FastNoi
     m_status = Status::VOXEL_GENERATED;
 }
 
-void Chunk::generateMeshData() {
-    for (int localX = 0; localX < m_size; localX++) {
-        for (int localZ = 0; localZ < m_size; localZ++) {
-            for (int localY = 0; localY < m_size; localY++) {
+void Chunk::generateMesh() {
+    for (int localX = 0; localX < Chunk::SIZE; localX++) {
+        for (int localZ = 0; localZ < Chunk::SIZE; localZ++) {
+            for (int localY = 0; localY < Chunk::SIZE; localY++) {
                 if (!isBlockPresent(localX, localY, localZ)) continue;
 
                 addBlockFaces(localX, localY, localZ, m_blockType[index(localX+1, localY+1, localZ+1)]);
@@ -115,7 +103,7 @@ void Chunk::setupBuffers() {
 }
 
 int Chunk::index(const int x, const int y, const int z) {
-    const int stride = static_cast<int>(m_size) + 2;
+    constexpr int stride = static_cast<int>(Chunk::SIZE) + 2;
     return x * stride * stride + y * stride + z;
 }
 

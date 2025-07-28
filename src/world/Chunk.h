@@ -4,44 +4,23 @@
 
 #include "Block.h"
 #include "FastNoiseLite.h"
-#include "../gl/IndexBuffer.h"
-#include "../gl/VertexArray.h"
-#include "../math/AABB.h"
+
+#include "Mesh.h"
 
 class World;
 
-struct BlockFaceData {
-    Face faceType;
-    uint8_t vertexCount;
-};
-
-enum class Status : uint8_t {
-    NOT_GENERATED,
-    VOXEL_GENERATED,
-    MESH_GENERATED,
-    BUFFERS_SETUP
-};
-
-class Chunk {
+class Chunk final : public Mesh {
 private:
-    static unsigned int m_size;
-    int m_x, m_y, m_z;
-    std::vector<BlockVertex> m_vertices;
-    std::vector<BlockFaceData> m_blockFaceData;
-    std::vector<BlockType> m_blockType;
-    Status m_status = Status::NOT_GENERATED;
-    VertexArray m_VAO;
-    VertexBuffer m_VBO;
-    IndexBuffer m_IBO;
-    AABB m_box;
 
 public:
-    Chunk(int x, int y, int z);
-    ~Chunk();
+    static constexpr unsigned int SIZE = 16;
 
-    void generateVoxelData(const FastNoiseLite& noiseGenerator, const FastNoiseLite& caveGenerator);
-    void generateMeshData();
-    void setupBuffers();
+    Chunk(int x, int y, int z);
+    ~Chunk() override;
+
+    void generateVoxel(const FastNoiseLite& noiseGenerator, const FastNoiseLite& surfaceVegetationGenerator, const FastNoiseLite& caveGenerator);
+    void generateMesh() override;
+    void setupBuffers() override;
 
     static int index(int x, int y, int z);
 

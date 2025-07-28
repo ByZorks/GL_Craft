@@ -37,10 +37,9 @@ World::~World() {
 void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
     if (!camera.hasCameraChangedChunk()) return;
 
-    const int chunkSize = static_cast<int>(Chunk::m_size1());
-    const int cameraWorldX = static_cast<int>(std::floor(camera.m_camera_pos().x / static_cast<float>(chunkSize))) * chunkSize;
-    const int cameraWorldY = static_cast<int>(std::floor(camera.m_camera_pos().y / static_cast<float>(chunkSize))) * chunkSize;
-    const int cameraWorldZ = static_cast<int>(std::floor(camera.m_camera_pos().z / static_cast<float>(chunkSize))) * chunkSize;
+    const int cameraWorldX = static_cast<int>(std::floor(camera.m_camera_pos().x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+    const int cameraWorldY = static_cast<int>(std::floor(camera.m_camera_pos().y / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+    const int cameraWorldZ = static_cast<int>(std::floor(camera.m_camera_pos().z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
     unloadDistantChunks(cameraChunkPos, renderDistanceInBlocks);
@@ -58,7 +57,7 @@ const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & Wo
 
 void World::generateDataForEachChunks(const float renderDistanceInBlocks, const int cameraWorldX,
                                           const int cameraWorldY, const int cameraWorldZ) {
-    const int r = static_cast<int>(renderDistanceInBlocks / static_cast<float>(Chunk::m_size1()));
+    const int r = static_cast<int>(renderDistanceInBlocks / static_cast<float>(Chunk::SIZE));
     const int r2 = r * r;
 
     // Pre-compute offsets for a circle of chunks around the camera position
@@ -83,11 +82,11 @@ void World::generateDataForEachChunks(const float renderDistanceInBlocks, const 
 
     // Generate chunks
     for (auto [x,z, maxY] : circleOffsets) {
-        int chunkX = cameraWorldX + static_cast<int>(x * Chunk::m_size1());
-        int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::m_size1());
+        int chunkX = cameraWorldX + static_cast<int>(x * Chunk::SIZE);
+        int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::SIZE);
 
         for (int y = -maxY; y <= maxY; y++) {
-            const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::m_size1());
+            const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::SIZE);
             if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
             const std::tuple<int, int, int> key = std::make_tuple(chunkX, chunkY, chunkZ);
