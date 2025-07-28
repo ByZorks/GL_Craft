@@ -14,6 +14,8 @@ public:
     static void init();
     static void clear();
     static float calculateDeltaTime(float currentFrame);
+    static void disableDepthMask();
+    static void enableDepthMask();
     static void draw(const VertexArray& vao, const IndexBuffer& ibo);
 
 };

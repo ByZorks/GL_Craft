@@ -16,6 +16,7 @@ enum class Face : uint8_t {
 struct BlockFaceData {
     Face faceType;
     uint8_t vertexCount;
+    bool transparent;
 };
 
 enum class BlockType : uint8_t {

@@ -9,6 +9,7 @@ uniform sampler2D u_Texture;
 
 void main() {
     vec4 texColor = texture(u_Texture, v_texCoord);
+    if (texColor.a < 0.1) discard;
 
     float lighting = 1.0;
     if (v_face == 4u) {

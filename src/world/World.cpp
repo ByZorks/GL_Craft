@@ -37,6 +37,8 @@ World::~World() {
     m_chunksToGenerate.clear();
     m_chunksToDelete.clear();
     m_chunksToRender.clear();
+    m_opaqueMeshes.clear();
+    m_transparentMeshes.clear();
 }
 
 void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
@@ -50,6 +52,85 @@ void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
     unloadDistantChunks(cameraChunkPos, renderDistanceInBlocks);
 
     generateDataForEachChunks(renderDistanceInBlocks, cameraWorldX, cameraWorldY, cameraWorldZ);
+}
+
+void World::draw(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount) {
+    // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_loadedChunks
+    processChunks();
+
+    // Setup buffers for chunks that are ready to be rendered, cache them into seperate list for rendering
+    m_opaqueMeshes.clear();
+    m_transparentMeshes.clear();
+    for (const auto& chunk : m_loadedChunks | std::views::values) {
+        // New meshes
+        if (chunk->m_status1() == Status::MESH_GENERATED) {
+            chunk->setupBuffers();
+            for (auto& vegetation : chunk->m_vegetations1()) {
+                if (vegetation->m_status1() == Status::MESH_GENERATED) {
+                    vegetation->setupBuffers();
+                }
+                if (vegetation->hasOpaqueFaces()) m_opaqueMeshes.push_back(vegetation);
+                if (vegetation->hasTransparentFaces()) m_transparentMeshes.push_back(vegetation);
+            }
+            if (chunk->hasOpaqueFaces()) m_opaqueMeshes.push_back(chunk);
+            if (chunk->hasTransparentFaces()) m_transparentMeshes.push_back(chunk);
+        }
+
+        // Existing meshes
+        if (chunk->m_status1() == Status::BUFFERS_SETUP) {
+            if (chunk->hasOpaqueFaces()) m_opaqueMeshes.push_back(chunk);
+            if (chunk->hasTransparentFaces()) m_transparentMeshes.push_back(chunk);
+            for (const auto& vegetation : chunk->m_vegetations1()) {
+                if (vegetation->m_status1() == Status::BUFFERS_SETUP) {
+                    if (vegetation->hasOpaqueFaces()) m_opaqueMeshes.push_back(vegetation);
+                    if (vegetation->hasTransparentFaces()) m_transparentMeshes.push_back(vegetation);
+                }
+            }
+        }
+    }
+
+    // Render opaque meshes
+    Renderer::enableDepthMask();
+    for (const auto& mesh : m_opaqueMeshes) {
+        auto weak_mesh = mesh.lock();
+        if (!weak_mesh) continue; // Skip if the mesh has been deleted
+        if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
+        if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
+        shader.setUniform3f("u_ChunkOffset",
+                            static_cast<float>(weak_mesh->m_x1()),
+                            static_cast<float>(weak_mesh->m_y1()),
+                            static_cast<float>(weak_mesh->m_z1()));
+
+        weak_mesh->drawOpaque();
+        visibleChunksCount++;
+    }
+
+    // Render far transparent meshes first
+    std::sort(m_transparentMeshes.begin(), m_transparentMeshes.end(),
+        [&camera](const auto& a, const auto& b) {
+            auto mesh_a = a.lock();
+            auto mesh_b = b.lock();
+            if (!mesh_a || !mesh_b) return false;
+            return camera.distanceToCamera(*mesh_a) > camera.distanceToCamera(*mesh_b);
+        });
+
+    // Render transparent meshes
+    Renderer::disableDepthMask();
+    for (const auto& mesh : m_transparentMeshes) {
+        auto weak_mesh = mesh.lock();
+        if (!weak_mesh) continue; // Skip if the mesh has been deleted
+        if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
+        if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
+        shader.setUniform3f("u_ChunkOffset",
+                            static_cast<float>(weak_mesh->m_x1()),
+                            static_cast<float>(weak_mesh->m_y1()),
+                            static_cast<float>(weak_mesh->m_z1()));
+
+        weak_mesh->drawTransparent();
+        visibleChunksCount++;
+    }
+
+    Renderer::enableDepthMask();
 }
 
 const FastNoiseLite & World::m_noise_generator() const {
@@ -106,4 +187,36 @@ void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const float ren
         auto [x, y, z] = pair.first;
         return glm::distance(glm::vec3(x, y, z), cameraChunkPos) > renderDistance;
     });
+}
+
+void World::processChunks() {
+    const int maxChunksPerFrame = static_cast<int>(0.3 * Renderer::m_renderDistance + 0.6 * static_cast<float>(m_threadPool.m_num_threads()));
+    // Remove chunks that are no longer needed
+    for (int i = 0; i < maxChunksPerFrame; ++i) {
+        if (!m_chunksToDelete.empty()) m_chunksToDelete.pop();
+    }
+
+    // Process chunks that are within the render distance
+    for (int i = 0; i < maxChunksPerFrame; ++i) {
+        if (m_chunksToGenerate.empty()) break;
+
+        std::tuple<int, int, int> key = m_chunksToGenerate.pop();
+        m_threadPool.enqueue([this, key] {
+            const auto p_chunk = std::make_shared<Chunk>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
+            p_chunk->generateVoxel(m_terrainHeightGenerator, m_surfaceVegetationGenerator, m_caveGenerator);
+            p_chunk->generateMesh();
+            if (!p_chunk->hasVisibleFaces()) {
+                m_chunksToDelete.push(p_chunk);
+                return;
+            }
+            m_chunksToRender.push(p_chunk);
+        });
+    }
+
+    for (int i = 0; i < maxChunksPerFrame; ++i) {
+        if (m_chunksToRender.empty()) break;
+        std::shared_ptr<Chunk> p_chunk = m_chunksToRender.pop();
+        std::tuple<int, int, int> key = std::make_tuple(p_chunk->m_x1(), p_chunk->m_y1(), p_chunk->m_z1());
+        m_loadedChunks.try_emplace(key, p_chunk);
+    }
 }

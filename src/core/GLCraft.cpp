@@ -84,18 +84,7 @@ int main(int argc, char *argv[]) {
             // Render the world
             Frustum frustum = Camera::getFrustum(mvp);
             unsigned int visibleChunksCount = 0;
-            world.forEachRenderableChunk([&](const std::weak_ptr<Mesh>& mesh) {
-                const auto p_mesh = mesh.lock();
-                if (camera.distanceToCamera(*p_mesh) > Renderer::m_renderDistance) return;
-                if (!frustum.isAABBInFrustum(p_mesh->m_box1())) return;
-
-                shader.setUniform3f("u_ChunkOffset",
-                                    static_cast<float>(p_mesh->m_x1()),
-                                    static_cast<float>(p_mesh->m_y1()),
-                                    static_cast<float>(p_mesh->m_z1()));
-                Renderer::draw(p_mesh->m_vao(), p_mesh->m_ibo());
-                visibleChunksCount++;
-            });
+            world.draw(camera, frustum, shader, visibleChunksCount);
 
             if (debugUI.isUIMode()) {
                 DebugUI::render(visibleChunksCount, world.m_loaded_chunks().size(), Renderer::m_renderDistance, camera);

@@ -12,8 +12,6 @@ void Renderer::init() {
     GLCall(glEnable(GL_DEPTH_TEST));
     GLCall(glEnable(GL_CULL_FACE));
     GLCall(glFrontFace(GL_CCW));
-    GLCall(glEnable(GL_BLEND));
-    GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 }
 
 void Renderer::clear() {
@@ -25,6 +23,17 @@ float Renderer::calculateDeltaTime(const float currentFrame) {
     m_deltaTime = currentFrame - m_lastFrame;
     m_lastFrame = currentFrame;
     return m_deltaTime;
+}
+
+void Renderer::disableDepthMask() {
+    GLCall(glEnable(GL_BLEND));
+    GLCall(glDepthMask(GL_FALSE));
+    GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+}
+
+void Renderer::enableDepthMask() {
+    GLCall(glDisable(GL_BLEND));
+    GLCall(glDepthMask(GL_TRUE));
 }
 
 void Renderer::draw(const VertexArray& vao, const IndexBuffer& ibo) {

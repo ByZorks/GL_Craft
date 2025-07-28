@@ -7,6 +7,7 @@
 #include "../gl/IndexBuffer.h"
 #include "../gl/VertexArray.h"
 #include "../math/AABB.h"
+#include "../render/Renderer.h"
 
 enum class Status : uint8_t {
     NOT_GENERATED,
@@ -22,9 +23,11 @@ protected:
     std::vector<BlockFaceData> m_blockFaceData;
     std::vector<BlockType> m_blockType;
     Status m_status = Status::NOT_GENERATED;
-    VertexArray m_VAO;
+    VertexArray m_VAO_opaque;
+    VertexArray m_VAO_transparent;
     VertexBuffer m_VBO;
-    IndexBuffer m_IBO;
+    IndexBuffer m_IBO_opaque;
+    IndexBuffer m_IBO_transparent;
     AABB m_box;
 
 public:
@@ -48,6 +51,22 @@ public:
     virtual void generateVoxel();
     virtual void generateMesh();
     virtual void setupBuffers();
+
+    void drawOpaque() const {
+        Renderer::draw(m_vao_opaque(), m_ibo_opaque());
+    }
+
+    void drawTransparent() const {
+        Renderer::draw(m_vao_transparent(), m_ibo_transparent());
+    }
+
+    bool hasOpaqueFaces() const {
+        return m_IBO_opaque.m_count() > 0;
+    }
+
+    bool hasTransparentFaces() const {
+        return m_IBO_transparent.m_count() > 0;
+    }
 
     [[nodiscard]] virtual bool shouldDrawFace(const int neighborX, const int neighborY, const int neighborZ,
                                               const BlockType currentBlockType) const {
@@ -98,12 +117,20 @@ public:
         return m_status;
     }
 
-    [[nodiscard]] const VertexArray &m_vao() const {
-        return m_VAO;
+    [[nodiscard]] const VertexArray &m_vao_opaque() const {
+        return m_VAO_opaque;
     }
 
-    [[nodiscard]] const IndexBuffer &m_ibo() const {
-        return m_IBO;
+    [[nodiscard]] const VertexArray & m_vao_transparent() const {
+        return m_VAO_transparent;
+    }
+
+    [[nodiscard]] const IndexBuffer &m_ibo_opaque() const {
+        return m_IBO_opaque;
+    }
+
+    [[nodiscard]] const IndexBuffer & m_ibo_transparent() const {
+        return m_IBO_transparent;
     }
 
     [[nodiscard]] const AABB &m_box1() const {
