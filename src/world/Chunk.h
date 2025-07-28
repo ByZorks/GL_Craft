@@ -22,7 +22,6 @@ public:
 
     void generateVoxel(const FastNoiseLite& noiseGenerator, const FastNoiseLite& surfaceVegetationGenerator, const FastNoiseLite& caveGenerator);
     void generateMesh() override;
-    void setupBuffers() override;
 
     static int index(int x, int y, int z);
 

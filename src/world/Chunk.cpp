@@ -88,47 +88,6 @@ void Chunk::generateMesh() {
     m_status = Status::MESH_GENERATED;
 }
 
-void Chunk::setupBuffers() {
-    std::vector<unsigned int> meshIndices_opaque;
-    std::vector<unsigned int> meshIndices_transparent;
-    meshIndices_opaque.reserve(m_vertices.size() * 6); // 6 indices per face
-    meshIndices_transparent.reserve(m_vertices.size() * 6); // 6 indices per face
-    unsigned int vertexOffset = 0;
-
-    for (const auto &[faceType, vertexCount, isTransparent]: m_blockFaceData) {
-        constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
-        constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
-        const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
-                                          ? faceIndicesCW
-                                          : faceIndicesCCW;
-        for (int i = 0; i < 6; ++i) {
-            unsigned int index = vertexOffset + indices[i];
-            if (isTransparent) {
-                meshIndices_transparent.push_back(index);
-            } else {
-                meshIndices_opaque.push_back(index);
-            }
-        }
-
-        vertexOffset += vertexCount;
-    }
-
-    m_VBO.init(m_vertices.data(), m_vertices.size() * sizeof(BlockVertex));
-    m_IBO_opaque.init(meshIndices_opaque.data(), meshIndices_opaque.size());
-    m_IBO_transparent.init(meshIndices_transparent.data(), meshIndices_transparent.size());
-
-    VertexBufferLayout chunkLayout;
-    chunkLayout.Push<unsigned char>(3); // x, y, z
-    chunkLayout.Push<unsigned char>(2, true); // u, v
-    chunkLayout.PushInt<unsigned char>(1); // face
-    m_VAO_opaque.init();
-    m_VAO_opaque.AddBuffer(m_VBO, chunkLayout);
-    m_VAO_transparent.init();
-    m_VAO_transparent.AddBuffer(m_VBO, chunkLayout);
-
-    m_status = Status::BUFFERS_SETUP;
-}
-
 int Chunk::index(const int x, const int y, const int z) {
     constexpr int stride = static_cast<int>(SIZE) + 2;
     return x * stride * stride + y * stride + z;

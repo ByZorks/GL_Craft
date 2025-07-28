@@ -11,7 +11,6 @@ public:
 
     void generateVoxel() override;
     void generateMesh() override;
-    void setupBuffers() override;
 };
 
 #endif //TREE_H
