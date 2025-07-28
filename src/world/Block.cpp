@@ -121,7 +121,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
 }
 
 bool Block::isTransparent(const BlockType type) {
-    return type == BlockType::WATER || type == BlockType::AIR;
+    return type == BlockType::WATER || type == BlockType::AIR || type == BlockType::LEAVES;
 }
 
 uint8_t Block::getTextureU(BlockType type, const Face face) {

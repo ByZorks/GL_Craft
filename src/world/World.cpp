@@ -15,6 +15,11 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_terrainHeightGenerator.SetFractalOctaves(6);
     m_terrainHeightGenerator.SetFractalLacunarity(2.2f);
 
+    m_surfaceVegetationGenerator.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    m_surfaceVegetationGenerator.SetFrequency(.5f);
+    m_surfaceVegetationGenerator.SetFractalType(FastNoiseLite::FractalType_FBm);
+    m_surfaceVegetationGenerator.SetFractalOctaves(6);
+
     m_caveGenerator.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
     m_caveGenerator.SetFrequency(.018f);
     m_caveGenerator.SetFractalType(FastNoiseLite::FractalType_Ridged);

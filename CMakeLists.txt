@@ -63,7 +63,9 @@ add_executable(GL_Craft
         src/utils/CustomHash.h
         src/render/ThreadPool.h
         src/render/ThreadPool.cpp
+        src/world/surface_vegetations/Tree.cpp
         src/world/Mesh.h
+        src/world/surface_vegetations/Tree.h
         src/world/Mesh.cpp
 )
 

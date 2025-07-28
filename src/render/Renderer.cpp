@@ -6,14 +6,14 @@
 
 float Renderer::m_deltaTime = 0.0f;
 float Renderer::m_lastFrame = 0.0f;
-float Renderer::m_renderDistance = 20.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
+float Renderer::m_renderDistance = 20.0f * static_cast<float>(Chunk::SIZE); // Render distance in blocks
 
 void Renderer::init() {
     GLCall(glEnable(GL_DEPTH_TEST));
     GLCall(glEnable(GL_CULL_FACE));
     GLCall(glFrontFace(GL_CCW));
-    // GLCall(glEnable(GL_BLEND));
-    // GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+    GLCall(glEnable(GL_BLEND));
+    GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 }
 
 void Renderer::clear() {

@@ -38,7 +38,7 @@ void DebugUI::render(const unsigned int visibleChunks, const unsigned int totalC
     ImGui::Separator();
     ImGui::Text("World:");
     ImGui::Text("Rendering: %u/%u chunks", visibleChunks, totalChunks);
-    const auto chunkSize = static_cast<float>(Chunk::m_size1());
+    constexpr auto chunkSize = static_cast<float>(Chunk::SIZE);
     int renderDistanceInChunks = static_cast<int>(renderDistance / chunkSize);
     if (ImGui::SliderInt("Render Distance (chunks)", &renderDistanceInChunks, 1, 32)) {
         renderDistance = static_cast<float>(renderDistanceInChunks) * chunkSize;

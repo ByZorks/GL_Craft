@@ -33,9 +33,9 @@ public:
     Mesh(const int x, const int y, const int z) : m_x(x), m_y(y), m_z(z),
                                                   m_box(AABB(static_cast<float>(x), static_cast<float>(y),
                                                              static_cast<float>(z),
-                                                             static_cast<float>(x) + static_cast<float>(Mesh::SIZE) - 1,
-                                                             static_cast<float>(y) + static_cast<float>(Mesh::SIZE) - 1,
-                                                             static_cast<float>(z) + static_cast<float>(Mesh::SIZE) - 1
+                                                             static_cast<float>(x) + static_cast<float>(SIZE) - 1,
+                                                             static_cast<float>(y) + static_cast<float>(SIZE) - 1,
+                                                             static_cast<float>(z) + static_cast<float>(SIZE) - 1
                                                   )) {
     }
 
@@ -48,6 +48,39 @@ public:
     virtual void generateVoxel();
     virtual void generateMesh();
     virtual void setupBuffers();
+
+    [[nodiscard]] virtual bool shouldDrawFace(const int neighborX, const int neighborY, const int neighborZ,
+                                              const BlockType currentBlockType) const {
+        if (!isBlockPresent(neighborX, neighborY, neighborZ)) {
+            return true; // Air block, always draw face
+        }
+
+        const BlockType neighborType = getBlockType(neighborX, neighborY, neighborZ);
+
+        // Don't draw between identical blocks of same type
+        if (currentBlockType == neighborType) {
+            return false;
+        }
+
+        const bool currentTransparent = Block::isTransparent(currentBlockType);
+        const bool neighborTransparent = Block::isTransparent(neighborType);
+
+        // Draw face if blocks have different transparency
+        return currentTransparent != neighborTransparent;
+    }
+
+    [[nodiscard]] virtual bool isBlockPresent(const int localX, const int localY, const int localZ) const {
+        return m_blockType[index(localX, localY, localZ)] != BlockType::AIR;
+    }
+
+    [[nodiscard]] virtual BlockType getBlockType(const int localX, const int localY, const int localZ) const {
+        return m_blockType[index(localX, localY, localZ)];
+    }
+
+    static int index(const int x, const int y, const int z) {
+        constexpr int stride = SIZE;
+        return x * stride * stride + y * stride + z;
+    }
 
     [[nodiscard]] int m_x1() const {
         return m_x;
@@ -73,7 +106,7 @@ public:
         return m_IBO;
     }
 
-    [[nodiscard]] const AABB & m_box1() const {
+    [[nodiscard]] const AABB &m_box1() const {
         return m_box;
     }
 };

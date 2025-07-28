@@ -19,12 +19,7 @@ struct BlockFaceData {
 };
 
 enum class BlockType : uint8_t {
-    AIR,
-    BEDROCK,
-    DIRT,
-    GRASS,
-    STONE,
-    WATER,
+    AIR, BEDROCK, DIRT, GRASS, STONE, WATER, LOG, LEAVES
 };
 
 struct BlockVertex {
@@ -36,23 +31,27 @@ struct BlockVertex {
 class Block {
 private:
     float m_x, m_y, m_z;
-    static constexpr uint8_t s_textureColumn[6][3] = {
+    static constexpr uint8_t s_textureColumn[8][3] = {
         // [side, top, bottom]
         {0, 0, 0}, // AIR
         {0, 0, 0}, // BEDROCK
         {1, 1, 1}, // DIRT
         {2, 3, 1}, // GRASS
         {0, 0, 0}, // STONE
-        {1, 2, 2} // WATER
+        {1, 2, 2}, // WATER
+        {3, 0, 0},  // LOG
+        {1, 1, 1}  // LEAVES
     };
-    static constexpr uint8_t s_textureRow[6][3] = {
+    static constexpr uint8_t s_textureRow[8][3] = {
         // [side, top, bottom]
-        {3, 3, 3}, // AIR
+        {0, 0, 0}, // AIR
         {3, 3, 3}, // BEDROCK
         {3, 3, 3}, // DIRT
         {3, 3, 3}, // GRASS
         {2, 2, 2}, // STONE
-        {2, 2, 2} // WATER
+        {2, 2, 2}, // WATER
+        {2, 1, 1},  // LOG
+        {1, 1, 1}   // LEAVES
     };
 
 public:
