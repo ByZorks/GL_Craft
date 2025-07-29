@@ -1,8 +1,6 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include <cstdint>
-
 #include "Block.h"
 #include "../gl/IndexBuffer.h"
 #include "../gl/VertexArray.h"
