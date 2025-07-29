@@ -2,6 +2,7 @@
 #define BLOCK_H
 #include <vector>
 
+#include "vec3.hpp"
 #include "GL/glew.h"
 
 enum class Face : uint8_t {
@@ -16,7 +17,11 @@ enum class Face : uint8_t {
 struct BlockFaceData {
     Face faceType;
     uint8_t vertexCount;
-    bool transparent;
+    uint8_t x, y, z;
+
+    [[nodiscard]] glm::vec3 getPosition() const {
+        return {static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)};
+    }
 };
 
 enum class BlockType : uint8_t {

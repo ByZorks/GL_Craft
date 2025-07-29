@@ -11,6 +11,7 @@ public:
     ~IndexBuffer();
 
     void init(const unsigned int *data, unsigned int count);
+    void updateData(const unsigned int *data) const;
     void bind() const;
     static void unbind();
 

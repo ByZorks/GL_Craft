@@ -80,6 +80,10 @@ float Camera::distanceToCamera(const Mesh& mesh) const {
     return glm::distance(m_cameraPos, farCorner);
 }
 
+float Camera::distanceToCamera(const glm::vec3 position) const {
+    return glm::distance(m_cameraPos, position);
+}
+
 void Camera::resetMousePosition(GLFWwindow *window) {
     int width = 0;
     int height = 0;
@@ -104,6 +108,21 @@ bool Camera::hasCameraChangedChunk() {
 
     m_lastCameraChunkPos = {cameraChunkX, cameraChunkY, cameraChunkZ};
     return true; // Camera has changed chunk
+}
+
+bool Camera::hasCameraChangedBlock() {
+    const float cameraBlockX = std::floor(m_cameraPos.x);
+    const float cameraBlockY = std::floor(m_cameraPos.y);
+    const float cameraBlockZ = std::floor(m_cameraPos.z);
+
+    if (m_lastCameraBlockPos.x == cameraBlockX &&
+        m_lastCameraBlockPos.y == cameraBlockY &&
+        m_lastCameraBlockPos.z == cameraBlockZ) {
+        return false; // Camera hasn't moved to a new block, no need to update
+    }
+
+    m_lastCameraBlockPos = {cameraBlockX, cameraBlockY, cameraBlockZ};
+    return true; // Camera has changed block
 }
 
 glm::mat4 Camera::getProjectionMatrix() const {

@@ -20,7 +20,8 @@ class Mesh {
 protected:
     int m_x, m_y, m_z;
     std::vector<BlockVertex> m_vertices;
-    std::vector<BlockFaceData> m_blockFaceData;
+    std::vector<BlockFaceData> m_blockFaceDataOpaque;
+    std::vector<BlockFaceData> m_blockFaceDataTransparent;
     std::vector<BlockType> m_blockType;
     Status m_status = Status::NOT_GENERATED;
     VertexArray m_VAO_opaque;
@@ -44,7 +45,7 @@ public:
 
     virtual ~Mesh() {
         m_vertices.clear();
-        m_blockFaceData.clear();
+        m_blockFaceDataOpaque.clear();
         m_blockType.clear();
     }
 
@@ -53,12 +54,10 @@ public:
 
     void setupBuffers() {
         std::vector<unsigned int> meshIndices_opaque;
-        std::vector<unsigned int> meshIndices_transparent;
         meshIndices_opaque.reserve(m_vertices.size() * 6); // 6 indices per face
-        meshIndices_transparent.reserve(m_vertices.size() * 6); // 6 indices per face
         unsigned int vertexOffset = 0;
 
-        for (const auto &[faceType, vertexCount, isTransparent]: m_blockFaceData) {
+        for (const auto &[faceType, vertexCount, x, y, z]: m_blockFaceDataOpaque) {
             constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
             constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
             const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
@@ -66,11 +65,23 @@ public:
                                               : faceIndicesCCW;
             for (int i = 0; i < 6; ++i) {
                 unsigned int index = vertexOffset + indices[i];
-                if (isTransparent) {
-                    meshIndices_transparent.push_back(index);
-                } else {
-                    meshIndices_opaque.push_back(index);
-                }
+                meshIndices_opaque.push_back(index);
+            }
+
+            vertexOffset += vertexCount;
+        }
+
+        std::vector<unsigned int> meshIndices_transparent;
+        meshIndices_transparent.reserve(m_vertices.size() * 6); // 6 indices per face
+        for (const auto &[faceType, vertexCount, x, y, z]: m_blockFaceDataTransparent) {
+            constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
+            constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
+            const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
+                                              ? faceIndicesCW
+                                              : faceIndicesCCW;
+            for (int i = 0; i < 6; ++i) {
+                unsigned int index = vertexOffset + indices[i];
+                meshIndices_transparent.push_back(index);
             }
 
             vertexOffset += vertexCount;
@@ -78,7 +89,7 @@ public:
 
         m_VBO.init(m_vertices.data(), m_vertices.size() * sizeof(BlockVertex));
         m_IBO_opaque.init(meshIndices_opaque.data(), meshIndices_opaque.size());
-        m_IBO_transparent.init(meshIndices_transparent.data(), meshIndices_transparent.size());
+        m_IBO_transparent.init(nullptr, meshIndices_transparent.size());
 
         VertexBufferLayout meshLayout;
         meshLayout.Push<unsigned char>(3); // x, y, z
@@ -90,6 +101,29 @@ public:
         m_VAO_transparent.AddBuffer(m_VBO, meshLayout);
 
         m_status = Status::BUFFERS_SETUP;
+    }
+
+    void updateTransparentIBO() {
+        std::vector<unsigned int> meshIndices_transparent;
+        meshIndices_transparent.reserve(m_blockFaceDataTransparent.size());
+        unsigned int vertexOffset = 0;
+
+        for (const auto &[faceType, vertexCount, x, y, z]: m_blockFaceDataTransparent) {
+            constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
+            constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
+            const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
+                                              ? faceIndicesCW
+                                              : faceIndicesCCW;
+            for (int i = 0; i < 6; ++i) {
+                unsigned int index = vertexOffset + indices[i];
+                meshIndices_transparent.push_back(index);
+            }
+
+            vertexOffset += vertexCount;
+        }
+
+        // m_IBO_transparent.init(meshIndices_transparent.data(), meshIndices_transparent.size());
+        m_IBO_transparent.updateData(meshIndices_transparent.data());
     }
 
     void drawOpaque() const {
@@ -115,6 +149,10 @@ public:
         }
 
         const BlockType neighborType = getBlockType(neighborX, neighborY, neighborZ);
+
+        if (currentBlockType == BlockType::LEAVES && neighborType == BlockType::LEAVES) {
+            return true; // Don't draw leaves faces against each other
+        }
 
         // Don't draw between identical blocks of same type
         if (currentBlockType == neighborType) {
@@ -175,6 +213,10 @@ public:
 
     [[nodiscard]] const AABB &m_box1() const {
         return m_box;
+    }
+
+    [[nodiscard]] std::vector<BlockFaceData> & m_block_face_data_transparent() {
+        return m_blockFaceDataTransparent;
     }
 };
 

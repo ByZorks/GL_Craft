@@ -54,7 +54,7 @@ void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
     generateDataForEachChunks(renderDistanceInBlocks, cameraWorldX, cameraWorldY, cameraWorldZ);
 }
 
-void World::draw(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount) {
+void World::draw(Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount) {
     // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_loadedChunks
     processChunks();
 
@@ -105,20 +105,22 @@ void World::draw(const Camera &camera, const Frustum &frustum, Shader &shader, u
         visibleChunksCount++;
     }
 
-    // Render far transparent meshes first
-    std::sort(m_transparentMeshes.begin(), m_transparentMeshes.end(),
-        [&camera](const auto& a, const auto& b) {
-            auto mesh_a = a.lock();
-            auto mesh_b = b.lock();
-            if (!mesh_a || !mesh_b) return false;
-            return camera.distanceToCamera(*mesh_a) > camera.distanceToCamera(*mesh_b);
-        });
-
     // Render transparent meshes
     Renderer::disableDepthMask();
     for (const auto& mesh : m_transparentMeshes) {
         auto weak_mesh = mesh.lock();
         if (!weak_mesh) continue; // Skip if the mesh has been deleted
+
+        if (camera.hasCameraChangedBlock()) {
+            // Sort faces by distance to camera
+            std::sort(weak_mesh->m_block_face_data_transparent().begin(), weak_mesh->m_block_face_data_transparent().end(),
+                [&camera](const BlockFaceData& a, const BlockFaceData& b) {
+                   return camera.distanceToCamera(a.getPosition()) > camera.distanceToCamera(b.getPosition());
+                });
+
+            weak_mesh->updateTransparentIBO();
+        }
+
         if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
         if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
         shader.setUniform3f("u_ChunkOffset",

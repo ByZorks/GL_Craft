@@ -33,7 +33,7 @@ public:
     ~World();
 
     void updateChunks(Camera &camera, float renderDistanceInBlocks);
-    void draw(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
+    void draw(Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
 
     [[nodiscard]] const FastNoiseLite & m_noise_generator() const;
     [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
