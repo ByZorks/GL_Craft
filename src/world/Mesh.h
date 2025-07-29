@@ -144,26 +144,17 @@ public:
 
     [[nodiscard]] virtual bool shouldDrawFace(const int neighborX, const int neighborY, const int neighborZ,
                                               const BlockType currentBlockType) const {
-        if (!isBlockPresent(neighborX, neighborY, neighborZ)) {
-            return true; // Air block, always draw face
-        }
+        if (!isBlockPresent(neighborX, neighborY, neighborZ)) return true; // Air block
 
         const BlockType neighborType = getBlockType(neighborX, neighborY, neighborZ);
-
-        if (currentBlockType == BlockType::LEAVES && neighborType == BlockType::LEAVES) {
-            return true; // Don't draw leaves faces against each other
-        }
-
-        // Don't draw between identical blocks of same type
-        if (currentBlockType == neighborType) {
-            return false;
-        }
-
-        const bool currentTransparent = Block::isTransparent(currentBlockType);
         const bool neighborTransparent = Block::isTransparent(neighborType);
 
-        // Draw face if blocks have different transparency
-        return currentTransparent != neighborTransparent;
+        if (currentBlockType == BlockType::LEAVES && neighborTransparent) return true; // Leaves block, always draw face
+        if (currentBlockType == neighborType) return false; // Same block type, no need to draw face
+
+        const bool currentTransparent = Block::isTransparent(currentBlockType);
+
+        return currentTransparent != neighborTransparent; // Different transparency state, draw face
     }
 
     [[nodiscard]] virtual bool isBlockPresent(const int localX, const int localY, const int localZ) const {
