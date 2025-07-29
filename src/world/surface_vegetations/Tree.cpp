@@ -3,8 +3,8 @@
 Tree::Tree(const int x, const int y, const int z)
     : Vegetation(x, y, z) {
     m_blockType.resize(343, BlockType::AIR);
-    m_blockFaceData.reserve(6 * 83); // 6 faces, 83 blocks
-    m_vertices.reserve(6 * 83 * 4); // 6 faces, 83 blocks, 4 vertices per face
+    m_blockFaceData.reserve(136);
+    m_vertices.reserve(544);
 }
 
 void Tree::generateVoxel() {
@@ -15,7 +15,7 @@ void Tree::generateVoxel() {
     m_blockType[index(3, 3, 3)] = BlockType::LOG;
     m_blockType[index(3, 4, 3)] = BlockType::LOG;
 
-    // Leaves niveau 1: 5x2x5 = 50 blocks (y=3 to y=4)
+    // Leaves: 5x2x5 = 50 blocks (y=3 to y=4)
     for (int y = 3; y < 5; y++) {
         for (int x = 1; x < 6; x++) {
             for (int z = 1; z < 6; z++) {
@@ -25,12 +25,12 @@ void Tree::generateVoxel() {
         }
     }
 
-    // Leaves niveau 2: 3x2x3 = 18 blocks (y=5 to y=6)
+    // Leaves: 3x2x3 = 18 blocks (y=5 to y=6)
     for (int y = 5; y < 7; y++) {
         for (int x = 2; x < 5; x++) {
             for (int z = 2; z < 5; z++) {
-                if ((x == 2 && z == 2) || (x == 4 && z == 4) || (x == 2 && z == 4) || (x == 4 && z == 2)) continue;
                 // Skip corners
+                if ((x == 2 && z == 2) || (x == 4 && z == 4) || (x == 2 && z == 4) || (x == 4 && z == 2)) continue;
                 m_blockType[index(x, y, z)] = BlockType::LEAVES;
             }
         }

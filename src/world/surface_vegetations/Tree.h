@@ -7,7 +7,6 @@ public:
     static constexpr unsigned int SIZE = 7;
 
     Tree(int x, int y, int z);
-    ~Tree() override = default;
 
     void generateVoxel() override;
     void generateMesh() override;
