@@ -19,7 +19,7 @@ void Tree::generateVoxel() {
     for (int y = 3; y < 5; y++) {
         for (int x = 1; x < 6; x++) {
             for (int z = 1; z < 6; z++) {
-                if (x == 3 && y == 3 && z == 3) continue; // Skip the trunk position
+                if (x == 3 && z == 3) continue; // Skip the trunk position
                 m_blockType[index(x, y, z)] = BlockType::LEAVES;
             }
         }
