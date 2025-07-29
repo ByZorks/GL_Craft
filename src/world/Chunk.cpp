@@ -47,12 +47,11 @@ void Chunk::generateVoxel(const FastNoiseLite& noiseGenerator, const FastNoiseLi
                     if (blockType != BlockType::GRASS) continue;
 
                     const float vegetationNoise = (surfaceVegetationGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
-                    if (vegetationNoise < 0.9f) continue;
+                    if (vegetationNoise < 0.875f) continue;
 
                     const auto tree = std::make_shared<Tree>(m_x + localX, m_y + localY + 1, m_z + localZ);
                     tree->generateVoxel();
                     m_vegetations.emplace_back(tree);
-                    // m_blockType[index(localX, localY + 8, localZ)] = BlockType::LEAVES;
                 } else if (constexpr int waterLevel = 63; worldY < waterLevel) {
                     m_blockType[index(localX, localY, localZ)] = BlockType::WATER;
                 } else {
