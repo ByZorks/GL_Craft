@@ -122,7 +122,6 @@ public:
             vertexOffset += vertexCount;
         }
 
-        // m_IBO_transparent.init(meshIndices_transparent.data(), meshIndices_transparent.size());
         m_IBO_transparent.updateData(meshIndices_transparent.data());
     }
 
