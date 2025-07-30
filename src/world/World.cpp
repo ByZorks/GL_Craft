@@ -96,7 +96,7 @@ void World::draw(Camera &camera, const Frustum &frustum, Shader &shader, unsigne
         if (!weak_mesh) continue; // Skip if the mesh has been deleted
         if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
         if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
-        shader.setUniform3f("u_ChunkOffset",
+        shader.setUniform3f("u_Offset",
                             static_cast<float>(weak_mesh->m_x1()),
                             static_cast<float>(weak_mesh->m_y1()),
                             static_cast<float>(weak_mesh->m_z1()));
@@ -123,7 +123,7 @@ void World::draw(Camera &camera, const Frustum &frustum, Shader &shader, unsigne
 
         if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
         if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
-        shader.setUniform3f("u_ChunkOffset",
+        shader.setUniform3f("u_Offset",
                             static_cast<float>(weak_mesh->m_x1()),
                             static_cast<float>(weak_mesh->m_y1()),
                             static_cast<float>(weak_mesh->m_z1()));
