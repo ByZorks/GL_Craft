@@ -30,7 +30,7 @@ void Chunk::generateVoxel(const FastNoiseLite& noiseGenerator, const FastNoiseLi
 
             const float normalizedNoise = (noiseGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
             const float terrainShape = std::pow(normalizedNoise, 4.6f); // Create more plains and sharper mountains
-            const float columnHeight = baseHeight + terrainShape * maxHeight; // Scale to world height
+            const float columnHeight = std::floor(baseHeight + terrainShape * maxHeight); // Scale to world height
 
             for (int localY = 0; localY < SIZE + 2; localY++) {
                 const auto worldY = static_cast<float>(m_y + localY);
@@ -44,14 +44,15 @@ void Chunk::generateVoxel(const FastNoiseLite& noiseGenerator, const FastNoiseLi
                     const BlockType blockType = Block::getBlockType(worldY, columnHeight, normalized3DNoise, caveThreshold);
                     m_blockType[index(localX, localY, localZ)] = blockType;
 
-                    if (blockType != BlockType::GRASS) continue;
+                    if (blockType != BlockType::GRASS || worldY != columnHeight) continue;
 
                     const float vegetationNoise = (surfaceVegetationGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
                     if (vegetationNoise < 0.875f) continue;
 
-                    const auto tree = std::make_shared<Tree>(m_x + localX, m_y + localY + 1, m_z + localZ);
+                    const auto tree = std::make_shared<Tree>(m_x + localX - 4, m_y + localY, m_z + localZ - 4);
                     tree->generateVoxel();
                     m_vegetations.emplace_back(tree);
+                    // m_blockType[index(localX, localY+1, localZ)] = BlockType::LOG;
                 } else if (constexpr int waterLevel = 63; worldY < waterLevel) {
                     m_blockType[index(localX, localY, localZ)] = BlockType::WATER;
                 } else {
