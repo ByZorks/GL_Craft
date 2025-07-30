@@ -1,7 +1,6 @@
 #include "Chunk.h"
 
 #include <cmath>
-#include <iostream>
 
 #include "World.h"
 #include "surface_vegetations/Tree.h"
@@ -20,16 +19,31 @@ Chunk::~Chunk() {
 }
 
 void Chunk::generateVoxel(World &world) {
-    for (int localX = 0; localX < SIZE + 2; localX++) { // +2 for boundary checks
+    std::array<std::array<int, SIZE + 2>, SIZE + 2> heightCache;
+
+    for (int localX = 0; localX < SIZE + 2; localX++) {
+        const int worldX = m_x + localX;
+        for (int localZ = 0; localZ < SIZE + 2; localZ++) {
+            const int worldZ = m_z + localZ;
+            heightCache[localX][localZ] = world.getHeight(worldX, worldZ);
+        }
+    }
+
+    for (int localX = 0; localX < SIZE + 2; localX++) {
         const int worldX = m_x + localX;
 
         for (int localZ = 0; localZ < SIZE + 2; localZ++) {
             const int worldZ = m_z + localZ;
+            const int columnHeight = heightCache[localX][localZ];
 
-            const int columnHeight = world.getHeight(worldX, worldZ);
+            if (columnHeight < m_y - SIZE) continue; // Early exit for aerial chunks
 
-            for (int localY = 0; localY < SIZE + 2; localY++) {
+            // Pre-compute the max height for the current column
+            const int endY = std::min(static_cast<int>(SIZE) + 2, std::max(0, columnHeight - m_y + 2));
+
+            for (int localY = 0; localY < endY; localY++) {
                 const int worldY = m_y + localY;
+
                 if (world.isCave(worldX, worldY, worldZ)) continue;
 
                 if (worldY <= columnHeight) {
@@ -38,7 +52,7 @@ void Chunk::generateVoxel(World &world) {
 
                     if (blockType != BlockType::GRASS || worldY != columnHeight) continue;
 
-                    const float vegetationNoise = (world.m_surface_vegetation_generator().GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
+                    const float vegetationNoise = (world.m_surface_vegetation_generator().GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) * 0.5f;
                     if (vegetationNoise < 0.875f) continue;
 
                     const auto tree = std::make_shared<Tree>(m_x + localX - 4, m_y + localY, m_z + localZ - 4);
