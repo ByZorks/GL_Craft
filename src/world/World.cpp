@@ -155,15 +155,14 @@ int World::getHeight(const int worldX, const int worldZ) {
     float columnHeight = std::floor(baseHeight + terrainShape * maxHeight); // Scale to world height
 
     // 3D noise generation for cave system
-    float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), columnHeight, static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
+    const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), columnHeight, static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
     constexpr float baseCaveThreshold = 0.82f;
     const float surfaceModifier = 1.0f - std::clamp((columnHeight - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
     const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
 
     // Adjust column height based on cave system
-    while (normalized3DNoise > caveThreshold - 0.1f && normalized3DNoise < caveThreshold + 0.1f) {
-        columnHeight--;
-        normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), columnHeight, static_cast<float>(worldZ)) + 1.0f) / 2.0f;
+    if (std::abs(normalized3DNoise - caveThreshold) < 0.1f) {
+        columnHeight -= static_cast<int>((normalized3DNoise - (caveThreshold - 0.1f)) * 10.0f);
     }
 
     {
