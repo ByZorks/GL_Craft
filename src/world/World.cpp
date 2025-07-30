@@ -3,6 +3,7 @@
 #include <iostream>
 #include <ranges>
 #include <thread>
+#include <unordered_set>
 
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
@@ -28,8 +29,11 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_caveGenerator.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
     m_caveGenerator.SetDomainWarpAmp(9.f);
 
-    m_loadedChunks.reserve(static_cast<std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>>::size_type>(
-        Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f)); // Estimation based on testing
+    m_loadedChunks.reserve(
+        static_cast<std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk> >::size_type>(
+            Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
+
+    m_heightMap.reserve(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f);
 }
 
 World::~World() {
@@ -135,8 +139,62 @@ void World::draw(Camera &camera, const Frustum &frustum, Shader &shader, unsigne
     Renderer::enableDepthMask();
 }
 
+int World::getHeight(const int worldX, const int worldZ) {
+    constexpr float maxHeight = 256.0f;
+    constexpr int baseHeight = 60;
+    const std::pair coords(worldX, worldZ);
+
+    // Check if height is already cached
+    if (const auto it = m_heightMap.find(coords); it != m_heightMap.end()) {
+        return it->second;
+    }
+
+    // 2D noise generation for terrain height
+    const float normalizedNoise = (m_terrainHeightGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
+    const float terrainShape = std::pow(normalizedNoise, 4.6f); // Create more plains and sharper mountains
+    float columnHeight = std::floor(baseHeight + terrainShape * maxHeight); // Scale to world height
+
+    // 3D noise generation for cave system
+    float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), columnHeight, static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
+    constexpr float baseCaveThreshold = 0.82f;
+    const float surfaceModifier = 1.0f - std::clamp((columnHeight - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
+    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
+
+    // Adjust column height based on cave system
+    while (normalized3DNoise > caveThreshold - 0.1f && normalized3DNoise < caveThreshold + 0.1f) {
+        columnHeight--;
+        normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), columnHeight, static_cast<float>(worldZ)) + 1.0f) / 2.0f;
+    }
+
+    {
+        std::lock_guard lock(m_heightMapMutex);
+        m_heightMap.try_emplace(coords, columnHeight);
+    }
+
+    return static_cast<int>(columnHeight);
+}
+
+bool World::isCave(const int worldX, const int worldY, const int worldZ) const {
+    constexpr float maxHeight = 256.0f;
+    constexpr int baseHeight = 60;
+
+    if (worldY <= 1 || worldY > maxHeight) return false;
+
+    // 3D noise generation for cave system
+    const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
+    constexpr float baseCaveThreshold = 0.82f;
+    const float surfaceModifier = 1.0f - std::clamp((worldY - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
+    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
+
+    return std::abs(normalized3DNoise - caveThreshold) < 0.1f;
+}
+
 const FastNoiseLite & World::m_noise_generator() const {
     return m_terrainHeightGenerator;
+}
+
+const FastNoiseLite & World::m_surface_vegetation_generator() const {
+    return m_surfaceVegetationGenerator;
 }
 
 const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & World::m_loaded_chunks() const {
@@ -185,10 +243,33 @@ void World::generateDataForEachChunks(const float renderDistanceInBlocks, const 
 }
 
 void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const float renderDistance) {
+    auto t1 = std::chrono::high_resolution_clock::now();
+    const float renderDistanceSq = renderDistance * renderDistance;
+
+    std::unordered_set<std::pair<int, int>> toRemoveXZ;
+
     std::erase_if(m_loadedChunks, [&](const auto &pair) {
         auto [x, y, z] = pair.first;
-        return glm::distance(glm::vec3(x, y, z), cameraChunkPos) > renderDistance;
+        const glm::vec3 pos(x, y, z);
+        float distSq = glm::distance(pos, cameraChunkPos);
+        distSq *= distSq;
+        if (distSq > renderDistanceSq) {
+            toRemoveXZ.emplace(x, z);
+            return true;
+        }
+        return false;
     });
+
+    std::lock_guard lock(m_heightMapMutex);
+    for (const auto &pair : toRemoveXZ) {
+        m_heightMap.erase(pair);
+    }
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    if (duration > 0) {
+        std::cout << "Unloaded distant chunks in " << duration << " ms\n";
+    }
 }
 
 void World::processChunks() {
@@ -205,7 +286,7 @@ void World::processChunks() {
         std::tuple<int, int, int> key = m_chunksToGenerate.pop();
         m_threadPool.enqueue([this, key] {
             const auto p_chunk = std::make_shared<Chunk>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
-            p_chunk->generateVoxel(m_terrainHeightGenerator, m_surfaceVegetationGenerator, m_caveGenerator);
+            p_chunk->generateVoxel(*this);
             p_chunk->generateMesh();
             if (!p_chunk->hasVisibleFaces()) {
                 m_chunksToDelete.push(p_chunk);

@@ -19,41 +19,32 @@ Chunk::~Chunk() {
     m_vegetations.clear();
 }
 
-void Chunk::generateVoxel(const FastNoiseLite& noiseGenerator, const FastNoiseLite& surfaceVegetationGenerator, const FastNoiseLite& caveGenerator) {
+void Chunk::generateVoxel(World &world) {
     for (int localX = 0; localX < SIZE + 2; localX++) { // +2 for boundary checks
-        const auto worldX = static_cast<float>(m_x + localX);
+        const int worldX = m_x + localX;
 
         for (int localZ = 0; localZ < SIZE + 2; localZ++) {
-            constexpr float maxHeight = 256.0f;
-            constexpr int baseHeight = 60;
-            const auto worldZ = static_cast<float>(m_z + localZ);
+            const int worldZ = m_z + localZ;
 
-            const float normalizedNoise = (noiseGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
-            const float terrainShape = std::pow(normalizedNoise, 4.6f); // Create more plains and sharper mountains
-            const float columnHeight = std::floor(baseHeight + terrainShape * maxHeight); // Scale to world height
+            const int columnHeight = world.getHeight(worldX, worldZ);
 
             for (int localY = 0; localY < SIZE + 2; localY++) {
-                const auto worldY = static_cast<float>(m_y + localY);
-
-                const float normalized3DNoise = (caveGenerator.GetNoise(worldX, worldY, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
-                constexpr float baseCaveThreshold = 0.82f;
-                const float surfaceModifier = 1.0f - std::clamp((worldY - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
-                const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
+                const int worldY = m_y + localY;
+                if (world.isCave(worldX, worldY, worldZ)) continue;
 
                 if (worldY <= columnHeight) {
-                    const BlockType blockType = Block::getBlockType(worldY, columnHeight, normalized3DNoise, caveThreshold);
+                    const BlockType blockType = Block::getBlockType(worldY, columnHeight);
                     m_blockType[index(localX, localY, localZ)] = blockType;
 
                     if (blockType != BlockType::GRASS || worldY != columnHeight) continue;
 
-                    const float vegetationNoise = (surfaceVegetationGenerator.GetNoise(worldX, worldZ) + 1.0f) / 2.0f; // Normalize to [0, 1]
+                    const float vegetationNoise = (world.m_surface_vegetation_generator().GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
                     if (vegetationNoise < 0.875f) continue;
 
                     const auto tree = std::make_shared<Tree>(m_x + localX - 4, m_y + localY, m_z + localZ - 4);
                     tree->generateVoxel();
                     m_vegetations.emplace_back(tree);
-                    // m_blockType[index(localX, localY+1, localZ)] = BlockType::LOG;
-                } else if (constexpr int waterLevel = 63; worldY < waterLevel) {
+                } else if (constexpr int waterLevel = 63; worldY < waterLevel && worldY <= columnHeight) {
                     m_blockType[index(localX, localY, localZ)] = BlockType::WATER;
                 } else {
                     break;

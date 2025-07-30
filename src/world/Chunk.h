@@ -20,7 +20,7 @@ public:
     Chunk(int x, int y, int z);
     ~Chunk() override;
 
-    void generateVoxel(const FastNoiseLite& noiseGenerator, const FastNoiseLite& surfaceVegetationGenerator, const FastNoiseLite& caveGenerator);
+    void generateVoxel(World &world);
     void generateMesh() override;
 
     static int index(int x, int y, int z);
