@@ -12,7 +12,7 @@ public:
     static constexpr unsigned int SIZE = 16;
 
     Vegetation(const int x, const int y, const int z) : Mesh(x, y, z) {
-        m_blockType.resize(Vegetation::SIZE * Vegetation::SIZE * Vegetation::SIZE, BlockType::AIR);
+        m_blockType.resize(SIZE * SIZE * SIZE, BlockType::AIR);
     }
 };
 

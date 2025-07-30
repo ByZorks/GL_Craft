@@ -242,7 +242,6 @@ void World::generateDataForEachChunks(const float renderDistanceInBlocks, const 
 }
 
 void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const float renderDistance) {
-    auto t1 = std::chrono::high_resolution_clock::now();
     const float renderDistanceSq = renderDistance * renderDistance;
 
     std::unordered_set<std::pair<int, int>> toRemoveXZ;
@@ -262,12 +261,6 @@ void World::unloadDistantChunks(const glm::vec3 &cameraChunkPos, const float ren
     std::lock_guard lock(m_heightMapMutex);
     for (const auto &pair : toRemoveXZ) {
         m_heightMap.erase(pair);
-    }
-
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-    if (duration > 0) {
-        std::cout << "Unloaded distant chunks in " << duration << " ms\n";
     }
 }
 
