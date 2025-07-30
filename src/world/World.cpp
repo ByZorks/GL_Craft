@@ -27,7 +27,7 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_caveGenerator.SetFractalOctaves(6);
     m_caveGenerator.SetFractalLacunarity(1.29f);
     m_caveGenerator.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
-    m_caveGenerator.SetDomainWarpAmp(9.f);
+    m_caveGenerator.SetDomainWarpAmp(20.f);
 
     m_loadedChunks.reserve(
         static_cast<std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk> >::size_type>(
@@ -161,8 +161,8 @@ int World::getHeight(const int worldX, const int worldZ) {
     const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
 
     // Adjust column height based on cave system
-    if (std::abs(normalized3DNoise - caveThreshold) < 0.1f) {
-        columnHeight -= static_cast<int>((normalized3DNoise - (caveThreshold - 0.1f)) * 10.0f);
+    if (std::abs(normalized3DNoise - caveThreshold) < 0.13) {
+        columnHeight -= static_cast<int>((normalized3DNoise - (caveThreshold - 0.13f)) * 10.0f);
     }
 
     {
@@ -185,7 +185,7 @@ bool World::isCave(const int worldX, const int worldY, const int worldZ) const {
     const float surfaceModifier = 1.0f - std::clamp((worldY - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
     const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
 
-    return std::abs(normalized3DNoise - caveThreshold) < 0.1f;
+    return std::abs(normalized3DNoise - caveThreshold) < 0.13f;
 }
 
 const FastNoiseLite & World::m_noise_generator() const {
