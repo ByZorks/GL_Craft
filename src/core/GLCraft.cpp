@@ -84,10 +84,11 @@ int main(int argc, char *argv[]) {
             // Render the world
             Frustum frustum = Camera::getFrustum(mvp);
             unsigned int visibleChunksCount = 0;
-            world.draw(camera, frustum, shader, visibleChunksCount);
+            unsigned int visibleVegetationsCount = 0;
+            world.draw(camera, frustum, shader, visibleChunksCount, visibleVegetationsCount);
 
             if (debugUI.isUIMode()) {
-                DebugUI::render(visibleChunksCount, world.m_loaded_chunks().size(), Renderer::m_renderDistance, camera);
+                DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(), world.m_loaded_vegetations().size(), Renderer::m_renderDistance, camera);
             }
             DebugUI::draw();
 

@@ -30,7 +30,7 @@ void DebugUI::newFrame() {
     ImGui::NewFrame();
 }
 
-void DebugUI::render(const unsigned int visibleChunks, const unsigned int totalChunks, float &renderDistance, const Camera &camera) {
+void DebugUI::render(const unsigned int visibleChunks, unsigned int visibleVegetations, const unsigned int totalChunks, unsigned int totalVegetations, float &renderDistance, const Camera &camera) {
     ImGui::Begin("Debug");
     ImGui::Text("Performance:");
     const ImGuiIO& io = ImGui::GetIO(); // Cannot use m_io here because it is not updated in this function
@@ -38,6 +38,7 @@ void DebugUI::render(const unsigned int visibleChunks, const unsigned int totalC
     ImGui::Separator();
     ImGui::Text("World:");
     ImGui::Text("Rendering: %u/%u chunks", visibleChunks, totalChunks);
+    ImGui::Text("Rendering: %u/%u vegetations", visibleVegetations, totalVegetations);
     constexpr auto chunkSize = static_cast<float>(Chunk::SIZE);
     int renderDistanceInChunks = static_cast<int>(renderDistance / chunkSize);
     if (ImGui::SliderInt("Render Distance (chunks)", &renderDistanceInChunks, 1, 32)) {

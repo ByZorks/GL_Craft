@@ -11,11 +11,6 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z) {
     m_vertices.reserve(avg_faces * 4); // avg_faces * 4 vertices per face
     m_blockFaceData.reserve(avg_faces);
     m_blockType.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
-    m_vegetations.reserve(8);
-}
-
-Chunk::~Chunk() {
-    m_vegetations.clear();
 }
 
 void Chunk::generateVoxel(World &world) {
@@ -49,15 +44,6 @@ void Chunk::generateVoxel(World &world) {
                 if (worldY <= columnHeight) {
                     const BlockType blockType = Block::getBlockType(worldY, columnHeight);
                     m_blockType[index(localX, localY, localZ)] = blockType;
-
-                    if (blockType != BlockType::GRASS || worldY != columnHeight) continue;
-
-                    const float vegetationNoise = (world.m_surface_vegetation_generator().GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) * 0.5f;
-                    if (vegetationNoise < 0.875f) continue;
-
-                    const auto tree = std::make_shared<Tree>(m_x + localX - 4, m_y + localY, m_z + localZ - 4);
-                    tree->generateVoxel();
-                    m_vegetations.emplace_back(tree);
                 } else if (constexpr int waterLevel = 63; worldY == waterLevel && worldY > columnHeight) {
                     m_blockType[index(localX, localY, localZ)] = BlockType::WATER;
                 } else {
@@ -79,10 +65,6 @@ void Chunk::generateMesh() {
                 addBlockFaces(localX, localY, localZ, m_blockType[index(localX+1, localY+1, localZ+1)]);
             }
         }
-    }
-
-    for (const auto& vegetation : m_vegetations) {
-        vegetation->generateMesh();
     }
 
     if (!hasVisibleFaces()) {
@@ -108,10 +90,6 @@ bool Chunk::hasBlocks() {
 
 bool Chunk::hasVisibleFaces() const {
     return !m_vertices.empty() && !m_blockFaceData.empty();
-}
-
-const std::vector<std::shared_ptr<Vegetation>> & Chunk::m_vegetations1() const {
-    return m_vegetations;
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {

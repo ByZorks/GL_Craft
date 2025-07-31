@@ -24,6 +24,11 @@ private:
     ThreadSafeQueue<std::shared_ptr<Chunk>> m_chunksToDelete;
     ThreadSafeQueue<std::shared_ptr<Chunk>> m_chunksToRender;
 
+    std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Vegetation>> m_loadedVegetations;
+    ThreadSafeQueue<std::tuple<int, int, int>> m_vegetationsToGenerate;
+    ThreadSafeQueue<std::shared_ptr<Vegetation>> m_vegetationsToDelete;
+    ThreadSafeQueue<std::shared_ptr<Vegetation>> m_vegetationsToRender;
+
     std::unordered_map<std::pair<int, int>, int> m_heightMap;
     mutable std::mutex m_heightMapMutex;
 
@@ -38,7 +43,7 @@ public:
     ~World();
 
     void updateChunks(Camera &camera, float renderDistanceInBlocks);
-    void draw(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
+    void draw(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &visibleVegetationsCount);
 
     int getHeight(int worldX, int worldZ);
     bool isCave(int worldX, int worldY, int worldZ) const;
@@ -46,11 +51,17 @@ public:
     [[nodiscard]] const FastNoiseLite & m_noise_generator() const;
     [[nodiscard]] const FastNoiseLite & m_surface_vegetation_generator() const;
     [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
+    [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Vegetation>> &m_loaded_vegetations() const;
 
 private:
-    void generateDataForEachChunks(float renderDistanceInBlocks, int cameraWorldX, int cameraWorldY, int cameraWorldZ);
-    void unloadDistantChunks(const glm::vec3 &cameraChunkPos, float renderDistance);
+    void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
     void processChunks();
+    void drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount);
+    void processVegetations();
+
+    void generateDataForEachChunks(float renderDistanceInBlocks, int cameraWorldX, int cameraWorldY, int cameraWorldZ);
+    void generateVegetationsForEachChunks(const std::shared_ptr<Chunk>& chunk);
+    void unloadDistantMeshes(const glm::vec3 &cameraChunkPos, float renderDistance);
 };
 
 #endif //WORLD_H

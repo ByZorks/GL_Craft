@@ -11,14 +11,10 @@
 class World;
 
 class Chunk final : public Mesh {
-private:
-    std::vector<std::shared_ptr<Vegetation>> m_vegetations;
-
 public:
     static constexpr unsigned int SIZE = 16;
 
     Chunk(int x, int y, int z);
-    ~Chunk() override;
 
     void generateVoxel(World &world);
     void generateMesh() override;
@@ -27,8 +23,6 @@ public:
 
     [[nodiscard]] bool hasBlocks();
     [[nodiscard]] bool hasVisibleFaces() const;
-
-    [[nodiscard]] const std::vector<std::shared_ptr<Vegetation>> & m_vegetations1() const;
 
 private:
     void addBlockFaces(int localX, int localY, int localZ, BlockType blockType);
