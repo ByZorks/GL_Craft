@@ -305,7 +305,7 @@ void World::generateVegetationsForEachChunks(const std::shared_ptr<Chunk> &chunk
             if (columnHeight < chunk->m_y1() || columnHeight >= chunk->m_y1() + Chunk::SIZE || isCave(worldX, columnHeight, worldZ)) continue;
             float vegetationNoise = (m_surfaceVegetationGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) * 0.5f;
             if (vegetationNoise < 0.875f) continue;
-            std::tuple<int, int, int> key = std::make_tuple(worldX - 4, columnHeight, worldZ - 4);
+            std::tuple<int, int, int> key = std::make_tuple(worldX, columnHeight, worldZ);
             m_vegetationsToGenerate.push(key);
         }
     }

@@ -1,7 +1,7 @@
 #include "Tree.h"
 
 Tree::Tree(const int x, const int y, const int z)
-    : Vegetation(x, y, z) {
+    : Vegetation(x - 4, y, z - 4) {
     m_blockType.resize(343, BlockType::AIR);
     m_blockFaceData.reserve(136);
     m_vertices.reserve(544);
