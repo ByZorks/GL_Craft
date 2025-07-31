@@ -58,7 +58,7 @@ void Chunk::generateVoxel(World &world) {
                     const auto tree = std::make_shared<Tree>(m_x + localX - 4, m_y + localY, m_z + localZ - 4);
                     tree->generateVoxel();
                     m_vegetations.emplace_back(tree);
-                } else if (constexpr int waterLevel = 63; worldY < waterLevel && worldY <= columnHeight) {
+                } else if (constexpr int waterLevel = 63; worldY == waterLevel && worldY > columnHeight) {
                     m_blockType[index(localX, localY, localZ)] = BlockType::WATER;
                 } else {
                     break;
