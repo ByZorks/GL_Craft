@@ -27,8 +27,7 @@ private:
     std::unordered_map<std::pair<int, int>, int> m_heightMap;
     mutable std::mutex m_heightMapMutex;
 
-    std::vector<std::weak_ptr<Mesh>> m_opaqueMeshes;
-    std::vector<std::weak_ptr<Mesh>> m_transparentMeshes;
+    std::vector<std::weak_ptr<Mesh>> m_displayedMeshes;
 
     FastNoiseLite m_terrainHeightGenerator;
     FastNoiseLite m_surfaceVegetationGenerator;
@@ -39,7 +38,7 @@ public:
     ~World();
 
     void updateChunks(Camera &camera, float renderDistanceInBlocks);
-    void draw(Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
+    void draw(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
 
     int getHeight(int worldX, int worldZ);
     bool isCave(int worldX, int worldY, int worldZ) const;

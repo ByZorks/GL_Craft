@@ -3,7 +3,7 @@
 Tree::Tree(const int x, const int y, const int z)
     : Vegetation(x, y, z) {
     m_blockType.resize(343, BlockType::AIR);
-    m_blockFaceDataOpaque.reserve(136);
+    m_blockFaceData.reserve(136);
     m_vertices.reserve(544);
 }
 
@@ -48,32 +48,32 @@ void Tree::generateMesh() {
                 if (shouldDrawFace(x, y + 1, z, blockType)) {
                     Block::addFaceVertices(Face::TOP, blockType, m_vertices, static_cast<float>(x),
                                            static_cast<float>(y), static_cast<float>(z));
-                    m_blockFaceDataOpaque.emplace_back(Face::TOP, 4, static_cast<uint8_t>(x), static_cast<uint8_t>(y+1), static_cast<uint8_t>(z));
+                    m_blockFaceData.emplace_back(Face::TOP, 4, static_cast<uint8_t>(x), static_cast<uint8_t>(y+1), static_cast<uint8_t>(z));
                 }
                 if (shouldDrawFace(x, y - 1, z, blockType)) {
                     Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, static_cast<float>(x),
                                            static_cast<float>(y), static_cast<float>(z));
-                    m_blockFaceDataOpaque.emplace_back(Face::BOTTOM, 4, static_cast<uint8_t>(x), static_cast<uint8_t>(y-1), static_cast<uint8_t>(z));
+                    m_blockFaceData.emplace_back(Face::BOTTOM, 4, static_cast<uint8_t>(x), static_cast<uint8_t>(y-1), static_cast<uint8_t>(z));
                 }
                 if (shouldDrawFace(x, y, z + 1, blockType)) {
                     Block::addFaceVertices(Face::FRONT, blockType, m_vertices, static_cast<float>(x),
                                            static_cast<float>(y), static_cast<float>(z));
-                    m_blockFaceDataOpaque.emplace_back(Face::FRONT, 4, static_cast<uint8_t>(x), static_cast<uint8_t>(y), static_cast<uint8_t>(z+1));
+                    m_blockFaceData.emplace_back(Face::FRONT, 4, static_cast<uint8_t>(x), static_cast<uint8_t>(y), static_cast<uint8_t>(z+1));
                 }
                 if (shouldDrawFace(x, y, z - 1, blockType)) {
                     Block::addFaceVertices(Face::BACK, blockType, m_vertices, static_cast<float>(x),
                                            static_cast<float>(y), static_cast<float>(z));
-                    m_blockFaceDataOpaque.emplace_back(Face::BACK, 4, static_cast<uint8_t>(x), static_cast<uint8_t>(y), static_cast<uint8_t>(z-1));
+                    m_blockFaceData.emplace_back(Face::BACK, 4, static_cast<uint8_t>(x), static_cast<uint8_t>(y), static_cast<uint8_t>(z-1));
                 }
                 if (shouldDrawFace(x + 1, y, z, blockType)) {
                     Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, static_cast<float>(x),
                                            static_cast<float>(y), static_cast<float>(z));
-                    m_blockFaceDataOpaque.emplace_back(Face::RIGHT, 4, static_cast<uint8_t>(x+1), static_cast<uint8_t>(y), static_cast<uint8_t>(z));
+                    m_blockFaceData.emplace_back(Face::RIGHT, 4, static_cast<uint8_t>(x+1), static_cast<uint8_t>(y), static_cast<uint8_t>(z));
                 }
                 if (shouldDrawFace(x - 1, y, z, blockType)) {
                     Block::addFaceVertices(Face::LEFT, blockType, m_vertices, static_cast<float>(x),
                                            static_cast<float>(y), static_cast<float>(z));
-                    m_blockFaceDataOpaque.emplace_back(Face::LEFT, 4, static_cast<uint8_t>(x-1), static_cast<uint8_t>(y), static_cast<uint8_t>(z));
+                    m_blockFaceData.emplace_back(Face::LEFT, 4, static_cast<uint8_t>(x-1), static_cast<uint8_t>(y), static_cast<uint8_t>(z));
                 }
             }
         }

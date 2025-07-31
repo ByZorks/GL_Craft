@@ -9,7 +9,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z) {
     constexpr size_t max_faces = 6 * 16 * 16 * 16;
     constexpr size_t avg_faces = max_faces / 4; // Assuming each block has a quarter of the maximum faces
     m_vertices.reserve(avg_faces * 4); // avg_faces * 4 vertices per face
-    m_blockFaceDataOpaque.reserve(avg_faces);
+    m_blockFaceData.reserve(avg_faces);
     m_blockType.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
     m_vegetations.reserve(8);
 }
@@ -86,7 +86,7 @@ void Chunk::generateMesh() {
     }
 
     if (!hasVisibleFaces()) {
-        m_blockFaceDataOpaque.shrink_to_fit();
+        m_blockFaceData.shrink_to_fit();
         m_vertices.shrink_to_fit();
     }
 
@@ -107,7 +107,7 @@ bool Chunk::hasBlocks() {
 }
 
 bool Chunk::hasVisibleFaces() const {
-    return !m_vertices.empty() && !m_blockFaceDataOpaque.empty();
+    return !m_vertices.empty() && !m_blockFaceData.empty();
 }
 
 const std::vector<std::shared_ptr<Vegetation>> & Chunk::m_vegetations1() const {
@@ -127,27 +127,27 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 
     if (shouldDrawFace(localX, localY + 1, localZ, blockType)) {
         Block::addFaceVertices(Face::TOP, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceDataOpaque.emplace_back(Face::TOP, 4);
+        m_blockFaceData.emplace_back(Face::TOP, 4);
     }
     if (shouldDrawFace(localX, localY - 1, localZ, blockType)) {
         Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceDataOpaque.emplace_back(Face::BOTTOM, 4);
+        m_blockFaceData.emplace_back(Face::BOTTOM, 4);
     }
     if (shouldDrawFace(localX, localY, localZ + 1, blockType)) {
         Block::addFaceVertices(Face::FRONT, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceDataOpaque.emplace_back(Face::FRONT, 4);
+        m_blockFaceData.emplace_back(Face::FRONT, 4);
     }
     if (shouldDrawFace(localX, localY, localZ - 1, blockType)) {
         Block::addFaceVertices(Face::BACK, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceDataOpaque.emplace_back(Face::BACK, 4);
+        m_blockFaceData.emplace_back(Face::BACK, 4);
     }
     if (shouldDrawFace(localX + 1, localY, localZ, blockType)) {
         Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceDataOpaque.emplace_back(Face::RIGHT, 4);
+        m_blockFaceData.emplace_back(Face::RIGHT, 4);
     }
     if (shouldDrawFace(localX - 1, localY, localZ, blockType)) {
         Block::addFaceVertices(Face::LEFT, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceDataOpaque.emplace_back(Face::LEFT, 4);
+        m_blockFaceData.emplace_back(Face::LEFT, 4);
     }
 }
 
