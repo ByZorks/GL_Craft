@@ -36,7 +36,7 @@ void Chunk::generateVoxel(World &world) {
             const int worldZ = m_z + localZ;
             const int columnHeight = heightCache[localX][localZ];
 
-            if (columnHeight < m_y - SIZE) continue; // Early exit for aerial chunks
+            if (columnHeight < m_y - static_cast<int>(SIZE)) continue; // Early exit for aerial chunks, cast is mandatory
 
             // Pre-compute the max height for the current column
             const int endY = std::min(static_cast<int>(SIZE) + 2, std::max(0, columnHeight - m_y + 2));
