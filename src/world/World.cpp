@@ -8,7 +8,7 @@
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
 #include "../utils/ThreadSafeQueue.h"
-#include "surface_vegetations/Tree.h"
+#include "vegetations/Tree.h"
 
 World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
     m_terrainHeightGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);

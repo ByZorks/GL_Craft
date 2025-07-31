@@ -6,7 +6,7 @@
 #include "FastNoiseLite.h"
 
 #include "Mesh.h"
-#include "surface_vegetations/Vegetation.h"
+#include "vegetations/Vegetation.h"
 
 class World;
 

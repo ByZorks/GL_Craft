@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "World.h"
-#include "surface_vegetations/Tree.h"
+#include "vegetations/Tree.h"
 
 Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z) {
     constexpr size_t max_faces = 6 * 16 * 16 * 16;
