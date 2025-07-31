@@ -83,6 +83,8 @@ public:
         Renderer::draw(m_vao(), m_ibo());
     }
 
+    [[nodiscard]] virtual bool isBillboard() const;
+
     [[nodiscard]] virtual bool shouldDrawFace(const int neighborX, const int neighborY, const int neighborZ,
                                               const BlockType currentBlockType) const {
         if (!isBlockPresent(neighborX, neighborY, neighborZ)) return true; // Air block

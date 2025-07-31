@@ -8,6 +8,7 @@
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
 #include "../utils/ThreadSafeQueue.h"
+#include "vegetations/ShortGrass.h"
 #include "vegetations/Tree.h"
 
 World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
@@ -130,7 +131,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     processChunks();
 
     // Setup buffers for chunks that are ready to be rendered
-    m_displayedMeshes.clear();
+    m_displayedNormalMeshes.clear();
     for (const auto& chunk : m_loadedChunks | std::views::values) {
         // New meshes
         if (chunk->m_status1() == Status::MESH_GENERATED) {
@@ -139,11 +140,11 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
 
         // Existing meshes
         if (chunk->m_status1() == Status::BUFFERS_SETUP) {
-            m_displayedMeshes.push_back(chunk);
+            m_displayedNormalMeshes.push_back(chunk);
         }
     }
 
-    for (const auto& mesh : m_displayedMeshes) {
+    for (const auto& mesh : m_displayedNormalMeshes) {
         auto weak_mesh = mesh.lock();
         if (!weak_mesh) continue; // Skip if the mesh has been deleted
         if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
@@ -197,7 +198,8 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
     processVegetations();
 
     // Setup buffers for chunks that are ready to be rendered
-    m_displayedMeshes.clear();
+    m_displayedNormalMeshes.clear();
+    m_displayedBillboardsMeshes.clear();
     for (const auto& vegetation : m_loadedVegetations| std::views::values) {
         // New meshes
         if (vegetation->m_status1() == Status::MESH_GENERATED) {
@@ -206,11 +208,16 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
 
         // Existing meshes
         if (vegetation->m_status1() == Status::BUFFERS_SETUP) {
-            m_displayedMeshes.push_back(vegetation);
+            if (vegetation->isBillboard()) {
+                m_displayedBillboardsMeshes.push_back(vegetation);
+            } else {
+                m_displayedNormalMeshes.push_back(vegetation);
+            }
         }
     }
 
-    for (const auto& mesh : m_displayedMeshes) {
+
+    for (const auto& mesh : m_displayedNormalMeshes) {
         auto weak_mesh = mesh.lock();
         if (!weak_mesh) continue; // Skip if the mesh has been deleted
         if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
@@ -221,8 +228,25 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
                             static_cast<float>(weak_mesh->m_z1()));
 
         weak_mesh->draw();
-        visibleVegetationsCount++;
     }
+
+    // Batch all billboards together to reduce OpenGL calls
+    Renderer::disableBackFaceCulling();
+    for (const auto& mesh : m_displayedBillboardsMeshes) {
+        auto weak_mesh = mesh.lock();
+        if (!weak_mesh) continue; // Skip if the mesh has been deleted
+        if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
+        if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
+        shader.setUniform3f("u_Offset",
+                            static_cast<float>(weak_mesh->m_x1()),
+                            static_cast<float>(weak_mesh->m_y1()),
+                            static_cast<float>(weak_mesh->m_z1()));
+
+        weak_mesh->draw();
+    }
+    Renderer::enableBackFaceCulling();
+
+    visibleVegetationsCount++;
 }
 
 void World::processVegetations() {
@@ -239,10 +263,18 @@ void World::processVegetations() {
 
         std::tuple<int, int, int> key = m_vegetationsToGenerate.pop();
         m_threadPool.enqueue([this, key] {
-            const auto p_vegetation = std::make_shared<Tree>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
-            p_vegetation->generateVoxel();
-            p_vegetation->generateMesh();
-            m_vegetationsToRender.push(p_vegetation);
+            float vegetationNoise = (this->m_surfaceVegetationGenerator.GetNoise(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<2>(key))) + 1.0f) * 0.5f;
+            std::shared_ptr<Vegetation> p_vegetation;
+            if (vegetationNoise > 0.87f) {
+                p_vegetation = std::make_shared<Tree>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
+            } else if (vegetationNoise > 0.7f) {
+                p_vegetation = std::make_shared<ShortGrass>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
+            }
+            if (p_vegetation) {
+                p_vegetation->generateVoxel();
+                p_vegetation->generateMesh();
+                m_vegetationsToRender.push(p_vegetation);
+            }
         });
     }
 
@@ -304,7 +336,7 @@ void World::generateVegetationsForEachChunks(const std::shared_ptr<Chunk> &chunk
             const int columnHeight = getHeight(worldX, worldZ);
             if (columnHeight < chunk->m_y1() || columnHeight >= chunk->m_y1() + Chunk::SIZE || isCave(worldX, columnHeight, worldZ)) continue;
             float vegetationNoise = (m_surfaceVegetationGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) * 0.5f;
-            if (vegetationNoise < 0.875f) continue;
+            if (vegetationNoise < 0.6f) continue;
             std::tuple<int, int, int> key = std::make_tuple(worldX, columnHeight, worldZ);
             m_vegetationsToGenerate.push(key);
         }

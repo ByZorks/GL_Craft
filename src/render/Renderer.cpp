@@ -36,6 +36,14 @@ void Renderer::enableDepthMask() {
     GLCall(glDepthMask(GL_TRUE));
 }
 
+void Renderer::disableBackFaceCulling() {
+    GLCall(glDisable(GL_CULL_FACE));
+}
+
+void Renderer::enableBackFaceCulling() {
+    GLCall(glEnable(GL_CULL_FACE));
+}
+
 void Renderer::draw(const VertexArray& vao, const IndexBuffer& ibo) {
     vao.bind();
     ibo.bind();

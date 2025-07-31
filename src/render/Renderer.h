@@ -16,6 +16,8 @@ public:
     static float calculateDeltaTime(float currentFrame);
     static void disableDepthMask();
     static void enableDepthMask();
+    static void disableBackFaceCulling();
+    static void enableBackFaceCulling();
     static void draw(const VertexArray& vao, const IndexBuffer& ibo);
 
 };
