@@ -19,7 +19,7 @@ Chunk::~Chunk() {
 }
 
 void Chunk::generateVoxel(World &world) {
-    std::array<std::array<int, SIZE + 2>, SIZE + 2> heightCache;
+    std::array<std::array<int, SIZE + 2>, SIZE + 2> heightCache{};
 
     for (int localX = 0; localX < SIZE + 2; localX++) {
         const int worldX = m_x + localX;
