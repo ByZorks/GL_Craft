@@ -58,7 +58,7 @@ void World::draw(const Camera &camera, const Frustum &frustum, Shader &shader, u
     // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_loadedChunks
     processChunks();
 
-    // Setup buffers for chunks that are ready to be rendered, cache them into seperate list for rendering
+    // Setup buffers for chunks that are ready to be rendered
     m_displayedMeshes.clear();
     for (const auto& chunk : m_loadedChunks | std::views::values) {
         // New meshes
