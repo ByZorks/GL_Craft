@@ -140,7 +140,7 @@ void World::draw(Camera &camera, const Frustum &frustum, Shader &shader, unsigne
 }
 
 int World::getHeight(const int worldX, const int worldZ) {
-    constexpr float maxHeight = 256.0f;
+    constexpr int maxHeight = 256;
     constexpr int baseHeight = 60;
     const std::pair coords(worldX, worldZ);
 
@@ -162,7 +162,7 @@ int World::getHeight(const int worldX, const int worldZ) {
 
     // Adjust column height based on cave system
     if (std::abs(normalized3DNoise - caveThreshold) < 0.13) {
-        columnHeight -= static_cast<int>((normalized3DNoise - (caveThreshold - 0.13f)) * 10.0f);
+        columnHeight -= (normalized3DNoise - (caveThreshold - 0.13f)) * 10.0f;
     }
 
     {
@@ -174,7 +174,7 @@ int World::getHeight(const int worldX, const int worldZ) {
 }
 
 bool World::isCave(const int worldX, const int worldY, const int worldZ) const {
-    constexpr float maxHeight = 256.0f;
+    constexpr int maxHeight = 256;
     constexpr int baseHeight = 60;
 
     if (worldY <= 1 || worldY > maxHeight) return false;
@@ -182,7 +182,7 @@ bool World::isCave(const int worldX, const int worldY, const int worldZ) const {
     // 3D noise generation for cave system
     const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
     constexpr float baseCaveThreshold = 0.82f;
-    const float surfaceModifier = 1.0f - std::clamp((worldY - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
+    const float surfaceModifier = 1.0f - std::clamp(static_cast<float>(worldY - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
     const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
 
     return std::abs(normalized3DNoise - caveThreshold) < 0.13f;
