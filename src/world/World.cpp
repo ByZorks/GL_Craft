@@ -29,11 +29,9 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_caveGenerator.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
     m_caveGenerator.SetDomainWarpAmp(20.f);
 
-    m_loadedChunks.reserve(
-        static_cast<std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk> >::size_type>(
-            Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
+    m_loadedChunks.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 
-    m_heightMap.reserve(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f);
+    m_heightMap.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 }
 
 World::~World() {
@@ -73,11 +71,7 @@ void World::draw(Camera &camera, const Frustum &frustum, Shader &shader, unsigne
                 if (vegetation->m_status1() == Status::MESH_GENERATED) {
                     vegetation->setupBuffers();
                 }
-                if (vegetation->hasOpaqueFaces()) m_opaqueMeshes.push_back(vegetation);
-                if (vegetation->hasTransparentFaces()) m_transparentMeshes.push_back(vegetation);
             }
-            if (chunk->hasOpaqueFaces()) m_opaqueMeshes.push_back(chunk);
-            if (chunk->hasTransparentFaces()) m_transparentMeshes.push_back(chunk);
         }
 
         // Existing meshes
@@ -268,7 +262,8 @@ void World::processChunks() {
     const int maxChunksPerFrame = static_cast<int>(0.3 * Renderer::m_renderDistance + 0.6 * static_cast<float>(m_threadPool.m_num_threads()));
     // Remove chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {
-        if (!m_chunksToDelete.empty()) m_chunksToDelete.pop();
+        if (m_chunksToDelete.empty()) break;
+        m_chunksToDelete.pop();
     }
 
     // Process chunks that are within the render distance
