@@ -82,7 +82,6 @@ void World::draw(const Camera &camera, const Frustum &frustum, Shader &shader, u
         }
     }
 
-    // Render opaque meshes
     for (const auto& mesh : m_displayedMeshes) {
         auto weak_mesh = mesh.lock();
         if (!weak_mesh) continue; // Skip if the mesh has been deleted
@@ -93,7 +92,7 @@ void World::draw(const Camera &camera, const Frustum &frustum, Shader &shader, u
                             static_cast<float>(weak_mesh->m_y1()),
                             static_cast<float>(weak_mesh->m_z1()));
 
-        weak_mesh->drawOpaque();
+        weak_mesh->draw();
         visibleChunksCount++;
     }
 }

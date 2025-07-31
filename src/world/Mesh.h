@@ -79,8 +79,8 @@ public:
         m_status = Status::BUFFERS_SETUP;
     }
 
-    void drawOpaque() const {
-        Renderer::draw(m_vao_opaque(), m_ibo_opaque());
+    void draw() const {
+        Renderer::draw(m_vao(), m_ibo());
     }
 
     [[nodiscard]] virtual bool shouldDrawFace(const int neighborX, const int neighborY, const int neighborZ,
@@ -127,11 +127,11 @@ public:
         return m_status;
     }
 
-    [[nodiscard]] const VertexArray &m_vao_opaque() const {
+    [[nodiscard]] const VertexArray &m_vao() const {
         return m_VAO;
     }
 
-    [[nodiscard]] const IndexBuffer &m_ibo_opaque() const {
+    [[nodiscard]] const IndexBuffer &m_ibo() const {
         return m_IBO;
     }
 
