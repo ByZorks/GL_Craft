@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
             }
             glm::mat4 view = camera.getViewMatrix();
             glm::mat4 mvp = projection * view * model;
+            Frustum frustum = Camera::getFrustum(mvp);
 
             // Chunks generation
             world.updateChunks(camera, Renderer::m_renderDistance);
@@ -87,12 +88,16 @@ int main(int argc, char *argv[]) {
             // Render the world
             shader.use();
             shader.setUniformMat4f("u_MVP", mvp);
-            Frustum frustum = Camera::getFrustum(mvp);
+
             unsigned int visibleChunksCount = 0;
             world.drawChunks(camera, frustum, shader, visibleChunksCount);
 
             unsigned int visibleVegetationsCount = 0;
-            world.drawVegetations(camera, frustum, mvp, shader, instanceShader, visibleVegetationsCount);
+            world.drawVegetations(camera, frustum, shader, visibleVegetationsCount);
+
+            instanceShader.use();
+            instanceShader.setUniformMat4f("u_MVP", mvp);
+            world.drawInstances(camera, frustum, visibleVegetationsCount);
 
             if (debugUI.isUIMode()) {
                 DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(), world.m_loaded_vegetations().size(), Renderer::m_renderDistance, camera);

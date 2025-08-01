@@ -12,6 +12,7 @@ public:
     ~Frustum();
 
     [[nodiscard]] bool isAABBInFrustum(const AABB& box) const;
+    [[nodiscard]] bool isPointInFrustum(const glm::vec3& point) const;
 };
 
 #endif //FRUSTUM_H

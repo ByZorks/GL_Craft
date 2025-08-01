@@ -32,5 +32,15 @@ struct std::hash<std::pair<int, int>> {
     }
 };
 
+template <>
+struct std::hash<glm::vec3> {
+    std::size_t operator()(const glm::vec3& v) const noexcept {
+        const std::size_t h1 = std::hash<float>{}(v.x);
+        const std::size_t h2 = std::hash<float>{}(v.y);
+        const std::size_t h3 = std::hash<float>{}(v.z);
+        return h1 ^ (h2 << 1) ^ (h3 << 2);
+    }
+};
+
 
 #endif //CUSTOMHASH_H

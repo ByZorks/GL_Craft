@@ -3,6 +3,7 @@
 
 #include <ranges>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "Chunk.h"
 
@@ -30,6 +31,8 @@ private:
     ThreadSafeQueue<std::shared_ptr<Vegetation>> m_vegetationsToDelete;
     ThreadSafeQueue<std::shared_ptr<Vegetation>> m_vegetationsToRender;
 
+    std::unordered_set<glm::vec3> m_loadedGrass;
+    mutable std::mutex m_grassInstancesMutex;
     GrassInstanceRenderer m_grassRenderer;
 
     std::unordered_map<std::pair<int, int>, int> m_heightMap;
@@ -48,7 +51,8 @@ public:
 
     void updateChunks(Camera &camera, float renderDistanceInBlocks);
     void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
-    void drawVegetations(const Camera &camera, const Frustum &frustum, const glm::mat4 &mvp, Shader &shader, Shader &instanceShader, unsigned int &visibleVegetationsCount);
+    void drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount);
+    void drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount);
 
     int getHeight(int worldX, int worldZ);
     bool isCave(int worldX, int worldY, int worldZ) const;

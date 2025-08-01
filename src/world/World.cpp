@@ -190,31 +190,17 @@ void World::processChunks() {
     }
 }
 
-void World::drawVegetations(const Camera &camera, const Frustum &frustum, const glm::mat4 &mvp, Shader &shader, Shader &instanceShader, unsigned int &visibleVegetationsCount) {
+void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount) {
     // Remove vegetations that are no longer needed, generate voxel and mesh, store them
     processVegetations();
 
     // Setup buffers for chunks that are ready to be rendered
     m_displayedNormalMeshes.clear();
     m_displayedBillboardsMeshes.clear();
-    m_grassRenderer.resetInstances();
     for (const auto& vegetation : m_loadedVegetations | std::views::values) {
         // New meshes
         if (vegetation->m_status1() == Status::MESH_GENERATED) {
-            if (vegetation->isShortGrass()) {
-                const glm::vec3 position(
-                    static_cast<float>(vegetation->m_x1()),
-                    static_cast<float>(vegetation->m_y1()),
-                    static_cast<float>(vegetation->m_z1()));
-
-                if (camera.distanceToCamera(*vegetation) <= Renderer::m_renderDistance &&
-                    frustum.isAABBInFrustum(vegetation->m_box1())) {
-                    m_grassRenderer.addInstance(position);
-                    visibleVegetationsCount++;
-                }
-            } else {
-                vegetation->setupBuffers();
-            }
+            vegetation->setupBuffers();
         }
 
         // Existing meshes
@@ -241,31 +227,44 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, const 
         visibleVegetationsCount++;
     }
 
-    // Batch all billboards together to reduce OpenGL calls
-    Renderer::disableBackFaceCulling();
-    for (const auto& mesh : m_displayedBillboardsMeshes) {
-        auto weak_mesh = mesh.lock();
-        if (!weak_mesh) continue; // Skip if the mesh has been deleted
-        if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
-        if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
-        shader.setUniform3f("u_Offset",
-                            static_cast<float>(weak_mesh->m_x1()),
-                            static_cast<float>(weak_mesh->m_y1()),
-                            static_cast<float>(weak_mesh->m_z1()));
+    // Prevent unnecessary OpenGL calls
+    if (!m_displayedBillboardsMeshes.empty()) {
+        // Batch all billboards together to reduce OpenGL calls
+        Renderer::disableBackFaceCulling();
+        for (const auto& mesh : m_displayedBillboardsMeshes) {
+            auto weak_mesh = mesh.lock();
+            if (!weak_mesh) continue; // Skip if the mesh has been deleted
+            if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
+            if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
+            shader.setUniform3f("u_Offset",
+                                static_cast<float>(weak_mesh->m_x1()),
+                                static_cast<float>(weak_mesh->m_y1()),
+                                static_cast<float>(weak_mesh->m_z1()));
 
-        weak_mesh->draw();
-        visibleVegetationsCount++;
+            weak_mesh->draw();
+            visibleVegetationsCount++;
+        }
+        Renderer::enableBackFaceCulling();
+    }
+}
+
+void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount) {
+    m_grassRenderer.resetInstances();
+
+    for (const auto &pos : m_loadedGrass) {
+        if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
+            frustum.isPointInFrustum(pos)) {
+            m_grassRenderer.addInstance(pos);
+            visibleVegetationsCount++;
+        }
     }
 
-    // Draw grass instances
     if (m_grassRenderer.m_instance_count() > 0) {
-        instanceShader.use();
-        instanceShader.setUniformMat4f("u_MVP", mvp);
         m_grassRenderer.updateInstanceBuffer();
+        Renderer::disableBackFaceCulling();
         m_grassRenderer.draw();
+        Renderer::enableBackFaceCulling();
     }
-
-    Renderer::enableBackFaceCulling();
 }
 
 void World::processVegetations() {
@@ -287,7 +286,9 @@ void World::processVegetations() {
             if (vegetationNoise > 0.87f) {
                 p_vegetation = std::make_shared<Tree>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
             } else if (vegetationNoise > 0.7f) {
-                p_vegetation = std::make_shared<ShortGrass>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
+                const glm::vec3 position(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key)));
+                std::lock_guard lock(m_grassInstancesMutex);
+                if (!m_loadedGrass.contains(position)) m_loadedGrass.emplace(position);
             }
             if (p_vegetation) {
                 p_vegetation->generateVoxel();
