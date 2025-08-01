@@ -347,24 +347,29 @@ void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos, const float ren
     const float renderDistanceSq = renderDistance * renderDistance;
 
     std::unordered_set<std::pair<int, int>> toRemoveXZ;
-    std::unordered_set<std::tuple<int, int, int>> toRemoveXYZ;
 
-    std::erase_if(m_loadedChunks, [&](const auto &pair) {
-        auto [x, y, z] = pair.first;
+    std::erase_if(m_loadedChunks, [&](const auto &tuple) {
+        auto [x, y, z] = tuple.first;
         const glm::vec3 pos(x, y, z);
         float distSq = glm::distance(pos, cameraChunkPos);
         distSq *= distSq;
         if (distSq > renderDistanceSq) {
             toRemoveXZ.emplace(x, z);
-            toRemoveXYZ.emplace(x, y, z);
             return true;
         }
         return false;
     });
 
-    for (const auto &tuple : toRemoveXYZ) {
-        m_loadedVegetations.erase(tuple);
-    }
+    std::erase_if(m_loadedVegetations, [&](const auto &tuple) {
+        auto [x, y, z] = tuple.first;
+        const glm::vec3 pos(x, y, z);
+        float distSq = glm::distance(pos, cameraChunkPos);
+        distSq *= distSq;
+        if (distSq > renderDistanceSq) {
+            return true;
+        }
+        return false;
+    });
 
     std::lock_guard lock(m_heightMapMutex);
     for (const auto &pair : toRemoveXZ) {
