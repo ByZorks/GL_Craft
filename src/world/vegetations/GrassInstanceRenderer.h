@@ -24,7 +24,7 @@ public:
     void init();
     void addInstance(const glm::vec3& position);
     void updateInstanceBuffer();
-    void clear();
+    void resetInstances();
     void draw() const;
 
     [[nodiscard]] unsigned int m_instance_count() const;

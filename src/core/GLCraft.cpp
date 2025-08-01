@@ -92,11 +92,7 @@ int main(int argc, char *argv[]) {
             world.drawChunks(camera, frustum, shader, visibleChunksCount);
 
             unsigned int visibleVegetationsCount = 0;
-            const auto t1 = std::chrono::high_resolution_clock::now();
             world.drawVegetations(camera, frustum, mvp, shader, instanceShader, visibleVegetationsCount);
-            const auto t2 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> duration = t2 - t1;
-            std::cout << "Vegetation rendering time: " << duration.count() << " ms" << std::endl;
 
             if (debugUI.isUIMode()) {
                 DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(), world.m_loaded_vegetations().size(), Renderer::m_renderDistance, camera);

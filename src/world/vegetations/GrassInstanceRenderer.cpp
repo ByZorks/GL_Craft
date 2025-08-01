@@ -44,9 +44,13 @@ void GrassInstanceRenderer::init() {
 }
 
 void GrassInstanceRenderer::addInstance(const glm::vec3& position) {
-    if (m_instancePositions.size() < m_instanceBufferCapacity) {
-        m_instancePositions.emplace_back(position);
-        m_instanceCount = m_instancePositions.size();
+    if (m_instanceCount < m_instanceBufferCapacity) {
+        if (m_instanceCount >= m_instancePositions.size()) {
+            m_instancePositions.push_back(position);
+        } else {
+            m_instancePositions[m_instanceCount] = position;
+        }
+        m_instanceCount++;
     }
 }
 
@@ -68,8 +72,7 @@ void GrassInstanceRenderer::updateInstanceBuffer() {
     }
 }
 
-void GrassInstanceRenderer::clear() {
-    m_instancePositions.clear();
+void GrassInstanceRenderer::resetInstances() {
     m_instanceCount = 0;
 }
 

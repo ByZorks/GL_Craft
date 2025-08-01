@@ -31,6 +31,8 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_caveGenerator.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
     m_caveGenerator.SetDomainWarpAmp(20.f);
 
+    m_grassRenderer.init();
+
     m_loadedChunks.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 
     m_heightMap.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
@@ -195,8 +197,7 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, const 
     // Setup buffers for chunks that are ready to be rendered
     m_displayedNormalMeshes.clear();
     m_displayedBillboardsMeshes.clear();
-    m_grassRenderer.clear();
-    m_grassRenderer.init();
+    m_grassRenderer.resetInstances();
     for (const auto& vegetation : m_loadedVegetations | std::views::values) {
         // New meshes
         if (vegetation->m_status1() == Status::MESH_GENERATED) {
