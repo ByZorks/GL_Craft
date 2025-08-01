@@ -45,10 +45,14 @@ int main(int argc, char *argv[]) {
         // Shader
         Shader shader("../res/shaders/block.vert", "../res/shaders/block.frag");
         shader.use();
+        shader.setUniform1i("u_Texture", 0);
+
+        Shader instanceShader("../res/shaders/instance_vegetation.vert", "../res/shaders/block.frag");
+        instanceShader.use();
+        instanceShader.setUniform1i("u_Texture", 0);
 
         const Texture atlas("../res/textures/atlas/texture_atlas.png");
         atlas.bind();
-        shader.setUniform1i("u_Texture", 0);
 
         // Set up the MVP matrix
         const glm::mat4 projection = camera.getProjectionMatrix();
@@ -76,16 +80,23 @@ int main(int argc, char *argv[]) {
             }
             glm::mat4 view = camera.getViewMatrix();
             glm::mat4 mvp = projection * view * model;
-            shader.setUniformMat4f("u_MVP", mvp);
 
             // Chunks generation
             world.updateChunks(camera, Renderer::m_renderDistance);
 
             // Render the world
+            shader.use();
+            shader.setUniformMat4f("u_MVP", mvp);
             Frustum frustum = Camera::getFrustum(mvp);
             unsigned int visibleChunksCount = 0;
+            world.drawChunks(camera, frustum, shader, visibleChunksCount);
+
             unsigned int visibleVegetationsCount = 0;
-            world.draw(camera, frustum, shader, visibleChunksCount, visibleVegetationsCount);
+            const auto t1 = std::chrono::high_resolution_clock::now();
+            world.drawVegetations(camera, frustum, mvp, shader, instanceShader, visibleVegetationsCount);
+            const auto t2 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::milli> duration = t2 - t1;
+            std::cout << "Vegetation rendering time: " << duration.count() << " ms" << std::endl;
 
             if (debugUI.isUIMode()) {
                 DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(), world.m_loaded_vegetations().size(), Renderer::m_renderDistance, camera);

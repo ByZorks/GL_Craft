@@ -12,6 +12,7 @@
 #include "../render/ThreadPool.h"
 #include "../utils/CustomHash.h"
 #include "../utils/ThreadSafeQueue.h"
+#include "vegetations/GrassInstanceRenderer.h"
 
 class Camera;
 
@@ -29,6 +30,8 @@ private:
     ThreadSafeQueue<std::shared_ptr<Vegetation>> m_vegetationsToDelete;
     ThreadSafeQueue<std::shared_ptr<Vegetation>> m_vegetationsToRender;
 
+    GrassInstanceRenderer m_grassRenderer;
+
     std::unordered_map<std::pair<int, int>, int> m_heightMap;
     mutable std::mutex m_heightMapMutex;
 
@@ -44,7 +47,8 @@ public:
     ~World();
 
     void updateChunks(Camera &camera, float renderDistanceInBlocks);
-    void draw(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &visibleVegetationsCount);
+    void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
+    void drawVegetations(const Camera &camera, const Frustum &frustum, const glm::mat4 &mvp, Shader &shader, Shader &instanceShader, unsigned int &visibleVegetationsCount);
 
     int getHeight(int worldX, int worldZ);
     bool isCave(int worldX, int worldY, int worldZ) const;
@@ -55,9 +59,7 @@ public:
     [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Vegetation>> &m_loaded_vegetations() const;
 
 private:
-    void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
     void processChunks();
-    void drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount);
     void processVegetations();
 
     void generateDataForEachChunks(float renderDistanceInBlocks, int cameraWorldX, int cameraWorldY, int cameraWorldZ);

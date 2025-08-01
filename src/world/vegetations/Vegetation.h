@@ -14,6 +14,10 @@ public:
     Vegetation(const int x, const int y, const int z) : Mesh(x, y, z) {
         m_blockType.resize(SIZE * SIZE * SIZE, BlockType::AIR);
     }
+
+    [[nodiscard]] virtual bool isShortGrass() const {
+        return false;
+    }
 };
 
 #endif //VEGETATION_H

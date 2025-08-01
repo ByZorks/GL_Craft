@@ -69,6 +69,8 @@ add_executable(GL_Craft
         src/world/Mesh.cpp
         src/world/vegetations/ShortGrass.cpp
         src/world/vegetations/ShortGrass.h
+        src/world/vegetations/GrassInstanceRenderer.cpp
+        src/world/vegetations/GrassInstanceRenderer.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

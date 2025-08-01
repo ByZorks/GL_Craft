@@ -10,6 +10,7 @@ public:
     void generateMesh() override;
 
     [[nodiscard]] bool isBillboard() const override;
+    [[nodiscard]] bool isShortGrass() const override;
 };
 
 #endif //SHORTGRASS_H

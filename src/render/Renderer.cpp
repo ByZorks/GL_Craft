@@ -49,3 +49,9 @@ void Renderer::draw(const VertexArray& vao, const IndexBuffer& ibo) {
     ibo.bind();
     GLCall(glDrawElements(GL_TRIANGLES, ibo.m_count(), GL_UNSIGNED_INT, nullptr));
 }
+
+void Renderer::drawInstanced(const VertexArray &vao, const IndexBuffer &ibo, unsigned int instanceCount) {
+    vao.bind();
+    ibo.bind();
+    GLCall(glDrawElementsInstanced(GL_TRIANGLES, ibo.m_count(), GL_UNSIGNED_INT, nullptr,instanceCount));
+}

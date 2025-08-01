@@ -25,3 +25,7 @@ void ShortGrass::generateMesh() {
 bool ShortGrass::isBillboard() const {
     return true;
 }
+
+bool ShortGrass::isShortGrass() const {
+    return true;
+}

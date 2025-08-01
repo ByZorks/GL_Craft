@@ -6,16 +6,17 @@
 class VertexArray {
 private:
     unsigned int m_RendererID = 0;
+    unsigned int m_nextAttributeIndex = 0;
 
 public:
     VertexArray();
     ~VertexArray();
 
     void init();
-    void AddBuffer(const VertexBuffer &vb, const VertexBufferLayout &layout) const;
+    void AddBuffer(const VertexBuffer &vb, const VertexBufferLayout &layout);
+    void addInstancedBuffer(const VertexBuffer &vb, unsigned int attributeIndex, unsigned int componentCount = 3) const;
     void bind() const;
     static void unbind();
-
 };
 
 #endif //VERTEXARRAY_H
