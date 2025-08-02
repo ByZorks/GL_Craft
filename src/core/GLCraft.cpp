@@ -104,6 +104,8 @@ int main(int argc, char *argv[]) {
             }
             DebugUI::draw();
 
+            camera.updateLastState();
+
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
