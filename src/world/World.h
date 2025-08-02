@@ -48,9 +48,8 @@ private:
 
 public:
     World();
-    ~World();
 
-    void updateChunks(const Camera &camera, float renderDistanceInBlocks);
+    void updateChunks(const Camera &camera);
     void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
     void drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount);
     void drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount);
@@ -66,10 +65,9 @@ public:
 private:
     void processChunks();
     void processVegetations();
-
-    void generateDataForEachChunks(float renderDistanceInBlocks, int cameraWorldX, int cameraWorldY, int cameraWorldZ);
+    void generateDataForEachChunks(int cameraWorldX, int cameraWorldY, int cameraWorldZ);
     void generateVegetationsForEachChunks(const std::shared_ptr<Chunk>& chunk);
-    void unloadDistantMeshes(const glm::vec3 &cameraChunkPos, float renderDistance);
+    void unloadDistantMeshes(const glm::vec3 &cameraChunkPos);
 };
 
 #endif //WORLD_H

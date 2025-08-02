@@ -40,14 +40,7 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_heightMap.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 }
 
-World::~World() {
-    m_loadedChunks.clear();
-    m_chunksToGenerate.clear();
-    m_chunksToDelete.clear();
-    m_chunksToRender.clear();
-}
-
-void World::updateChunks(const Camera &camera, const float renderDistanceInBlocks) {
+void World::updateChunks(const Camera &camera) {
     if (!camera.hasCameraChangedChunk()) return;
 
     const int cameraWorldX = static_cast<int>(std::floor(camera.m_camera_pos().x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
@@ -55,9 +48,115 @@ void World::updateChunks(const Camera &camera, const float renderDistanceInBlock
     const int cameraWorldZ = static_cast<int>(std::floor(camera.m_camera_pos().z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
-    unloadDistantMeshes(cameraChunkPos, renderDistanceInBlocks);
+    unloadDistantMeshes(cameraChunkPos);
+    generateDataForEachChunks(cameraWorldX, cameraWorldY, cameraWorldZ);
+}
 
-    generateDataForEachChunks(renderDistanceInBlocks, cameraWorldX, cameraWorldY, cameraWorldZ);
+void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount) {
+    // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_loadedChunks
+    processChunks();
+
+    // Setup buffers for chunks that are ready to be rendered
+    m_displayedNormalMeshes.clear();
+    for (const auto& chunk : m_loadedChunks | std::views::values) {
+        // New meshes
+        if (chunk->m_status1() == Status::MESH_GENERATED) chunk->setupBuffers();
+
+        // Existing meshes
+        if (chunk->m_status1() == Status::BUFFERS_SETUP) m_displayedNormalMeshes.push_back(chunk);
+    }
+
+    for (const auto& mesh : m_displayedNormalMeshes) {
+        auto weak_mesh = mesh.lock();
+        if (!weak_mesh) continue;
+        if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
+        if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
+        shader.setUniform3f("u_Offset",
+                            static_cast<float>(weak_mesh->m_x1()),
+                            static_cast<float>(weak_mesh->m_y1()),
+                            static_cast<float>(weak_mesh->m_z1()));
+
+        weak_mesh->draw();
+        visibleChunksCount++;
+    }
+}
+
+void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount) {
+    // Remove vegetations that are no longer needed, generate voxel and mesh, store them
+    processVegetations();
+
+    // Setup buffers for chunks that are ready to be rendered
+    m_displayedNormalMeshes.clear();
+    m_displayedBillboardsMeshes.clear();
+    for (const auto& vegetation : m_loadedVegetations | std::views::values) {
+        // New meshes
+        if (vegetation->m_status1() == Status::MESH_GENERATED) vegetation->setupBuffers();
+
+        // Existing meshes
+        if (vegetation->m_status1() == Status::BUFFERS_SETUP) {
+            if (vegetation->isBillboard()) {
+                m_displayedBillboardsMeshes.push_back(vegetation);
+            } else {
+                m_displayedNormalMeshes.push_back(vegetation);
+            }
+        }
+    }
+
+    for (const auto& mesh : m_displayedNormalMeshes) {
+        auto weak_mesh = mesh.lock();
+        if (!weak_mesh) continue;
+        if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
+        if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
+        shader.setUniform3f("u_Offset",
+                            static_cast<float>(weak_mesh->m_x1()),
+                            static_cast<float>(weak_mesh->m_y1()),
+                            static_cast<float>(weak_mesh->m_z1()));
+
+        weak_mesh->draw();
+        visibleVegetationsCount++;
+    }
+
+    // Prevent unnecessary OpenGL calls
+    if (!m_displayedBillboardsMeshes.empty()) {
+        // Batch all billboards together to reduce OpenGL calls
+        Renderer::disableBackFaceCulling();
+        for (const auto& mesh : m_displayedBillboardsMeshes) {
+            auto weak_mesh = mesh.lock();
+            if (!weak_mesh) continue; // Skip if the mesh has been deleted
+            if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
+            if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
+            shader.setUniform3f("u_Offset",
+                                static_cast<float>(weak_mesh->m_x1()),
+                                static_cast<float>(weak_mesh->m_y1()),
+                                static_cast<float>(weak_mesh->m_z1()));
+
+            weak_mesh->draw();
+            visibleVegetationsCount++;
+        }
+        Renderer::enableBackFaceCulling();
+    }
+}
+
+void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount) {
+    if (camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk()) {
+        m_grassRenderer.resetInstances();
+
+        for (const auto &pos : m_loadedGrass) {
+            if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
+                frustum.isPointInFrustum(pos)) {
+                m_grassRenderer.addInstance(pos);
+                visibleVegetationsCount++;
+            }
+        }
+
+        m_grassRenderer.updateInstanceBuffer();
+    }
+
+    if (m_grassRenderer.m_instance_count() > 0) {
+        Renderer::disableBackFaceCulling();
+        m_grassRenderer.draw();
+        Renderer::enableBackFaceCulling();
+    }
 }
 
 int World::getHeight(const int worldX, const int worldZ) {
@@ -66,9 +165,7 @@ int World::getHeight(const int worldX, const int worldZ) {
     const std::pair coords(worldX, worldZ);
 
     // Check if height is already cached
-    if (const auto it = m_heightMap.find(coords); it != m_heightMap.end()) {
-        return it->second;
-    }
+    if (const auto it = m_heightMap.find(coords); it != m_heightMap.end()) return it->second;
 
     // 2D noise generation for terrain height
     const float normalizedNoise = (m_terrainHeightGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
@@ -125,39 +222,6 @@ const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Vegetation>>
     return m_loadedVegetations;
 }
 
-void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount) {
-    // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_loadedChunks
-    processChunks();
-
-    // Setup buffers for chunks that are ready to be rendered
-    m_displayedNormalMeshes.clear();
-    for (const auto& chunk : m_loadedChunks | std::views::values) {
-        // New meshes
-        if (chunk->m_status1() == Status::MESH_GENERATED) {
-            chunk->setupBuffers();
-        }
-
-        // Existing meshes
-        if (chunk->m_status1() == Status::BUFFERS_SETUP) {
-            m_displayedNormalMeshes.push_back(chunk);
-        }
-    }
-
-    for (const auto& mesh : m_displayedNormalMeshes) {
-        auto weak_mesh = mesh.lock();
-        if (!weak_mesh) continue; // Skip if the mesh has been deleted
-        if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
-        if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
-        shader.setUniform3f("u_Offset",
-                            static_cast<float>(weak_mesh->m_x1()),
-                            static_cast<float>(weak_mesh->m_y1()),
-                            static_cast<float>(weak_mesh->m_z1()));
-
-        weak_mesh->draw();
-        visibleChunksCount++;
-    }
-}
-
 void World::processChunks() {
     const int maxChunksPerFrame = static_cast<int>(0.3 * Renderer::m_renderDistance + 0.6 * static_cast<float>(m_threadPool.m_num_threads()));
     // Remove chunks that are no longer needed
@@ -189,86 +253,6 @@ void World::processChunks() {
         std::shared_ptr<Chunk> p_chunk = m_chunksToRender.pop();
         std::tuple<int, int, int> key = std::make_tuple(p_chunk->m_x1(), p_chunk->m_y1(), p_chunk->m_z1());
         m_loadedChunks.try_emplace(key, p_chunk);
-    }
-}
-
-void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount) {
-    // Remove vegetations that are no longer needed, generate voxel and mesh, store them
-    processVegetations();
-
-    // Setup buffers for chunks that are ready to be rendered
-    m_displayedNormalMeshes.clear();
-    m_displayedBillboardsMeshes.clear();
-    for (const auto& vegetation : m_loadedVegetations | std::views::values) {
-        // New meshes
-        if (vegetation->m_status1() == Status::MESH_GENERATED) {
-            vegetation->setupBuffers();
-        }
-
-        // Existing meshes
-        if (vegetation->m_status1() == Status::BUFFERS_SETUP) {
-            if (vegetation->isBillboard()) {
-                m_displayedBillboardsMeshes.push_back(vegetation);
-            } else {
-                m_displayedNormalMeshes.push_back(vegetation);
-            }
-        }
-    }
-
-    for (const auto& mesh : m_displayedNormalMeshes) {
-        auto weak_mesh = mesh.lock();
-        if (!weak_mesh) continue; // Skip if the mesh has been deleted
-        if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
-        if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
-        shader.setUniform3f("u_Offset",
-                            static_cast<float>(weak_mesh->m_x1()),
-                            static_cast<float>(weak_mesh->m_y1()),
-                            static_cast<float>(weak_mesh->m_z1()));
-
-        weak_mesh->draw();
-        visibleVegetationsCount++;
-    }
-
-    // Prevent unnecessary OpenGL calls
-    if (!m_displayedBillboardsMeshes.empty()) {
-        // Batch all billboards together to reduce OpenGL calls
-        Renderer::disableBackFaceCulling();
-        for (const auto& mesh : m_displayedBillboardsMeshes) {
-            auto weak_mesh = mesh.lock();
-            if (!weak_mesh) continue; // Skip if the mesh has been deleted
-            if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
-            if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
-            shader.setUniform3f("u_Offset",
-                                static_cast<float>(weak_mesh->m_x1()),
-                                static_cast<float>(weak_mesh->m_y1()),
-                                static_cast<float>(weak_mesh->m_z1()));
-
-            weak_mesh->draw();
-            visibleVegetationsCount++;
-        }
-        Renderer::enableBackFaceCulling();
-    }
-}
-
-void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount) {
-    if (camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk()) {
-        m_grassRenderer.resetInstances();
-
-        for (const auto &pos : m_loadedGrass) {
-            if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
-                frustum.isPointInFrustum(pos)) {
-                m_grassRenderer.addInstance(pos);
-                visibleVegetationsCount++;
-            }
-        }
-
-        m_grassRenderer.updateInstanceBuffer();
-    }
-
-    if (m_grassRenderer.m_instance_count() > 0) {
-        Renderer::disableBackFaceCulling();
-        m_grassRenderer.draw();
-        Renderer::enableBackFaceCulling();
     }
 }
 
@@ -312,9 +296,8 @@ void World::processVegetations() {
 }
 
 
-void World::generateDataForEachChunks(const float renderDistanceInBlocks, const int cameraWorldX,
-                                      const int cameraWorldY, const int cameraWorldZ) {
-    const int r = static_cast<int>(renderDistanceInBlocks / static_cast<float>(Chunk::SIZE));
+void World::generateDataForEachChunks(const int cameraWorldX, const int cameraWorldY, const int cameraWorldZ) {
+    const int r = static_cast<int>(Renderer::m_renderDistance / static_cast<float>(Chunk::SIZE));
     const int r2 = r * r;
 
     // Pre-compute offsets for a circle of chunks around the camera position
@@ -355,8 +338,9 @@ void World::generateDataForEachChunks(const float renderDistanceInBlocks, const 
 
 void World::generateVegetationsForEachChunks(const std::shared_ptr<Chunk> &chunk) {
     for (int localX = 0; localX < Chunk::SIZE; ++localX) {
+        const int worldX = chunk->m_x1() + localX;
+
         for (int localZ = 0; localZ < Chunk::SIZE; ++localZ) {
-            const int worldX = chunk->m_x1() + localX;
             const int worldZ = chunk->m_z1() + localZ;
             const int columnHeight = getHeight(worldX, worldZ);
             if (columnHeight < chunk->m_y1() || columnHeight >= chunk->m_y1() + Chunk::SIZE || isCave(worldX, columnHeight, worldZ)) continue;
@@ -368,8 +352,8 @@ void World::generateVegetationsForEachChunks(const std::shared_ptr<Chunk> &chunk
     }
 }
 
-void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos, const float renderDistance) {
-    const float renderDistanceSq = renderDistance * renderDistance;
+void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
+    const float renderDistanceSq = Renderer::m_renderDistance * Renderer::m_renderDistance;
 
     std::unordered_set<std::pair<int, int>> toRemoveXZ;
 

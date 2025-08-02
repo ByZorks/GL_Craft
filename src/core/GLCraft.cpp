@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
             Frustum frustum = Camera::getFrustum(mvp);
 
             // Chunks generation
-            world.updateChunks(camera, Renderer::m_renderDistance);
+            world.updateChunks(camera);
 
             // Render the world
             shader.use();
