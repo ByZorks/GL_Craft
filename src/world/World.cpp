@@ -45,7 +45,7 @@ World::~World() {
     m_chunksToRender.clear();
 }
 
-void World::updateChunks(Camera &camera, const float renderDistanceInBlocks) {
+void World::updateChunks(const Camera &camera, const float renderDistanceInBlocks) {
     if (!camera.hasCameraChangedChunk()) return;
 
     const int cameraWorldX = static_cast<int>(std::floor(camera.m_camera_pos().x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
@@ -249,18 +249,21 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
 }
 
 void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount) {
-    m_grassRenderer.resetInstances();
+    if (camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk()) {
+        m_grassRenderer.resetInstances();
 
-    for (const auto &pos : m_loadedGrass) {
-        if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
-            frustum.isPointInFrustum(pos)) {
-            m_grassRenderer.addInstance(pos);
-            visibleVegetationsCount++;
+        for (const auto &pos : m_loadedGrass) {
+            if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
+                frustum.isPointInFrustum(pos)) {
+                m_grassRenderer.addInstance(pos);
+                visibleVegetationsCount++;
+            }
         }
+
+        m_grassRenderer.updateInstanceBuffer();
     }
 
     if (m_grassRenderer.m_instance_count() > 0) {
-        m_grassRenderer.updateInstanceBuffer();
         Renderer::disableBackFaceCulling();
         m_grassRenderer.draw();
         Renderer::enableBackFaceCulling();

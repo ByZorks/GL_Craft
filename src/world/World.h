@@ -49,7 +49,7 @@ public:
     World();
     ~World();
 
-    void updateChunks(Camera &camera, float renderDistanceInBlocks);
+    void updateChunks(const Camera &camera, float renderDistanceInBlocks);
     void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
     void drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount);
     void drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount);
