@@ -80,6 +80,7 @@ add_executable(GL_Craft
         src/render/InstanceRenderer.cpp
         src/render/InstanceRenderer.h
         src/render/InstanceRendererData.h
+        src/world/MeshData.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

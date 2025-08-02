@@ -34,9 +34,9 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_grassData.renderer.init();
     m_flowerData.renderer.init();
 
-    m_loadedChunks.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
+    m_chunksData.loadedMeshes.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 
-    m_loadedVegetations.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
+    m_vegetationsData.loadedMeshes.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 
     m_heightMap.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 }
@@ -54,12 +54,12 @@ void World::updateChunks(const Camera &camera) {
 }
 
 void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount) {
-    // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_loadedChunks
+    // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_chunksData.loadedMeshes
     processChunks();
 
     // Setup buffers for chunks that are ready to be rendered
     m_displayedNormalMeshes.clear();
-    for (const auto& chunk : m_loadedChunks | std::views::values) {
+    for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
         // New meshes
         if (chunk->m_status1() == Status::MESH_GENERATED) chunk->setupBuffers();
 
@@ -89,7 +89,7 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
     // Setup buffers for chunks that are ready to be rendered
     m_displayedNormalMeshes.clear();
     m_displayedBillboardsMeshes.clear();
-    for (const auto& vegetation : m_loadedVegetations | std::views::values) {
+    for (const auto& vegetation : m_vegetationsData.loadedMeshes | std::views::values) {
         // New meshes
         if (vegetation->m_status1() == Status::MESH_GENERATED) vegetation->setupBuffers();
 
@@ -234,44 +234,44 @@ const FastNoiseLite & World::m_surface_vegetation_generator() const {
 }
 
 const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & World::m_loaded_chunks() const {
-    return m_loadedChunks;
+    return m_chunksData.loadedMeshes;
 }
 
 const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Vegetation>> & World::m_loaded_vegetations() const {
-    return m_loadedVegetations;
+    return m_vegetationsData.loadedMeshes;
 }
 
 void World::processChunks() {
     const int maxChunksPerFrame = static_cast<int>(0.3 * Renderer::m_renderDistance + 0.6 * static_cast<float>(m_threadPool.m_num_threads()));
     // Remove chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {
-        if (m_chunksToDelete.empty()) break;
-        m_chunksToDelete.pop();
+        if (m_chunksData.meshesToDelete.empty()) break;
+        m_chunksData.meshesToDelete.pop();
     }
 
     // Process chunks that are within the render distance
     for (int i = 0; i < maxChunksPerFrame; ++i) {
-        if (m_chunksToGenerate.empty()) break;
+        if (m_chunksData.meshesToGenerate.empty()) break;
 
-        std::tuple<int, int, int> key = m_chunksToGenerate.pop();
+        std::tuple<int, int, int> key = m_chunksData.meshesToGenerate.pop();
         m_threadPool.enqueue([this, key] {
             const auto p_chunk = std::make_shared<Chunk>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
             p_chunk->generateVoxel(*this);
             p_chunk->generateMesh();
             if (!p_chunk->hasVisibleFaces()) {
-                m_chunksToDelete.push(p_chunk);
+                m_chunksData.meshesToDelete.push(p_chunk);
                 return;
             }
             this->generateVegetationsForEachChunks(p_chunk);
-            m_chunksToRender.push(p_chunk);
+            m_chunksData.meshesToRender.push(p_chunk);
         });
     }
 
     for (int i = 0; i < maxChunksPerFrame; ++i) {
-        if (m_chunksToRender.empty()) break;
-        std::shared_ptr<Chunk> p_chunk = m_chunksToRender.pop();
+        if (m_chunksData.meshesToRender.empty()) break;
+        std::shared_ptr<Chunk> p_chunk = m_chunksData.meshesToRender.pop();
         std::tuple<int, int, int> key = std::make_tuple(p_chunk->m_x1(), p_chunk->m_y1(), p_chunk->m_z1());
-        m_loadedChunks.try_emplace(key, p_chunk);
+        m_chunksData.loadedMeshes.try_emplace(key, p_chunk);
     }
 }
 
@@ -279,16 +279,16 @@ void World::processVegetations() {
     const int maxVegetationsPerFrame = static_cast<int>(0.2 * Renderer::m_renderDistance + 0.4 * static_cast<float>(m_threadPool.m_num_threads()));
     // Remove vegetations that are no longer needed
     for (int i = 0; i < maxVegetationsPerFrame; ++i) {
-        if (m_vegetationsToDelete.empty()) break;
-        m_vegetationsToDelete.pop();
+        if (m_vegetationsData.meshesToDelete.empty()) break;
+        m_vegetationsData.meshesToDelete.pop();
     }
 
     // Process chunks that are within the render distance
     for (int i = 0; i < maxVegetationsPerFrame; ++i) {
-        if (m_vegetationsToGenerate.empty()) break;
+        if (m_vegetationsData.meshesToGenerate.empty()) break;
 
         m_threadPool.enqueue([this] {
-            std::tuple<int, int, int> key = m_vegetationsToGenerate.pop();
+            std::tuple<int, int, int> key = m_vegetationsData.meshesToGenerate.pop();
             float vegetationNoise = (this->m_surfaceVegetationGenerator.GetNoise(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<2>(key))) + 1.0f) * 0.5f;
             std::shared_ptr<Vegetation> p_vegetation;
             if (vegetationNoise > 0.87f) {
@@ -305,16 +305,16 @@ void World::processVegetations() {
             if (p_vegetation) {
                 p_vegetation->generateVoxel();
                 p_vegetation->generateMesh();
-                m_vegetationsToRender.push(p_vegetation);
+                m_vegetationsData.meshesToRender.push(p_vegetation);
             }
         });
     }
 
     for (int i = 0; i < maxVegetationsPerFrame; ++i) {
-        if (m_vegetationsToRender.empty()) break;
-        std::shared_ptr<Vegetation> p_vegetation = m_vegetationsToRender.pop();
+        if (m_vegetationsData.meshesToRender.empty()) break;
+        std::shared_ptr<Vegetation> p_vegetation = m_vegetationsData.meshesToRender.pop();
         std::tuple<int, int, int> key = std::make_tuple(p_vegetation->m_x1(), p_vegetation->m_y1(), p_vegetation->m_z1());
-        m_loadedVegetations.try_emplace(key, p_vegetation);
+        m_vegetationsData.loadedMeshes.try_emplace(key, p_vegetation);
     }
 }
 
@@ -353,8 +353,8 @@ void World::generateDataForEachChunks(const int cameraWorldX, const int cameraWo
             if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
             const std::tuple<int, int, int> key = std::make_tuple(chunkX, chunkY, chunkZ);
-            if (m_loadedChunks.contains(key)) continue;
-            m_chunksToGenerate.push(key);
+            if (m_chunksData.loadedMeshes.contains(key)) continue;
+            m_chunksData.meshesToGenerate.push(key);
         }
     }
 }
@@ -370,7 +370,7 @@ void World::generateVegetationsForEachChunks(const std::shared_ptr<Chunk> &chunk
             float vegetationNoise = (m_surfaceVegetationGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) * 0.5f;
             if (vegetationNoise <= 0.69f) continue;
             std::tuple<int, int, int> key = std::make_tuple(worldX, columnHeight, worldZ);
-            m_vegetationsToGenerate.push(key);
+            m_vegetationsData.meshesToGenerate.push(key);
         }
     }
 }
@@ -380,7 +380,7 @@ void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
 
     std::unordered_set<std::pair<int, int>> toRemoveXZ;
 
-    std::erase_if(m_loadedChunks, [&](const auto &tuple) {
+    std::erase_if(m_chunksData.loadedMeshes, [&](const auto &tuple) {
         auto [x, y, z] = tuple.first;
         const glm::vec3 pos(x, y, z);
         float distSq = glm::distance(pos, cameraChunkPos);
@@ -392,7 +392,7 @@ void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
         return false;
     });
 
-    std::erase_if(m_loadedVegetations, [&](const auto &tuple) {
+    std::erase_if(m_vegetationsData.loadedMeshes, [&](const auto &tuple) {
         auto [x, y, z] = tuple.first;
         const glm::vec3 pos(x, y, z);
         float distSq = glm::distance(pos, cameraChunkPos);

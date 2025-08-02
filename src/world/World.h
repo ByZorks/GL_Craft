@@ -3,17 +3,16 @@
 
 #include <ranges>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "Chunk.h"
 
 #include "FastNoiseLite.h"
+#include "MeshData.h"
 #include "../gl/Shader.h"
 #include "../math/Frustum.h"
 #include "../render/InstanceRendererData.h"
 #include "../render/ThreadPool.h"
 #include "../utils/CustomHash.h"
-#include "../utils/ThreadSafeQueue.h"
 #include "vegetations/grass/GrassInstanceRenderer.h"
 #include "vegetations/Vegetation.h"
 #include "vegetations/flowers/FlowerInstanceRenderer.h"
@@ -24,15 +23,8 @@ class World {
 private:
     ThreadPool m_threadPool;
 
-    std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> m_loadedChunks;
-    ThreadSafeQueue<std::tuple<int, int, int>> m_chunksToGenerate;
-    ThreadSafeQueue<std::shared_ptr<Chunk>> m_chunksToDelete;
-    ThreadSafeQueue<std::shared_ptr<Chunk>> m_chunksToRender;
-
-    std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Vegetation>> m_loadedVegetations;
-    ThreadSafeQueue<std::tuple<int, int, int>> m_vegetationsToGenerate;
-    ThreadSafeQueue<std::shared_ptr<Vegetation>> m_vegetationsToDelete;
-    ThreadSafeQueue<std::shared_ptr<Vegetation>> m_vegetationsToRender;
+    MeshData<Chunk> m_chunksData;
+    MeshData<Vegetation> m_vegetationsData;
 
     InstanceRendererData<GrassInstanceRenderer> m_grassData;
     InstanceRendererData<FlowerInstanceRenderer> m_flowerData;
