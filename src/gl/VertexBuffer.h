@@ -19,6 +19,7 @@ public:
 
     void init(const void *data, unsigned int size, BufferUsage usage = BufferUsage::STATIC);
     void updateData(const void *data, unsigned int size, unsigned int offset = 0) const;
+    void deleteBuffer() const;
     void bind() const;
     static void unbind();
 };

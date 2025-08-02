@@ -62,10 +62,9 @@ void GrassInstanceRenderer::updateInstanceBuffer() {
     if (m_instanceCount > m_instanceBufferCapacity) {
         m_instanceBufferCapacity = m_instanceCount * 2;
 
-        VertexBuffer newInstanceVBO;
-        newInstanceVBO.init(m_instancePositions.data(), m_instanceBufferCapacity * sizeof(glm::vec3), BufferUsage::DYNAMIC);
+        m_instanceVBO.deleteBuffer();
+        m_instanceVBO.init(m_instancePositions.data(), m_instanceBufferCapacity * sizeof(glm::vec3), BufferUsage::DYNAMIC);
 
-        m_instanceVBO = newInstanceVBO;
         m_VAO.addInstancedBuffer(m_instanceVBO, 3, 3);
     } else {
         m_instanceVBO.updateData(m_instancePositions.data(), m_instanceCount * sizeof(glm::vec3));
