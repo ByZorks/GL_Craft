@@ -271,7 +271,7 @@ void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned
 }
 
 void World::processVegetations() {
-    const int maxVegetationsPerFrame = static_cast<int>(0.1 * Renderer::m_renderDistance + 0.2 * static_cast<float>(m_threadPool.m_num_threads()));
+    const int maxVegetationsPerFrame = static_cast<int>(0.2 * Renderer::m_renderDistance + 0.4 * static_cast<float>(m_threadPool.m_num_threads()));
     // Remove vegetations that are no longer needed
     for (int i = 0; i < maxVegetationsPerFrame; ++i) {
         if (m_vegetationsToDelete.empty()) break;
