@@ -279,8 +279,8 @@ void World::processVegetations() {
     for (int i = 0; i < maxVegetationsPerFrame; ++i) {
         if (m_vegetationsToGenerate.empty()) break;
 
-        std::tuple<int, int, int> key = m_vegetationsToGenerate.pop();
-        m_threadPool.enqueue([this, key] {
+        m_threadPool.enqueue([this] {
+            std::tuple<int, int, int> key = m_vegetationsToGenerate.pop();
             float vegetationNoise = (this->m_surfaceVegetationGenerator.GetNoise(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<2>(key))) + 1.0f) * 0.5f;
             std::shared_ptr<Vegetation> p_vegetation;
             if (vegetationNoise > 0.87f) {
