@@ -1,7 +1,7 @@
 #include "GrassInstanceRenderer.h"
 
-#include "../Block.h"
-#include "../../render/Renderer.h"
+#include "../../Block.h"
+#include "../../../render/Renderer.h"
 
 struct BlockVertex;
 

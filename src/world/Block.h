@@ -25,7 +25,7 @@ struct BlockFaceData {
 };
 
 enum class BlockType : uint8_t {
-    AIR, BEDROCK, DIRT, GRASS, STONE, WATER, LOG, LEAVES, SHORT_GRASS
+    AIR, BEDROCK, DIRT, GRASS, STONE, WATER, LOG, LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER, FLOWER_ALLIUM
 };
 
 struct BlockVertex {

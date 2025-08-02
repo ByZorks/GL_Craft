@@ -1,6 +1,6 @@
 #ifndef SHORTGRASS_H
 #define SHORTGRASS_H
-#include "Vegetation.h"
+#include "../Vegetation.h"
 
 class ShortGrass final : public Vegetation {
 public:
@@ -10,7 +10,6 @@ public:
     void generateMesh() override;
 
     [[nodiscard]] bool isBillboard() const override;
-    [[nodiscard]] bool isShortGrass() const override;
 };
 
 #endif //SHORTGRASS_H

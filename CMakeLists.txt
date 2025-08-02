@@ -63,14 +63,14 @@ add_executable(GL_Craft
         src/utils/CustomHash.h
         src/render/ThreadPool.h
         src/render/ThreadPool.cpp
-        src/world/vegetations/Tree.cpp
+        src/world/vegetations/trees/Tree.cpp
         src/world/Mesh.h
-        src/world/vegetations/Tree.h
+        src/world/vegetations/trees/Tree.h
         src/world/Mesh.cpp
-        src/world/vegetations/ShortGrass.cpp
-        src/world/vegetations/ShortGrass.h
-        src/world/vegetations/GrassInstanceRenderer.cpp
-        src/world/vegetations/GrassInstanceRenderer.h
+        src/world/vegetations/grass/ShortGrass.cpp
+        src/world/vegetations/grass/ShortGrass.h
+        src/world/vegetations/grass/GrassInstanceRenderer.cpp
+        src/world/vegetations/grass/GrassInstanceRenderer.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

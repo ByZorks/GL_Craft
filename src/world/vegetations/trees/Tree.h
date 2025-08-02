@@ -1,6 +1,6 @@
 #ifndef TREE_H
 #define TREE_H
-#include "Vegetation.h"
+#include "../Vegetation.h"
 
 class Tree final : public Vegetation {
 public:

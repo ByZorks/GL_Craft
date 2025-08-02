@@ -13,7 +13,7 @@
 #include "../render/ThreadPool.h"
 #include "../utils/CustomHash.h"
 #include "../utils/ThreadSafeQueue.h"
-#include "vegetations/GrassInstanceRenderer.h"
+#include "vegetations/grass/GrassInstanceRenderer.h"
 #include "vegetations/Vegetation.h"
 
 class Camera;

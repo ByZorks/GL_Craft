@@ -2,8 +2,8 @@
 #define GRASSINSTANCERENDERER_H
 
 #include "vec3.hpp"
-#include "../../gl/IndexBuffer.h"
-#include "../../gl/VertexArray.h"
+#include "../../../gl/IndexBuffer.h"
+#include "../../../gl/VertexArray.h"
 
 class GrassInstanceRenderer {
 private:
