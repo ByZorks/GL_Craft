@@ -14,6 +14,8 @@
 #include "imgui.h"
 #include "../ui/DebugUI.h"
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+
 int main(int argc, char *argv[]) {
     if (!glfwInit())
         return -1;
@@ -22,12 +24,14 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow *window = glfwCreateWindow(1920, 1080, "GLCraft", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(1280, 720, "GLCraft", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwMaximizeWindow(window);
 
     // Camera
     Camera camera(1920, 1080);
@@ -112,4 +116,8 @@ int main(int argc, char *argv[]) {
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
+}
+
+void framebuffer_size_callback(GLFWwindow* window, const int width, const int height) {
+    glViewport(0, 0, width, height);
 }
