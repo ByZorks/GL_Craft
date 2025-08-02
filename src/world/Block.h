@@ -37,7 +37,7 @@ struct BlockVertex {
 class Block {
 private:
     float m_x, m_y, m_z;
-    static constexpr uint8_t s_textureColumn[9][3] = {
+    static constexpr uint8_t s_textureColumn[10][3] = {
         // [side, top, bottom]
         {0, 0, 0}, // AIR
         {0, 0, 0}, // BEDROCK
@@ -45,11 +45,12 @@ private:
         {2, 3, 1}, // GRASS
         {0, 0, 0}, // STONE
         {1, 2, 2}, // WATER
-        {3, 0, 0},  // LOG
-        {1, 1, 1},  // LEAVES
-        {2, 2, 2}
+        {3, 0, 0}, // LOG
+        {1, 1, 1}, // LEAVES
+        {2, 2, 2}, // SHORT_GRASS
+        {3, 3, 3}, // POPPY
     };
-    static constexpr uint8_t s_textureRow[9][3] = {
+    static constexpr uint8_t s_textureRow[10][3] = {
         // [side, top, bottom]
         {0, 0, 0}, // AIR
         {3, 3, 3}, // BEDROCK
@@ -57,9 +58,10 @@ private:
         {3, 3, 3}, // GRASS
         {2, 2, 2}, // STONE
         {2, 2, 2}, // WATER
-        {2, 1, 1},  // LOG
-        {1, 1, 1},   // LEAVES
-        {1, 1, 1}    // SHORT_GRASS
+        {2, 1, 1}, // LOG
+        {1, 1, 1}, // LEAVES
+        {1, 1, 1}, // SHORT_GRASS
+        {1, 1, 1}, // POPPY
     };
 
 public:
