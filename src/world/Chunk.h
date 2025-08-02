@@ -1,12 +1,6 @@
 #ifndef CHUNK_H
 #define CHUNK_H
-#include <memory>
-#include <vector>
-
-#include "FastNoiseLite.h"
-
 #include "Mesh.h"
-#include "vegetations/Vegetation.h"
 
 class World;
 

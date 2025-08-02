@@ -1,6 +1,5 @@
 #include "Block.h"
 
-#include <iostream>
 #include <stdexcept>
 
 #include "Chunk.h"

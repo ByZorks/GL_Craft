@@ -1,7 +1,6 @@
 #include "Frustum.h"
 
 #include <algorithm>
-#include <ranges>
 
 #include "vec3.hpp"
 

@@ -35,6 +35,8 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
 
     m_loadedChunks.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 
+    m_loadedVegetations.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
+
     m_heightMap.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 }
 
