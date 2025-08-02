@@ -15,6 +15,7 @@
 #include "../utils/ThreadSafeQueue.h"
 #include "vegetations/grass/GrassInstanceRenderer.h"
 #include "vegetations/Vegetation.h"
+#include "vegetations/flowers/FlowerInstanceRenderer.h"
 
 class Camera;
 
@@ -35,6 +36,10 @@ private:
     std::unordered_set<glm::vec3> m_loadedGrass;
     mutable std::mutex m_grassInstancesMutex;
     GrassInstanceRenderer m_grassRenderer;
+
+    std::unordered_set<glm::vec3> m_loadedFlowers;
+    mutable std::mutex m_flowerInstancesMutex;
+    FlowerInstanceRenderer m_flowerRenderer;
 
     std::unordered_map<std::pair<int, int>, int> m_heightMap;
     mutable std::mutex m_heightMapMutex;

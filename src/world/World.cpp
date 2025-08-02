@@ -32,6 +32,7 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_caveGenerator.SetDomainWarpAmp(20.f);
 
     m_grassRenderer.init();
+    m_flowerRenderer.init();
 
     m_loadedChunks.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 
@@ -140,6 +141,7 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
 void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount) {
     if (camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk()) {
         m_grassRenderer.resetInstances();
+        m_flowerRenderer.resetInstances();
 
         for (const auto &pos : m_loadedGrass) {
             if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
@@ -150,11 +152,28 @@ void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned
         }
 
         m_grassRenderer.updateInstanceBuffer();
+
+        for (const auto &pos : m_loadedFlowers) {
+            if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
+                frustum.isPointInFrustum(pos)) {
+                m_flowerRenderer.addInstance(pos);
+                visibleVegetationsCount++;
+            }
+        }
+
+        m_flowerRenderer.updateInstanceBuffer();
+
     }
 
     if (m_grassRenderer.m_instance_count() > 0) {
         Renderer::disableBackFaceCulling();
         m_grassRenderer.draw();
+        Renderer::enableBackFaceCulling();
+    }
+
+    if (m_flowerRenderer.m_instance_count() > 0) {
+        Renderer::disableBackFaceCulling();
+        m_flowerRenderer.draw();
         Renderer::enableBackFaceCulling();
     }
 }
@@ -278,6 +297,10 @@ void World::processVegetations() {
                 const glm::vec3 position(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key)));
                 std::lock_guard lock(m_grassInstancesMutex);
                 if (!m_loadedGrass.contains(position)) m_loadedGrass.emplace(position);
+            } else if (vegetationNoise > 0.69f) {
+                const glm::vec3 position(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key)));
+                std::lock_guard lock(m_flowerInstancesMutex);
+                if (!m_loadedFlowers.contains(position)) m_loadedFlowers.emplace(position);
             }
             if (p_vegetation) {
                 p_vegetation->generateVoxel();
@@ -345,7 +368,7 @@ void World::generateVegetationsForEachChunks(const std::shared_ptr<Chunk> &chunk
             const int columnHeight = getHeight(worldX, worldZ);
             if (columnHeight < chunk->m_y1() || columnHeight >= chunk->m_y1() + Chunk::SIZE || isCave(worldX, columnHeight, worldZ)) continue;
             float vegetationNoise = (m_surfaceVegetationGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) * 0.5f;
-            if (vegetationNoise < 0.6f) continue;
+            if (vegetationNoise <= 0.69f) continue;
             std::tuple<int, int, int> key = std::make_tuple(worldX, columnHeight, worldZ);
             m_vegetationsToGenerate.push(key);
         }
@@ -372,6 +395,24 @@ void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
     std::erase_if(m_loadedVegetations, [&](const auto &tuple) {
         auto [x, y, z] = tuple.first;
         const glm::vec3 pos(x, y, z);
+        float distSq = glm::distance(pos, cameraChunkPos);
+        distSq *= distSq;
+        if (distSq > renderDistanceSq) {
+            return true;
+        }
+        return false;
+    });
+
+    std::erase_if(m_loadedGrass, [&](const auto &pos) {
+        float distSq = glm::distance(pos, cameraChunkPos);
+        distSq *= distSq;
+        if (distSq > renderDistanceSq) {
+            return true;
+        }
+        return false;
+    });
+
+    std::erase_if(m_loadedFlowers, [&](const auto &pos) {
         float distSq = glm::distance(pos, cameraChunkPos);
         distSq *= distSq;
         if (distSq > renderDistanceSq) {
