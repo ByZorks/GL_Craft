@@ -8,8 +8,6 @@ Frustum::Frustum(const Plane &left, const Plane &right, const Plane &bottom, con
                  const Plane &far) : m_planes{left, right, bottom, top, near, far} {
 }
 
-Frustum::~Frustum() = default;
-
 bool Frustum::isAABBInFrustum(const AABB &box) const {
     for (const auto& plane : m_planes) {
         int out = 0;

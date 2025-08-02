@@ -7,8 +7,6 @@
 Block::Block(const float x, const float y, const float z) : m_x(x), m_y(y), m_z(z) {
 }
 
-Block::~Block() = default;
-
 BlockType Block::getBlockType(const int y, const int columnHeight) {
     if (y < 1) return BlockType::AIR;
     if (y == 1) return BlockType::BEDROCK;

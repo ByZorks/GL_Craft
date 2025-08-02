@@ -18,6 +18,7 @@ private:
 
 public:
     Camera(unsigned int windowWidth, unsigned int windowHeight);
+
     void updateLastState();
     void processInput(GLFWwindow *window, float deltaTime);
     void handleMouse(double xpos, double ypos);

@@ -4,6 +4,8 @@
 
 class ShortGrass final : public Vegetation {
 public:
+    static constexpr unsigned int SIZE = 1;
+
     ShortGrass(int x, int y, int z);
 
     void generateVoxel() override;

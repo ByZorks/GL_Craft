@@ -9,7 +9,6 @@ private:
 
 public:
     Frustum(const Plane& left, const Plane& right, const Plane &bottom, const Plane &top, const Plane &near, const Plane& far);
-    ~Frustum();
 
     [[nodiscard]] bool isAABBInFrustum(const AABB& box) const;
     [[nodiscard]] bool isPointInFrustum(const glm::vec3& point) const;

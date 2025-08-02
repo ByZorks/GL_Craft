@@ -13,8 +13,6 @@ public:
     ThreadSafeQueue<std::tuple<int, int, int>> meshesToGenerate;
     ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToDelete;
     ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToRender;
-
-    MeshData() = default;
 };
 
 

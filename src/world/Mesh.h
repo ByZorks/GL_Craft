@@ -27,6 +27,8 @@ protected:
     AABB m_box;
 
 public:
+    virtual ~Mesh() = default;
+
     static constexpr unsigned int SIZE = 16;
 
     Mesh(const int x, const int y, const int z) : m_x(x), m_y(y), m_z(z),
@@ -36,12 +38,6 @@ public:
                                                              static_cast<float>(y) + static_cast<float>(SIZE) - 1,
                                                              static_cast<float>(z) + static_cast<float>(SIZE) - 1
                                                   )) {
-    }
-
-    virtual ~Mesh() {
-        m_vertices.clear();
-        m_blockFaceData.clear();
-        m_blockType.clear();
     }
 
     virtual void generateVoxel();
