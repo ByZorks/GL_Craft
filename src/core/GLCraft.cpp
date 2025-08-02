@@ -99,9 +99,7 @@ int main(int argc, char *argv[]) {
             instanceShader.setUniformMat4f("u_MVP", mvp);
             world.drawInstances(camera, frustum, visibleVegetationsCount);
 
-            if (debugUI.isUIMode()) {
-                DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(), world.m_loaded_vegetations().size(), Renderer::m_renderDistance, camera);
-            }
+            DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(), world.m_loaded_vegetations().size(), camera);
             DebugUI::draw();
 
             camera.updateLastState();

@@ -11,10 +11,8 @@ DebugUI::DebugUI(GLFWwindow *window): m_uiMode(false), m_tabKeyPressed(false) {
     ImGuiContext* ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
 
-    m_io = ImGui::GetIO();
-
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330 core");
+    ImGui_ImplOpenGL3_Init("#version 460 core");
     ImGui::StyleColorsDark();
 }
 
@@ -30,23 +28,23 @@ void DebugUI::newFrame() {
     ImGui::NewFrame();
 }
 
-void DebugUI::render(const unsigned int visibleChunks, unsigned int visibleVegetations, const unsigned int totalChunks, unsigned int totalVegetations, float &renderDistance, const Camera &camera) {
+void DebugUI::render(const unsigned int visibleChunks, const unsigned int visibleVegetations, const unsigned int totalChunks, const unsigned int totalVegetations, const Camera &camera) {
     ImGui::Begin("Debug");
     ImGui::Text("Performance:");
-    const ImGuiIO& io = ImGui::GetIO(); // Cannot use m_io here because it is not updated in this function
+    const ImGuiIO& io = ImGui::GetIO();
     ImGui::Text("Application average %.3f ms/frame (%.0f FPS)", 1000.0f / io.Framerate, io.Framerate);
     ImGui::Separator();
     ImGui::Text("World:");
     ImGui::Text("Rendering: %u/%u chunks", visibleChunks, totalChunks);
     ImGui::Text("Rendering: %u/%u vegetations", visibleVegetations, totalVegetations);
-    constexpr auto chunkSize = static_cast<float>(Chunk::SIZE);
-    int renderDistanceInChunks = static_cast<int>(renderDistance / chunkSize);
+    int renderDistanceInChunks = static_cast<int>(Renderer::m_renderDistance / Chunk::SIZE);
     if (ImGui::SliderInt("Render Distance (chunks)", &renderDistanceInChunks, 1, 32)) {
-        renderDistance = static_cast<float>(renderDistanceInChunks) * chunkSize;
+        Renderer::m_renderDistance = static_cast<float>(renderDistanceInChunks) * Chunk::SIZE;
     }
     ImGui::Separator();
     ImGui::Text("Camera:");
-    ImGui::Text("Position: (%.2f, %.2f, %.2f)", camera.m_camera_pos().x, camera.m_camera_pos().y, camera.m_camera_pos().z);
+    const glm::vec3 cameraPosition = camera.m_camera_pos();
+    ImGui::Text("Position: (%.2f, %.2f, %.2f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
     ImGui::End();
 }
 
@@ -69,8 +67,4 @@ void DebugUI::processInput(GLFWwindow *window, Camera &camera) {
     if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE) {
         m_tabKeyPressed = false;
     }
-}
-
-bool DebugUI::isUIMode() const {
-    return m_uiMode;
 }
