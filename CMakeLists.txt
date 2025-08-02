@@ -79,6 +79,7 @@ add_executable(GL_Craft
         src/world/vegetations/flowers/FlowerInstanceRenderer.h
         src/render/InstanceRenderer.cpp
         src/render/InstanceRenderer.h
+        src/render/InstanceRendererData.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

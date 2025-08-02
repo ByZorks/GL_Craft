@@ -31,8 +31,8 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_caveGenerator.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
     m_caveGenerator.SetDomainWarpAmp(20.f);
 
-    m_grassRenderer.init();
-    m_flowerRenderer.init();
+    m_grassData.renderer.init();
+    m_flowerData.renderer.init();
 
     m_loadedChunks.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 
@@ -140,40 +140,40 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
 
 void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount) {
     if (camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk()) {
-        m_grassRenderer.resetInstances();
-        m_flowerRenderer.resetInstances();
+        m_grassData.renderer.resetInstances();
+        m_flowerData.renderer.resetInstances();
 
-        for (const auto &pos : m_loadedGrass) {
+        for (const auto &pos : m_grassData.instances) {
             if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
                 frustum.isPointInFrustum(pos)) {
-                m_grassRenderer.addInstance(pos);
+                m_grassData.renderer.addInstance(pos);
                 visibleVegetationsCount++;
             }
         }
 
-        m_grassRenderer.updateInstanceBuffer();
+        m_grassData.renderer.updateInstanceBuffer();
 
-        for (const auto &pos : m_loadedFlowers) {
+        for (const auto &pos : m_flowerData.instances) {
             if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
                 frustum.isPointInFrustum(pos)) {
-                m_flowerRenderer.addInstance(pos);
+                m_flowerData.renderer.addInstance(pos);
                 visibleVegetationsCount++;
             }
         }
 
-        m_flowerRenderer.updateInstanceBuffer();
+        m_flowerData.renderer.updateInstanceBuffer();
 
     }
 
-    if (m_grassRenderer.m_instance_count() > 0) {
+    if (m_grassData.renderer.m_instance_count() > 0) {
         Renderer::disableBackFaceCulling();
-        m_grassRenderer.draw();
+        m_grassData.renderer.draw();
         Renderer::enableBackFaceCulling();
     }
 
-    if (m_flowerRenderer.m_instance_count() > 0) {
+    if (m_flowerData.renderer.m_instance_count() > 0) {
         Renderer::disableBackFaceCulling();
-        m_flowerRenderer.draw();
+        m_flowerData.renderer.draw();
         Renderer::enableBackFaceCulling();
     }
 }
@@ -295,12 +295,12 @@ void World::processVegetations() {
                 p_vegetation = std::make_shared<Tree>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
             } else if (vegetationNoise > 0.7f) {
                 const glm::vec3 position(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key)));
-                std::lock_guard lock(m_grassInstancesMutex);
-                if (!m_loadedGrass.contains(position)) m_loadedGrass.emplace(position);
+                std::lock_guard lock(m_grassData.mutex);
+                if (!m_grassData.instances.contains(position)) m_grassData.instances.emplace(position);
             } else if (vegetationNoise > 0.69f) {
                 const glm::vec3 position(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key)));
-                std::lock_guard lock(m_flowerInstancesMutex);
-                if (!m_loadedFlowers.contains(position)) m_loadedFlowers.emplace(position);
+                std::lock_guard lock(m_flowerData.mutex);
+                if (!m_flowerData.instances.contains(position)) m_flowerData.instances.emplace(position);
             }
             if (p_vegetation) {
                 p_vegetation->generateVoxel();
@@ -403,7 +403,7 @@ void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
         return false;
     });
 
-    std::erase_if(m_loadedGrass, [&](const auto &pos) {
+    std::erase_if(m_grassData.instances, [&](const auto &pos) {
         float distSq = glm::distance(pos, cameraChunkPos);
         distSq *= distSq;
         if (distSq > renderDistanceSq) {
@@ -412,7 +412,7 @@ void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
         return false;
     });
 
-    std::erase_if(m_loadedFlowers, [&](const auto &pos) {
+    std::erase_if(m_flowerData.instances, [&](const auto &pos) {
         float distSq = glm::distance(pos, cameraChunkPos);
         distSq *= distSq;
         if (distSq > renderDistanceSq) {
