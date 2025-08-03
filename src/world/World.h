@@ -15,7 +15,7 @@
 #include "../utils/CustomHash.h"
 #include "vegetations/grass/GrassInstanceRenderer.h"
 #include "vegetations/Vegetation.h"
-#include "vegetations/flowers/FlowerInstanceRenderer.h"
+#include "vegetations/flowers/PoppyInstanceRenderer.h"
 
 class Camera;
 
@@ -27,7 +27,7 @@ private:
     MeshData<Vegetation> m_vegetationsData;
 
     InstanceRendererData<GrassInstanceRenderer> m_grassData;
-    InstanceRendererData<FlowerInstanceRenderer> m_flowerData;
+    InstanceRendererData<PoppyInstanceRenderer> m_flowerData;
 
     std::unordered_map<std::pair<int, int>, int> m_heightMap;
     mutable std::mutex m_heightMapMutex;
