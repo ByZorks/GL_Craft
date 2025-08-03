@@ -37,6 +37,7 @@ private:
     mutable std::mutex m_heightMapMutex;
 
     std::vector<std::weak_ptr<Mesh>> m_displayedNormalMeshes;
+    std::vector<std::weak_ptr<Mesh>> m_displayedTransparentMeshes;
     std::vector<std::weak_ptr<Mesh>> m_displayedBillboardsMeshes;
 
     FastNoiseLite m_terrainHeightGenerator;

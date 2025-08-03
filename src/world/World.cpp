@@ -61,11 +61,9 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
 
     // Setup buffers for chunks that are ready to be rendered
     m_displayedNormalMeshes.clear();
+    m_displayedTransparentMeshes.clear();
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
-        // New meshes
         if (chunk->m_status1() == Status::MESH_GENERATED) chunk->setupBuffers();
-
-        // Existing meshes
         if (chunk->m_status1() == Status::BUFFERS_SETUP) m_displayedNormalMeshes.push_back(chunk);
     }
 
@@ -80,7 +78,23 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
                             static_cast<float>(weak_mesh->m_z1()));
 
         weak_mesh->draw();
+        if (weak_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(weak_mesh);
         visibleChunksCount++;
+    }
+
+    if (!m_displayedTransparentMeshes.empty()) {
+        Renderer::disableDepthMask();
+        for (const auto& mesh : m_displayedTransparentMeshes) {
+            const auto weak_mesh = mesh.lock();
+            if (!weak_mesh) continue;
+            shader.setUniform3f("u_Offset",
+                                static_cast<float>(weak_mesh->m_x1()),
+                                static_cast<float>(weak_mesh->m_y1()),
+                                static_cast<float>(weak_mesh->m_z1()));
+
+            weak_mesh->drawTransparent();
+        }
+        Renderer::enableDepthMask();
     }
 }
 
@@ -90,6 +104,7 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
 
     // Setup buffers for chunks that are ready to be rendered
     m_displayedNormalMeshes.clear();
+    m_displayedTransparentMeshes.clear();
     m_displayedBillboardsMeshes.clear();
     for (const auto& vegetation : m_vegetationsData.loadedMeshes | std::views::values) {
         // New meshes
@@ -116,7 +131,21 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
                             static_cast<float>(weak_mesh->m_z1()));
 
         weak_mesh->draw();
+        if (weak_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(weak_mesh);
         visibleVegetationsCount++;
+    }
+
+    if (!m_displayedTransparentMeshes.empty()) {
+        for (const auto& mesh : m_displayedTransparentMeshes) {
+            const auto weak_mesh = mesh.lock();
+            if (!weak_mesh) continue;
+            shader.setUniform3f("u_Offset",
+                            static_cast<float>(weak_mesh->m_x1()),
+                            static_cast<float>(weak_mesh->m_y1()),
+                            static_cast<float>(weak_mesh->m_z1()));
+
+            weak_mesh->drawTransparent();
+        }
     }
 
     // Prevent unnecessary OpenGL calls
