@@ -107,19 +107,9 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
     // Setup buffers for chunks that are ready to be rendered
     m_displayedNormalMeshes.clear();
     m_displayedTransparentMeshes.clear();
-    m_displayedBillboardsMeshes.clear();
     for (const auto& vegetation : m_vegetationsData.loadedMeshes | std::views::values) {
-        // New meshes
         if (vegetation->m_status1() == Status::MESH_GENERATED) vegetation->setupBuffers();
-
-        // Existing meshes
-        if (vegetation->m_status1() == Status::BUFFERS_SETUP) {
-            if (vegetation->isBillboard()) {
-                m_displayedBillboardsMeshes.push_back(vegetation);
-            } else {
-                m_displayedNormalMeshes.push_back(vegetation);
-            }
-        }
+        if (vegetation->m_status1() == Status::BUFFERS_SETUP) m_displayedNormalMeshes.push_back(vegetation);
     }
 
     for (const auto& mesh : m_displayedNormalMeshes) {
@@ -137,37 +127,15 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
         visibleVegetationsCount++;
     }
 
-    if (!m_displayedTransparentMeshes.empty()) {
-        for (const auto& mesh : m_displayedTransparentMeshes) {
-            const auto weak_mesh = mesh.lock();
-            if (!weak_mesh) continue;
-            shader.setUniform3f("u_Offset",
-                            static_cast<float>(weak_mesh->m_x1()),
-                            static_cast<float>(weak_mesh->m_y1()),
-                            static_cast<float>(weak_mesh->m_z1()));
+    for (const auto& mesh : m_displayedTransparentMeshes) {
+        const auto weak_mesh = mesh.lock();
+        if (!weak_mesh) continue;
+        shader.setUniform3f("u_Offset",
+                        static_cast<float>(weak_mesh->m_x1()),
+                        static_cast<float>(weak_mesh->m_y1()),
+                        static_cast<float>(weak_mesh->m_z1()));
 
-            weak_mesh->drawTransparent();
-        }
-    }
-
-    // Prevent unnecessary OpenGL calls
-    if (!m_displayedBillboardsMeshes.empty()) {
-        // Batch all billboards together to reduce OpenGL calls
-        Renderer::disableBackFaceCulling();
-        for (const auto& mesh : m_displayedBillboardsMeshes) {
-            auto weak_mesh = mesh.lock();
-            if (!weak_mesh) continue; // Skip if the mesh has been deleted
-            if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
-            if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
-            shader.setUniform3f("u_Offset",
-                                static_cast<float>(weak_mesh->m_x1()),
-                                static_cast<float>(weak_mesh->m_y1()),
-                                static_cast<float>(weak_mesh->m_z1()));
-
-            weak_mesh->draw();
-            visibleVegetationsCount++;
-        }
-        Renderer::enableBackFaceCulling();
+        weak_mesh->drawTransparent();
     }
 }
 
