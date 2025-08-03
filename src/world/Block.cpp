@@ -8,11 +8,22 @@ Block::Block(const float x, const float y, const float z) : m_x(x), m_y(y), m_z(
 }
 
 BlockType Block::getBlockType(const int y, const int columnHeight) {
+    constexpr int waterLevel = 63;
+
     if (y < 1) return BlockType::AIR;
     if (y == 1) return BlockType::BEDROCK;
-    if (y == columnHeight) return BlockType::GRASS;
-    if (y < columnHeight - 4) return BlockType::STONE;
-    if (y < columnHeight) return BlockType::DIRT;
+
+    if (y <= columnHeight) {
+        if (y == columnHeight && columnHeight >= waterLevel) return BlockType::GRASS;
+        if (y == columnHeight && columnHeight < waterLevel) return BlockType::DIRT;
+        if (y < columnHeight - 4) return BlockType::STONE;
+        if (y < columnHeight) return BlockType::DIRT;
+    }
+
+    if (y > columnHeight && y <= waterLevel) {
+        return BlockType::WATER;
+    }
+
     return BlockType::AIR;
 }
 
