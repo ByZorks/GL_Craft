@@ -1,14 +1,12 @@
-#include <algorithm>
 #include <iostream>
 #include <ostream>
-#include <ranges>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
-#include "../render/Shader.h"
-#include "../render/Texture.h"
+#include "../gl/Shader.h"
+#include "../gl/Texture.h"
 #include "../world/World.h"
 
 #include "glm.hpp"
@@ -16,17 +14,24 @@
 #include "imgui.h"
 #include "../ui/DebugUI.h"
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+
 int main(int argc, char *argv[]) {
     if (!glfwInit())
         return -1;
 
-    GLFWwindow *window = glfwCreateWindow(1920, 1080, "GLCraft", nullptr, nullptr);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow *window = glfwCreateWindow(1280, 720, "GLCraft", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
         return -1;
     }
-
     glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwMaximizeWindow(window);
 
     // Camera
     Camera camera(1920, 1080);
@@ -44,10 +49,14 @@ int main(int argc, char *argv[]) {
         // Shader
         Shader shader("../res/shaders/block.vert", "../res/shaders/block.frag");
         shader.use();
+        shader.setUniform1i("u_Texture", 0);
+
+        Shader instanceShader("../res/shaders/instance_vegetation.vert", "../res/shaders/block.frag");
+        instanceShader.use();
+        instanceShader.setUniform1i("u_Texture", 0);
 
         const Texture atlas("../res/textures/atlas/texture_atlas.png");
         atlas.bind();
-        shader.setUniform1i("u_Texture", 0);
 
         // Set up the MVP matrix
         const glm::mat4 projection = camera.getProjectionMatrix();
@@ -57,7 +66,6 @@ int main(int argc, char *argv[]) {
         DebugUI debugUI(window);
         const ImGuiIO& io = ImGui::GetIO();
 
-        float renderDistance = 16.0f * static_cast<float>(Chunk::m_size1()); // Render distance in blocks
         World world;
         Renderer::init();
         while (!glfwWindowShouldClose(window)) {
@@ -76,27 +84,29 @@ int main(int argc, char *argv[]) {
             }
             glm::mat4 view = camera.getViewMatrix();
             glm::mat4 mvp = projection * view * model;
-            shader.setUniformMat4f("u_MVP", mvp);
+            Frustum frustum = Camera::getFrustum(mvp);
 
             // Chunks generation
-            world.updateChunks(camera, renderDistance);
+            world.updateChunks(camera);
 
             // Render the world
-            Frustum frustum = Camera::getFrustum(mvp);
-            unsigned int visibleChunksCount = 0;
-            world.forEachRenderableChunk([&](const Chunk *chunk) {
-                if (camera.distanceToCamera(*chunk) > renderDistance) return;
-                if (frustum.isAABBInFrustum(chunk->m_box1())) {
-                    Renderer::draw(chunk->m_vao(), chunk->m_ibo());
-                    visibleChunksCount++;
-                }
-            });
+            shader.use();
+            shader.setUniformMat4f("u_MVP", mvp);
 
-            if (debugUI.isUIMode()) {
-                unsigned int totalChunks = world.getChunksToRender().size();
-                DebugUI::render(visibleChunksCount, totalChunks, renderDistance, camera);
-            }
+            unsigned int visibleChunksCount = 0;
+            world.drawChunks(camera, frustum, shader, visibleChunksCount);
+
+            unsigned int visibleVegetationsCount = 0;
+            world.drawVegetations(camera, frustum, shader, visibleVegetationsCount);
+
+            instanceShader.use();
+            instanceShader.setUniformMat4f("u_MVP", mvp);
+            world.drawInstances(camera, frustum, visibleVegetationsCount);
+
+            DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(), world.m_loaded_vegetations().size(), camera);
             DebugUI::draw();
+
+            camera.updateLastState();
 
             glfwSwapBuffers(window);
             glfwPollEvents();
@@ -106,4 +116,8 @@ int main(int argc, char *argv[]) {
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
+}
+
+void framebuffer_size_callback(GLFWwindow* window, const int width, const int height) {
+    glViewport(0, 0, width, height);
 }

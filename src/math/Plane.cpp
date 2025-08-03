@@ -7,8 +7,6 @@ Plane::Plane(const float a, const float b, const float c, const float d) : m_a(a
     normalize();
 }
 
-Plane::~Plane() = default;
-
 void Plane::normalize() {
     const float length = std::sqrt(m_a * m_a + m_b * m_b + m_c * m_c);
     if (length == 0.0f) throw std::runtime_error("Cannot normalize a plane with zero length.");

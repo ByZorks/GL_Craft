@@ -1,6 +1,7 @@
 #include "Camera.h"
 
 #include <cmath>
+#include <iostream>
 
 #include "../math/Plane.h"
 #include "ext/matrix_clip_space.hpp"
@@ -9,19 +10,35 @@
 Camera::Camera(const unsigned int windowWidth,
                const unsigned int windowHeight) : m_lastX(static_cast<float>(windowWidth) / 2.0f),
                                                   m_lastY(static_cast<float>(windowHeight) / 2.0f),
-                                                  m_yaw(-90.0f), m_pitch(0.0f),
+                                                  m_yaw(-90.0f), m_pitch(0.0f), m_lastYaw(0.f), m_lastPitch(.0f),
                                                   m_firstMouse(true), m_cameraPos(glm::vec3(0.0f, 110, .0f)),
                                                   m_cameraFront(glm::vec3(0.0f, 0.0f, -1.0f)),
                                                   m_cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
-                                                  m_FOVDegrees(45.f),
+                                                  m_FOVDegrees(70.f),
                                                   m_aspectRatio(
                                                       static_cast<float>(windowWidth) / static_cast<float>(
                                                           windowHeight)),
                                                   m_nearPlane(.1f), m_farPlane(1024.0f) {
 }
 
+void Camera::updateLastState() {
+    constexpr auto chunkSize = static_cast<float>(Chunk::SIZE);
+    const float cameraChunkX = std::floor(m_cameraPos.x / chunkSize);
+    const float cameraChunkY = std::floor(m_cameraPos.y / chunkSize);
+    const float cameraChunkZ = std::floor(m_cameraPos.z / chunkSize);
+    m_lastCameraChunkPos = {cameraChunkX, cameraChunkY, cameraChunkZ};
+
+    const float cameraBlockX = std::floor(m_cameraPos.x);
+    const float cameraBlockY = std::floor(m_cameraPos.y);
+    const float cameraBlockZ = std::floor(m_cameraPos.z);
+    m_lastCameraBlockPos = {cameraBlockX, cameraBlockY, cameraBlockZ};
+
+    if (std::abs(m_lastYaw - m_yaw) > 15.f) m_lastYaw = m_yaw;
+    if (std::abs(m_lastPitch - m_pitch) > 15.f) m_lastPitch = m_pitch;
+}
+
 void Camera::processInput(GLFWwindow *window, const float deltaTime) {
-    const float cameraSpeed = 20.0f * deltaTime;
+    const float cameraSpeed = 15.0f * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         m_cameraPos += cameraSpeed * m_cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -70,14 +87,18 @@ void Camera::mouseCallback(GLFWwindow *window, const double xpos, const double y
     cam->handleMouse(xpos, ypos);
 }
 
-float Camera::distanceToCamera(const Chunk& chunk) const {
-    const auto x = static_cast<float>(chunk.m_x_start());
-    const auto y = static_cast<float>(chunk.m_y_start());
-    const auto z = static_cast<float>(chunk.m_z_start());
-    const auto size = static_cast<float>(Chunk::m_size1());
+float Camera::distanceToCamera(const Mesh& mesh) const {
+    const auto x = static_cast<float>(mesh.m_x1());
+    const auto y = static_cast<float>(mesh.m_y1());
+    const auto z = static_cast<float>(mesh.m_z1());
+    constexpr auto size = static_cast<float>(Chunk::SIZE);
     const glm::vec3 farCorner(x + size - 1, y + size - 1, z + size - 1);
 
     return glm::distance(m_cameraPos, farCorner);
+}
+
+float Camera::distanceToCamera(const glm::vec3 position) const {
+    return glm::distance(m_cameraPos, position);
 }
 
 void Camera::resetMousePosition(GLFWwindow *window) {
@@ -87,6 +108,40 @@ void Camera::resetMousePosition(GLFWwindow *window) {
     m_lastX = static_cast<float>(width) / 2.0f;
     m_lastY = static_cast<float>(height) / 2.0f;
     m_firstMouse = true;
+}
+
+bool Camera::hasCameraChangedChunk() const {
+    // Calculate which chunk the camera is in
+    constexpr auto chunkSize = static_cast<float>(Chunk::SIZE);
+    const float cameraChunkX = std::floor(m_cameraPos.x / chunkSize);
+    const float cameraChunkY = std::floor(m_cameraPos.y / chunkSize);
+    const float cameraChunkZ = std::floor(m_cameraPos.z / chunkSize);
+
+    if (m_lastCameraChunkPos.x == cameraChunkX &&
+        m_lastCameraChunkPos.y == cameraChunkY &&
+        m_lastCameraChunkPos.z == cameraChunkZ) {
+        return false;
+    }
+
+    return true;
+}
+
+bool Camera::hasCameraChangedBlock() const {
+    const float cameraBlockX = std::floor(m_cameraPos.x);
+    const float cameraBlockY = std::floor(m_cameraPos.y);
+    const float cameraBlockZ = std::floor(m_cameraPos.z);
+
+    if (m_lastCameraBlockPos.x == cameraBlockX &&
+        m_lastCameraBlockPos.y == cameraBlockY &&
+        m_lastCameraBlockPos.z == cameraBlockZ) {
+        return false;
+    }
+
+    return true;
+}
+
+bool Camera::hasCameraChangedDirection() const {
+    return std::abs(m_lastYaw - m_yaw) > 15.f || std::abs(m_lastPitch - m_pitch) > 15.f;
 }
 
 glm::mat4 Camera::getProjectionMatrix() const {

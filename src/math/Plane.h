@@ -7,7 +7,6 @@ private:
 
 public:
     Plane(float a, float b, float c, float d);
-    ~Plane();
 
 private:
     void normalize();

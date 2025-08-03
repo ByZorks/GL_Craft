@@ -1,57 +1,30 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.31)
 project(GL_Craft)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto")
 set(LIBS_DIR "${CMAKE_SOURCE_DIR}/libs")
-set(IMGUI_DIR ${LIBS_DIR}/imgui)
+set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/libs/imgui)
 
 include_directories(
+        ${LIBS_DIR}/glew/include
+        ${LIBS_DIR}/glfw/include
         ${LIBS_DIR}/stb
         ${LIBS_DIR}/glm
         ${LIBS_DIR}/imgui
         ${LIBS_DIR}/fastNoiseLite
 )
 
-if (UNIX)
-    cmake_policy(SET CMP0072 NEW)
-    find_package(OpenGL REQUIRED)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(GLFW REQUIRED glfw3)
-    pkg_check_modules(GLEW REQUIRED glew)
-
-    include_directories(${GLFW_INCLUDE_DIRS})
-    include_directories(${GLEW_INCLUDE_DIRS})
-    link_directories(${GLFW_LIBRARY_DIRS} ${GLEW_LIBRARY_DIRS})
-
-    set(EXTRA_LIBS
-            ${GLFW_LIBRARIES}
-            ${GLEW_LIBRARIES}
-            OpenGL::GL
-    )
-
-elseif (WIN32)
-    include_directories(
-            ${LIBS_DIR}/glew/include
-            ${LIBS_DIR}/glfw/include
-    )
-    link_directories(
-            ${LIBS_DIR}/glew/lib/Release/x64
-            ${LIBS_DIR}/glfw/lib-mingw-w64
-    )
-
-    add_definitions(-DGLEW_STATIC)
-
-    set(EXTRA_LIBS
-            glfw3
-            glew32s
-            opengl32
-    )
-endif ()
+link_directories(
+        ${LIBS_DIR}/glew/lib/Release/x64
+        ${LIBS_DIR}/glfw/lib-mingw-w64
+)
 
 add_executable(GL_Craft
         src/core/GLCraft.cpp
-        src/render/Shader.cpp
+        src/gl/Shader.cpp
+        src/gl/Shader.cpp
+        src/gl/Shader.h
         src/core/OpenGLDebug.h
         src/core/OpenGLDebug.cpp
         src/gl/VertexBuffer.h
@@ -62,8 +35,8 @@ add_executable(GL_Craft
         src/gl/IndexBuffer.h
         src/render/Renderer.cpp
         src/render/Renderer.h
-        src/render/Texture.cpp
-        src/render/Texture.h
+        src/gl/Texture.cpp
+        src/gl/Texture.h
         src/render/Camera.cpp
         src/render/Camera.h
         src/world/Block.cpp
@@ -88,6 +61,32 @@ add_executable(GL_Craft
         src/ui/DebugUI.h
         src/utils/ThreadSafeQueue.h
         src/utils/CustomHash.h
+        src/render/ThreadPool.h
+        src/render/ThreadPool.cpp
+        src/world/vegetations/trees/Tree.cpp
+        src/world/Mesh.h
+        src/world/vegetations/trees/Tree.h
+        src/world/Mesh.cpp
+        src/world/vegetations/grass/ShortGrass.cpp
+        src/world/vegetations/grass/ShortGrass.h
+        src/world/vegetations/grass/GrassInstanceRenderer.cpp
+        src/world/vegetations/grass/GrassInstanceRenderer.h
+        src/world/vegetations/flowers/Flower.h
+        src/world/vegetations/flowers/Flower.cpp
+        src/world/vegetations/flowers/Poppy.cpp
+        src/world/vegetations/flowers/Poppy.h
+        src/world/vegetations/flowers/FlowerInstanceRenderer.cpp
+        src/world/vegetations/flowers/FlowerInstanceRenderer.h
+        src/render/InstanceRenderer.cpp
+        src/render/InstanceRenderer.h
+        src/render/InstanceRendererData.h
+        src/world/MeshData.h
 )
 
-target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})
+target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)
+
+target_link_libraries(GL_Craft
+        glfw3
+        glew32s
+        opengl32
+)

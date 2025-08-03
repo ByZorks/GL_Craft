@@ -78,8 +78,8 @@ void Shader::setUniform1i(const std::string &name, const int value) {
     GLCall(glUniform1i(getUniformLocation(name), value));
 }
 
-void Shader::setUniform4f(const std::string &name, const float v0, const float v1, const float v2, const float v3) {
-    GLCall(glUniform4f(getUniformLocation(name), v0, v1, v2, v3));
+void Shader::setUniform3f(const std::string &name, const float v0, const float v1, const float v2) {
+    GLCall(glUniform3f(getUniformLocation(name), v0, v1, v2));
 }
 
 void Shader::setUniformMat4f(const std::string &name, const glm::mat4 &matrix) {
@@ -112,7 +112,7 @@ unsigned int Shader::compile(const GLenum shaderType, const std::string &shader)
     GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
     if (result == GL_FALSE) {
         int length;
-        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+        GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
         const auto message = static_cast<char *>(alloca(length * sizeof(char)));
         GLCall(glGetShaderInfoLog(id, length, &length, message));
         std::cout << "Failed to compile " << (shaderType == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader!" <<

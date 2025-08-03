@@ -4,129 +4,160 @@
 
 #include "Chunk.h"
 
-Block::Block(const float x, const float y, const float z) : m_x(x), m_y(y), m_z(z), m_columnIndex(0) {
-}
-
-Block::~Block() = default;
-
-void Block::setType(const BlockType type) {
-    switch (type) {
-        case BlockType::BEDROCK:
-            m_columnIndex = 0;
-            break;
-        case BlockType::DIRT:
-            m_columnIndex = 3;
-            break;
-        case BlockType::GRASS:
-            m_columnIndex = 6;
-            break;
-        case BlockType::STONE:
-            m_columnIndex = 9;
-            break;
-        case BlockType::WATER:
-            m_columnIndex = 12;
-            break;
-        default:
-            throw std::runtime_error("Block::setType: invalid block type");
-    }
+Block::Block(const float x, const float y, const float z) : m_x(x), m_y(y), m_z(z) {
 }
 
 BlockType Block::getBlockType(const int y, const int columnHeight) {
-    if (y < 0) return BlockType::UNKNOWN;
-    if (y == 0) return BlockType::BEDROCK;
+    if (y < 1) return BlockType::AIR;
+    if (y == 1) return BlockType::BEDROCK;
+    if (y == columnHeight) return BlockType::GRASS;
     if (y < columnHeight - 4) return BlockType::STONE;
     if (y < columnHeight) return BlockType::DIRT;
-    if (y == columnHeight) return BlockType::GRASS;
-    return BlockType::UNKNOWN;
+    return BlockType::AIR;
 }
 
-float Block::getTextureColumnIndex(const BlockType type) {
-    float columnIndex;
-    switch (type) {
-        case BlockType::BEDROCK: columnIndex = 0; break;
-        case BlockType::DIRT: columnIndex = 3; break;
-        case BlockType::GRASS: columnIndex = 6; break;
-        case BlockType::STONE: columnIndex = 9; break;
-        case BlockType::WATER: columnIndex = 12; break;
-        default: throw std::invalid_argument("Invalid block type");
-    }
-    return columnIndex;
-}
+void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &vertices, const float block_startX, const float block_startY, const float block_startZ) {
+    const float block_endX = block_startX + 1.0f;
+    const float block_endY = block_startY + 1.0f;
+    const float block_endZ = block_startZ + 1.0f;
 
-void Block::addFaceVertices(const Face face, const BlockType type, std::vector<float> *vertices, const float worldX, const float worldY, const float worldZ, const float u_base) {
-    constexpr float c_texture_width = 1.0f / 15.0f;
-    constexpr float c_texture_offset_0 = 0.0f;
-    constexpr float c_texture_offset_33 = c_texture_width;
-    constexpr float c_texture_offset_66 = c_texture_width * 2.0f;
-    constexpr float c_texture_offset_100 = c_texture_width * 3.0f;
-    constexpr float c_texture_v_max = 1.0f;
-    constexpr float c_block_min = 0.0f;
-    constexpr float c_block_max = 1.0f;
-    constexpr float v_base = 0.0f;
-
-    // std::vector<float> vertices;
-    vertices->reserve(vertices->size() + 4*8); // 4 vertices * 8 components per vertex
+    vertices.reserve(vertices.size() + 4);
 
     // Helper lambda to add a vertex directly
-    auto addVertex = [&vertices](float x, float y, float z, float u, float v, float nx, float ny, float nz) {
-        vertices->emplace_back(x);
-        vertices->emplace_back(y);
-        vertices->emplace_back(z);
-        vertices->emplace_back(u);
-        vertices->emplace_back(v);
-        vertices->emplace_back(nx);
-        vertices->emplace_back(ny);
-        vertices->emplace_back(nz);
+    auto addVertex = [&vertices](const float x, const float y, const float z, const uint8_t u, const uint8_t v, const uint8_t faceIndex) {
+        vertices.emplace_back(BlockVertex{
+            static_cast<uint8_t>(x),
+            static_cast<uint8_t>(y),
+            static_cast<uint8_t>(z),
+            u,
+            v,
+            faceIndex
+        });
     };
 
     switch (face) {
         case Face::FRONT: {
-            constexpr float normal[3] = {0.f, 0.f, -1.f};
-            addVertex(worldX - c_block_min, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
-            addVertex(worldX - c_block_min, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
+            const uint8_t u_start = getTextureU(type, face);
+            const uint8_t u_end = u_start + 1;
+            const uint8_t v_start = getTextureV(type, face);
+            const uint8_t v_end = v_start + 1;
+            constexpr uint8_t faceIndex = 0;
+            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, faceIndex);
+            addVertex(block_endX, block_endY, block_endZ, u_end, v_end, faceIndex);
+            addVertex(block_endX, block_startY, block_endZ, u_end, v_start, faceIndex);
+            addVertex(block_startX, block_startY, block_endZ, u_start, v_start, faceIndex);
             break;
         }
         case Face::BACK: {
-            constexpr float normal[3] = {0.f, 0.f, 1.f};
-            addVertex(worldX - c_block_min, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_33, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
-            addVertex(worldX - c_block_min, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_33, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
+            const uint8_t u_start = getTextureU(type, face);
+            const uint8_t u_end = u_start + 1;
+            const uint8_t v_start = getTextureV(type, face);
+            const uint8_t v_end = v_start + 1;
+            constexpr uint8_t normal = 1;
+            addVertex(block_startX, block_endY, block_startZ, u_start, v_end, normal);
+            addVertex(block_endX, block_endY, block_startZ, u_end, v_end, normal);
+            addVertex(block_endX, block_startY, block_startZ, u_end, v_start, normal);
+            addVertex(block_startX, block_startY, block_startZ, u_start, v_start, normal);
             break;
         }
         case Face::LEFT: {
-            constexpr float normal[3] = {-1.f, 0.f, 0.f};
-            addVertex(worldX - c_block_min, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX - c_block_min, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX - c_block_min, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
-            addVertex(worldX - c_block_min, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
+            const uint8_t u_start = getTextureU(type, face);
+            const uint8_t u_end = u_start + 1;
+            const uint8_t v_start = getTextureV(type, face);
+            const uint8_t v_end = v_start + 1;
+            constexpr uint8_t normal = 2;
+            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, normal);
+            addVertex(block_startX, block_endY, block_startZ, u_end, v_end, normal);
+            addVertex(block_startX, block_startY, block_startZ, u_end, v_start, normal);
+            addVertex(block_startX, block_startY, block_endZ, u_start, v_start, normal);
             break;
         }
         case Face::RIGHT: {
-            constexpr float normal[3] = {1.f, 0.f, 0.f};
-            addVertex(worldX + c_block_max, worldY + c_block_max, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, worldY + c_block_max, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
+            const uint8_t u_start = getTextureU(type, face);
+            const uint8_t u_end = u_start + 1;
+            const uint8_t v_start = getTextureV(type, face);
+            const uint8_t v_end = v_start + 1;
+            constexpr uint8_t normal = 3;
+            addVertex(block_endX, block_endY, block_endZ, u_start, v_end, normal);
+            addVertex(block_endX, block_endY, block_startZ, u_end, v_end, normal);
+            addVertex(block_endX, block_startY, block_startZ, u_end, v_start, normal);
+            addVertex(block_endX, block_startY, block_endZ, u_start, v_start, normal);
             break;
         }
         case Face::TOP: {
-            constexpr float normal[3] = {0.f, 1.f, 0.f};
-            const float topY = (type == BlockType::WATER) ? worldY + c_block_max - 0.2f : worldY + c_block_max;
-            addVertex(worldX - c_block_min, topY, worldZ + c_block_max, u_base + c_texture_offset_66, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, topY, worldZ + c_block_max, u_base + c_texture_offset_100, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, topY, worldZ - c_block_min, u_base + c_texture_offset_100, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
-            addVertex(worldX - c_block_min, topY, worldZ - c_block_min, u_base + c_texture_offset_66, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
+            const uint8_t u_start = getTextureU(type, face);
+            const uint8_t u_end = u_start + 1;
+            const uint8_t v_start = getTextureV(type, face);
+            const uint8_t v_end = v_start + 1;
+            constexpr uint8_t normal = 4;
+            const float topY = type == BlockType::WATER ? block_endY - 0.2f : block_endY;
+            addVertex(block_startX, topY, block_endZ, u_end, v_end, normal);
+            addVertex(block_endX, topY, block_endZ, u_start , v_end, normal);
+            addVertex(block_endX, topY, block_startZ, u_start , v_start, normal);
+            addVertex(block_startX, topY, block_startZ, u_end, v_start, normal);
             break;
         }
         case Face::BOTTOM: {
-            constexpr float normal[3] = {0.f, -1.f, 0.f};
-            addVertex(worldX - c_block_min, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_0, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, worldY - c_block_min, worldZ + c_block_max, u_base + c_texture_offset_33, v_base + c_texture_v_max, normal[0], normal[1], normal[2]);
-            addVertex(worldX + c_block_max, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_33, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
-            addVertex(worldX - c_block_min, worldY - c_block_min, worldZ - c_block_min, u_base + c_texture_offset_0, v_base + c_texture_offset_0, normal[0], normal[1], normal[2]);
+            const uint8_t u_start = getTextureU(type, face);
+            const uint8_t u_end = u_start + 1;
+            const uint8_t v_start = getTextureV(type, face);
+            const uint8_t v_end = v_start + 1;
+            constexpr uint8_t normal = 5;
+            addVertex(block_startX, block_startY, block_endZ, u_start, v_end, normal);
+            addVertex(block_endX, block_startY, block_endZ, u_end, v_end, normal);
+            addVertex(block_endX, block_startY, block_startZ, u_end, v_start, normal);
+            addVertex(block_startX, block_startY, block_startZ, u_start, v_start, normal);
+            break;
+        }
+        default:
+            throw std::invalid_argument("Invalid face type");
+    }
+}
+
+void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std::vector<BlockVertex> &vertices, const float block_startX,
+    const float block_startY, const float block_startZ) {
+
+    const float block_endX = block_startX + 1.0f;
+    const float block_endY = block_startY + 1.0f;
+    const float block_endZ = block_startZ + 1.0f;
+
+    vertices.reserve(vertices.size() + 4);
+
+    // Helper lambda to add a vertex directly
+    auto addVertex = [&vertices](const float x, const float y, const float z, const uint8_t u, const uint8_t v, const uint8_t faceIndex) {
+        vertices.emplace_back(BlockVertex{
+            static_cast<uint8_t>(x),
+            static_cast<uint8_t>(y),
+            static_cast<uint8_t>(z),
+            u,
+            v,
+            faceIndex
+        });
+    };
+
+    switch (face) {
+        case Face::FRONT: {
+            const uint8_t u_start = getTextureU(type, face);
+            const uint8_t u_end = u_start + 1;
+            const uint8_t v_start = getTextureV(type, face);
+            const uint8_t v_end = v_start + 1;
+            constexpr uint8_t faceIndex = 0;
+            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, faceIndex);
+            addVertex(block_endX, block_endY, block_startZ, u_end, v_end, faceIndex);
+            addVertex(block_endX, block_startY, block_startZ, u_end, v_start, faceIndex);
+            addVertex(block_startX, block_startY, block_endZ, u_start, v_start, faceIndex);
+            break;
+        }
+        case Face::BACK: {
+            const uint8_t u_start = getTextureU(type, face);
+            const uint8_t u_end = u_start + 1;
+            const uint8_t v_start = getTextureV(type, face);
+            const uint8_t v_end = v_start + 1;
+            constexpr uint8_t normal = 1;
+            addVertex(block_startX, block_endY, block_startZ, u_start, v_end, normal);
+            addVertex(block_endX, block_endY, block_endZ, u_end, v_end, normal);
+            addVertex(block_endX, block_startY, block_endZ, u_end, v_start, normal);
+            addVertex(block_startX, block_startY, block_startZ, u_start, v_start, normal);
             break;
         }
         default:
@@ -135,5 +166,17 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<f
 }
 
 bool Block::isTransparent(const BlockType type) {
-    return type == BlockType::WATER || type == BlockType::AIR;
+    return type == BlockType::WATER || type == BlockType::AIR || type == BlockType::LEAVES;
+}
+
+uint8_t Block::getTextureU(BlockType type, const Face face) {
+    const uint8_t typeIndex = static_cast<int>(type);
+    const uint8_t faceIndex = face == Face::TOP ? 1 : face == Face::BOTTOM ? 2 : 0;
+    return s_textureColumn[typeIndex][faceIndex];
+}
+
+uint8_t Block::getTextureV(BlockType type, const Face face) {
+    const uint8_t typeIndex = static_cast<int>(type);
+    const uint8_t faceIndex = face == Face::TOP ? 1 : face == Face::BOTTOM ? 2 : 0;
+    return s_textureRow[typeIndex][faceIndex];
 }

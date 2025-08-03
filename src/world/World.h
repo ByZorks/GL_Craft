@@ -1,51 +1,66 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <mutex>
 #include <ranges>
 #include <unordered_map>
 
 #include "Chunk.h"
-#include <vector>
 
-#include "vec2.hpp"
 #include "FastNoiseLite.h"
+#include "MeshData.h"
+#include "../gl/Shader.h"
+#include "../math/Frustum.h"
+#include "../render/InstanceRendererData.h"
+#include "../render/ThreadPool.h"
+#include "../utils/CustomHash.h"
+#include "vegetations/grass/GrassInstanceRenderer.h"
+#include "vegetations/Vegetation.h"
+#include "vegetations/flowers/FlowerInstanceRenderer.h"
 
 class Camera;
 
 class World {
 private:
-    std::unordered_map<std::tuple<int, int, int>, Chunk*> m_loadedChunks;
-    glm::vec3 m_lastCameraChunkPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
-    FastNoiseLite m_noiseGenerator;
-    mutable std::mutex m_chunksMutex;
-    static unsigned int s_numberOfThreads;
+    ThreadPool m_threadPool;
+
+    MeshData<Chunk> m_chunksData;
+    MeshData<Vegetation> m_vegetationsData;
+
+    InstanceRendererData<GrassInstanceRenderer> m_grassData;
+    InstanceRendererData<FlowerInstanceRenderer> m_flowerData;
+
+    std::unordered_map<std::pair<int, int>, int> m_heightMap;
+    mutable std::mutex m_heightMapMutex;
+
+    std::vector<std::weak_ptr<Mesh>> m_displayedNormalMeshes;
+    std::vector<std::weak_ptr<Mesh>> m_displayedBillboardsMeshes;
+
+    FastNoiseLite m_terrainHeightGenerator;
+    FastNoiseLite m_surfaceVegetationGenerator;
+    FastNoiseLite m_caveGenerator;
 
 public:
     World();
-    ~World();
 
-    Chunk* getChunk(int chunkBaseX, int chunkBaseY, int chunkBaseZ) const;
-    void updateChunks(const Camera &camera, float renderDistanceInBlocks = 8.0f * static_cast<float>(Chunk::m_size1()));
-    const std::vector<Chunk*> & getChunksToRender();
-    template<typename Callback>
-    void forEachRenderableChunk(Callback&& callback) const;
+    void updateChunks(const Camera &camera);
+    void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
+    void drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount);
+    void drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount);
+
+    int getHeight(int worldX, int worldZ);
+    bool isCave(int worldX, int worldY, int worldZ) const;
 
     [[nodiscard]] const FastNoiseLite & m_noise_generator() const;
+    [[nodiscard]] const FastNoiseLite & m_surface_vegetation_generator() const;
+    [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
+    [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Vegetation>> &m_loaded_vegetations() const;
 
 private:
-    void unloadDistantChunks(const glm::vec3 &cameraChunkPos, int renderDistance);
-    static void processChunk(Chunk *chunk, const World *world);
+    void processChunks();
+    void processVegetations();
+    void generateDataForEachChunks(int cameraWorldX, int cameraWorldY, int cameraWorldZ);
+    void generateVegetationsForEachChunks(const std::shared_ptr<Chunk>& chunk);
+    void unloadDistantMeshes(const glm::vec3 &cameraChunkPos);
 };
-
-template<typename Callback>
-void World::forEachRenderableChunk(Callback &&callback) const {
-    std::lock_guard lock(m_chunksMutex);
-    for (const auto& chunk : m_loadedChunks | std::views::values) {
-        if (chunk->m_status1() == Status::BUFFERS_SETUP) {
-            callback(chunk);
-        }
-    }
-}
 
 #endif //WORLD_H

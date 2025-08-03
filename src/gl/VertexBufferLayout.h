@@ -10,6 +10,7 @@ struct VertexBufferElement {
     unsigned int type;
     unsigned int count;
     unsigned char normalized;
+    bool isInteger;
 
     static unsigned int GetSizeOfType(const unsigned int type) {
         switch (type) {
@@ -34,8 +35,13 @@ public:
     VertexBufferLayout() : m_Stride(0) {}
 
     template<typename T>
-    void Push(unsigned int count) {
+    void Push(unsigned int count, bool normalized = false) {
         throw std::runtime_error("Unsupported type for VertexBufferLayout::Push");
+    }
+
+    template<typename T>
+    void PushInt(unsigned int count, bool normalized = false) {
+        throw std::runtime_error("Unsupported type for VertexBufferLayout::PushInt");
     }
 
     [[nodiscard]] std::vector<VertexBufferElement> m_elements() const {
@@ -48,20 +54,26 @@ public:
 };
 
 template<>
-inline void VertexBufferLayout::Push<float>(const unsigned int count) {
-    m_Elements.push_back({GL_FLOAT, count, GL_FALSE});
+inline void VertexBufferLayout::Push<float>(const unsigned int count, const bool normalized) {
+    m_Elements.push_back({GL_FLOAT, count, static_cast<unsigned char>(normalized)});
     m_Stride += VertexBufferElement::GetSizeOfType(GL_FLOAT) * count;
 }
 
 template<>
-inline void VertexBufferLayout::Push<unsigned int>(const unsigned int count) {
-    m_Elements.push_back({GL_UNSIGNED_INT, count, GL_FALSE});
+inline void VertexBufferLayout::Push<unsigned int>(const unsigned int count, const bool normalized) {
+    m_Elements.push_back({GL_UNSIGNED_INT, count, static_cast<unsigned char>(normalized)});
     m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_INT) * count;
 }
 
 template<>
-inline void VertexBufferLayout::Push<unsigned char>(const unsigned int count) {
-    m_Elements.push_back({GL_UNSIGNED_BYTE, count, GL_TRUE});
+inline void VertexBufferLayout::Push<unsigned char>(const unsigned int count, const bool normalized) {
+    m_Elements.push_back({GL_UNSIGNED_BYTE, count, static_cast<unsigned char>(normalized)});
+    m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE) * count;
+}
+
+template<>
+inline void VertexBufferLayout::PushInt<unsigned char>(const unsigned int count, const bool normalized) {
+    m_Elements.push_back({GL_UNSIGNED_BYTE, count, static_cast<unsigned char>(normalized), true}); // ⚠️ isInteger = true
     m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE) * count;
 }
 

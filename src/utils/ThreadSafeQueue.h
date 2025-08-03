@@ -28,16 +28,39 @@ public:
         condVar_.notify_all();
     }
 
+    [[nodiscard]] bool empty() {
+        std::lock_guard lk(mutex_);
+        return queue_.empty();
+    }
+
+    int size() {
+        std::lock_guard lk(mutex_);
+        return queue_.size();
+    }
+
     T pop() {
         std::unique_lock lk(mutex_);
-        condVar_.wait(lk, [&]{ return done_ || !queue_.empty(); });
-        if (queue_.empty()) {
-            // plus rien à faire, on signale la fin
-            return nullptr;
-        }
+        if (queue_.empty()) return T{};
         T item = queue_.front();
         queue_.pop();
         return item;
+    }
+
+    T popBlocking() {
+        std::unique_lock lk(mutex_);
+        condVar_.wait(lk, [&]{ return done_ || !queue_.empty(); });
+        if (done_ && queue_.empty()) return nullptr;
+
+        T item = queue_.front();
+        queue_.pop();
+        return item;
+    }
+
+    void clear() {
+        std::lock_guard lk(mutex_);
+        while (!queue_.empty()) {
+            queue_.pop();
+        }
     }
 
 private:

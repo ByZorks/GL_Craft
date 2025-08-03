@@ -6,7 +6,9 @@
 IndexBuffer::IndexBuffer() = default;
 
 IndexBuffer::~IndexBuffer() {
-    GLCall(glDeleteBuffers(1, &m_rendererID));
+    if (m_rendererID != 0) {
+        GLCall(glDeleteBuffers(1, &m_rendererID));
+    }
 }
 
 void IndexBuffer::init(const unsigned int *data, const unsigned int count) {
@@ -14,6 +16,11 @@ void IndexBuffer::init(const unsigned int *data, const unsigned int count) {
     GLCall(glGenBuffers(1, &m_rendererID));
     GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_rendererID));
     GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned int), data, GL_STATIC_DRAW));
+}
+
+void IndexBuffer::updateData(const unsigned int *data) const {
+    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_rendererID));
+    GLCall(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, m_Count * sizeof(unsigned int), data));
 }
 
 void IndexBuffer::bind() const {
