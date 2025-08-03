@@ -260,13 +260,13 @@ int World::getHeight(const int worldX, const int worldZ) {
 
     // 3D noise generation for cave system
     const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), columnHeight, static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
-    constexpr float baseCaveThreshold = 0.82f;
+    constexpr float baseCaveThreshold = 0.87f;
     const float surfaceModifier = 1.0f - std::clamp((columnHeight - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
-    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
+    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f; // Increase threshold near surface
 
     // Adjust column height based on cave system
-    if (std::abs(normalized3DNoise - caveThreshold) < 0.13) {
-        columnHeight -= (normalized3DNoise - (caveThreshold - 0.13f)) * 10.0f;
+    if (std::abs(normalized3DNoise - caveThreshold) < 0.3) {
+        columnHeight -= (normalized3DNoise - (caveThreshold - 0.3f)) * 10.0f;
     }
 
     {
@@ -285,11 +285,11 @@ bool World::isCave(const int worldX, const int worldY, const int worldZ) const {
 
     // 3D noise generation for cave system
     const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
-    constexpr float baseCaveThreshold = 0.82f;
+    constexpr float baseCaveThreshold = 0.87f;
     const float surfaceModifier = 1.0f - std::clamp(static_cast<float>(worldY - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
-    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
+    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f; // Increase threshold near surface
 
-    return std::abs(normalized3DNoise - caveThreshold) < 0.13f;
+    return std::abs(normalized3DNoise - caveThreshold) < 0.3f;
 }
 
 const FastNoiseLite & World::m_noise_generator() const {
