@@ -81,13 +81,15 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         if (weak_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(weak_mesh);
         visibleChunksCount++;
     }
+}
 
+void World::drawWater(Shader &waterShader) const {
     if (!m_displayedTransparentMeshes.empty()) {
         Renderer::disableDepthMask();
         for (const auto& mesh : m_displayedTransparentMeshes) {
             const auto weak_mesh = mesh.lock();
             if (!weak_mesh) continue;
-            shader.setUniform3f("u_Offset",
+            waterShader.setUniform3f("u_Offset",
                                 static_cast<float>(weak_mesh->m_x1()),
                                 static_cast<float>(weak_mesh->m_y1()),
                                 static_cast<float>(weak_mesh->m_z1()));
@@ -279,7 +281,7 @@ bool World::isCave(const int worldX, const int worldY, const int worldZ) const {
     constexpr int maxHeight = 256;
     constexpr int baseHeight = 60;
 
-    if (worldY <= 1 || worldY > maxHeight) return false;
+    if (worldY <= 1 || worldY > maxHeight || worldY == 63) return false;
 
     // 3D noise generation for cave system
     const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]

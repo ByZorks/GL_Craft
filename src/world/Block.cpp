@@ -90,11 +90,10 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
             constexpr uint8_t normal = 4;
-            const float topY = type == BlockType::WATER ? block_endY - 0.2f : block_endY;
-            addVertex(block_startX, topY, block_endZ, u_start, v_end, normal);
-            addVertex(block_endX, topY, block_endZ, u_end , v_end, normal);
-            addVertex(block_endX, topY, block_startZ, u_end , v_start, normal);
-            addVertex(block_startX, topY, block_startZ, u_start, v_start, normal);
+            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, normal);
+            addVertex(block_endX, block_endY, block_endZ, u_end , v_end, normal);
+            addVertex(block_endX, block_endY, block_startZ, u_end , v_start, normal);
+            addVertex(block_startX, block_endY, block_startZ, u_start, v_start, normal);
             break;
         }
         case Face::BOTTOM: {

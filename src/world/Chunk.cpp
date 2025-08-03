@@ -36,7 +36,9 @@ void Chunk::generateVoxel(World &world) {
             if (columnHeight < m_y - static_cast<int>(SIZE)) continue; // Early exit for aerial chunks, cast is mandatory
 
             // Pre-compute the max height for the current column
-            const int endY = std::min(static_cast<int>(SIZE) + 2, std::max(0, columnHeight - m_y + 2));
+            constexpr int waterLevel = 63;
+            const int maxHeightInChunk = std::max(columnHeight, waterLevel);
+            const int endY = std::min(static_cast<int>(SIZE) + 2, std::max(0, maxHeightInChunk - m_y + 2));
 
             for (int localY = 0; localY < endY; localY++) {
                 const int worldY = m_y + localY;
@@ -45,7 +47,7 @@ void Chunk::generateVoxel(World &world) {
                     if (world.isCave(worldX, worldY, worldZ)) continue;
                     const BlockType blockType = Block::getBlockType(worldY, columnHeight);
                     m_blockType[index(localX, localY, localZ)] = blockType;
-                } else if (constexpr int waterLevel = 63; worldY <= waterLevel) {
+                } else if (worldY <= waterLevel) {
                     m_blockType[index(localX, localY, localZ)] = BlockType::WATER;
                 } else {
                     break;

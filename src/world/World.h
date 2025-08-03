@@ -49,6 +49,7 @@ public:
 
     void updateChunks(const Camera &camera);
     void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
+    void drawWater(Shader &waterShader) const;
     void drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount);
     void drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount);
 

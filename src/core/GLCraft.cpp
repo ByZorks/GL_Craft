@@ -55,6 +55,10 @@ int main(int argc, char *argv[]) {
         instanceShader.use();
         instanceShader.setUniform1i("u_Texture", 0);
 
+        Shader waterShader("../res/shaders/water.vert", "../res/shaders/water.frag");
+        waterShader.use();
+        waterShader.setUniform1i("u_Texture", 0);
+
         const Texture atlas("../res/textures/atlas/texture_atlas.png");
         atlas.bind();
 
@@ -96,6 +100,12 @@ int main(int argc, char *argv[]) {
             unsigned int visibleChunksCount = 0;
             world.drawChunks(camera, frustum, shader, visibleChunksCount);
 
+            waterShader.use();
+            waterShader.setUniformMat4f("u_MVP", mvp);
+            world.drawWater(waterShader);
+
+            shader.use();
+            shader.setUniformMat4f("u_MVP", mvp);
             unsigned int visibleVegetationsCount = 0;
             world.drawVegetations(camera, frustum, shader, visibleVegetationsCount);
 
