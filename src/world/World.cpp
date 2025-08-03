@@ -330,28 +330,32 @@ void World::processVegetations() {
             if (vegetationNoise > 0.87f) {
                 p_vegetation = std::make_shared<Tree>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
             } else if (vegetationNoise > 0.7f) {
-                const glm::vec3 position(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key)));
+                const glm::vec3 position(static_cast<float>(std::get<0>(key) - 1), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key) - 1));
                 std::lock_guard lock(m_grassData.mutex);
                 if (!m_grassData.instances.contains(position)) m_grassData.instances.emplace(position);
             } else if (vegetationNoise > 0.69f) {
-                const glm::vec3 position(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key)));
-                switch (rand() % 3) {
-                    case 0: {
-                        std::lock_guard lock(m_poppyData.mutex);
-                        if (!m_poppyData.instances.contains(position)) m_poppyData.instances.emplace(position);
+                const glm::vec3 position(static_cast<float>(std::get<0>(key) - 1), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key) - 1));
+                if (!m_poppyData.instances.contains(position) &&
+                    !m_cornflowerData.instances.contains(position) &&
+                    !m_alliumData.instances.contains(position)) {
+                    switch (rand() % 3) {
+                        case 0: {
+                            std::lock_guard lock(m_poppyData.mutex);
+                            m_poppyData.instances.emplace(position);
+                        }
+                            break;
+                        case 1: {
+                            std::lock_guard lock(m_cornflowerData.mutex);
+                            m_cornflowerData.instances.emplace(position);
+                        }
+                            break;
+                        case 2: {
+                            std::lock_guard lock(m_alliumData.mutex);
+                            m_alliumData.instances.emplace(position);
+                        }
+                            break;
+                        default: {}
                     }
-                        break;
-                    case 1: {
-                        std::lock_guard lock(m_cornflowerData.mutex);
-                        if (!m_cornflowerData.instances.contains(position)) m_cornflowerData.instances.emplace(position);
-                    }
-                        break;
-                    case 2: {
-                        std::lock_guard lock(m_alliumData.mutex);
-                        if (!m_alliumData.instances.contains(position)) m_alliumData.instances.emplace(position);
-                    }
-                        break;
-                    default: {}
                 }
             }
             if (p_vegetation) {
