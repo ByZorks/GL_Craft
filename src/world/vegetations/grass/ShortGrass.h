@@ -1,8 +1,8 @@
 #ifndef SHORTGRASS_H
 #define SHORTGRASS_H
-#include "../Vegetation.h"
+#include "../../Mesh.h"
 
-class ShortGrass final : public Vegetation {
+class ShortGrass final : public Mesh {
 public:
     static constexpr unsigned int SIZE = 1;
 
@@ -10,8 +10,6 @@ public:
 
     void generateVoxel() override;
     void generateMesh() override;
-
-    [[nodiscard]] bool isBillboard() const override;
 };
 
 #endif //SHORTGRASS_H

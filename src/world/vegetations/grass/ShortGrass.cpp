@@ -1,6 +1,6 @@
 #include "ShortGrass.h"
 
-ShortGrass::ShortGrass(const int x, const int y, const int z) : Vegetation(x, y, z) {
+ShortGrass::ShortGrass(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     m_blockFaceData.reserve(2);
     m_vertices.reserve(2*4);
 }
@@ -19,8 +19,4 @@ void ShortGrass::generateMesh() {
     m_blockFaceData.emplace_back(Face::FRONT, 4);
 
     m_status = Status::MESH_GENERATED;
-}
-
-bool ShortGrass::isBillboard() const {
-    return true;
 }

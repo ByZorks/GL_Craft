@@ -2,7 +2,7 @@
 
 #include "World.h"
 
-Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z) {
+Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     constexpr size_t max_faces = 6 * 16 * 16 * 16;
     constexpr size_t avg_faces = max_faces / 4; // Assuming each block has a quarter of the maximum faces
     m_vertices.reserve(avg_faces * 4); // avg_faces * 4 vertices per face
@@ -71,7 +71,7 @@ void Chunk::generateMesh() {
     m_status = Status::MESH_GENERATED;
 }
 
-int Chunk::index(const int x, const int y, const int z) {
+int Chunk::index(const int x, const int y, const int z) const {
     constexpr int stride = static_cast<int>(SIZE) + 2;
     return x * stride * stride + y * stride + z;
 }

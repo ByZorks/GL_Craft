@@ -16,6 +16,7 @@ enum class Status : uint8_t {
 
 class Mesh {
 protected:
+    const unsigned int m_size;
     int m_x, m_y, m_z;
     std::vector<BlockVertex> m_vertices;
     std::vector<BlockVertex> m_vertices_transparent;
@@ -32,18 +33,16 @@ protected:
     AABB m_box;
 
 public:
-    virtual ~Mesh() = default;
-
-    static constexpr unsigned int SIZE = 16;
-
-    Mesh(const int x, const int y, const int z) : m_x(x), m_y(y), m_z(z),
+    Mesh(const int x, const int y, const int z, const unsigned int size) : m_size(size), m_x(x), m_y(y), m_z(z),
                                                   m_box(AABB(static_cast<float>(x), static_cast<float>(y),
                                                              static_cast<float>(z),
-                                                             static_cast<float>(x) + static_cast<float>(SIZE) - 1,
-                                                             static_cast<float>(y) + static_cast<float>(SIZE) - 1,
-                                                             static_cast<float>(z) + static_cast<float>(SIZE) - 1
+                                                             static_cast<float>(x) + static_cast<float>(size) - 1,
+                                                             static_cast<float>(y) + static_cast<float>(size) - 1,
+                                                             static_cast<float>(z) + static_cast<float>(size) - 1
                                                   )) {
+        m_blockType.resize(m_size * m_size * m_size, BlockType::AIR);
     }
+    virtual ~Mesh() = default;
 
     virtual void generateVoxel();
     virtual void generateMesh();
@@ -111,6 +110,7 @@ public:
 
         m_status = Status::BUFFERS_SETUP;
     }
+
     void draw() const {
         Renderer::draw(m_VAO, m_IBO);
     }
@@ -122,8 +122,6 @@ public:
     [[nodiscard]] bool hasTransparentFaces() const {
         return !m_vertices_transparent.empty() && m_IBO_transparent.m_count() > 0;
     }
-
-    [[nodiscard]] virtual bool isBillboard() const;
 
     [[nodiscard]] virtual bool shouldDrawFace(const int neighborX, const int neighborY, const int neighborZ,
                                               const BlockType currentBlockType) const {
@@ -148,8 +146,8 @@ public:
         return m_blockType[index(localX, localY, localZ)];
     }
 
-    static int index(const int x, const int y, const int z) {
-        constexpr int stride = SIZE;
+    [[nodiscard]] virtual int index(const int x, const int y, const int z) const {
+        const int stride = static_cast<int>(m_size);
         return x * stride * stride + y * stride + z;
     }
 

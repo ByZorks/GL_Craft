@@ -311,7 +311,7 @@ const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & Wo
     return m_chunksData.loadedMeshes;
 }
 
-const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Vegetation>> & World::m_loaded_vegetations() const {
+const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Mesh>> & World::m_loaded_vegetations() const {
     return m_vegetationsData.loadedMeshes;
 }
 
@@ -364,7 +364,7 @@ void World::processVegetations() {
         m_threadPool.enqueue([this] {
             std::tuple<int, int, int> key = m_vegetationsData.meshesToGenerate.pop();
             float vegetationNoise = (this->m_surfaceVegetationGenerator.GetNoise(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<2>(key))) + 1.0f) * 0.5f;
-            std::shared_ptr<Vegetation> p_vegetation;
+            std::shared_ptr<Mesh> p_vegetation;
             if (vegetationNoise > 0.87f) {
                 p_vegetation = std::make_shared<Tree>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
             } else if (vegetationNoise > 0.7f) {
@@ -406,7 +406,7 @@ void World::processVegetations() {
 
     for (int i = 0; i < maxVegetationsPerFrame; ++i) {
         if (m_vegetationsData.meshesToRender.empty()) break;
-        std::shared_ptr<Vegetation> p_vegetation = m_vegetationsData.meshesToRender.pop();
+        std::shared_ptr<Mesh> p_vegetation = m_vegetationsData.meshesToRender.pop();
         std::tuple<int, int, int> key = std::make_tuple(p_vegetation->m_x1(), p_vegetation->m_y1(), p_vegetation->m_z1());
         m_vegetationsData.loadedMeshes.try_emplace(key, p_vegetation);
     }

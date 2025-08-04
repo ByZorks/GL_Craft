@@ -13,7 +13,6 @@
 #include "../render/InstanceRendererData.h"
 #include "../render/ThreadPool.h"
 #include "../utils/CustomHash.h"
-#include "vegetations/Vegetation.h"
 
 class Camera;
 
@@ -31,7 +30,7 @@ private:
     ThreadPool m_threadPool;
 
     MeshData<Chunk> m_chunksData;
-    MeshData<Vegetation> m_vegetationsData;
+    MeshData<Mesh> m_vegetationsData;
 
     InstanceRendererData m_grassData;
     InstanceRendererData m_poppyData;
@@ -63,7 +62,7 @@ public:
     [[nodiscard]] const FastNoiseLite & m_noise_generator() const;
     [[nodiscard]] const FastNoiseLite & m_surface_vegetation_generator() const;
     [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
-    [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Vegetation>> &m_loaded_vegetations() const;
+    [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Mesh>> &m_loaded_vegetations() const;
 
 private:
     void processChunks();
