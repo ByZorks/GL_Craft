@@ -47,10 +47,10 @@ public:
     World();
 
     void updateChunks(const Camera &camera);
-    void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount);
-    void drawWater(Shader &waterShader) const;
-    void drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount);
-    void drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount);
+    void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &drawCalls);
+    void drawWater(Shader &waterShader, unsigned int &drawCalls) const;
+    void drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount, unsigned int &drawCalls);
+    void drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount, unsigned int &drawCalls);
 
     int getHeight(int worldX, int worldZ);
     bool isCave(int worldX, int worldY, int worldZ) const;

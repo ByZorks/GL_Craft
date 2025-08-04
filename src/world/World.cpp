@@ -55,7 +55,7 @@ void World::updateChunks(const Camera &camera) {
     generateDataForEachChunks(cameraWorldX, cameraWorldY, cameraWorldZ);
 }
 
-void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount) {
+void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &drawCalls) {
     // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_chunksData.loadedMeshes
     processChunks();
 
@@ -79,11 +79,12 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
 
         weak_mesh->draw();
         if (weak_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(weak_mesh);
+        drawCalls++;
         visibleChunksCount++;
     }
 }
 
-void World::drawWater(Shader &waterShader) const {
+void World::drawWater(Shader &waterShader, unsigned int &drawCalls) const {
     if (!m_displayedTransparentMeshes.empty()) {
         Renderer::disableDepthMask();
         for (const auto& mesh : m_displayedTransparentMeshes) {
@@ -95,12 +96,13 @@ void World::drawWater(Shader &waterShader) const {
                                 static_cast<float>(weak_mesh->m_z1()));
 
             weak_mesh->drawTransparent();
+            drawCalls++;
         }
         Renderer::enableDepthMask();
     }
 }
 
-void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount) {
+void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount, unsigned int &drawCalls) {
     // Remove vegetations that are no longer needed, generate voxel and mesh, store them
     processVegetations();
 
@@ -124,6 +126,7 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
 
         weak_mesh->draw();
         if (weak_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(weak_mesh);
+        drawCalls++;
         visibleVegetationsCount++;
     }
 
@@ -136,10 +139,11 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
                         static_cast<float>(weak_mesh->m_z1()));
 
         weak_mesh->drawTransparent();
+        drawCalls++;
     }
 }
 
-void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount) {
+void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount, unsigned int &drawCalls) {
     if (camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk()) {
         m_grassData.renderer.resetInstances();
         m_poppyData.renderer.resetInstances();
@@ -192,24 +196,28 @@ void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned
         Renderer::disableBackFaceCulling();
         m_grassData.renderer.draw();
         Renderer::enableBackFaceCulling();
+        drawCalls++;
     }
 
     if (m_poppyData.renderer.m_instance_count() > 0) {
         Renderer::disableBackFaceCulling();
         m_poppyData.renderer.draw();
         Renderer::enableBackFaceCulling();
+        drawCalls++;
     }
 
     if (m_cornflowerData.renderer.m_instance_count() > 0) {
         Renderer::disableBackFaceCulling();
         m_cornflowerData.renderer.draw();
         Renderer::enableBackFaceCulling();
+        drawCalls++;
     }
 
     if (m_alliumData.renderer.m_instance_count() > 0) {
         Renderer::disableBackFaceCulling();
         m_alliumData.renderer.draw();
         Renderer::enableBackFaceCulling();
+        drawCalls++;
     }
 }
 
