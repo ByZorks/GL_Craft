@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
         shader.use();
         shader.setUniform1i("u_Texture", 0);
 
-        Shader instanceShader("../res/shaders/instance_vegetation.vert", "../res/shaders/block.frag");
+        Shader instanceShader("../res/shaders/grass.vert", "../res/shaders/grass.frag");
         instanceShader.use();
         instanceShader.setUniform1i("u_Texture", 0);
 
