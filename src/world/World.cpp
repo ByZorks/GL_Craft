@@ -442,69 +442,60 @@ void World::generateVegetationsForEachChunks(const std::shared_ptr<Chunk> &chunk
 void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
     const float renderDistanceSq = Renderer::m_renderDistance * Renderer::m_renderDistance;
 
-    std::unordered_set<std::pair<int, int>> toRemoveXZ;
-
     std::erase_if(m_chunksData.loadedMeshes, [&](const auto &tuple) {
         auto [x, y, z] = tuple.first;
         const glm::vec3 pos(x, y, z);
-        float distSq = glm::distance(pos, cameraChunkPos);
-        distSq *= distSq;
-        if (distSq > renderDistanceSq) {
-            toRemoveXZ.emplace(x, z);
-            return true;
-        }
-        return false;
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
     });
 
     std::erase_if(m_vegetationsData.loadedMeshes, [&](const auto &tuple) {
         auto [x, y, z] = tuple.first;
         const glm::vec3 pos(x, y, z);
-        float distSq = glm::distance(pos, cameraChunkPos);
-        distSq *= distSq;
-        if (distSq > renderDistanceSq) {
-            return true;
-        }
-        return false;
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
     });
 
     std::erase_if(m_grassData.instances, [&](const auto &pos) {
-        float distSq = glm::distance(pos, cameraChunkPos);
-        distSq *= distSq;
-        if (distSq > renderDistanceSq) {
-            return true;
-        }
-        return false;
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
     });
 
     std::erase_if(m_poppyData.instances, [&](const auto &pos) {
-        float distSq = glm::distance(pos, cameraChunkPos);
-        distSq *= distSq;
-        if (distSq > renderDistanceSq) {
-            return true;
-        }
-        return false;
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
     });
 
     std::erase_if(m_cornflowerData.instances, [&](const auto &pos) {
-        float distSq = glm::distance(pos, cameraChunkPos);
-        distSq *= distSq;
-        if (distSq > renderDistanceSq) {
-            return true;
-        }
-        return false;
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
     });
 
     std::erase_if(m_alliumData.instances, [&](const auto &pos) {
-        float distSq = glm::distance(pos, cameraChunkPos);
-        distSq *= distSq;
-        if (distSq > renderDistanceSq) {
-            return true;
-        }
-        return false;
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
     });
 
+    // TODO: Implements a faster way to remove distant height map entries
     std::lock_guard lock(m_heightMapMutex);
-    for (const auto &pair : toRemoveXZ) {
-        m_heightMap.erase(pair);
-    }
+    std::erase_if(m_heightMap, [&](const auto &pair) {
+        const auto &[x, z] = pair.first;
+        const glm::vec3 pos(x, 0, z);
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
+    });
 }
