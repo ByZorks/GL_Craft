@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <ranges>
+#include <shared_mutex>
 #include <thread>
 #include <unordered_set>
 
@@ -40,7 +41,7 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
 
     m_vegetationsData.loadedMeshes.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 
-    m_heightMap.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
+    m_heightMapByChunk.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 }
 
 void World::updateChunks(const Camera &camera) {
@@ -222,35 +223,62 @@ void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned
 }
 
 int World::getHeight(const int worldX, const int worldZ) {
-    constexpr int maxHeight = 256;
-    constexpr int baseHeight = 60;
-    const std::pair coords(worldX, worldZ);
+    // static cast have to be used on both coords and size or it will crash
+    const int chunkXInHeightMap = static_cast<int>(std::floor(static_cast<double>(worldX) / Chunk::SIZE));
+    const int chunkZInHeightMap = static_cast<int>(std::floor(static_cast<double>(worldZ) / Chunk::SIZE));
+    const std::pair coordsChunk(chunkXInHeightMap, chunkZInHeightMap);
 
-    // Check if height is already cached
-    if (const auto it = m_heightMap.find(coords); it != m_heightMap.end()) return it->second;
+    const int localXInHeightMap = worldX - chunkXInHeightMap * static_cast<int>(Chunk::SIZE);
+    const int localZInHeightMap = worldZ - chunkZInHeightMap * static_cast<int>(Chunk::SIZE);
 
-    // 2D noise generation for terrain height
-    const float normalizedNoise = (m_terrainHeightGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
-    const float terrainShape = std::pow(normalizedNoise, 4.6f); // Create more plains and sharper mountains
-    float columnHeight = std::floor(baseHeight + terrainShape * maxHeight); // Scale to world height
+    // Check cache
+    if (const auto it = m_heightMapByChunk.find(coordsChunk); it != m_heightMapByChunk.end()) {
+        return it->second.getHeight(localXInHeightMap, localZInHeightMap);
+    }
 
-    // 3D noise generation for cave system
-    const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), columnHeight, static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
-    constexpr float baseCaveThreshold = 0.87f;
-    const float surfaceModifier = 1.0f - std::clamp((columnHeight - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
-    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f; // Increase threshold near surface
+    // Generate heigtmap for the chunk if it doesn't exist
+    ChunkHeightmap newHeightMap{};
+    for (int i = 0; i < Chunk::SIZE * Chunk::SIZE; ++i) {
+        constexpr int baseHeight = 60;
+        constexpr int maxHeight = 256;
+        const int localXInChunk = i % static_cast<int>(Chunk::SIZE);
+        const int localZInChunk = i / static_cast<int>(Chunk::SIZE);
+        const int worldXInChunk = chunkXInHeightMap * static_cast<int>(Chunk::SIZE) + localXInChunk;
+        const int worldZInChunk = chunkZInHeightMap * static_cast<int>(Chunk::SIZE) + localZInChunk;
 
-    // Adjust column height based on cave system
-    if (std::abs(normalized3DNoise - caveThreshold) < 0.3) {
-        columnHeight -= (normalized3DNoise - (caveThreshold - 0.3f)) * 10.0f;
+        // 2D noise generation for terrain height
+        const float normalizedNoise = (m_terrainHeightGenerator.GetNoise(
+            static_cast<float>(worldXInChunk),
+            static_cast<float>(worldZInChunk)
+            ) + 1.0f) / 2.0f;
+
+        const float terrainShape = std::pow(normalizedNoise, 4.6f);
+        float columnHeight = std::floor(baseHeight + terrainShape * maxHeight);
+
+        // 3D noise generation for cave system
+        const float normalized3DNoise = (m_caveGenerator.GetNoise(
+            static_cast<float>(worldXInChunk),
+            columnHeight,
+            static_cast<float>(worldZInChunk)
+            ) + 1.0f) / 2.0f;
+        constexpr float baseCaveThreshold = 0.87f;
+        const float surfaceModifier = 1.0f - std::clamp((columnHeight - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
+        const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f;
+
+        // Adjust column height based on cave noise
+        if (std::abs(normalized3DNoise - caveThreshold) < 0.3f) {
+            columnHeight -= (normalized3DNoise - (caveThreshold - 0.3f)) * 10.0f;
+        }
+
+        newHeightMap.heights[localXInChunk + localZInChunk * Chunk::SIZE] = static_cast<int>(columnHeight);
     }
 
     {
         std::lock_guard lock(m_heightMapMutex);
-        m_heightMap.try_emplace(coords, columnHeight);
+        m_heightMapByChunk[coordsChunk] = newHeightMap;
     }
 
-    return static_cast<int>(columnHeight);
+    return m_heightMapByChunk[coordsChunk].getHeight(localXInHeightMap, localZInHeightMap);
 }
 
 bool World::isCave(const int worldX, const int worldY, const int worldZ) const {
@@ -444,19 +472,17 @@ void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
 
     std::erase_if(m_chunksData.loadedMeshes, [&](const auto &tuple) {
         auto [x, y, z] = tuple.first;
-        const glm::vec3 pos(x, y, z);
-        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
-                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
-                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        const float distSq = (x - cameraChunkPos.x) * (x - cameraChunkPos.x)
+                             + (y - cameraChunkPos.y) * (y - cameraChunkPos.y)
+                             + (z - cameraChunkPos.z) * (z - cameraChunkPos.z);
         return distSq > renderDistanceSq;
     });
 
     std::erase_if(m_vegetationsData.loadedMeshes, [&](const auto &tuple) {
         auto [x, y, z] = tuple.first;
-        const glm::vec3 pos(x, y, z);
-        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
-                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
-                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        const float distSq = (x - cameraChunkPos.x) * (x - cameraChunkPos.x)
+                             + (y - cameraChunkPos.y) * (y - cameraChunkPos.y)
+                             + (z - cameraChunkPos.z) * (z - cameraChunkPos.z);
         return distSq > renderDistanceSq;
     });
 
@@ -488,14 +514,16 @@ void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
         return distSq > renderDistanceSq;
     });
 
-    // TODO: Implements a faster way to remove distant height map entries
-    std::lock_guard lock(m_heightMapMutex);
-    std::erase_if(m_heightMap, [&](const auto &pair) {
-        const auto &[x, z] = pair.first;
-        const glm::vec3 pos(x, 0, z);
-        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
-                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
-                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
-        return distSq > renderDistanceSq;
-    });
+    const int cameraHeightmapX = static_cast<int>(std::floor(cameraChunkPos.x / Chunk::SIZE));
+    const int cameraHeightmapZ = static_cast<int>(std::floor(cameraChunkPos.z / Chunk::SIZE));
+    const float heightmapRenderDistanceSq = Renderer::m_renderDistance / Chunk::SIZE * (Renderer::m_renderDistance / Chunk::SIZE);
+    {
+        std::lock_guard lock(m_heightMapMutex);
+        std::erase_if(m_heightMapByChunk, [&](const auto &pos) {
+            const auto [x, z] = pos.first;
+            const float distSq = (x - cameraHeightmapX) * (x - cameraHeightmapX)
+                                + (z - cameraHeightmapZ) * (z - cameraHeightmapZ);
+            return distSq > heightmapRenderDistanceSq;
+        });
+    }
 }

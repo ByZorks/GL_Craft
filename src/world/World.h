@@ -21,6 +21,15 @@
 
 class Camera;
 
+struct ChunkHeightmap {
+    std::array<int, Chunk::SIZE * Chunk::SIZE> heights;
+
+    [[nodiscard]] int getHeight(const int localX, const int localZ) const {
+        return heights[localX + localZ * Chunk::SIZE];
+    }
+};
+
+
 class World {
 private:
     ThreadPool m_threadPool;
@@ -33,7 +42,7 @@ private:
     InstanceRendererData<CornflowerInstanceRenderer> m_cornflowerData;
     InstanceRendererData<AlliumInstanceRenderer> m_alliumData;
 
-    std::unordered_map<std::pair<int, int>, int> m_heightMap;
+    std::unordered_map<std::pair<int, int>, ChunkHeightmap> m_heightMapByChunk;
     mutable std::mutex m_heightMapMutex;
 
     std::vector<std::weak_ptr<Mesh>> m_displayedNormalMeshes;
