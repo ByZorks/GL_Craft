@@ -9,6 +9,9 @@
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
 #include "../utils/ThreadSafeQueue.h"
+#include "vegetations/flowers/Allium.h"
+#include "vegetations/flowers/Cornflower.h"
+#include "vegetations/flowers/Poppy.h"
 #include "vegetations/grass/ShortGrass.h"
 #include "vegetations/trees/Tree.h"
 
@@ -32,10 +35,10 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_caveGenerator.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
     m_caveGenerator.SetDomainWarpAmp(20.f);
 
-    m_grassData.renderer.init();
-    m_poppyData.renderer.init();
-    m_cornflowerData.renderer.init();
-    m_alliumData.renderer.init();
+    m_grassData.renderer.init(ShortGrass(0, 0, 0));
+    m_poppyData.renderer.init(Poppy(0, 0, 0));
+    m_cornflowerData.renderer.init(Cornflower(0, 0, 0));
+    m_alliumData.renderer.init(Allium(0, 0, 0));
 
     m_chunksData.loadedMeshes.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 

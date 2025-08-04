@@ -13,11 +13,7 @@
 #include "../render/InstanceRendererData.h"
 #include "../render/ThreadPool.h"
 #include "../utils/CustomHash.h"
-#include "vegetations/grass/GrassInstanceRenderer.h"
 #include "vegetations/Vegetation.h"
-#include "vegetations/flowers/AlliumInstanceRenderer.h"
-#include "vegetations/flowers/CornflowerInstanceRenderer.h"
-#include "vegetations/flowers/PoppyInstanceRenderer.h"
 
 class Camera;
 
@@ -37,10 +33,10 @@ private:
     MeshData<Chunk> m_chunksData;
     MeshData<Vegetation> m_vegetationsData;
 
-    InstanceRendererData<GrassInstanceRenderer> m_grassData;
-    InstanceRendererData<PoppyInstanceRenderer> m_poppyData;
-    InstanceRendererData<CornflowerInstanceRenderer> m_cornflowerData;
-    InstanceRendererData<AlliumInstanceRenderer> m_alliumData;
+    InstanceRendererData m_grassData;
+    InstanceRendererData m_poppyData;
+    InstanceRendererData m_cornflowerData;
+    InstanceRendererData m_alliumData;
 
     std::unordered_map<std::pair<int, int>, ChunkHeightmap> m_heightMapByChunk;
     mutable std::mutex m_heightMapMutex;

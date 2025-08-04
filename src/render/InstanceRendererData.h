@@ -4,15 +4,15 @@
 #include <mutex>
 #include <unordered_set>
 
+#include "InstanceRenderer.h"
 #include "vec3.hpp"
 #include "../utils/CustomHash.h"
 
-template<typename RendererType>
 class InstanceRendererData {
 public:
     std::unordered_set<glm::vec3> instances;
     mutable std::mutex mutex;
-    RendererType renderer;
+    InstanceRenderer renderer;
 };
 
 #endif //INSTANCERENDERERDATA_H

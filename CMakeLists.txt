@@ -69,22 +69,14 @@ add_executable(GL_Craft
         src/world/Mesh.cpp
         src/world/vegetations/grass/ShortGrass.cpp
         src/world/vegetations/grass/ShortGrass.h
-        src/world/vegetations/grass/GrassInstanceRenderer.cpp
-        src/world/vegetations/grass/GrassInstanceRenderer.h
         src/world/vegetations/flowers/Flower.h
         src/world/vegetations/flowers/Flower.cpp
         src/world/vegetations/flowers/Poppy.cpp
         src/world/vegetations/flowers/Poppy.h
-        src/world/vegetations/flowers/PoppyInstanceRenderer.cpp
-        src/world/vegetations/flowers/PoppyInstanceRenderer.h
         src/render/InstanceRenderer.cpp
         src/render/InstanceRenderer.h
         src/render/InstanceRendererData.h
         src/world/MeshData.h
-        src/world/vegetations/flowers/CornflowerInstanceRenderer.cpp
-        src/world/vegetations/flowers/CornflowerInstanceRenderer.h
-        src/world/vegetations/flowers/AlliumInstanceRenderer.cpp
-        src/world/vegetations/flowers/AlliumInstanceRenderer.h
         src/world/vegetations/flowers/Cornflower.cpp
         src/world/vegetations/flowers/Cornflower.h
         src/world/vegetations/flowers/Allium.cpp

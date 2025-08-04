@@ -52,7 +52,7 @@ public:
         // === OPAQUE ===
         if (!m_vertices.empty()) {
             std::vector<unsigned int> meshIndices_opaque;
-            meshIndices_opaque.reserve(m_blockFaceData.size() * 6); // 6 indices par face
+            meshIndices_opaque.reserve(m_blockFaceData.size() * 6); // 6 indices per face
             unsigned int vertexOffsetOpaque = 0;
 
             for (const auto &[faceType, vertexCount, x, y, z]: m_blockFaceData) {
@@ -179,6 +179,22 @@ public:
 
     [[nodiscard]] const AABB &m_box1() const {
         return m_box;
+    }
+
+    [[nodiscard]] const std::vector<BlockVertex> & m_vertices1() const {
+        return m_vertices;
+    }
+
+    [[nodiscard]] const std::vector<BlockVertex> & m_vertices_transparent1() const {
+        return m_vertices_transparent;
+    }
+
+    [[nodiscard]] std::vector<BlockFaceData> m_block_face_data() const {
+        return m_blockFaceData;
+    }
+
+    [[nodiscard]] std::vector<BlockFaceData> m_block_face_data_transparent() const {
+        return m_blockFaceData_transparent;
     }
 };
 
