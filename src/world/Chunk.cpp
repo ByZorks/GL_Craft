@@ -3,12 +3,13 @@
 #include "World.h"
 
 Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
-    constexpr size_t max_faces = 6 * 16 * 16 * 16;
+    constexpr size_t max_faces = 6 * SIZE * SIZE * SIZE;
     constexpr size_t avg_faces = max_faces / 4; // Assuming each block has a quarter of the maximum faces
-    m_vertices.reserve(avg_faces * 4); // avg_faces * 4 vertices per face
-    m_vertices_transparent.reserve(avg_faces * 4); // avg_faces * 4 vertices per face
+    constexpr size_t avg_faces_transparent = avg_faces * static_cast<size_t>(0.2f); // Most don't have many transparent faces
+    m_vertices.reserve(avg_faces * 4); // 4 vertices per face
+    m_vertices_transparent.reserve(avg_faces_transparent * 4);
     m_blockFaceData.reserve(avg_faces);
-    m_blockFaceData_transparent.reserve(avg_faces);
+    m_blockFaceData_transparent.reserve(avg_faces_transparent);
     m_blockType.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
 }
 
