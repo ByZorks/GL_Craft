@@ -11,6 +11,7 @@
 
 Shader::Shader(std::string vertexPath, std::string fragmentPath) : m_vertexFilePath(std::move(vertexPath)),
                                                                    m_fragmentFilePath(std::move(fragmentPath)) {
+    compileAndLink();
 }
 
 Shader::~Shader() {
@@ -19,47 +20,10 @@ Shader::~Shader() {
     }
 }
 
-unsigned int Shader::use() {
-    const std::string &vertexShader = readFile(m_vertexFilePath);
-    const std::string &fragmentShader = readFile(m_fragmentFilePath);
-
-    if (vertexShader.empty() || fragmentShader.empty()) {
-        return 0;
+void Shader::use() const {
+    if (m_isInitialized) {
+        GLCall(glUseProgram(m_programId));
     }
-
-    const unsigned int program = glCreateProgram();
-    const unsigned int vs = compile(GL_VERTEX_SHADER, vertexShader);
-    const unsigned int fs = compile(GL_FRAGMENT_SHADER, fragmentShader);
-
-    if (vs == 0 || fs == 0) {
-        GLCall(glDeleteProgram(program));
-        return 0;
-    }
-
-    GLCall(glAttachShader(program, vs));
-    GLCall(glAttachShader(program, fs));
-    GLCall(glLinkProgram(program));
-
-    int success;
-    GLCall(glGetProgramiv(program, GL_LINK_STATUS, &success));
-    if (!success) {
-        char infoLog[512];
-        GLCall(glGetProgramInfoLog(program, 512, nullptr, infoLog));
-        std::cerr << "Shader error: " << infoLog << std::endl;
-        GLCall(glDeleteProgram(program));
-        GLCall(glDeleteShader(vs));
-        GLCall(glDeleteShader(fs));
-        return 0;
-    }
-
-    GLCall(glValidateProgram(program));
-    GLCall(glDeleteShader(vs));
-    GLCall(glDeleteShader(fs));
-
-    GLCall(glUseProgram(program));
-    m_programId = program;
-
-    return program;
 }
 
 int Shader::getUniformLocation(const std::string &name) {
@@ -123,4 +87,47 @@ unsigned int Shader::compile(const GLenum shaderType, const std::string &shader)
     }
 
     return id;
+}
+
+void Shader::compileAndLink() {
+    const std::string &vertexShader = readFile(m_vertexFilePath);
+    const std::string &fragmentShader = readFile(m_fragmentFilePath);
+
+    if (vertexShader.empty() || fragmentShader.empty()) {
+        return;
+    }
+
+    const unsigned int program = glCreateProgram();
+    const unsigned int vs = compile(GL_VERTEX_SHADER, vertexShader);
+    const unsigned int fs = compile(GL_FRAGMENT_SHADER, fragmentShader);
+
+    if (vs == 0 || fs == 0) {
+        if (program != 0) GLCall(glDeleteProgram(program));
+        if (vs != 0) GLCall(glDeleteShader(vs));
+        if (fs != 0) GLCall(glDeleteShader(fs));
+        return;
+    }
+
+    GLCall(glAttachShader(program, vs));
+    GLCall(glAttachShader(program, fs));
+    GLCall(glLinkProgram(program));
+
+    int success;
+    GLCall(glGetProgramiv(program, GL_LINK_STATUS, &success));
+    if (!success) {
+        char infoLog[512];
+        GLCall(glGetProgramInfoLog(program, 512, nullptr, infoLog));
+        std::cerr << "Shader error: " << infoLog << std::endl;
+        GLCall(glDeleteProgram(program));
+        GLCall(glDeleteShader(vs));
+        GLCall(glDeleteShader(fs));
+        return;
+    }
+
+    GLCall(glValidateProgram(program));
+    GLCall(glDeleteShader(vs));
+    GLCall(glDeleteShader(fs));
+
+    m_programId = program;
+    m_isInitialized = true;
 }

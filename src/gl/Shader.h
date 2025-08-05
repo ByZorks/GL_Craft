@@ -12,12 +12,13 @@ private:
     std::string m_vertexFilePath;
     std::string m_fragmentFilePath;
     std::pmr::unordered_map<std::string, int> m_uniformLocationCache;
+    bool m_isInitialized = false;
 
 public:
     Shader(std::string vertexPath, std::string fragmentPath);
     ~Shader();
 
-    unsigned int use();
+    void use() const;
     int getUniformLocation(const std::string &name);
     void setUniform1i(const std::string &name, int value);
     void setUniform3f(const std::string &name, float v0, float v1, float v2);
@@ -28,6 +29,7 @@ public:
 private:
     static std::string readFile(const std::string &filePath);
     static unsigned int compile(GLenum shaderType, const std::string& shader);
+    void compileAndLink();
 };
 
 #endif //SHADER_H
