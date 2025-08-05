@@ -242,7 +242,7 @@ int World::getHeight(const int worldX, const int worldZ) {
     // Generate heigtmap for the chunk if it doesn't exist
     ChunkHeightmap newHeightMap{};
     for (int i = 0; i < Chunk::SIZE * Chunk::SIZE; ++i) {
-        constexpr int baseHeight = 60;
+        constexpr int baseHeight = 58;
         constexpr int maxHeight = 256;
         const int localXInChunk = i % static_cast<int>(Chunk::SIZE);
         const int localZInChunk = i / static_cast<int>(Chunk::SIZE);
@@ -286,7 +286,7 @@ int World::getHeight(const int worldX, const int worldZ) {
 
 bool World::isCave(const int worldX, const int worldY, const int worldZ) const {
     constexpr int maxHeight = 256;
-    constexpr int baseHeight = 60;
+    constexpr int baseHeight = 58;
 
     if (worldY <= 1 || worldY > maxHeight || worldY == 63) return false;
 
