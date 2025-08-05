@@ -14,7 +14,7 @@
 #include "imgui.h"
 #include "../ui/DebugUI.h"
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 
 int main(int argc, char *argv[]) {
     if (!glfwInit())
@@ -43,17 +43,19 @@ int main(int argc, char *argv[]) {
 
     if (glewInit() != GLEW_OK) std::cout << "glewInit() failed" << std::endl;
 
-    std::cout << glGetString(GL_VERSION) << std::endl;
-
-    {
+    std::cout << glGetString(GL_VERSION) << std::endl; {
         // Shader
         Shader shader("../res/shaders/block.vert", "../res/shaders/block.frag");
         shader.use();
         shader.setUniform1i("u_Texture", 0);
 
-        Shader instanceShader("../res/shaders/instance_vegetation.vert", "../res/shaders/block.frag");
+        Shader instanceShader("../res/shaders/grass.vert", "../res/shaders/grass.frag");
         instanceShader.use();
         instanceShader.setUniform1i("u_Texture", 0);
+
+        Shader waterShader("../res/shaders/water.vert", "../res/shaders/water.frag");
+        waterShader.use();
+        waterShader.setUniform1i("u_Texture", 0);
 
         const Texture atlas("../res/textures/atlas/texture_atlas.png");
         atlas.bind();
@@ -64,7 +66,7 @@ int main(int argc, char *argv[]) {
 
         // Debug UI
         DebugUI debugUI(window);
-        const ImGuiIO& io = ImGui::GetIO();
+        const ImGuiIO &io = ImGui::GetIO();
 
         World world;
         Renderer::init();
@@ -93,17 +95,25 @@ int main(int argc, char *argv[]) {
             shader.use();
             shader.setUniformMat4f("u_MVP", mvp);
 
+            unsigned int drawCalls = 0;
             unsigned int visibleChunksCount = 0;
-            world.drawChunks(camera, frustum, shader, visibleChunksCount);
+            world.drawChunks(camera, frustum, shader, visibleChunksCount, drawCalls);
 
+            waterShader.use();
+            waterShader.setUniformMat4f("u_MVP", mvp);
+            world.drawWater(waterShader, drawCalls);
+
+            shader.use();
+            shader.setUniformMat4f("u_MVP", mvp);
             unsigned int visibleVegetationsCount = 0;
-            world.drawVegetations(camera, frustum, shader, visibleVegetationsCount);
+            world.drawVegetations(camera, frustum, shader, visibleVegetationsCount, drawCalls);
 
             instanceShader.use();
             instanceShader.setUniformMat4f("u_MVP", mvp);
-            world.drawInstances(camera, frustum, visibleVegetationsCount);
+            world.drawInstances(camera, frustum, visibleVegetationsCount, drawCalls);
 
-            DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(), world.m_loaded_vegetations().size(), camera);
+            DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(),
+                            world.m_loaded_vegetations().size(), drawCalls, camera);
             DebugUI::draw();
 
             camera.updateLastState();
@@ -118,6 +128,6 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void framebuffer_size_callback(GLFWwindow* window, const int width, const int height) {
+void framebuffer_size_callback(GLFWwindow *window, const int width, const int height) {
     glViewport(0, 0, width, height);
 }

@@ -1,8 +1,8 @@
 #ifndef TREE_H
 #define TREE_H
-#include "../Vegetation.h"
+#include "../../Mesh.h"
 
-class Tree final : public Vegetation {
+class Tree final : public Mesh {
 public:
     static constexpr unsigned int SIZE = 7;
 

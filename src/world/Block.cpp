@@ -8,11 +8,22 @@ Block::Block(const float x, const float y, const float z) : m_x(x), m_y(y), m_z(
 }
 
 BlockType Block::getBlockType(const int y, const int columnHeight) {
+    constexpr int waterLevel = 63;
+
     if (y < 1) return BlockType::AIR;
     if (y == 1) return BlockType::BEDROCK;
-    if (y == columnHeight) return BlockType::GRASS;
-    if (y < columnHeight - 4) return BlockType::STONE;
-    if (y < columnHeight) return BlockType::DIRT;
+
+    if (y <= columnHeight) {
+        if (y == columnHeight && columnHeight >= waterLevel) return BlockType::GRASS;
+        if (y == columnHeight && columnHeight < waterLevel) return BlockType::DIRT;
+        if (y < columnHeight - 4) return BlockType::STONE;
+        if (y < columnHeight) return BlockType::DIRT;
+    }
+
+    if (y > columnHeight && y <= waterLevel) {
+        return BlockType::WATER;
+    }
+
     return BlockType::AIR;
 }
 
@@ -90,11 +101,10 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
             constexpr uint8_t normal = 4;
-            const float topY = type == BlockType::WATER ? block_endY - 0.2f : block_endY;
-            addVertex(block_startX, topY, block_endZ, u_end, v_end, normal);
-            addVertex(block_endX, topY, block_endZ, u_start , v_end, normal);
-            addVertex(block_endX, topY, block_startZ, u_start , v_start, normal);
-            addVertex(block_startX, topY, block_startZ, u_end, v_start, normal);
+            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, normal);
+            addVertex(block_endX, block_endY, block_endZ, u_end , v_end, normal);
+            addVertex(block_endX, block_endY, block_startZ, u_end , v_start, normal);
+            addVertex(block_startX, block_endY, block_startZ, u_start, v_start, normal);
             break;
         }
         case Face::BOTTOM: {

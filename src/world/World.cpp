@@ -2,12 +2,16 @@
 
 #include <iostream>
 #include <ranges>
+#include <shared_mutex>
 #include <thread>
 #include <unordered_set>
 
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
 #include "../utils/ThreadSafeQueue.h"
+#include "vegetations/flowers/Allium.h"
+#include "vegetations/flowers/Cornflower.h"
+#include "vegetations/flowers/Poppy.h"
 #include "vegetations/grass/ShortGrass.h"
 #include "vegetations/trees/Tree.h"
 
@@ -31,14 +35,16 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_caveGenerator.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
     m_caveGenerator.SetDomainWarpAmp(20.f);
 
-    m_grassData.renderer.init();
-    m_flowerData.renderer.init();
+    m_grassData.renderer.init(ShortGrass(0, 0, 0));
+    m_poppyData.renderer.init(Poppy(0, 0, 0));
+    m_cornflowerData.renderer.init(Cornflower(0, 0, 0));
+    m_alliumData.renderer.init(Allium(0, 0, 0));
 
     m_chunksData.loadedMeshes.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 
     m_vegetationsData.loadedMeshes.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 
-    m_heightMap.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
+    m_heightMapByChunk.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 }
 
 void World::updateChunks(const Camera &camera) {
@@ -53,17 +59,15 @@ void World::updateChunks(const Camera &camera) {
     generateDataForEachChunks(cameraWorldX, cameraWorldY, cameraWorldZ);
 }
 
-void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount) {
+void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &drawCalls) {
     // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_chunksData.loadedMeshes
     processChunks();
 
     // Setup buffers for chunks that are ready to be rendered
     m_displayedNormalMeshes.clear();
+    m_displayedTransparentMeshes.clear();
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
-        // New meshes
         if (chunk->m_status1() == Status::MESH_GENERATED) chunk->setupBuffers();
-
-        // Existing meshes
         if (chunk->m_status1() == Status::BUFFERS_SETUP) m_displayedNormalMeshes.push_back(chunk);
     }
 
@@ -78,29 +82,40 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
                             static_cast<float>(weak_mesh->m_z1()));
 
         weak_mesh->draw();
+        if (weak_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(weak_mesh);
+        drawCalls++;
         visibleChunksCount++;
     }
 }
 
-void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount) {
+void World::drawWater(Shader &waterShader, unsigned int &drawCalls) const {
+    if (!m_displayedTransparentMeshes.empty()) {
+        Renderer::disableDepthMask();
+        for (const auto& mesh : m_displayedTransparentMeshes) {
+            const auto weak_mesh = mesh.lock();
+            if (!weak_mesh) continue;
+            waterShader.setUniform3f("u_Offset",
+                                static_cast<float>(weak_mesh->m_x1()),
+                                static_cast<float>(weak_mesh->m_y1()),
+                                static_cast<float>(weak_mesh->m_z1()));
+
+            weak_mesh->drawTransparent();
+            drawCalls++;
+        }
+        Renderer::enableDepthMask();
+    }
+}
+
+void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleVegetationsCount, unsigned int &drawCalls) {
     // Remove vegetations that are no longer needed, generate voxel and mesh, store them
     processVegetations();
 
     // Setup buffers for chunks that are ready to be rendered
     m_displayedNormalMeshes.clear();
-    m_displayedBillboardsMeshes.clear();
+    m_displayedTransparentMeshes.clear();
     for (const auto& vegetation : m_vegetationsData.loadedMeshes | std::views::values) {
-        // New meshes
         if (vegetation->m_status1() == Status::MESH_GENERATED) vegetation->setupBuffers();
-
-        // Existing meshes
-        if (vegetation->m_status1() == Status::BUFFERS_SETUP) {
-            if (vegetation->isBillboard()) {
-                m_displayedBillboardsMeshes.push_back(vegetation);
-            } else {
-                m_displayedNormalMeshes.push_back(vegetation);
-            }
-        }
+        if (vegetation->m_status1() == Status::BUFFERS_SETUP) m_displayedNormalMeshes.push_back(vegetation);
     }
 
     for (const auto& mesh : m_displayedNormalMeshes) {
@@ -114,34 +129,30 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
                             static_cast<float>(weak_mesh->m_z1()));
 
         weak_mesh->draw();
+        if (weak_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(weak_mesh);
+        drawCalls++;
         visibleVegetationsCount++;
     }
 
-    // Prevent unnecessary OpenGL calls
-    if (!m_displayedBillboardsMeshes.empty()) {
-        // Batch all billboards together to reduce OpenGL calls
-        Renderer::disableBackFaceCulling();
-        for (const auto& mesh : m_displayedBillboardsMeshes) {
-            auto weak_mesh = mesh.lock();
-            if (!weak_mesh) continue; // Skip if the mesh has been deleted
-            if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
-            if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
-            shader.setUniform3f("u_Offset",
-                                static_cast<float>(weak_mesh->m_x1()),
-                                static_cast<float>(weak_mesh->m_y1()),
-                                static_cast<float>(weak_mesh->m_z1()));
+    for (const auto& mesh : m_displayedTransparentMeshes) {
+        const auto weak_mesh = mesh.lock();
+        if (!weak_mesh) continue;
+        shader.setUniform3f("u_Offset",
+                        static_cast<float>(weak_mesh->m_x1()),
+                        static_cast<float>(weak_mesh->m_y1()),
+                        static_cast<float>(weak_mesh->m_z1()));
 
-            weak_mesh->draw();
-            visibleVegetationsCount++;
-        }
-        Renderer::enableBackFaceCulling();
+        weak_mesh->drawTransparent();
+        drawCalls++;
     }
 }
 
-void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount) {
+void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount, unsigned int &drawCalls) {
     if (camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk()) {
         m_grassData.renderer.resetInstances();
-        m_flowerData.renderer.resetInstances();
+        m_poppyData.renderer.resetInstances();
+        m_cornflowerData.renderer.resetInstances();
+        m_alliumData.renderer.resetInstances();
 
         for (const auto &pos : m_grassData.instances) {
             if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
@@ -153,15 +164,35 @@ void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned
 
         m_grassData.renderer.updateInstanceBuffer();
 
-        for (const auto &pos : m_flowerData.instances) {
+        for (const auto &pos : m_poppyData.instances) {
             if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
                 frustum.isPointInFrustum(pos)) {
-                m_flowerData.renderer.addInstance(pos);
+                m_poppyData.renderer.addInstance(pos);
                 visibleVegetationsCount++;
             }
         }
 
-        m_flowerData.renderer.updateInstanceBuffer();
+        m_poppyData.renderer.updateInstanceBuffer();
+
+        for (const auto &pos : m_cornflowerData.instances) {
+            if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
+                frustum.isPointInFrustum(pos)) {
+                m_cornflowerData.renderer.addInstance(pos);
+                visibleVegetationsCount++;
+                }
+        }
+
+        m_cornflowerData.renderer.updateInstanceBuffer();
+
+        for (const auto &pos : m_alliumData.instances) {
+            if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
+                frustum.isPointInFrustum(pos)) {
+                m_alliumData.renderer.addInstance(pos);
+                visibleVegetationsCount++;
+                }
+        }
+
+        m_alliumData.renderer.updateInstanceBuffer();
 
     }
 
@@ -169,60 +200,103 @@ void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned
         Renderer::disableBackFaceCulling();
         m_grassData.renderer.draw();
         Renderer::enableBackFaceCulling();
+        drawCalls++;
     }
 
-    if (m_flowerData.renderer.m_instance_count() > 0) {
+    if (m_poppyData.renderer.m_instance_count() > 0) {
         Renderer::disableBackFaceCulling();
-        m_flowerData.renderer.draw();
+        m_poppyData.renderer.draw();
         Renderer::enableBackFaceCulling();
+        drawCalls++;
+    }
+
+    if (m_cornflowerData.renderer.m_instance_count() > 0) {
+        Renderer::disableBackFaceCulling();
+        m_cornflowerData.renderer.draw();
+        Renderer::enableBackFaceCulling();
+        drawCalls++;
+    }
+
+    if (m_alliumData.renderer.m_instance_count() > 0) {
+        Renderer::disableBackFaceCulling();
+        m_alliumData.renderer.draw();
+        Renderer::enableBackFaceCulling();
+        drawCalls++;
     }
 }
 
 int World::getHeight(const int worldX, const int worldZ) {
-    constexpr int maxHeight = 256;
-    constexpr int baseHeight = 60;
-    const std::pair coords(worldX, worldZ);
+    // static cast have to be used on both coords and size or it will crash
+    const int chunkXInHeightMap = static_cast<int>(std::floor(static_cast<double>(worldX) / Chunk::SIZE));
+    const int chunkZInHeightMap = static_cast<int>(std::floor(static_cast<double>(worldZ) / Chunk::SIZE));
+    const std::pair coordsChunk(chunkXInHeightMap, chunkZInHeightMap);
 
-    // Check if height is already cached
-    if (const auto it = m_heightMap.find(coords); it != m_heightMap.end()) return it->second;
+    const int localXInHeightMap = worldX - chunkXInHeightMap * static_cast<int>(Chunk::SIZE);
+    const int localZInHeightMap = worldZ - chunkZInHeightMap * static_cast<int>(Chunk::SIZE);
 
-    // 2D noise generation for terrain height
-    const float normalizedNoise = (m_terrainHeightGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
-    const float terrainShape = std::pow(normalizedNoise, 4.6f); // Create more plains and sharper mountains
-    float columnHeight = std::floor(baseHeight + terrainShape * maxHeight); // Scale to world height
+    // Check cache
+    if (const auto it = m_heightMapByChunk.find(coordsChunk); it != m_heightMapByChunk.end()) {
+        return it->second.getHeight(localXInHeightMap, localZInHeightMap);
+    }
 
-    // 3D noise generation for cave system
-    const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), columnHeight, static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
-    constexpr float baseCaveThreshold = 0.82f;
-    const float surfaceModifier = 1.0f - std::clamp((columnHeight - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
-    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
+    // Generate heigtmap for the chunk if it doesn't exist
+    ChunkHeightmap newHeightMap{};
+    for (int i = 0; i < Chunk::SIZE * Chunk::SIZE; ++i) {
+        constexpr int baseHeight = 60;
+        constexpr int maxHeight = 256;
+        const int localXInChunk = i % static_cast<int>(Chunk::SIZE);
+        const int localZInChunk = i / static_cast<int>(Chunk::SIZE);
+        const int worldXInChunk = chunkXInHeightMap * static_cast<int>(Chunk::SIZE) + localXInChunk;
+        const int worldZInChunk = chunkZInHeightMap * static_cast<int>(Chunk::SIZE) + localZInChunk;
 
-    // Adjust column height based on cave system
-    if (std::abs(normalized3DNoise - caveThreshold) < 0.13) {
-        columnHeight -= (normalized3DNoise - (caveThreshold - 0.13f)) * 10.0f;
+        // 2D noise generation for terrain height
+        const float normalizedNoise = (m_terrainHeightGenerator.GetNoise(
+            static_cast<float>(worldXInChunk),
+            static_cast<float>(worldZInChunk)
+            ) + 1.0f) / 2.0f;
+
+        const float terrainShape = std::pow(normalizedNoise, 4.6f);
+        float columnHeight = std::floor(baseHeight + terrainShape * maxHeight);
+
+        // 3D noise generation for cave system
+        const float normalized3DNoise = (m_caveGenerator.GetNoise(
+            static_cast<float>(worldXInChunk),
+            columnHeight,
+            static_cast<float>(worldZInChunk)
+            ) + 1.0f) / 2.0f;
+        constexpr float baseCaveThreshold = 0.87f;
+        const float surfaceModifier = 1.0f - std::clamp((columnHeight - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
+        const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f;
+
+        // Adjust column height based on cave noise
+        if (std::abs(normalized3DNoise - caveThreshold) < 0.3f) {
+            columnHeight -= (normalized3DNoise - (caveThreshold - 0.3f)) * 10.0f;
+        }
+
+        newHeightMap.heights[localXInChunk + localZInChunk * Chunk::SIZE] = static_cast<int>(columnHeight);
     }
 
     {
         std::lock_guard lock(m_heightMapMutex);
-        m_heightMap.try_emplace(coords, columnHeight);
+        m_heightMapByChunk[coordsChunk] = newHeightMap;
     }
 
-    return static_cast<int>(columnHeight);
+    return m_heightMapByChunk[coordsChunk].getHeight(localXInHeightMap, localZInHeightMap);
 }
 
 bool World::isCave(const int worldX, const int worldY, const int worldZ) const {
     constexpr int maxHeight = 256;
     constexpr int baseHeight = 60;
 
-    if (worldY <= 1 || worldY > maxHeight) return false;
+    if (worldY <= 1 || worldY > maxHeight || worldY == 63) return false;
 
     // 3D noise generation for cave system
     const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
-    constexpr float baseCaveThreshold = 0.82f;
+    constexpr float baseCaveThreshold = 0.87f;
     const float surfaceModifier = 1.0f - std::clamp(static_cast<float>(worldY - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
-    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.15f; // Increase threshold near surface
+    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f; // Increase threshold near surface
 
-    return std::abs(normalized3DNoise - caveThreshold) < 0.13f;
+    return std::abs(normalized3DNoise - caveThreshold) < 0.3f;
 }
 
 const FastNoiseLite & World::m_noise_generator() const {
@@ -237,7 +311,7 @@ const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & Wo
     return m_chunksData.loadedMeshes;
 }
 
-const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Vegetation>> & World::m_loaded_vegetations() const {
+const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Mesh>> & World::m_loaded_vegetations() const {
     return m_vegetationsData.loadedMeshes;
 }
 
@@ -290,17 +364,37 @@ void World::processVegetations() {
         m_threadPool.enqueue([this] {
             std::tuple<int, int, int> key = m_vegetationsData.meshesToGenerate.pop();
             float vegetationNoise = (this->m_surfaceVegetationGenerator.GetNoise(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<2>(key))) + 1.0f) * 0.5f;
-            std::shared_ptr<Vegetation> p_vegetation;
+            std::shared_ptr<Mesh> p_vegetation;
             if (vegetationNoise > 0.87f) {
                 p_vegetation = std::make_shared<Tree>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
             } else if (vegetationNoise > 0.7f) {
-                const glm::vec3 position(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key)));
+                const glm::vec3 position(static_cast<float>(std::get<0>(key) - 1), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key) - 1));
                 std::lock_guard lock(m_grassData.mutex);
                 if (!m_grassData.instances.contains(position)) m_grassData.instances.emplace(position);
             } else if (vegetationNoise > 0.69f) {
-                const glm::vec3 position(static_cast<float>(std::get<0>(key)), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key)));
-                std::lock_guard lock(m_flowerData.mutex);
-                if (!m_flowerData.instances.contains(position)) m_flowerData.instances.emplace(position);
+                const glm::vec3 position(static_cast<float>(std::get<0>(key) - 1), static_cast<float>(std::get<1>(key)), static_cast<float>(std::get<2>(key) - 1));
+                if (!m_poppyData.instances.contains(position) &&
+                    !m_cornflowerData.instances.contains(position) &&
+                    !m_alliumData.instances.contains(position)) {
+                    switch (rand() % 3) {
+                        case 0: {
+                            std::lock_guard lock(m_poppyData.mutex);
+                            m_poppyData.instances.emplace(position);
+                        }
+                            break;
+                        case 1: {
+                            std::lock_guard lock(m_cornflowerData.mutex);
+                            m_cornflowerData.instances.emplace(position);
+                        }
+                            break;
+                        case 2: {
+                            std::lock_guard lock(m_alliumData.mutex);
+                            m_alliumData.instances.emplace(position);
+                        }
+                            break;
+                        default: {}
+                    }
+                }
             }
             if (p_vegetation) {
                 p_vegetation->generateVoxel();
@@ -312,7 +406,7 @@ void World::processVegetations() {
 
     for (int i = 0; i < maxVegetationsPerFrame; ++i) {
         if (m_vegetationsData.meshesToRender.empty()) break;
-        std::shared_ptr<Vegetation> p_vegetation = m_vegetationsData.meshesToRender.pop();
+        std::shared_ptr<Mesh> p_vegetation = m_vegetationsData.meshesToRender.pop();
         std::tuple<int, int, int> key = std::make_tuple(p_vegetation->m_x1(), p_vegetation->m_y1(), p_vegetation->m_z1());
         m_vegetationsData.loadedMeshes.try_emplace(key, p_vegetation);
     }
@@ -366,7 +460,8 @@ void World::generateVegetationsForEachChunks(const std::shared_ptr<Chunk> &chunk
         for (int localZ = 0; localZ < Chunk::SIZE; ++localZ) {
             const int worldZ = chunk->m_z1() + localZ;
             const int columnHeight = getHeight(worldX, worldZ);
-            if (columnHeight < chunk->m_y1() || columnHeight >= chunk->m_y1() + Chunk::SIZE || isCave(worldX, columnHeight, worldZ)) continue;
+            constexpr int waterLevel = 63;
+            if ((columnHeight < waterLevel && chunk->m_y1() < columnHeight) || columnHeight < chunk->m_y1() || columnHeight >= chunk->m_y1() + Chunk::SIZE || isCave(worldX, columnHeight, worldZ)) continue;
             float vegetationNoise = (m_surfaceVegetationGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) * 0.5f;
             if (vegetationNoise <= 0.69f) continue;
             std::tuple<int, int, int> key = std::make_tuple(worldX, columnHeight, worldZ);
@@ -378,51 +473,60 @@ void World::generateVegetationsForEachChunks(const std::shared_ptr<Chunk> &chunk
 void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
     const float renderDistanceSq = Renderer::m_renderDistance * Renderer::m_renderDistance;
 
-    std::unordered_set<std::pair<int, int>> toRemoveXZ;
-
     std::erase_if(m_chunksData.loadedMeshes, [&](const auto &tuple) {
         auto [x, y, z] = tuple.first;
-        const glm::vec3 pos(x, y, z);
-        float distSq = glm::distance(pos, cameraChunkPos);
-        distSq *= distSq;
-        if (distSq > renderDistanceSq) {
-            toRemoveXZ.emplace(x, z);
-            return true;
-        }
-        return false;
+        const float distSq = (x - cameraChunkPos.x) * (x - cameraChunkPos.x)
+                             + (y - cameraChunkPos.y) * (y - cameraChunkPos.y)
+                             + (z - cameraChunkPos.z) * (z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
     });
 
     std::erase_if(m_vegetationsData.loadedMeshes, [&](const auto &tuple) {
         auto [x, y, z] = tuple.first;
-        const glm::vec3 pos(x, y, z);
-        float distSq = glm::distance(pos, cameraChunkPos);
-        distSq *= distSq;
-        if (distSq > renderDistanceSq) {
-            return true;
-        }
-        return false;
+        const float distSq = (x - cameraChunkPos.x) * (x - cameraChunkPos.x)
+                             + (y - cameraChunkPos.y) * (y - cameraChunkPos.y)
+                             + (z - cameraChunkPos.z) * (z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
     });
 
     std::erase_if(m_grassData.instances, [&](const auto &pos) {
-        float distSq = glm::distance(pos, cameraChunkPos);
-        distSq *= distSq;
-        if (distSq > renderDistanceSq) {
-            return true;
-        }
-        return false;
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
     });
 
-    std::erase_if(m_flowerData.instances, [&](const auto &pos) {
-        float distSq = glm::distance(pos, cameraChunkPos);
-        distSq *= distSq;
-        if (distSq > renderDistanceSq) {
-            return true;
-        }
-        return false;
+    std::erase_if(m_poppyData.instances, [&](const auto &pos) {
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
     });
 
-    std::lock_guard lock(m_heightMapMutex);
-    for (const auto &pair : toRemoveXZ) {
-        m_heightMap.erase(pair);
+    std::erase_if(m_cornflowerData.instances, [&](const auto &pos) {
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
+    });
+
+    std::erase_if(m_alliumData.instances, [&](const auto &pos) {
+        const float distSq = (pos.x - cameraChunkPos.x) * (pos.x - cameraChunkPos.x)
+                     + (pos.y - cameraChunkPos.y) * (pos.y - cameraChunkPos.y)
+                     + (pos.z - cameraChunkPos.z) * (pos.z - cameraChunkPos.z);
+        return distSq > renderDistanceSq;
+    });
+
+    const int cameraHeightmapX = static_cast<int>(std::floor(cameraChunkPos.x / Chunk::SIZE));
+    const int cameraHeightmapZ = static_cast<int>(std::floor(cameraChunkPos.z / Chunk::SIZE));
+    const float heightmapRenderDistanceSq = Renderer::m_renderDistance / Chunk::SIZE * (Renderer::m_renderDistance / Chunk::SIZE);
+    {
+        std::lock_guard lock(m_heightMapMutex);
+        std::erase_if(m_heightMapByChunk, [&](const auto &pos) {
+            const auto [x, z] = pos.first;
+            const float distSq = (x - cameraHeightmapX) * (x - cameraHeightmapX)
+                                + (z - cameraHeightmapZ) * (z - cameraHeightmapZ);
+            return distSq > heightmapRenderDistanceSq;
+        });
     }
 }

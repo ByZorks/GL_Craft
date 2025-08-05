@@ -13,8 +13,7 @@ public:
     void generateVoxel(World &world);
     void generateMesh() override;
 
-    static int index(int x, int y, int z);
-
+    [[nodiscard]] int index(int x, int y, int z) const override;
     [[nodiscard]] bool hasBlocks();
     [[nodiscard]] bool hasVisibleFaces() const;
 

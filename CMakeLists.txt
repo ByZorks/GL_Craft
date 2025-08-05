@@ -69,18 +69,18 @@ add_executable(GL_Craft
         src/world/Mesh.cpp
         src/world/vegetations/grass/ShortGrass.cpp
         src/world/vegetations/grass/ShortGrass.h
-        src/world/vegetations/grass/GrassInstanceRenderer.cpp
-        src/world/vegetations/grass/GrassInstanceRenderer.h
         src/world/vegetations/flowers/Flower.h
         src/world/vegetations/flowers/Flower.cpp
         src/world/vegetations/flowers/Poppy.cpp
         src/world/vegetations/flowers/Poppy.h
-        src/world/vegetations/flowers/FlowerInstanceRenderer.cpp
-        src/world/vegetations/flowers/FlowerInstanceRenderer.h
         src/render/InstanceRenderer.cpp
         src/render/InstanceRenderer.h
         src/render/InstanceRendererData.h
         src/world/MeshData.h
+        src/world/vegetations/flowers/Cornflower.cpp
+        src/world/vegetations/flowers/Cornflower.h
+        src/world/vegetations/flowers/Allium.cpp
+        src/world/vegetations/flowers/Allium.h
 )
 
 target_compile_definitions(GL_Craft PRIVATE GLEW_STATIC)

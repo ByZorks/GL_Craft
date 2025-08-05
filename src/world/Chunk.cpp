@@ -1,15 +1,14 @@
 #include "Chunk.h"
 
-#include <cmath>
-
 #include "World.h"
-#include "vegetations/trees/Tree.h"
 
-Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z) {
+Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     constexpr size_t max_faces = 6 * 16 * 16 * 16;
     constexpr size_t avg_faces = max_faces / 4; // Assuming each block has a quarter of the maximum faces
     m_vertices.reserve(avg_faces * 4); // avg_faces * 4 vertices per face
+    m_vertices_transparent.reserve(avg_faces * 4); // avg_faces * 4 vertices per face
     m_blockFaceData.reserve(avg_faces);
+    m_blockFaceData_transparent.reserve(avg_faces);
     m_blockType.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
 }
 
@@ -34,21 +33,16 @@ void Chunk::generateVoxel(World &world) {
             if (columnHeight < m_y - static_cast<int>(SIZE)) continue; // Early exit for aerial chunks, cast is mandatory
 
             // Pre-compute the max height for the current column
-            const int endY = std::min(static_cast<int>(SIZE) + 2, std::max(0, columnHeight - m_y + 2));
+            constexpr int waterLevel = 63;
+            const int maxHeightInChunk = std::max(columnHeight, waterLevel);
+            const int endY = std::min(static_cast<int>(SIZE) + 2, std::max(0, maxHeightInChunk - m_y + 2));
 
             for (int localY = 0; localY < endY; localY++) {
                 const int worldY = m_y + localY;
 
                 if (world.isCave(worldX, worldY, worldZ)) continue;
-
-                if (worldY <= columnHeight) {
-                    const BlockType blockType = Block::getBlockType(worldY, columnHeight);
-                    m_blockType[index(localX, localY, localZ)] = blockType;
-                } else if (constexpr int waterLevel = 63; worldY == waterLevel && worldY > columnHeight) {
-                    m_blockType[index(localX, localY, localZ)] = BlockType::WATER;
-                } else {
-                    break;
-                }
+                const BlockType blockType = Block::getBlockType(worldY, columnHeight);
+                m_blockType[index(localX, localY, localZ)] = blockType;
             }
         }
     }
@@ -69,13 +63,15 @@ void Chunk::generateMesh() {
 
     if (!hasVisibleFaces()) {
         m_blockFaceData.shrink_to_fit();
+        m_blockFaceData_transparent.shrink_to_fit();
         m_vertices.shrink_to_fit();
+        m_vertices_transparent.shrink_to_fit();
     }
 
     m_status = Status::MESH_GENERATED;
 }
 
-int Chunk::index(const int x, const int y, const int z) {
+int Chunk::index(const int x, const int y, const int z) const {
     constexpr int stride = static_cast<int>(SIZE) + 2;
     return x * stride * stride + y * stride + z;
 }
@@ -89,7 +85,8 @@ bool Chunk::hasBlocks() {
 }
 
 bool Chunk::hasVisibleFaces() const {
-    return !m_vertices.empty() && !m_blockFaceData.empty();
+    return (!m_vertices.empty() && !m_blockFaceData.empty()) ||
+           (!m_vertices_transparent.empty() && !m_blockFaceData_transparent.empty());
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {
@@ -102,30 +99,61 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     const auto localXf = static_cast<float>(localX);
     const auto localYf = static_cast<float>(localY);
     const auto localZf = static_cast<float>(localZ);
+    const bool isTransparent = Block::isTransparent(blockType);
 
     if (shouldDrawFace(localX, localY + 1, localZ, blockType)) {
-        Block::addFaceVertices(Face::TOP, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceData.emplace_back(Face::TOP, 4);
+        if (isTransparent) {
+            Block::addFaceVertices(Face::TOP, blockType, m_vertices_transparent, localXf, localYf, localZf);
+            m_blockFaceData_transparent.emplace_back(Face::TOP, 4);
+        } else {
+            Block::addFaceVertices(Face::TOP, blockType, m_vertices, localXf, localYf, localZf);
+            m_blockFaceData.emplace_back(Face::TOP, 4);
+        }
     }
     if (shouldDrawFace(localX, localY - 1, localZ, blockType)) {
-        Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceData.emplace_back(Face::BOTTOM, 4);
+        if (isTransparent) {
+            Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices_transparent, localXf, localYf, localZf);
+            m_blockFaceData_transparent.emplace_back(Face::BOTTOM, 4);
+        } else {
+            Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, localXf, localYf, localZf);
+            m_blockFaceData.emplace_back(Face::BOTTOM, 4);
+        }
     }
     if (shouldDrawFace(localX, localY, localZ + 1, blockType)) {
-        Block::addFaceVertices(Face::FRONT, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceData.emplace_back(Face::FRONT, 4);
+        if (isTransparent) {
+            Block::addFaceVertices(Face::FRONT, blockType, m_vertices_transparent, localXf, localYf, localZf);
+            m_blockFaceData_transparent.emplace_back(Face::FRONT, 4);
+        } else {
+            Block::addFaceVertices(Face::FRONT, blockType, m_vertices, localXf, localYf, localZf);
+            m_blockFaceData.emplace_back(Face::FRONT, 4);
+        }
     }
     if (shouldDrawFace(localX, localY, localZ - 1, blockType)) {
-        Block::addFaceVertices(Face::BACK, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceData.emplace_back(Face::BACK, 4);
+        if (isTransparent) {
+            Block::addFaceVertices(Face::BACK, blockType, m_vertices_transparent, localXf, localYf, localZf);
+            m_blockFaceData_transparent.emplace_back(Face::BACK, 4);
+        } else {
+            Block::addFaceVertices(Face::BACK, blockType, m_vertices, localXf, localYf, localZf);
+            m_blockFaceData.emplace_back(Face::BACK, 4);
+        }
     }
     if (shouldDrawFace(localX + 1, localY, localZ, blockType)) {
-        Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceData.emplace_back(Face::RIGHT, 4);
+        if (isTransparent) {
+            Block::addFaceVertices(Face::RIGHT, blockType, m_vertices_transparent, localXf, localYf, localZf);
+            m_blockFaceData_transparent.emplace_back(Face::RIGHT, 4);
+        } else {
+            Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, localXf, localYf, localZf);
+            m_blockFaceData.emplace_back(Face::RIGHT, 4);
+        }
     }
     if (shouldDrawFace(localX - 1, localY, localZ, blockType)) {
-        Block::addFaceVertices(Face::LEFT, blockType, m_vertices, localXf, localYf, localZf);
-        m_blockFaceData.emplace_back(Face::LEFT, 4);
+        if (isTransparent) {
+            Block::addFaceVertices(Face::LEFT, blockType, m_vertices_transparent, localXf, localYf, localZf);
+            m_blockFaceData_transparent.emplace_back(Face::LEFT, 4);
+        } else {
+            Block::addFaceVertices(Face::LEFT, blockType, m_vertices, localXf, localYf, localZf);
+            m_blockFaceData.emplace_back(Face::LEFT, 4);
+        }
     }
 }
 
