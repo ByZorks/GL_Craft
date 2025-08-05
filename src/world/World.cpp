@@ -72,19 +72,19 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     }
 
     for (const auto& mesh : m_displayedNormalMeshes) {
-        auto weak_mesh = mesh.lock();
-        if (!weak_mesh) continue;
-        if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
-        if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
-        shader.setUniform3f("u_Offset",
-                            static_cast<float>(weak_mesh->m_x1()),
-                            static_cast<float>(weak_mesh->m_y1()),
-                            static_cast<float>(weak_mesh->m_z1()));
+        if (auto strong_mesh = mesh.lock()) {
+            if (camera.distanceToCamera(*strong_mesh) > Renderer::m_renderDistance) continue;
+            if (!frustum.isAABBInFrustum(strong_mesh->m_box1())) continue;
+            shader.setUniform3f("u_Offset",
+                                static_cast<float>(strong_mesh->m_x1()),
+                                static_cast<float>(strong_mesh->m_y1()),
+                                static_cast<float>(strong_mesh->m_z1()));
 
-        weak_mesh->draw();
-        if (weak_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(weak_mesh);
-        drawCalls++;
-        visibleChunksCount++;
+            strong_mesh->draw();
+            if (strong_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(strong_mesh);
+            drawCalls++;
+            visibleChunksCount++;
+        }
     }
 }
 
@@ -92,15 +92,15 @@ void World::drawWater(Shader &waterShader, unsigned int &drawCalls) const {
     if (!m_displayedTransparentMeshes.empty()) {
         Renderer::disableDepthMask();
         for (const auto& mesh : m_displayedTransparentMeshes) {
-            const auto weak_mesh = mesh.lock();
-            if (!weak_mesh) continue;
-            waterShader.setUniform3f("u_Offset",
-                                static_cast<float>(weak_mesh->m_x1()),
-                                static_cast<float>(weak_mesh->m_y1()),
-                                static_cast<float>(weak_mesh->m_z1()));
+            if (const auto strong_mesh = mesh.lock()) {
+                waterShader.setUniform3f("u_Offset",
+                                    static_cast<float>(strong_mesh->m_x1()),
+                                    static_cast<float>(strong_mesh->m_y1()),
+                                    static_cast<float>(strong_mesh->m_z1()));
 
-            weak_mesh->drawTransparent();
-            drawCalls++;
+                strong_mesh->drawTransparent();
+                drawCalls++;
+            }
         }
         Renderer::enableDepthMask();
     }
@@ -119,31 +119,31 @@ void World::drawVegetations(const Camera &camera, const Frustum &frustum, Shader
     }
 
     for (const auto& mesh : m_displayedNormalMeshes) {
-        auto weak_mesh = mesh.lock();
-        if (!weak_mesh) continue;
-        if (camera.distanceToCamera(*weak_mesh) > Renderer::m_renderDistance) continue;
-        if (!frustum.isAABBInFrustum(weak_mesh->m_box1())) continue;
-        shader.setUniform3f("u_Offset",
-                            static_cast<float>(weak_mesh->m_x1()),
-                            static_cast<float>(weak_mesh->m_y1()),
-                            static_cast<float>(weak_mesh->m_z1()));
+        if (auto strong_mesh = mesh.lock()) {
+            if (camera.distanceToCamera(*strong_mesh) > Renderer::m_renderDistance) continue;
+            if (!frustum.isAABBInFrustum(strong_mesh->m_box1())) continue;
+            shader.setUniform3f("u_Offset",
+                                static_cast<float>(strong_mesh->m_x1()),
+                                static_cast<float>(strong_mesh->m_y1()),
+                                static_cast<float>(strong_mesh->m_z1()));
 
-        weak_mesh->draw();
-        if (weak_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(weak_mesh);
-        drawCalls++;
-        visibleVegetationsCount++;
+            strong_mesh->draw();
+            if (strong_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(strong_mesh);
+            drawCalls++;
+            visibleVegetationsCount++;
+        }
     }
 
     for (const auto& mesh : m_displayedTransparentMeshes) {
-        const auto weak_mesh = mesh.lock();
-        if (!weak_mesh) continue;
-        shader.setUniform3f("u_Offset",
-                        static_cast<float>(weak_mesh->m_x1()),
-                        static_cast<float>(weak_mesh->m_y1()),
-                        static_cast<float>(weak_mesh->m_z1()));
+        if (const auto strong_mesh = mesh.lock()) {
+            shader.setUniform3f("u_Offset",
+                            static_cast<float>(strong_mesh->m_x1()),
+                            static_cast<float>(strong_mesh->m_y1()),
+                            static_cast<float>(strong_mesh->m_z1()));
 
-        weak_mesh->drawTransparent();
-        drawCalls++;
+            strong_mesh->drawTransparent();
+            drawCalls++;
+        }
     }
 }
 
