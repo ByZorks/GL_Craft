@@ -73,7 +73,7 @@ inline void VertexBufferLayout::Push<unsigned char>(const unsigned int count, co
 
 template<>
 inline void VertexBufferLayout::PushInt<unsigned char>(const unsigned int count, const bool normalized) {
-    m_Elements.push_back({GL_UNSIGNED_BYTE, count, static_cast<unsigned char>(normalized), true}); // ⚠️ isInteger = true
+    m_Elements.push_back({GL_UNSIGNED_BYTE, count, static_cast<unsigned char>(normalized), true});
     m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE) * count;
 }
 
