@@ -93,6 +93,7 @@ void World::drawWater(Shader &waterShader, unsigned int &drawCalls) const {
         Renderer::disableDepthMask();
         for (const auto& mesh : m_displayedTransparentMeshes) {
             if (const auto strong_mesh = mesh.lock()) {
+                waterShader.setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
                 waterShader.setUniform3f("u_Offset",
                                     static_cast<float>(strong_mesh->m_x1()),
                                     static_cast<float>(strong_mesh->m_y1()),

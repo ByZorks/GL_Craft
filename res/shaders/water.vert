@@ -7,15 +7,15 @@ layout(location = 2) in uint face; // Face index (0-5 for 6 faces)
 out vec2 v_texCoord;
 flat out uint v_face;
 
+uniform float u_Time;
 uniform vec3 u_Offset;
 uniform mat4 u_MVP;
 
 void main() {
-    vec3 adjustedPosition = position;
-    if (face == 0 || face == 1 || face == 2 || face == 3 || face == 4) {
-        adjustedPosition.y -= .2; // Side and top faces need to be slightly lower
-    }
-    const vec3 worldPos = adjustedPosition + u_Offset;
+    vec3 worldPos = position + u_Offset;
+    worldPos.y -= .2;
+    worldPos.y += (sin(u_Time * 2.5 + worldPos.x * 2.0 + worldPos.z * 1.5)
+                + cos(u_Time * 1.5 + worldPos.z * 2.5 + worldPos.x * 1.2)) * 0.05;
     gl_Position = u_MVP * vec4(worldPos, 1.0);
 
     const float tileSize = 255.f / 4.f; // Map 0-255 to 0-1 range for texture atlas, 4 tiles per row/column
