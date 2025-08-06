@@ -100,7 +100,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr uint8_t normal = 4;
+            const uint8_t normal = face == Face::TOP ? 4 : 6;
             addVertex(block_startX, block_endY, block_endZ, u_start, v_end, normal);
             addVertex(block_endX, block_endY, block_endZ, u_end , v_end, normal);
             addVertex(block_endX, block_endY, block_startZ, u_end , v_start, normal);

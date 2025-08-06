@@ -3,9 +3,23 @@
 layout(location = 0) out vec4 color;
 
 in vec2 v_texCoord;
+flat in uint v_face;
 
 uniform sampler2D u_Texture;
 
 void main() {
-    color = texture(u_Texture, v_texCoord);
+    vec4 texColor = texture(u_Texture, v_texCoord);
+    if (texColor.a < 0.1) discard;
+
+    float lighting = 1.0;
+    if (v_face == 4u) {
+        lighting = 1.0; // Top
+    } else if (v_face == 4u || v_face == 6u) {
+        lighting = 0.4; // Bottom
+    } else {
+        lighting = 0.7; // Side
+    }
+    vec3 shaded = texColor.rgb * lighting;
+
+    color = vec4(shaded, texColor.a);
 }
