@@ -1,7 +1,6 @@
 #include "Camera.h"
 
 #include <cmath>
-#include <iostream>
 
 #include "../math/Plane.h"
 #include "ext/matrix_clip_space.hpp"
@@ -209,4 +208,8 @@ void Camera::set_m_input_enabled(const bool m_input_enabled) {
 
 glm::vec3 Camera::m_camera_pos() const {
     return m_cameraPos;
+}
+
+void Camera::set_m_aspect_ratio(float m_aspect_ratio) {
+    m_aspectRatio = m_aspect_ratio;
 }

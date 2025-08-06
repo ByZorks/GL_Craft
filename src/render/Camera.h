@@ -1,9 +1,9 @@
 #ifndef CAMERA_H
 #define CAMERA_H
-#include "../world/Chunk.h"
-#include "../math/Frustum.h"
-#include "GLFW/glfw3.h"
 #include "glm.hpp"
+#include "../math/Frustum.h"
+#include "../world/Chunk.h"
+#include "GLFW/glfw3.h"
 
 class Camera {
 private:
@@ -37,6 +37,8 @@ public:
     [[nodiscard]] bool m_input_enabled() const;
     void set_m_input_enabled(bool m_input_enabled);
     [[nodiscard]] glm::vec3 m_camera_pos() const;
+
+    void set_m_aspect_ratio(float m_aspect_ratio);
 };
 
 #endif //CAMERA_H

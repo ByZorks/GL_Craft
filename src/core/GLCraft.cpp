@@ -3,16 +3,19 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "../render/Camera.h"
-#include "../render/Renderer.h"
 #include "../gl/Shader.h"
 #include "../gl/Texture.h"
+#include "../render/Camera.h"
+#include "../render/Renderer.h"
 #include "../world/World.h"
 
 #include "glm.hpp"
 
 #include "imgui.h"
 #include "../ui/DebugUI.h"
+
+constexpr int BASE_WIDTH = 1280;
+constexpr int BASE_HEIGHT = 720;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 
@@ -24,7 +27,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow *window = glfwCreateWindow(1280, 720, "GLCraft", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(BASE_WIDTH, BASE_HEIGHT, "GLCraft", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -34,7 +37,7 @@ int main(int argc, char *argv[]) {
     glfwMaximizeWindow(window);
 
     // Camera
-    Camera camera(1920, 1080);
+    Camera camera(BASE_WIDTH, BASE_HEIGHT);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(window, &camera);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
@@ -59,8 +62,6 @@ int main(int argc, char *argv[]) {
 
         const Texture atlas("../res/textures/atlas/texture_atlas.png");
         atlas.bind();
-
-        const glm::mat4 projection = camera.getProjectionMatrix();
 
         // Debug UI
         DebugUI debugUI(window);
@@ -87,6 +88,7 @@ int main(int argc, char *argv[]) {
             if (camera.m_input_enabled() && !io.WantCaptureKeyboard) {
                 camera.processInput(window, deltaTime);
             }
+            const glm::mat4 projection = camera.getProjectionMatrix();
             const glm::mat4 view = camera.getViewMatrix();
             const glm::mat4 mvp = projection * view;
             Frustum frustum = Camera::getFrustum(mvp);
@@ -127,4 +129,7 @@ int main(int argc, char *argv[]) {
 
 void framebuffer_size_callback(GLFWwindow *window, const int width, const int height) {
     glViewport(0, 0, width, height);
+    const auto camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+    if (!camera) return;
+    camera->set_m_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
 }
