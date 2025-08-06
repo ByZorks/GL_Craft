@@ -45,13 +45,13 @@ int main(int argc, char *argv[]) {
 
     std::cout << glGetString(GL_VERSION) << std::endl; {
         // Shader
-        Shader shader("../res/shaders/block.vert", "../res/shaders/block.frag");
-        shader.use();
-        shader.setUniform1i("u_Texture", 0);
+        Shader blockShader("../res/shaders/block.vert", "../res/shaders/block.frag");
+        blockShader.use();
+        blockShader.setUniform1i("u_Texture", 0);
 
-        Shader instanceShader("../res/shaders/grass.vert", "../res/shaders/grass.frag");
-        instanceShader.use();
-        instanceShader.setUniform1i("u_Texture", 0);
+        Shader grassShader("../res/shaders/grass.vert", "../res/shaders/grass.frag");
+        grassShader.use();
+        grassShader.setUniform1i("u_Texture", 0);
 
         Shader waterShader("../res/shaders/water.vert", "../res/shaders/water.frag");
         waterShader.use();
@@ -92,24 +92,24 @@ int main(int argc, char *argv[]) {
             world.updateChunks(camera);
 
             // Render the world
-            shader.use();
-            shader.setUniformMat4f("u_MVP", mvp);
+            blockShader.use();
+            blockShader.setUniformMat4f("u_MVP", mvp);
 
             unsigned int drawCalls = 0;
             unsigned int visibleChunksCount = 0;
-            world.drawChunks(camera, frustum, shader, visibleChunksCount, drawCalls);
+            world.drawChunks(camera, frustum, blockShader, visibleChunksCount, drawCalls);
 
             waterShader.use();
             waterShader.setUniformMat4f("u_MVP", mvp);
             world.drawWater(waterShader, drawCalls);
 
-            shader.use();
-            shader.setUniformMat4f("u_MVP", mvp);
+            blockShader.use();
+            blockShader.setUniformMat4f("u_MVP", mvp);
             unsigned int visibleVegetationsCount = 0;
-            world.drawVegetations(camera, frustum, shader, visibleVegetationsCount, drawCalls);
+            world.drawVegetations(camera, frustum, blockShader, visibleVegetationsCount, drawCalls);
 
-            instanceShader.use();
-            instanceShader.setUniformMat4f("u_MVP", mvp);
+            grassShader.use();
+            grassShader.setUniformMat4f("u_MVP", mvp);
             world.drawInstances(camera, frustum, visibleVegetationsCount, drawCalls);
 
             DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(),

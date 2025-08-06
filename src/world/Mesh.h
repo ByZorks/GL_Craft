@@ -71,7 +71,7 @@ public:
 
             VertexBufferLayout meshLayout;
             meshLayout.Push<unsigned char>(3); // x, y, z
-            meshLayout.Push<unsigned char>(2, true); // u, v
+            meshLayout.PushInt<unsigned char>(2, true); // u, v
             meshLayout.PushInt<unsigned char>(1); // face
 
             m_VAO.init();
@@ -101,7 +101,7 @@ public:
 
             VertexBufferLayout meshLayout;
             meshLayout.Push<unsigned char>(3); // x, y, z
-            meshLayout.Push<unsigned char>(2, true); // u, v
+            meshLayout.PushInt<unsigned char>(2, true); // u, v
             meshLayout.PushInt<unsigned char>(1); // face
 
             m_VAO_transparent.init();
