@@ -45,12 +45,12 @@ private:
         {2, 3, 1}, // GRASS
         {0, 0, 0}, // STONE
         {1, 1 , 1}, // WATER
-        {2, 3, 3}, // LOG
-        {0, 0, 0}, // LEAVES
-        {1, 1, 1}, // SHORT_GRASS
-        {2, 2, 2}, // POPPY
-        {3, 3, 3}, // CORNFLOWER
-        {0, 0, 0}  // ALLIUM
+        {1, 2, 2}, // LOG
+        {3, 3, 3}, // LEAVES
+        {0, 0, 0}, // SHORT_GRASS
+        {1, 1, 1}, // POPPY
+        {2, 2, 2}, // CORNFLOWER
+        {3, 3, 3}  // ALLIUM
     };
     static constexpr uint8_t s_textureRow[12][3] = {
         // [side, top, bottom]
@@ -60,11 +60,11 @@ private:
         {3, 3, 3}, // GRASS
         {2, 2, 2}, // STONE
         {2, 2, 2}, // WATER
-        {2, 2, 2}, // LOG
+        {1, 1, 1}, // LOG
         {1, 1, 1}, // LEAVES
-        {1, 1, 1}, // SHORT_GRASS
-        {1, 1, 1}, // POPPY
-        {1, 1, 1}, // CORNFLOWER
+        {0, 0, 0}, // SHORT_GRASS
+        {0, 0, 0}, // POPPY
+        {0, 0, 0}, // CORNFLOWER
         {0, 0, 0}  // ALLIUM
     };
 
