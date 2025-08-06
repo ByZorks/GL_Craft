@@ -14,7 +14,7 @@ void main() {
     const vec3 worldPos = position + u_Offset;
     gl_Position = u_MVP * vec4(worldPos, 1.0);
 
-    const float tileSize = 1.f / 4.f;
+    const float tileSize = 1.f / 5.f;
     v_texCoord = texIndex * tileSize;
 
     v_face = face;
