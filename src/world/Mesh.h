@@ -123,17 +123,28 @@ public:
         return !m_vertices_transparent.empty() && m_IBO_transparent.m_count() > 0;
     }
 
-    [[nodiscard]] virtual bool shouldDrawFace(const int neighborX, const int neighborY, const int neighborZ,
-                                              const BlockType currentBlockType) const {
-        if (!isBlockPresent(neighborX, neighborY, neighborZ)) return true; // Air block
+    [[nodiscard]] virtual bool shouldDrawFace(int x, int y, int z,
+                                              const BlockType currentBlockType, const Face face) const {
+        switch (face) {
+            case Face::TOP: y++; break;
+            case Face::BOTTOM: y--; break;
+            case Face::FRONT: z++; break;
+            case Face::BACK: z--; break;
+            case Face::RIGHT: x++; break;
+            case Face::LEFT: x--; break;
+            default: ;
+        }
 
-        const BlockType neighborType = getBlockType(neighborX, neighborY, neighborZ);
+        if (!isBlockPresent(x, y, z)) return true; // Air block
+
+        const BlockType neighborType = getBlockType(x, y, z);
         const bool neighborTransparent = Block::isTransparent(neighborType);
 
         if (currentBlockType == BlockType::LEAVES && neighborTransparent) return true; // Leaves block, always draw face
         if (currentBlockType == neighborType) return false; // Same block type, no need to draw face
 
         const bool currentTransparent = Block::isTransparent(currentBlockType);
+        if (currentTransparent && !neighborTransparent) return false; // Current block is transparent, neighbor is not, do not draw face
 
         return currentTransparent != neighborTransparent; // Different transparency state, draw face
     }

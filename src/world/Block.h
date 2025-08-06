@@ -40,7 +40,7 @@ private:
         {1, 1, 1}, // DIRT
         {2, 3, 1}, // GRASS
         {4, 4, 4}, // STONE
-        {0, 0 , 0}, // WATER
+        {0, 0, 0}, // WATER
         {3, 4, 4}, // LOG
         {0, 0, 0}, // LEAVES
         {1, 1, 1}, // SHORT_GRASS

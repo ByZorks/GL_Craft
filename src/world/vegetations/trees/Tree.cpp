@@ -51,7 +51,7 @@ void Tree::generateMesh() {
                 const auto localZf = static_cast<float>(z);
                 const bool isTransparent = Block::isTransparent(blockType);
 
-                if (shouldDrawFace(x, y + 1, z, blockType)) {
+                if (shouldDrawFace(x, y, z, blockType, Face::TOP)) {
                     if (isTransparent) {
                         Block::addFaceVertices(Face::TOP, blockType, m_vertices_transparent, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::TOP, 4);
@@ -60,7 +60,7 @@ void Tree::generateMesh() {
                         m_blockFaceData.emplace_back(Face::TOP, 4);
                     }
                 }
-                if (shouldDrawFace(x, y - 1, z, blockType)) {
+                if (shouldDrawFace(x, y, z, blockType, Face::BOTTOM)) {
                     if (isTransparent) {
                         Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices_transparent, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::BOTTOM, 4);
@@ -69,7 +69,7 @@ void Tree::generateMesh() {
                         m_blockFaceData.emplace_back(Face::BOTTOM, 4);
                     }
                 }
-                if (shouldDrawFace(x, y, z + 1, blockType)) {
+                if (shouldDrawFace(x, y, z, blockType, Face::FRONT)) {
                     if (isTransparent) {
                         Block::addFaceVertices(Face::FRONT, blockType, m_vertices_transparent, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::FRONT, 4);
@@ -78,7 +78,7 @@ void Tree::generateMesh() {
                         m_blockFaceData.emplace_back(Face::FRONT, 4);
                     }
                 }
-                if (shouldDrawFace(x, y, z - 1, blockType)) {
+                if (shouldDrawFace(x, y, z, blockType, Face::BACK)) {
                     if (isTransparent) {
                         Block::addFaceVertices(Face::BACK, blockType, m_vertices_transparent, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::BACK, 4);
@@ -87,7 +87,7 @@ void Tree::generateMesh() {
                         m_blockFaceData.emplace_back(Face::BACK, 4);
                     }
                 }
-                if (shouldDrawFace(x + 1, y, z, blockType)) {
+                if (shouldDrawFace(x, y, z, blockType, Face::RIGHT)) {
                     if (isTransparent) {
                         Block::addFaceVertices(Face::RIGHT, blockType, m_vertices_transparent, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::RIGHT, 4);
@@ -96,7 +96,7 @@ void Tree::generateMesh() {
                         m_blockFaceData.emplace_back(Face::RIGHT, 4);
                     }
                 }
-                if (shouldDrawFace(x - 1, y, z, blockType)) {
+                if (shouldDrawFace(x, y, z, blockType, Face::LEFT)) {
                     if (isTransparent) {
                         Block::addFaceVertices(Face::LEFT, blockType, m_vertices_transparent, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::LEFT, 4);
