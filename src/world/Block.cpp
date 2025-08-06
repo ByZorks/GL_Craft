@@ -95,7 +95,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             addVertex(block_endX, block_startY, block_endZ, u_start, v_start, normal);
             break;
         }
-        case Face::TOP: {
+        case Face::TOP: case Face::TOP_INVERSED: {
             const uint8_t u_start = getTextureU(type, face);
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);

@@ -6,12 +6,8 @@
 #include "GL/glew.h"
 
 enum class Face : uint8_t {
-    FRONT,
-    BACK,
-    LEFT,
-    RIGHT,
-    TOP,
-    BOTTOM
+    FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM,
+    TOP_INVERSED // TOP is drawn CW, TOP_INVERSED is drawn CCW
 };
 
 struct BlockFaceData {

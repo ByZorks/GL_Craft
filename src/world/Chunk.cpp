@@ -106,6 +106,10 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         if (isTransparent) {
             Block::addFaceVertices(Face::TOP, blockType, m_vertices_transparent, localXf, localYf, localZf);
             m_blockFaceData_transparent.emplace_back(Face::TOP, 4);
+            if (blockType == BlockType::WATER) {
+                Block::addFaceVertices(Face::TOP_INVERSED, blockType, m_vertices_transparent, localXf, localYf, localZf);
+                m_blockFaceData_transparent.emplace_back(Face::TOP_INVERSED, 4);
+            }
         } else {
             Block::addFaceVertices(Face::TOP, blockType, m_vertices, localXf, localYf, localZf);
             m_blockFaceData.emplace_back(Face::TOP, 4);
