@@ -57,7 +57,7 @@ public:
     void drawInstances(const Camera &camera, const Frustum &frustum, unsigned int &visibleVegetationsCount, unsigned int &drawCalls);
 
     int getHeight(int worldX, int worldZ);
-    bool isCave(int worldX, int worldY, int worldZ) const;
+    bool isCave(int worldX, int worldY, int worldZ, int columnHeight) const;
 
     [[nodiscard]] const FastNoiseLite & m_noise_generator() const;
     [[nodiscard]] const FastNoiseLite & m_surface_vegetation_generator() const;

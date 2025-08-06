@@ -41,7 +41,7 @@ void Chunk::generateVoxel(World &world) {
             for (int localY = 0; localY < endY; localY++) {
                 const int worldY = m_y + localY;
 
-                if (world.isCave(worldX, worldY, worldZ)) continue;
+                if (world.isCave(worldX, worldY, worldZ, columnHeight)) continue;
                 const BlockType blockType = Block::getBlockType(worldY, columnHeight);
                 m_blockType[index(localX, localY, localZ)] = blockType;
             }

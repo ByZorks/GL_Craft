@@ -290,11 +290,12 @@ int World::getHeight(const int worldX, const int worldZ) {
     return m_heightMapByChunk[coordsChunk].getHeight(localXInHeightMap, localZInHeightMap);
 }
 
-bool World::isCave(const int worldX, const int worldY, const int worldZ) const {
+bool World::isCave(const int worldX, const int worldY, const int worldZ, const int columnHeight) const {
     constexpr int maxHeight = 256;
     constexpr int baseHeight = 58;
+    constexpr int waterLevel = 63;
 
-    if (worldY <= 1 || worldY > maxHeight || worldY == 63) return false;
+    if (worldY <= 1 || worldY > maxHeight || (worldY >= columnHeight && columnHeight < waterLevel)) return false;
 
     // 3D noise generation for cave system
     const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
@@ -470,7 +471,7 @@ void World::generateVegetationsForEachChunks(const std::shared_ptr<Chunk> &chunk
             if ((columnHeight < waterLevel && chunk->m_y1() < columnHeight) ||
                 columnHeight < chunk->m_y1() ||
                 columnHeight >= chunk->m_y1() + Chunk::SIZE ||
-                isCave(worldX, columnHeight, worldZ)) continue;
+                isCave(worldX, columnHeight, worldZ, columnHeight)) continue;
             float vegetationNoise = (m_surfaceVegetationGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) * 0.5f;
             if (vegetationNoise <= 0.69f) continue;
             std::tuple<int, int, int> key = std::make_tuple(worldX, columnHeight, worldZ);
