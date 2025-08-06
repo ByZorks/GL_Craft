@@ -55,19 +55,19 @@ public:
 
 template<>
 inline void VertexBufferLayout::Push<float>(const unsigned int count, const bool normalized) {
-    m_Elements.push_back({GL_FLOAT, count, static_cast<unsigned char>(normalized)});
+    m_Elements.push_back({GL_FLOAT, count, static_cast<unsigned char>(normalized), false});
     m_Stride += VertexBufferElement::GetSizeOfType(GL_FLOAT) * count;
 }
 
 template<>
 inline void VertexBufferLayout::Push<unsigned int>(const unsigned int count, const bool normalized) {
-    m_Elements.push_back({GL_UNSIGNED_INT, count, static_cast<unsigned char>(normalized)});
+    m_Elements.push_back({GL_UNSIGNED_INT, count, static_cast<unsigned char>(normalized), false});
     m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_INT) * count;
 }
 
 template<>
 inline void VertexBufferLayout::Push<unsigned char>(const unsigned int count, const bool normalized) {
-    m_Elements.push_back({GL_UNSIGNED_BYTE, count, static_cast<unsigned char>(normalized)});
+    m_Elements.push_back({GL_UNSIGNED_BYTE, count, static_cast<unsigned char>(normalized), false});
     m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE) * count;
 }
 
