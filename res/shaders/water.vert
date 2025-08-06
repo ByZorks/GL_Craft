@@ -19,5 +19,13 @@ void main() {
     gl_Position = u_MVP * vec4(worldPos, 1.0);
 
     const float tileSize = 1.f / 5.f;
-    v_texCoord = texIndex * tileSize;
+    vec2 animatedTexIndex = vec2(texIndex);
+    float frameOffset = mod(floor(u_Time / 1.5), 8.0);
+    if (frameOffset >= 5.0) {
+        frameOffset -= 5.0;
+        animatedTexIndex.y -= 1.0;
+    }
+    animatedTexIndex.x += frameOffset;
+
+    v_texCoord = animatedTexIndex * tileSize;
 }
