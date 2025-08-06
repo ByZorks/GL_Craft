@@ -20,7 +20,7 @@ void main() {
 
     const float tileSize = 1.f / 5.f;
     vec2 animatedTexIndex = vec2(texIndex);
-    float frameOffset = mod(floor(u_Time / 1.5), 8.0);
+    float frameOffset = mod(floor(u_Time / 1.25), 8.0);
     if (frameOffset >= 5.0) {
         frameOffset -= 5.0;
         animatedTexIndex.y -= 1.0;
