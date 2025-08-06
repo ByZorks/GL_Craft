@@ -6,7 +6,7 @@
 
 float Renderer::m_deltaTime = 0.0f;
 float Renderer::m_lastFrame = 0.0f;
-float Renderer::m_renderDistance = 16.0f * static_cast<float>(Chunk::SIZE); // Render distance in blocks
+float Renderer::m_renderDistance = 12.0f * static_cast<float>(Chunk::SIZE); // Render distance in blocks
 
 void Renderer::init() {
     GLCall(glEnable(GL_DEPTH_TEST));

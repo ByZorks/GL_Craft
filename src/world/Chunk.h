@@ -6,7 +6,7 @@ class World;
 
 class Chunk final : public Mesh {
 public:
-    static constexpr unsigned int SIZE = 16;
+    static constexpr unsigned int SIZE = 32;
 
     Chunk(int x, int y, int z);
 

@@ -155,8 +155,10 @@ void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned
         m_cornflowerData.renderer.resetInstances();
         m_alliumData.renderer.resetInstances();
 
+        constexpr float MAX_RENDER_DISTANCE = 320.f; // They are not visible beyond this even if we draw them
         for (const auto &pos : m_grassData.instances) {
-            if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
+            const float distance = camera.distanceToCamera(pos);
+            if (distance <= Renderer::m_renderDistance && distance < MAX_RENDER_DISTANCE &&
                 frustum.isPointInFrustum(pos)) {
                 m_grassData.renderer.addInstance(pos);
                 visibleVegetationsCount++;
@@ -166,7 +168,8 @@ void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned
         m_grassData.renderer.updateInstanceBuffer();
 
         for (const auto &pos : m_poppyData.instances) {
-            if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
+            const float distance = camera.distanceToCamera(pos);
+            if (distance <= Renderer::m_renderDistance && distance < MAX_RENDER_DISTANCE &&
                 frustum.isPointInFrustum(pos)) {
                 m_poppyData.renderer.addInstance(pos);
                 visibleVegetationsCount++;
@@ -176,7 +179,8 @@ void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned
         m_poppyData.renderer.updateInstanceBuffer();
 
         for (const auto &pos : m_cornflowerData.instances) {
-            if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
+            const float distance = camera.distanceToCamera(pos);
+            if (distance <= Renderer::m_renderDistance && distance < MAX_RENDER_DISTANCE &&
                 frustum.isPointInFrustum(pos)) {
                 m_cornflowerData.renderer.addInstance(pos);
                 visibleVegetationsCount++;
@@ -186,7 +190,8 @@ void World::drawInstances(const Camera &camera, const Frustum &frustum, unsigned
         m_cornflowerData.renderer.updateInstanceBuffer();
 
         for (const auto &pos : m_alliumData.instances) {
-            if (camera.distanceToCamera(pos) <= Renderer::m_renderDistance &&
+            const float distance = camera.distanceToCamera(pos);
+            if (distance <= Renderer::m_renderDistance && distance < MAX_RENDER_DISTANCE &&
                 frustum.isPointInFrustum(pos)) {
                 m_alliumData.renderer.addInstance(pos);
                 visibleVegetationsCount++;
@@ -317,7 +322,7 @@ const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Mesh>> & Wor
 }
 
 void World::processChunks() {
-    const int maxChunksPerFrame = static_cast<int>(0.3 * Renderer::m_renderDistance + 0.6 * static_cast<float>(m_threadPool.m_num_threads()));
+    const int maxChunksPerFrame = static_cast<int>(0.15 * Renderer::m_renderDistance + 0.3 * static_cast<float>(m_threadPool.m_num_threads()));
     // Remove chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.meshesToDelete.empty()) break;
@@ -351,7 +356,7 @@ void World::processChunks() {
 }
 
 void World::processVegetations() {
-    const int maxVegetationsPerFrame = static_cast<int>(0.2 * Renderer::m_renderDistance + 0.4 * static_cast<float>(m_threadPool.m_num_threads()));
+    const int maxVegetationsPerFrame = static_cast<int>(0.1 * Renderer::m_renderDistance + 0.2 * static_cast<float>(m_threadPool.m_num_threads()));
     // Remove vegetations that are no longer needed
     for (int i = 0; i < maxVegetationsPerFrame; ++i) {
         if (m_vegetationsData.meshesToDelete.empty()) break;
