@@ -13,9 +13,15 @@ uniform mat4 u_MVP;
 
 void main() {
     vec3 worldPos = position + u_Offset;
-    worldPos.y -= .2;
-    worldPos.y += (sin(u_Time * 2.5 + worldPos.x * 2.0 + worldPos.z * 1.5)
-                + cos(u_Time * 1.5 + worldPos.z * 2.5 + worldPos.x * 1.2)) * 0.05;
+
+    // The 2 first vertex drawn are the top vertices
+    bool isTopVertex = (face == 4u || face == 6u) || (face < 4u && (gl_VertexID % 4 < 2));
+
+    if (isTopVertex) {
+        worldPos.y -= .2;
+        worldPos.y += (sin(u_Time * 2.5 + worldPos.x * 2.0 + worldPos.z * 1.5)
+                    + cos(u_Time * 1.5 + worldPos.z * 2.5 + worldPos.x * 1.2)) * 0.05;
+    }
     gl_Position = u_MVP * vec4(worldPos, 1.0);
 
     const float tileSize = 1.f / 5.f;
