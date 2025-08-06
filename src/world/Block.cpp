@@ -15,7 +15,7 @@ BlockType Block::getBlockType(const int y, const int columnHeight) {
 
     if (y <= columnHeight) {
         if (y == columnHeight && columnHeight >= waterLevel) return BlockType::GRASS;
-        if (y == columnHeight && columnHeight < waterLevel) return BlockType::DIRT;
+        if (y == columnHeight) return BlockType::DIRT;
         if (y < columnHeight - 4) return BlockType::STONE;
         if (y < columnHeight) return BlockType::DIRT;
     }
