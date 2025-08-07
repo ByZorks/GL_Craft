@@ -25,6 +25,14 @@ float Renderer::calculateDeltaTime(const float currentFrame) {
     return m_deltaTime;
 }
 
+void Renderer::disableDepthTesting() {
+    GLCall(glDisable(GL_DEPTH_TEST));
+}
+
+void Renderer::enableDepthTesting() {
+    GLCall(glEnable(GL_DEPTH_TEST));
+}
+
 void Renderer::disableDepthMask() {
     GLCall(glEnable(GL_BLEND));
     GLCall(glDepthMask(GL_FALSE));

@@ -112,6 +112,13 @@ add_executable(GL_Craft
         src/world/vegetations/flowers/Cornflower.h
         src/world/vegetations/flowers/Allium.cpp
         src/world/vegetations/flowers/Allium.h
+        src/gl/FrameBuffer.cpp
+        src/gl/FrameBuffer.h
+        src/render/PostProcessingMesh.cpp
+        src/render/PostProcessingMesh.h
+        src/core/WindowUserPointers.h
+        src/gl/RenderBuffer.cpp
+        src/gl/RenderBuffer.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})

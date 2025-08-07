@@ -11,10 +11,14 @@ private:
 
 public:
     explicit Texture(std::string filePath);
+    Texture(int width, int height);
     ~Texture();
 
     void bind(unsigned int slot = 0) const;
     static void unbind();
+
+    [[nodiscard]] unsigned int m_renderer_id() const;
+    void set_m_renderer_id(unsigned int m_renderer_id);
 };
 
 #endif //TEXTURE_H

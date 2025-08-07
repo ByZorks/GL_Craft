@@ -12,6 +12,9 @@
 #include "glm.hpp"
 
 #include "imgui.h"
+#include "WindowUserPointers.h"
+#include "../gl/FrameBuffer.h"
+#include "../render/PostProcessingMesh.h"
 #include "../ui/DebugUI.h"
 
 constexpr int BASE_WIDTH = 1280;
@@ -34,36 +37,30 @@ int main(int argc, char *argv[]) {
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwMaximizeWindow(window);
+
+    if (glewInit() != GLEW_OK) std::cerr << "glewInit() failed" << std::endl;
 
     // Camera
     Camera camera(BASE_WIDTH, BASE_HEIGHT);
+    PostProcessingMesh postProcessingMesh(BASE_WIDTH, BASE_HEIGHT);
+    WindowUserPointers pointers = {&camera, &postProcessingMesh};
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetWindowUserPointer(window, &camera);
+    glfwSetWindowUserPointer(window, &pointers);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
 
+    glfwMaximizeWindow(window);
     glfwSwapInterval(0); // Disable VSync
 
-    if (glewInit() != GLEW_OK) std::cout << "glewInit() failed" << std::endl;
 
     std::cout << glGetString(GL_VERSION) << std::endl; {
-        // Shader
         Shader blockShader("../res/shaders/block.vert", "../res/shaders/block.frag");
-        blockShader.use();
-        blockShader.setUniform1i("u_Texture", 0);
-
         Shader grassShader("../res/shaders/grass.vert", "../res/shaders/grass.frag");
-        grassShader.use();
-        grassShader.setUniform1i("u_Texture", 0);
-
         Shader waterShader("../res/shaders/water.vert", "../res/shaders/water.frag");
-        waterShader.use();
-        waterShader.setUniform1i("u_Texture", 0);
+        Shader postProcessingShader("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
 
         const Texture atlas("../res/textures/atlas/texture_atlas.png");
         atlas.bind();
 
-        // Debug UI
         DebugUI debugUI(window);
         const ImGuiIO &io = ImGui::GetIO();
 
@@ -80,6 +77,7 @@ int main(int argc, char *argv[]) {
             // Handle tab key for UI mode
             debugUI.processInput(window, camera);
 
+            postProcessingMesh.m_fbo().bind();
             Renderer::clear();
             DebugUI::newFrame();
 
@@ -111,10 +109,21 @@ int main(int argc, char *argv[]) {
             waterShader.setUniformMat4f("u_MVP", mvp);
             world.drawWater(waterShader, drawCalls);
 
+            // Post-processing
+            FrameBuffer::unbind();
+            postProcessingShader.use();
+            postProcessingMesh.m_fbo().m_texture1().bind();
+            Renderer::disableDepthTesting();
+            Renderer::draw(postProcessingMesh.m_vao(), postProcessingMesh.m_ibo());
+            Renderer::enableDepthTesting();
+
+            // Render ImGui
             DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(),
                             world.m_loaded_vegetations().size(), drawCalls, camera);
             DebugUI::draw();
 
+            // State update
+            atlas.bind();
             camera.updateLastState();
 
             glfwSwapBuffers(window);
@@ -129,7 +138,9 @@ int main(int argc, char *argv[]) {
 
 void framebuffer_size_callback(GLFWwindow *window, const int width, const int height) {
     glViewport(0, 0, width, height);
-    const auto camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
-    if (!camera) return;
-    camera->set_m_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
+    const auto pointers = static_cast<WindowUserPointers*>(glfwGetWindowUserPointer(window));
+    if (!pointers) return;
+
+    pointers->camera->set_m_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
+    pointers->postProcessingMesh->resize(width, height);
 }

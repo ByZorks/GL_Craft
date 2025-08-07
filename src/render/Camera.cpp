@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "../core/WindowUserPointers.h"
 #include "../math/Plane.h"
 #include "ext/matrix_clip_space.hpp"
 #include "ext/matrix_transform.hpp"
@@ -80,9 +81,10 @@ void Camera::handleMouse(const double xpos, const double ypos) {
 }
 
 void Camera::mouseCallback(GLFWwindow *window, const double xpos, const double ypos) {
-    auto* cam = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+    const auto pointers = static_cast<WindowUserPointers*>(glfwGetWindowUserPointer(window));
+    if (!pointers) return;
+    const auto cam = pointers->camera;
     if (!cam || !cam->m_inputEnabled) return;
-
     cam->handleMouse(xpos, ypos);
 }
 

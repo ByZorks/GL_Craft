@@ -20,6 +20,8 @@ struct VertexBufferElement {
                 return sizeof(GLuint);
             case GL_UNSIGNED_BYTE:
                 return sizeof(GLubyte);
+            case GL_BYTE:
+                return sizeof(GLbyte);
             default:
                 return 0;
         }
@@ -69,6 +71,12 @@ template<>
 inline void VertexBufferLayout::Push<unsigned char>(const unsigned int count, const bool normalized) {
     m_Elements.push_back({GL_UNSIGNED_BYTE, count, static_cast<unsigned char>(normalized), false});
     m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE) * count;
+}
+
+template<>
+inline void VertexBufferLayout::Push<char>(const unsigned int count, const bool normalized) {
+    m_Elements.push_back({GL_BYTE, count, static_cast<unsigned char>(normalized), false});
+    m_Stride += VertexBufferElement::GetSizeOfType(GL_BYTE) * count;
 }
 
 template<>
