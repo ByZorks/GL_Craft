@@ -15,21 +15,21 @@ Shader::Shader(std::string vertexPath, std::string fragmentPath) : m_vertexFileP
 }
 
 Shader::~Shader() {
-    if (m_programId != 0) {
-        GLCall(glDeleteProgram(m_programId));
+    if (m_ID != 0) {
+        GLCall(glDeleteProgram(m_ID));
     }
 }
 
 void Shader::use() const {
     if (m_isInitialized) {
-        GLCall(glUseProgram(m_programId));
+        GLCall(glUseProgram(m_ID));
     }
 }
 
 int Shader::getUniformLocation(const std::string &name) {
     if (m_uniformLocationCache.contains(name)) return m_uniformLocationCache[name];
 
-    GLCall(const int location = glGetUniformLocation(m_programId, name.c_str()));
+    GLCall(const int location = glGetUniformLocation(m_ID, name.c_str()));
     if (location == -1) {
         std::cerr << "Warning: uniform '" << name << "' doesn't exist or is not used in the shader." << std::endl;
     }
@@ -58,8 +58,8 @@ void Shader::setUniformMat4f(const std::string &name, const glm::mat4 &matrix) {
     GLCall(glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &matrix[0][0]));
 }
 
-unsigned int Shader::m_program_id() const {
-    return m_programId;
+unsigned int Shader::m_id() const {
+    return m_ID;
 }
 
 std::string Shader::readFile(const std::string &filePath) {
@@ -136,6 +136,6 @@ void Shader::compileAndLink() {
     GLCall(glDeleteShader(vs));
     GLCall(glDeleteShader(fs));
 
-    m_programId = program;
+    m_ID = program;
     m_isInitialized = true;
 }

@@ -18,8 +18,8 @@ Texture::Texture(std::string filePath) : m_FilePath(std::move(filePath)), m_Loca
     m_LocalBuffer = stbi_load(m_FilePath.c_str(), &m_Width, &m_Height, &m_BPP, 4); // 4 for RGBA
     if (!m_LocalBuffer) std::cerr << "Cannot load texture: " << m_FilePath << std::endl;
 
-    GLCall(glGenTextures(1, &m_RendererID));
-    GLCall(glBindTexture(GL_TEXTURE_2D, m_RendererID));
+    GLCall(glGenTextures(1, &m_ID));
+    GLCall(glBindTexture(GL_TEXTURE_2D, m_ID));
 
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
@@ -32,8 +32,8 @@ Texture::Texture(std::string filePath) : m_FilePath(std::move(filePath)), m_Loca
 }
 
 Texture::Texture(const int width, const int height, const bool isDepthTexture) : m_LocalBuffer(nullptr), m_Width(width), m_Height(height), m_BPP(0) {
-    GLCall(glGenTextures(1, &m_RendererID));
-    GLCall(glBindTexture(GL_TEXTURE_2D, m_RendererID));
+    GLCall(glGenTextures(1, &m_ID));
+    GLCall(glBindTexture(GL_TEXTURE_2D, m_ID));
 
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
@@ -48,24 +48,24 @@ Texture::Texture(const int width, const int height, const bool isDepthTexture) :
 }
 
 Texture::~Texture() {
-    if (m_RendererID != 0) {
-        GLCall(glDeleteTextures(1, &m_RendererID));
+    if (m_ID != 0) {
+        GLCall(glDeleteTextures(1, &m_ID));
     }
 }
 
 void Texture::bind(const unsigned int slot) const {
     GLCall(glActiveTexture(GL_TEXTURE0 + slot));
-    GLCall(glBindTexture(GL_TEXTURE_2D, m_RendererID));
+    GLCall(glBindTexture(GL_TEXTURE_2D, m_ID));
 }
 
 void Texture::unbind() {
     GLCall(glBindTexture(GL_TEXTURE_2D, 0));
 }
 
-unsigned int Texture::m_renderer_id() const {
-    return m_RendererID;
+unsigned int Texture::m_id() const {
+    return m_ID;
 }
 
-void Texture::set_m_renderer_id(const unsigned int m_renderer_id) {
-    m_RendererID = m_renderer_id;
+void Texture::set_m_id(const unsigned int m_id) {
+    m_ID = m_id;
 }

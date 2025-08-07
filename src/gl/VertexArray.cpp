@@ -6,17 +6,17 @@
 VertexArray::VertexArray() = default;
 
 VertexArray::~VertexArray() {
-    if (m_RendererID != 0) {
-        GLCall(glDeleteVertexArrays(1, &m_RendererID));
+    if (m_ID != 0) {
+        GLCall(glDeleteVertexArrays(1, &m_ID));
     }
 }
 
 void VertexArray::init() {
-    GLCall(glGenVertexArrays(1, &m_RendererID));
-    GLCall(glBindVertexArray(m_RendererID));
+    GLCall(glGenVertexArrays(1, &m_ID));
+    GLCall(glBindVertexArray(m_ID));
 }
 
-void VertexArray::AddBuffer(const VertexBuffer &vb, const VertexBufferLayout &layout) {
+void VertexArray::addBuffer(const VertexBuffer &vb, const VertexBufferLayout &layout) {
     bind();
     vb.bind();
     const auto& elements = layout.m_elements();
@@ -43,7 +43,7 @@ void VertexArray::addInstancedBuffer(const VertexBuffer &vb, const unsigned int 
 }
 
 void VertexArray::bind() const {
-    GLCall(glBindVertexArray(m_RendererID));
+    GLCall(glBindVertexArray(m_ID));
 }
 
 void VertexArray::unbind() {

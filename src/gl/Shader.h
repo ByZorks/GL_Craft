@@ -8,7 +8,7 @@
 
 class Shader {
 private:
-    unsigned int m_programId = 0;
+    unsigned int m_ID = 0;
     std::string m_vertexFilePath;
     std::string m_fragmentFilePath;
     std::pmr::unordered_map<std::string, int> m_uniformLocationCache;
@@ -26,7 +26,7 @@ public:
     void setUniform3f(const std::string &name, float v0, float v1, float v2);
     void setUniformMat4f(const std::string &name, const glm::mat4 &matrix);
 
-    [[nodiscard]] unsigned int m_program_id() const;
+    [[nodiscard]] unsigned int m_id() const;
 
 private:
     static std::string readFile(const std::string &filePath);

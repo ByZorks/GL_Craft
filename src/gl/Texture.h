@@ -4,7 +4,7 @@
 
 class Texture {
 private:
-    unsigned int m_RendererID = 0;
+    unsigned int m_ID = 0;
     std::string m_FilePath;
     unsigned char *m_LocalBuffer;
     int m_Width, m_Height, m_BPP; // BPP: Bytes Per Pixel
@@ -17,8 +17,8 @@ public:
     void bind(unsigned int slot = 0) const;
     static void unbind();
 
-    [[nodiscard]] unsigned int m_renderer_id() const;
-    void set_m_renderer_id(unsigned int m_renderer_id);
+    [[nodiscard]] unsigned int m_id() const;
+    void set_m_id(unsigned int m_id);
 };
 
 #endif //TEXTURE_H

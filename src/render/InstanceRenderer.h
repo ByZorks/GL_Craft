@@ -57,7 +57,7 @@ public:
             meshLayout.PushInt<unsigned char>(1); // face
 
             m_VAO.init();
-            m_VAO.AddBuffer(m_VBO, meshLayout);
+            m_VAO.addBuffer(m_VBO, meshLayout);
         }
 
         // Instance buffer

@@ -9,7 +9,7 @@ PostProcessingMesh::PostProcessingMesh(const int width, const int height) : m_wi
     layout.Push<unsigned char>(2); // u, v
 
     m_VAO.init();
-    m_VAO.AddBuffer(m_VBO, layout);
+    m_VAO.addBuffer(m_VBO, layout);
 }
 
 void PostProcessingMesh::resize(const int width, const int height) {

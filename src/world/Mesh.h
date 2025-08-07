@@ -75,7 +75,7 @@ public:
             meshLayout.PushInt<unsigned char>(1); // face
 
             m_VAO.init();
-            m_VAO.AddBuffer(m_VBO, meshLayout);
+            m_VAO.addBuffer(m_VBO, meshLayout);
         }
 
         // === TRANSPARENT ===
@@ -105,7 +105,7 @@ public:
             meshLayout.PushInt<unsigned char>(1); // face
 
             m_VAO_transparent.init();
-            m_VAO_transparent.AddBuffer(m_VBO_transparent, meshLayout);
+            m_VAO_transparent.addBuffer(m_VBO_transparent, meshLayout);
         }
 
         m_status = Status::BUFFERS_SETUP;

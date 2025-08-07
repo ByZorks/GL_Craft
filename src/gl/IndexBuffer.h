@@ -3,7 +3,7 @@
 
 class IndexBuffer {
 private:
-    unsigned int m_rendererID = 0;
+    unsigned int m_ID = 0;
     unsigned int m_Count = 0;
 
 public:
