@@ -112,6 +112,7 @@ int main(int argc, char *argv[]) {
             // Post-processing
             FrameBuffer::unbind();
             postProcessingShader.use();
+            postProcessingShader.setUniform1f("u_RenderDistance", Renderer::m_renderDistance);
             postProcessingShader.setUniform1b("u_IsUnderWater", camera.isUnderWater(world.getHeight(
                 static_cast<int>(camera.m_camera_pos().x), static_cast<int>(camera.m_camera_pos().z))));
 
