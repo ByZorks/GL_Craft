@@ -198,7 +198,7 @@ Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
                       modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][2]
     );
 
-    Frustum frustum(left, right, bottom, top, near, far);
+    const Frustum frustum(left, right, bottom, top, near, far);
     return frustum;
 }
 
@@ -214,6 +214,6 @@ glm::vec3 Camera::m_camera_pos() const {
     return m_cameraPos;
 }
 
-void Camera::set_m_aspect_ratio(float m_aspect_ratio) {
+void Camera::set_m_aspect_ratio(const float m_aspect_ratio) {
     m_aspectRatio = m_aspect_ratio;
 }
