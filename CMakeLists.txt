@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.31)
 project(GL_Craft)
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
 set(LIBS_DIR "${CMAKE_SOURCE_DIR}/libs")
 set(IMGUI_DIR ${LIBS_DIR}/imgui)
 
