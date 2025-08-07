@@ -42,8 +42,8 @@ int main(int argc, char *argv[]) {
 
     // Camera
     Camera camera(BASE_WIDTH, BASE_HEIGHT);
-    PostProcessingMesh postProcessingMesh(BASE_WIDTH, BASE_HEIGHT);
-    WindowUserPointers pointers = {&camera, &postProcessingMesh};
+    auto *postProcessingMesh = new PostProcessingMesh(BASE_WIDTH, BASE_HEIGHT);
+    WindowUserPointers pointers = {&camera, postProcessingMesh};
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(window, &pointers);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
@@ -51,94 +51,101 @@ int main(int argc, char *argv[]) {
     glfwMaximizeWindow(window);
     glfwSwapInterval(0); // Disable VSync
 
+    std::cout << glGetString(GL_VERSION) << std::endl;
 
-    std::cout << glGetString(GL_VERSION) << std::endl; {
-        Shader blockShader("../res/shaders/block.vert", "../res/shaders/block.frag");
-        Shader grassShader("../res/shaders/grass.vert", "../res/shaders/grass.frag");
-        Shader waterShader("../res/shaders/water.vert", "../res/shaders/water.frag");
-        Shader postProcessingShader("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
+    auto *blockShader = new Shader("../res/shaders/block.vert", "../res/shaders/block.frag");
+    auto *grassShader = new Shader("../res/shaders/grass.vert", "../res/shaders/grass.frag");
+    auto *waterShader = new Shader("../res/shaders/water.vert", "../res/shaders/water.frag");
+    auto *postProcessingShader = new Shader("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
 
-        const Texture atlas("../res/textures/atlas/texture_atlas.png");
-        atlas.bind();
+    const auto *atlas = new Texture("../res/textures/atlas/texture_atlas.png");
+    atlas->bind();
 
-        DebugUI debugUI(window);
-        const ImGuiIO &io = ImGui::GetIO();
+    DebugUI debugUI(window);
+    const ImGuiIO &io = ImGui::GetIO();
 
-        World world;
-        Renderer::init();
-        while (!glfwWindowShouldClose(window)) {
-            if (glfwGetKey(window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window, true);
+    auto* world = new World();
+    Renderer::init();
+    while (!glfwWindowShouldClose(window)) {
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window, true);
 
-            // Debug variables
-            unsigned int drawCalls = 0;
-            unsigned int visibleChunksCount = 0;
-            unsigned int visibleVegetationsCount = 0;
+        // Debug variables
+        unsigned int drawCalls = 0;
+        unsigned int visibleChunksCount = 0;
+        unsigned int visibleVegetationsCount = 0;
 
-            // Handle tab key for UI mode
-            debugUI.processInput(window, camera);
+        // Handle tab key for UI mode
+        debugUI.processInput(window, camera);
 
-            postProcessingMesh.m_fbo().bind();
-            Renderer::clear();
-            DebugUI::newFrame();
+        postProcessingMesh->m_fbo().bind();
+        Renderer::clear();
+        DebugUI::newFrame();
 
-            // Update camera position and view matrix
-            const float deltaTime = Renderer::calculateDeltaTime(static_cast<float>(glfwGetTime()));
-            if (camera.m_input_enabled() && !io.WantCaptureKeyboard) {
-                camera.processInput(window, deltaTime);
-            }
-            const glm::mat4 projection = camera.getProjectionMatrix();
-            const glm::mat4 view = camera.getViewMatrix();
-            const glm::mat4 mvp = projection * view;
-            Frustum frustum = Camera::getFrustum(mvp);
-
-            // Chunks generation
-            world.updateChunks(camera);
-
-            // Render instances, vegetations, chunks then water
-            grassShader.use();
-            grassShader.setUniformMat4f("u_MVP", mvp);
-            world.drawInstances(camera, frustum, visibleVegetationsCount, drawCalls);
-
-            blockShader.use();
-            blockShader.setUniformMat4f("u_MVP", mvp);
-            world.drawVegetations(camera, frustum, blockShader, visibleVegetationsCount, drawCalls);
-
-            world.drawChunks(camera, frustum, blockShader, visibleChunksCount, drawCalls);
-
-            waterShader.use();
-            waterShader.setUniformMat4f("u_MVP", mvp);
-            world.drawWater(waterShader, drawCalls);
-
-            // Post-processing
-            FrameBuffer::unbind();
-            postProcessingShader.use();
-            postProcessingShader.setUniform1f("u_RenderDistance", Renderer::m_renderDistance);
-            postProcessingShader.setUniform1b("u_IsUnderWater", camera.isUnderWater(world.getHeight(
-                static_cast<int>(camera.m_camera_pos().x), static_cast<int>(camera.m_camera_pos().z))));
-
-            postProcessingShader.setUniform1i("u_SceneTexture", 0);
-            postProcessingMesh.m_fbo().m_color_texture().bind(0);
-
-            postProcessingShader.setUniform1i("u_DepthTexture", 1);
-            postProcessingMesh.m_fbo().m_depth_texture().bind(1);
-
-            Renderer::disableDepthTesting();
-            Renderer::draw(postProcessingMesh.m_vao(), postProcessingMesh.m_ibo());
-            Renderer::enableDepthTesting();
-
-            // Render ImGui
-            DebugUI::render(visibleChunksCount, visibleVegetationsCount, world.m_loaded_chunks().size(),
-                            world.m_loaded_vegetations().size(), drawCalls, camera);
-            DebugUI::draw();
-
-            // State update
-            atlas.bind();
-            camera.updateLastState();
-
-            glfwSwapBuffers(window);
-            glfwPollEvents();
+        // Update camera position and view matrix
+        const float deltaTime = Renderer::calculateDeltaTime(static_cast<float>(glfwGetTime()));
+        if (camera.m_input_enabled() && !io.WantCaptureKeyboard) {
+            camera.processInput(window, deltaTime);
         }
+        const glm::mat4 projection = camera.getProjectionMatrix();
+        const glm::mat4 view = camera.getViewMatrix();
+        const glm::mat4 mvp = projection * view;
+        Frustum frustum = Camera::getFrustum(mvp);
+
+        // Chunks generation
+        world->updateChunks(camera);
+
+        // Render instances, vegetations, chunks then water
+        grassShader->use();
+        grassShader->setUniformMat4f("u_MVP", mvp);
+        world->drawInstances(camera, frustum, visibleVegetationsCount, drawCalls);
+
+        blockShader->use();
+        blockShader->setUniformMat4f("u_MVP", mvp);
+        world->drawVegetations(camera, frustum, *blockShader, visibleVegetationsCount, drawCalls);
+
+        world->drawChunks(camera, frustum, *blockShader, visibleChunksCount, drawCalls);
+
+        waterShader->use();
+        waterShader->setUniformMat4f("u_MVP", mvp);
+        world->drawWater(*waterShader, drawCalls);
+
+        // Post-processing
+        FrameBuffer::unbind();
+        postProcessingShader->use();
+        postProcessingShader->setUniform1f("u_RenderDistance", Renderer::m_renderDistance);
+        postProcessingShader->setUniform1b("u_IsUnderWater", camera.isUnderWater(world->getHeight(
+                                               static_cast<int>(camera.m_camera_pos().x),
+                                               static_cast<int>(camera.m_camera_pos().z))));
+
+        postProcessingShader->setUniform1i("u_SceneTexture", 0);
+        postProcessingMesh->m_fbo().m_color_texture().bind(0);
+
+        postProcessingShader->setUniform1i("u_DepthTexture", 1);
+        postProcessingMesh->m_fbo().m_depth_texture().bind(1);
+
+        Renderer::disableDepthTesting();
+        Renderer::draw(postProcessingMesh->m_vao(), postProcessingMesh->m_ibo());
+        Renderer::enableDepthTesting();
+
+        // Render ImGui
+        DebugUI::render(visibleChunksCount, visibleVegetationsCount, world->m_loaded_chunks().size(),
+                        world->m_loaded_vegetations().size(), drawCalls, camera);
+        DebugUI::draw();
+
+        // State update
+        atlas->bind();
+        camera.updateLastState();
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
+
+    delete blockShader;
+    delete grassShader;
+    delete waterShader;
+    delete postProcessingShader;
+    delete postProcessingMesh;
+    delete world;
 
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -147,7 +154,7 @@ int main(int argc, char *argv[]) {
 
 void framebuffer_size_callback(GLFWwindow *window, const int width, const int height) {
     glViewport(0, 0, width, height);
-    const auto pointers = static_cast<WindowUserPointers*>(glfwGetWindowUserPointer(window));
+    const auto pointers = static_cast<WindowUserPointers *>(glfwGetWindowUserPointer(window));
     if (!pointers) return;
 
     pointers->camera->set_m_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
