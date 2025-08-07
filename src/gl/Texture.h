@@ -11,7 +11,7 @@ private:
 
 public:
     explicit Texture(std::string filePath);
-    Texture(int width, int height);
+    Texture(int width, int height, bool isDepthTexture = false);
     ~Texture();
 
     void bind(unsigned int slot = 0) const;

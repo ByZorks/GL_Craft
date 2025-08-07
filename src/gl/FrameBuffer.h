@@ -1,14 +1,13 @@
 #ifndef GL_CRAFT_FRAMEBUFFER_H
 #define GL_CRAFT_FRAMEBUFFER_H
-#include "RenderBuffer.h"
 #include "Texture.h"
 
 class FrameBuffer {
 private:
     unsigned int m_ID = 0;
     int m_Width, m_Height;
-    Texture m_texture;
-    RenderBuffer m_RBO;
+    Texture m_colorTexture;
+    Texture m_depthTexture;
 
 public:
     FrameBuffer(int width, int height);
@@ -22,7 +21,8 @@ public:
     void bind() const;
     static void unbind();
 
-    [[nodiscard]] const Texture & m_texture1() const;
+    [[nodiscard]] const Texture & m_color_texture() const;
+    [[nodiscard]] const Texture & m_depth_texture() const;
 };
 
 #endif //GL_CRAFT_FRAMEBUFFER_H

@@ -112,7 +112,15 @@ int main(int argc, char *argv[]) {
             // Post-processing
             FrameBuffer::unbind();
             postProcessingShader.use();
-            postProcessingMesh.m_fbo().m_texture1().bind();
+            postProcessingShader.setUniform1b("u_IsUnderWater", camera.isUnderWater(world.getHeight(
+                static_cast<int>(camera.m_camera_pos().x), static_cast<int>(camera.m_camera_pos().z))));
+
+            postProcessingShader.setUniform1i("u_SceneTexture", 0);
+            postProcessingMesh.m_fbo().m_color_texture().bind(0);
+
+            postProcessingShader.setUniform1i("u_DepthTexture", 1);
+            postProcessingMesh.m_fbo().m_depth_texture().bind(1);
+
             Renderer::disableDepthTesting();
             Renderer::draw(postProcessingMesh.m_vao(), postProcessingMesh.m_ibo());
             Renderer::enableDepthTesting();
