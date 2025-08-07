@@ -147,6 +147,12 @@ bool Camera::hasCameraChangedDirection() const {
     return std::abs(m_lastYaw - m_yaw) > 15.f || std::abs(m_lastPitch - m_pitch) > 15.f;
 }
 
+bool Camera::isUnderWater(const int columnHeight) const {
+    constexpr int waterLevel = 63;
+    return m_cameraPos.y > static_cast<float>(columnHeight) && m_cameraPos.y <= waterLevel;
+
+}
+
 glm::mat4 Camera::getProjectionMatrix() const {
     return glm::perspective(glm::radians(m_FOVDegrees), m_aspectRatio, m_nearPlane, m_farPlane);
 }
