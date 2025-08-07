@@ -3,7 +3,8 @@
 layout(location = 0) in vec3 position; // Vertex position
 layout(location = 1) in uvec2 texIndex; // Texture column and row for atlas mapping (normalized)
 layout(location = 2) in uint face; // Face index
-layout(location = 3) in vec3 instancePos; // Instance position in world space
+layout(location = 3) in uint AO; // Ambient Occlusion values (0-3)
+layout(location = 4) in vec3 instancePos; // Instance position in world space
 
 out vec2 v_texCoord;
 

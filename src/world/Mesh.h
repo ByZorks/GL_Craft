@@ -73,6 +73,7 @@ public:
             meshLayout.Push<unsigned char>(3); // x, y, z
             meshLayout.PushInt<unsigned char>(2, true); // u, v
             meshLayout.PushInt<unsigned char>(1); // face
+            meshLayout.PushInt<unsigned char>(1); // AO
 
             m_VAO.init();
             m_VAO.addBuffer(m_VBO, meshLayout);
@@ -103,6 +104,7 @@ public:
             meshLayout.Push<unsigned char>(3); // x, y, z
             meshLayout.PushInt<unsigned char>(2, true); // u, v
             meshLayout.PushInt<unsigned char>(1); // face
+            meshLayout.PushInt<unsigned char>(1); // AO
 
             m_VAO_transparent.init();
             m_VAO_transparent.addBuffer(m_VBO_transparent, meshLayout);

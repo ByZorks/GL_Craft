@@ -41,67 +41,76 @@ void Tree::generateVoxel() {
 }
 
 void Tree::generateMesh() {
-    for (int x = 0; x < SIZE; ++x) {
-        for (int y = 0; y < SIZE; ++y) {
-            for (int z = 0; z < SIZE; ++z) {
-                const BlockType blockType = m_blockType[index(x, y, z)];
+    for (int localX = 0; localX < SIZE; ++localX) {
+        for (int localY = 0; localY < SIZE; ++localY) {
+            for (int localZ = 0; localZ < SIZE; ++localZ) {
+                const BlockType blockType = m_blockType[index(localX, localY, localZ)];
                 if (blockType == BlockType::AIR) continue;
-                const auto localXf = static_cast<float>(x);
-                const auto localYf = static_cast<float>(y);
-                const auto localZf = static_cast<float>(z);
+                const auto localXf = static_cast<float>(localX);
+                const auto localYf = static_cast<float>(localY);
+                const auto localZf = static_cast<float>(localZ);
                 const bool isTransparent = Block::isTransparent(blockType);
 
-                if (shouldDrawFace(x, y, z, blockType, Face::TOP)) {
+                std::vector<BlockType> adjacentFaces;
+                adjacentFaces.reserve(6);
+                adjacentFaces.emplace_back(getBlockType(localX - 1, localY, localZ)); // Left
+                adjacentFaces.emplace_back(getBlockType(localX + 1, localY, localZ)); // Right
+                adjacentFaces.emplace_back(getBlockType(localX, localY - 1, localZ)); // Bottom
+                adjacentFaces.emplace_back(getBlockType(localX, localY + 1, localZ)); // Top
+                adjacentFaces.emplace_back(getBlockType(localX, localY, localZ - 1)); // Back
+                adjacentFaces.emplace_back(getBlockType(localX, localY, localZ + 1)); // Front
+
+                if (shouldDrawFace(localX, localY, localZ, blockType, Face::TOP)) {
                     if (isTransparent) {
-                        Block::addFaceVertices(Face::TOP, blockType, m_vertices_transparent, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::TOP, blockType, m_vertices_transparent, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::TOP, 4);
                     } else {
-                        Block::addFaceVertices(Face::TOP, blockType, m_vertices, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::TOP, blockType, m_vertices, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData.emplace_back(Face::TOP, 4);
                     }
                 }
-                if (shouldDrawFace(x, y, z, blockType, Face::BOTTOM)) {
+                if (shouldDrawFace(localX, localY, localZ, blockType, Face::BOTTOM)) {
                     if (isTransparent) {
-                        Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices_transparent, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices_transparent, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::BOTTOM, 4);
                     } else {
-                        Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData.emplace_back(Face::BOTTOM, 4);
                     }
                 }
-                if (shouldDrawFace(x, y, z, blockType, Face::FRONT)) {
+                if (shouldDrawFace(localX, localY, localZ, blockType, Face::FRONT)) {
                     if (isTransparent) {
-                        Block::addFaceVertices(Face::FRONT, blockType, m_vertices_transparent, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::FRONT, blockType, m_vertices_transparent, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::FRONT, 4);
                     } else {
-                        Block::addFaceVertices(Face::FRONT, blockType, m_vertices, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::FRONT, blockType, m_vertices, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData.emplace_back(Face::FRONT, 4);
                     }
                 }
-                if (shouldDrawFace(x, y, z, blockType, Face::BACK)) {
+                if (shouldDrawFace(localX, localY, localZ, blockType, Face::BACK)) {
                     if (isTransparent) {
-                        Block::addFaceVertices(Face::BACK, blockType, m_vertices_transparent, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::BACK, blockType, m_vertices_transparent, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::BACK, 4);
                     } else {
-                        Block::addFaceVertices(Face::BACK, blockType, m_vertices, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::BACK, blockType, m_vertices, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData.emplace_back(Face::BACK, 4);
                     }
                 }
-                if (shouldDrawFace(x, y, z, blockType, Face::RIGHT)) {
+                if (shouldDrawFace(localX, localY, localZ, blockType, Face::RIGHT)) {
                     if (isTransparent) {
-                        Block::addFaceVertices(Face::RIGHT, blockType, m_vertices_transparent, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::RIGHT, blockType, m_vertices_transparent, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::RIGHT, 4);
                     } else {
-                        Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData.emplace_back(Face::RIGHT, 4);
                     }
                 }
-                if (shouldDrawFace(x, y, z, blockType, Face::LEFT)) {
+                if (shouldDrawFace(localX, localY, localZ, blockType, Face::LEFT)) {
                     if (isTransparent) {
-                        Block::addFaceVertices(Face::LEFT, blockType, m_vertices_transparent, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::LEFT, blockType, m_vertices_transparent, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData_transparent.emplace_back(Face::LEFT, 4);
                     } else {
-                        Block::addFaceVertices(Face::LEFT, blockType, m_vertices, localXf, localYf, localZf);
+                        Block::addFaceVertices(Face::LEFT, blockType, m_vertices, adjacentFaces, localXf, localYf, localZf);
                         m_blockFaceData.emplace_back(Face::LEFT, 4);
                     }
                 }

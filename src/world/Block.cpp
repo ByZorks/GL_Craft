@@ -27,7 +27,7 @@ BlockType Block::getBlockType(const int y, const int columnHeight) {
     return BlockType::AIR;
 }
 
-void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &vertices, const float block_startX, const float block_startY, const float block_startZ) {
+void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &vertices, std::vector<BlockType> &adjacentsFaces, const float block_startX, const float block_startY, const float block_startZ) {
     const float block_endX = block_startX + 1.0f;
     const float block_endY = block_startY + 1.0f;
     const float block_endZ = block_startZ + 1.0f;
@@ -35,14 +35,15 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
     vertices.reserve(vertices.size() + 4);
 
     // Helper lambda to add a vertex directly
-    auto addVertex = [&vertices](const float x, const float y, const float z, const uint8_t u, const uint8_t v, const uint8_t faceIndex) {
+    auto addVertex = [&vertices](const float x, const float y, const float z, const uint8_t u, const uint8_t v, const uint8_t faceIndex, const uint8_t ao = 3) {
         vertices.emplace_back(BlockVertex{
             static_cast<uint8_t>(x),
             static_cast<uint8_t>(y),
             static_cast<uint8_t>(z),
             u,
             v,
-            faceIndex
+            faceIndex,
+            ao
         });
     };
 
@@ -141,7 +142,8 @@ void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std
             static_cast<uint8_t>(z),
             u,
             v,
-            faceIndex
+            faceIndex,
+            static_cast<uint8_t>(3)
         });
     };
 
@@ -173,6 +175,13 @@ void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std
         default:
             throw std::invalid_argument("Invalid face type");
     }
+}
+
+int Block::computeVertexAO(const bool side1, const bool side2, const int opacity) {
+    if (side1 && side2) {
+        return 0;
+    }
+    return 3 -(side1 + side2 + opacity);
 }
 
 bool Block::isTransparent(const BlockType type) {

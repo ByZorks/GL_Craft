@@ -3,9 +3,11 @@
 layout(location = 0) in vec3 position; // Vertex position in local chunk space
 layout(location = 1) in uvec2 texIndex; // Texture column and row for atlas mapping (normalized)
 layout(location = 2) in uint face; // Face index (0-6 for 6 faces + 1 inversed face)
+layout(location = 3) in uint AO; // Ambient Occlusion values (0-3)
 
 out vec2 v_texCoord;
 flat out uint v_face;
+flat out float v_AO;
 
 uniform float u_Time;
 uniform vec3 u_Offset;
@@ -36,4 +38,6 @@ void main() {
     v_texCoord = animatedTexIndex * tileSize;
 
     v_face = face;
+
+    v_AO = float(AO) / 3.0f; // Normalize AO to 0-1 range
 }

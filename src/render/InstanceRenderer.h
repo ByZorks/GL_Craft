@@ -55,6 +55,7 @@ public:
             meshLayout.Push<unsigned char>(3); // x, y, z
             meshLayout.PushInt<unsigned char>(2, true); // u, v
             meshLayout.PushInt<unsigned char>(1); // face
+            meshLayout.PushInt<unsigned char>(1); // AO
 
             m_VAO.init();
             m_VAO.addBuffer(m_VBO, meshLayout);
@@ -64,7 +65,7 @@ public:
         constexpr size_t initialCapacity = 10000;
         m_instancePositions.reserve(initialCapacity);
         m_instanceVBO.init(nullptr, initialCapacity * sizeof(glm::vec3), BufferUsage::DYNAMIC);
-        m_VAO.addInstancedBuffer(m_instanceVBO, 3, 3); // Instance positions (x, y, z)
+        m_VAO.addInstancedBuffer(m_instanceVBO, 4, 3); // Instance positions (x, y, z)
 
         m_instanceBufferCapacity = initialCapacity;
         m_buffersInitialized = true;

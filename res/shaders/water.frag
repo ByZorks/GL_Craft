@@ -4,6 +4,7 @@ layout(location = 0) out vec4 color;
 
 in vec2 v_texCoord;
 flat in uint v_face;
+flat in float v_AO;
 
 uniform sampler2D u_Texture;
 
@@ -19,7 +20,7 @@ void main() {
     } else {
         lighting = 0.7; // Side
     }
-    vec3 shaded = texColor.rgb * lighting;
+    vec3 shaded = texColor.rgb * lighting * v_AO;
 
     color = vec4(shaded, texColor.a);
 }

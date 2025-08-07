@@ -28,6 +28,7 @@ struct BlockVertex {
     uint8_t x, y, z; // Position in local coordinates
     uint8_t texCol, texRow; // Texture row and column in the texture atlas
     uint8_t face; // Face index to determine the normal vector
+    uint8_t AO; // Ambient Occlusion value (0-3)
 };
 
 class Block {
@@ -68,8 +69,9 @@ public:
     Block(float x, float y, float z);
 
     static BlockType getBlockType(int y, int columnHeight);
-    static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, float block_startX, float block_startY, float block_startZ);
+    static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, std::vector<BlockType> &adjacentsFaces, float block_startX, float block_startY, float block_startZ);
     static void addFaceVerticesAsBilboard(Face face, BlockType type, std::vector<BlockVertex> &vertices, float block_startX, float block_startY, float block_startZ);
+    static int computeVertexAO(bool side1, bool side2, int opacity);
 
     static bool isTransparent(BlockType type);
 
