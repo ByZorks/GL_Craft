@@ -27,7 +27,7 @@ BlockType Block::getBlockType(const int y, const int columnHeight) {
     return BlockType::AIR;
 }
 
-void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &vertices, std::vector<BlockType> &adjacentsFaces, const float block_startX, const float block_startY, const float block_startZ) {
+void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &vertices, std::vector<bool> &adjacentsFaces, const float block_startX, const float block_startY, const float block_startZ) {
     const float block_endX = block_startX + 1.0f;
     const float block_endY = block_startY + 1.0f;
     const float block_endZ = block_startZ + 1.0f;
@@ -35,7 +35,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
     vertices.reserve(vertices.size() + 4);
 
     // Helper lambda to add a vertex directly
-    auto addVertex = [&vertices](const float x, const float y, const float z, const uint8_t u, const uint8_t v, const uint8_t faceIndex, const uint8_t ao = 3) {
+    auto addVertex = [&vertices](const float x, const float y, const float z, const uint8_t u, const uint8_t v, const uint8_t faceIndex, const uint8_t ao) {
         vertices.emplace_back(BlockVertex{
             static_cast<uint8_t>(x),
             static_cast<uint8_t>(y),
@@ -54,10 +54,22 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
             constexpr uint8_t faceIndex = 0;
-            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, faceIndex);
-            addVertex(block_endX, block_endY, block_endZ, u_end, v_end, faceIndex);
-            addVertex(block_endX, block_startY, block_endZ, u_end, v_start, faceIndex);
-            addVertex(block_startX, block_startY, block_endZ, u_start, v_start, faceIndex);
+            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, 0, 1)],
+                adjacentsFaces[AOIndex(0, 1, 1)],
+                adjacentsFaces[AOIndex(-1, 1, 1)]));
+            addVertex(block_endX, block_endY, block_endZ, u_end, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, 0, 1)],
+                adjacentsFaces[AOIndex(0, 1, 1)],
+                adjacentsFaces[AOIndex(1, 1, 1)]));
+            addVertex(block_endX, block_startY, block_endZ, u_end, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, 0, 1)],
+                adjacentsFaces[AOIndex(0, -1, 1)],
+                adjacentsFaces[AOIndex(1, -1, 1)]));
+            addVertex(block_startX, block_startY, block_endZ, u_start, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, 0, 1)],
+                adjacentsFaces[AOIndex(0, -1, 1)],
+                adjacentsFaces[AOIndex(-1, -1, 1)]));
             break;
         }
         case Face::BACK: {
@@ -65,11 +77,23 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr uint8_t normal = 1;
-            addVertex(block_startX, block_endY, block_startZ, u_start, v_end, normal);
-            addVertex(block_endX, block_endY, block_startZ, u_end, v_end, normal);
-            addVertex(block_endX, block_startY, block_startZ, u_end, v_start, normal);
-            addVertex(block_startX, block_startY, block_startZ, u_start, v_start, normal);
+            constexpr uint8_t faceIndex = 1;
+            addVertex(block_startX, block_endY, block_startZ, u_start, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, 0, -1)],
+                adjacentsFaces[AOIndex(0, 1, -1)],
+                adjacentsFaces[AOIndex(-1, 1, -1)]));
+            addVertex(block_endX, block_endY, block_startZ, u_end, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, 0, -1)],
+                adjacentsFaces[AOIndex(0, 1, -1)],
+                adjacentsFaces[AOIndex(1, 1, -1)]));
+            addVertex(block_endX, block_startY, block_startZ, u_end, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, 0, -1)],
+                adjacentsFaces[AOIndex(0, -1, -1)],
+                adjacentsFaces[AOIndex(1, -1, -1)]));
+            addVertex(block_startX, block_startY, block_startZ, u_start, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, 0, -1)],
+                adjacentsFaces[AOIndex(0, -1, -1)],
+                adjacentsFaces[AOIndex(-1, -1, -1)]));
             break;
         }
         case Face::LEFT: {
@@ -77,11 +101,23 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr uint8_t normal = 2;
-            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, normal);
-            addVertex(block_startX, block_endY, block_startZ, u_end, v_end, normal);
-            addVertex(block_startX, block_startY, block_startZ, u_end, v_start, normal);
-            addVertex(block_startX, block_startY, block_endZ, u_start, v_start, normal);
+            constexpr uint8_t faceIndex = 2;
+            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, 0, 1)],
+                adjacentsFaces[AOIndex(-1, 1, 0)],
+                adjacentsFaces[AOIndex(-1, 1, 1)]));
+            addVertex(block_startX, block_endY, block_startZ, u_end, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, 0, -1)],
+                adjacentsFaces[AOIndex(-1, 1, 0)],
+                adjacentsFaces[AOIndex(-1, 1, -1)]));
+            addVertex(block_startX, block_startY, block_startZ, u_end, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, 0, -1)],
+                adjacentsFaces[AOIndex(-1, -1, 0)],
+                adjacentsFaces[AOIndex(-1, -1, -1)]));
+            addVertex(block_startX, block_startY, block_endZ, u_start, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, 0, 1)],
+                adjacentsFaces[AOIndex(-1, -1, 0)],
+                adjacentsFaces[AOIndex(-1, -1, 1)]));
             break;
         }
         case Face::RIGHT: {
@@ -89,11 +125,23 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr uint8_t normal = 3;
-            addVertex(block_endX, block_endY, block_endZ, u_start, v_end, normal);
-            addVertex(block_endX, block_endY, block_startZ, u_end, v_end, normal);
-            addVertex(block_endX, block_startY, block_startZ, u_end, v_start, normal);
-            addVertex(block_endX, block_startY, block_endZ, u_start, v_start, normal);
+            constexpr uint8_t faceIndex = 3;
+            addVertex(block_endX, block_endY, block_endZ, u_start, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, 0, 1)],
+                adjacentsFaces[AOIndex(1, 1, 0)],
+                adjacentsFaces[AOIndex(1, 1, 1)]));
+            addVertex(block_endX, block_endY, block_startZ, u_end, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, 0, -1)],
+                adjacentsFaces[AOIndex(1, 1, 0)],
+                adjacentsFaces[AOIndex(1, 1, -1)]));
+            addVertex(block_endX, block_startY, block_startZ, u_end, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, 0, -1)],
+                adjacentsFaces[AOIndex(1, -1, 0)],
+                adjacentsFaces[AOIndex(1, -1, -1)]));
+            addVertex(block_endX, block_startY, block_endZ, u_start, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, 0, 1)],
+                adjacentsFaces[AOIndex(1, -1, 0)],
+                adjacentsFaces[AOIndex(1, -1, 1)]));
             break;
         }
         case Face::TOP: case Face::TOP_INVERSED: {
@@ -101,11 +149,23 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            const uint8_t normal = face == Face::TOP ? 4 : 6;
-            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, normal);
-            addVertex(block_endX, block_endY, block_endZ, u_end , v_end, normal);
-            addVertex(block_endX, block_endY, block_startZ, u_end , v_start, normal);
-            addVertex(block_startX, block_endY, block_startZ, u_start, v_start, normal);
+            const uint8_t faceIndex = face == Face::TOP ? 4 : 6;
+            addVertex(block_startX, block_endY, block_endZ, u_start, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, 1, 0)],
+                adjacentsFaces[AOIndex(0, 1, 1)],
+                adjacentsFaces[AOIndex(-1, 1, 1)]));
+            addVertex(block_endX, block_endY, block_endZ, u_end , v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, 1, 0)],
+                adjacentsFaces[AOIndex(0, 1, 1)],
+                adjacentsFaces[AOIndex(1, 1, 1)]));
+            addVertex(block_endX, block_endY, block_startZ, u_end , v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, 1, 0)],
+                adjacentsFaces[AOIndex(0, 1, -1)],
+                adjacentsFaces[AOIndex(1, 1, -1)]));
+            addVertex(block_startX, block_endY, block_startZ, u_start, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, 1, 0)],
+                adjacentsFaces[AOIndex(0, 1, -1)],
+                adjacentsFaces[AOIndex(-1, 1, -1)]));
             break;
         }
         case Face::BOTTOM: {
@@ -113,11 +173,23 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr uint8_t normal = 5;
-            addVertex(block_startX, block_startY, block_endZ, u_start, v_end, normal);
-            addVertex(block_endX, block_startY, block_endZ, u_end, v_end, normal);
-            addVertex(block_endX, block_startY, block_startZ, u_end, v_start, normal);
-            addVertex(block_startX, block_startY, block_startZ, u_start, v_start, normal);
+            constexpr uint8_t faceIndex = 5;
+            addVertex(block_startX, block_startY, block_endZ, u_start, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, -1, 0)],
+                adjacentsFaces[AOIndex(0, -1, 1)],
+                adjacentsFaces[AOIndex(-1, -1, 1)]));
+            addVertex(block_endX, block_startY, block_endZ, u_end, v_end, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, -1, 0)],
+                adjacentsFaces[AOIndex(0, -1, 1)],
+                adjacentsFaces[AOIndex(1, -1, 1)]));
+            addVertex(block_endX, block_startY, block_startZ, u_end, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(1, -1, 0)],
+                adjacentsFaces[AOIndex(0, -1, -1)],
+                adjacentsFaces[AOIndex(1, -1, -1)]));
+            addVertex(block_startX, block_startY, block_startZ, u_start, v_start, faceIndex, computeVertexAO(
+                adjacentsFaces[AOIndex(-1, -1, 0)],
+                adjacentsFaces[AOIndex(0, -1, -1)],
+                adjacentsFaces[AOIndex(-1, -1, -1)]));
             break;
         }
         default:
@@ -177,11 +249,14 @@ void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std
     }
 }
 
-int Block::computeVertexAO(const bool side1, const bool side2, const int opacity) {
+uint8_t Block::computeVertexAO(const bool side1, const bool side2, const bool corner) {
+    constexpr uint8_t AO_MIN = 0;
+    constexpr uint8_t AO_MAX = 3;
+
     if (side1 && side2) {
-        return 0;
+        return AO_MIN;
     }
-    return 3 -(side1 + side2 + opacity);
+    return AO_MAX - (side1 + side2 + corner);
 }
 
 bool Block::isTransparent(const BlockType type) {
@@ -198,4 +273,10 @@ uint8_t Block::getTextureV(BlockType type, const Face face) {
     const uint8_t typeIndex = static_cast<int>(type);
     const uint8_t faceIndex = face == Face::TOP ? 1 : face == Face::BOTTOM ? 2 : 0;
     return s_textureRow[typeIndex][faceIndex];
+}
+
+int Block::AOIndex(const int x, const int y, const int z) {
+    constexpr int stride = 3;
+    const int idx = (x + 1) * stride * stride + (y + 1) * stride + (z + 1);
+    return idx < 13 ? idx : idx - 1;
 }

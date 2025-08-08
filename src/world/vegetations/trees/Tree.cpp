@@ -51,14 +51,16 @@ void Tree::generateMesh() {
                 const auto localZf = static_cast<float>(localZ);
                 const bool isTransparent = Block::isTransparent(blockType);
 
-                std::vector<BlockType> adjacentFaces;
-                adjacentFaces.reserve(6);
-                adjacentFaces.emplace_back(getBlockType(localX - 1, localY, localZ)); // Left
-                adjacentFaces.emplace_back(getBlockType(localX + 1, localY, localZ)); // Right
-                adjacentFaces.emplace_back(getBlockType(localX, localY - 1, localZ)); // Bottom
-                adjacentFaces.emplace_back(getBlockType(localX, localY + 1, localZ)); // Top
-                adjacentFaces.emplace_back(getBlockType(localX, localY, localZ - 1)); // Back
-                adjacentFaces.emplace_back(getBlockType(localX, localY, localZ + 1)); // Front
+                std::vector<bool> adjacentFaces;
+                adjacentFaces.reserve(26);
+                for (int dx = -1; dx <= 1; ++dx) {
+                    for (int dy = -1; dy <= 1; ++dy) {
+                        for (int dz = -1; dz <= 1; ++dz) {
+                            if (dx == 0 && dy == 0 && dz == 0) continue;
+                            adjacentFaces.emplace_back(!Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz)));
+                        }
+                    }
+                }
 
                 if (shouldDrawFace(localX, localY, localZ, blockType, Face::TOP)) {
                     if (isTransparent) {

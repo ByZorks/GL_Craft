@@ -7,7 +7,7 @@ layout(location = 3) in uint AO; // Ambient Occlusion values (0-3)
 
 out vec2 v_texCoord;
 flat out uint v_face;
-flat out float v_AO;
+out float v_AO;
 
 uniform vec3 u_Offset;
 uniform mat4 u_MVP;
@@ -21,5 +21,6 @@ void main() {
 
     v_face = face;
 
-    v_AO = float(AO) / 3.0f; // Normalize AO to 0-1 range
+    const float AO_f = float(AO) / 3.0; // Normalize AO to 0-1 range
+    v_AO = AO_f == 0.0 ? 0.1 : AO_f; // Prevent completely dark faces
 }

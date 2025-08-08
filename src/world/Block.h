@@ -69,15 +69,16 @@ public:
     Block(float x, float y, float z);
 
     static BlockType getBlockType(int y, int columnHeight);
-    static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, std::vector<BlockType> &adjacentsFaces, float block_startX, float block_startY, float block_startZ);
+    static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, std::vector<bool> &adjacentsFaces, float block_startX, float block_startY, float block_startZ);
     static void addFaceVerticesAsBilboard(Face face, BlockType type, std::vector<BlockVertex> &vertices, float block_startX, float block_startY, float block_startZ);
-    static int computeVertexAO(bool side1, bool side2, int opacity);
+    static uint8_t computeVertexAO(bool side1, bool side2, bool corner);
 
     static bool isTransparent(BlockType type);
 
 private:
     static uint8_t getTextureU(BlockType type, Face face);
     static uint8_t getTextureV(BlockType type, Face face);
+    [[nodiscard]] static int AOIndex(int x, int y, int z);
 };
 
 #endif //BLOCK_H
