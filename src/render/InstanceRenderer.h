@@ -52,7 +52,7 @@ public:
             m_IBO.init(meshIndices_opaque.data(), meshIndices_opaque.size());
 
             VertexBufferLayout meshLayout;
-            meshLayout.Push<unsigned char>(3); // x, y, z
+            meshLayout.PushInt<unsigned char>(3); // x, y, z
             meshLayout.PushInt<unsigned char>(2, true); // u, v
             meshLayout.PushInt<unsigned char>(1); // face
 
