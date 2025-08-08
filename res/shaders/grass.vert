@@ -1,6 +1,6 @@
 #version 460 core
 
-layout(location = 0) in vec3 position; // Vertex position
+layout(location = 0) in uvec3 position; // Vertex position
 layout(location = 1) in uvec2 texIndex; // Texture column and row for atlas mapping (normalized)
 layout(location = 2) in uint face; // Face index
 layout(location = 3) in uint AO; // Ambient Occlusion values (0-3)
