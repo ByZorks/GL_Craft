@@ -152,10 +152,16 @@ public:
     }
 
     [[nodiscard]] virtual bool isBlockPresent(const int localX, const int localY, const int localZ) const {
+        if (localX < 0 || localY < 0 || localZ < 0 || localX >= m_size || localY >= m_size || localZ >= m_size) {
+            return false;
+        }
         return m_blockType[index(localX, localY, localZ)] != BlockType::AIR;
     }
 
     [[nodiscard]] virtual BlockType getBlockType(const int localX, const int localY, const int localZ) const {
+        if (localX < 0 || localY < 0 || localZ < 0 || localX >= m_size || localY >= m_size || localZ >= m_size) {
+            return BlockType::AIR;
+        }
         return m_blockType[index(localX, localY, localZ)];
     }
 
