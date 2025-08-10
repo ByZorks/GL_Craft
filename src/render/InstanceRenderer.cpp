@@ -3,14 +3,12 @@
 #include "Renderer.h"
 
 void InstanceRenderer::addInstance(const glm::vec3 &position) {
-    if (m_instanceCount < m_instanceBufferCapacity) {
-        if (m_instanceCount >= m_instancePositions.size()) {
-            m_instancePositions.push_back(position);
-        } else {
-            m_instancePositions[m_instanceCount] = position;
-        }
-        m_instanceCount++;
+    if (m_instanceCount >= m_instancePositions.size()) {
+        m_instancePositions.push_back(position);
+    } else {
+        m_instancePositions[m_instanceCount] = position;
     }
+    m_instanceCount++;
 }
 
 void InstanceRenderer::updateInstanceBuffer() {
