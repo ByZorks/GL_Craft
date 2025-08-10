@@ -27,9 +27,7 @@ public:
         meshCopy.generateMesh();
 
         const auto& vertices = meshCopy.m_vertices1();
-        const auto& verticesTransparent = meshCopy.m_vertices_transparent1();
         const auto& blockFaceData = meshCopy.m_block_face_data();
-        const auto& blockFaceDataTransparent = meshCopy.m_block_face_data_transparent();
 
         if (!vertices.empty()) {
             std::vector<unsigned int> meshIndices_opaque;
