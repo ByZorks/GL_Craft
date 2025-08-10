@@ -64,6 +64,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     // Setup buffers for chunks that are ready to be rendered
     m_displayedNormalMeshes.clear();
     m_displayedTransparentMeshes.clear();
+    m_displayedWaterMeshes.clear();
     bool needInstanceUpdate = false;
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
         if (chunk->m_status1() == Status::MESH_GENERATED) {
@@ -90,8 +91,9 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
                                 static_cast<float>(strong_mesh->m_y1()),
                                 static_cast<float>(strong_mesh->m_z1()));
 
-            strong_mesh->draw();
+            if (strong_mesh->hasOpaqueFaces()) strong_mesh->draw();
             if (strong_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(strong_mesh);
+            if (strong_mesh->hasWaterFaces()) m_displayedWaterMeshes.push_back(strong_mesh);
             drawCalls++;
             visibleChunksCount++;
 
@@ -126,18 +128,32 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     }
 }
 
-void World::drawWater(Shader &waterShader, unsigned int &drawCalls) const {
-    if (!m_displayedTransparentMeshes.empty()) {
+void World::drawTransparentChunks(Shader &shader, unsigned int &drawCalls) const {
+    for (const auto& mesh : m_displayedTransparentMeshes) {
+        if (const auto strong_mesh = mesh.lock()) {
+            shader.setUniform3f("u_Offset",
+                                static_cast<float>(strong_mesh->m_x1()),
+                                static_cast<float>(strong_mesh->m_y1()),
+                                static_cast<float>(strong_mesh->m_z1()));
+
+            strong_mesh->drawTransparent();
+            drawCalls++;
+        }
+    }
+}
+
+void World::drawWater(Shader &shader, unsigned int &drawCalls) const {
+    if (!m_displayedWaterMeshes.empty()) {
         Renderer::disableDepthMask();
-        for (const auto& mesh : m_displayedTransparentMeshes) {
+        for (const auto& mesh : m_displayedWaterMeshes) {
             if (const auto strong_mesh = mesh.lock()) {
-                waterShader.setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
-                waterShader.setUniform3f("u_Offset",
+                shader.setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
+                shader.setUniform3f("u_Offset",
                                     static_cast<float>(strong_mesh->m_x1()),
                                     static_cast<float>(strong_mesh->m_y1()),
                                     static_cast<float>(strong_mesh->m_z1()));
 
-                strong_mesh->drawTransparent();
+                strong_mesh->drawWater();
                 drawCalls++;
             }
         }

@@ -10,7 +10,7 @@
 #include "MeshData.h"
 #include "../gl/Shader.h"
 #include "../math/Frustum.h"
-#include "../render/InstanceRendererData.h"
+#include "../render/InstanceRenderer.h"
 #include "../render/ThreadPool.h"
 #include "../utils/CustomHash.h"
 
@@ -41,6 +41,7 @@ private:
 
     std::vector<std::weak_ptr<Chunk>> m_displayedNormalMeshes;
     std::vector<std::weak_ptr<Chunk>> m_displayedTransparentMeshes;
+    std::vector<std::weak_ptr<Chunk>> m_displayedWaterMeshes;
 
     FastNoiseLite m_terrainHeightGenerator;
     FastNoiseLite m_surfaceFeaturesNoise;
@@ -51,7 +52,8 @@ public:
 
     void updateChunks(const Camera &camera);
     void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &drawCalls);
-    void drawWater(Shader &waterShader, unsigned int &drawCalls) const;
+    void drawTransparentChunks(Shader &shader, unsigned int &drawCalls) const;
+    void drawWater(Shader &shader, unsigned int &drawCalls) const;
     void drawInstances(unsigned int &drawCalls) const;
 
     int getHeight(int worldX, int worldZ);

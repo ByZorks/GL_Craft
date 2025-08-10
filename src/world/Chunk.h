@@ -27,6 +27,8 @@ public:
 
 private:
     void addBlockFaces(int localX, int localY, int localZ, BlockType blockType);
+    void addTree(int localX, int localY, int localZ);
+
     [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const override;
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const override;
 

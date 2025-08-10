@@ -20,16 +20,21 @@ protected:
     int m_x, m_y, m_z;
     std::vector<BlockVertex> m_vertices;
     std::vector<BlockVertex> m_vertices_transparent;
+    std::vector<BlockVertex> m_vertices_water;
     std::vector<BlockFaceData> m_blockFaceData;
     std::vector<BlockFaceData> m_blockFaceData_transparent;
+    std::vector<BlockFaceData> m_blockFaceData_water;
     std::vector<BlockType> m_blockType;
     Status m_status = Status::NOT_GENERATED;
     VertexArray m_VAO;
     VertexArray m_VAO_transparent;
+    VertexArray m_VAO_water;
     VertexBuffer m_VBO;
     VertexBuffer m_VBO_transparent;
+    VertexBuffer m_VBO_water;
     IndexBuffer m_IBO;
     IndexBuffer m_IBO_transparent;
+    IndexBuffer m_IBO_water;
     AABB m_box;
 
 public:
@@ -108,6 +113,36 @@ public:
             m_VAO_transparent.addBuffer(m_VBO_transparent, meshLayout);
         }
 
+        // === WATER ===
+        if (!m_vertices_water.empty()) {
+            std::vector<unsigned int> meshIndices_water;
+            meshIndices_water.reserve(m_blockFaceData_water.size() * 6); // 6 indices par face
+            unsigned int vertexOffsetWater = 0;
+
+            for (const auto &[faceType, vertexCount, x, y, z]: m_blockFaceData_water) {
+                constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
+                constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
+                const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
+                                                  ? faceIndicesCW : faceIndicesCCW;
+
+                for (int i = 0; i < 6; ++i) {
+                    meshIndices_water.push_back(vertexOffsetWater + indices[i]);
+                }
+                vertexOffsetWater += vertexCount;
+            }
+
+            m_VBO_water.init(m_vertices_water.data(), m_vertices_water.size() * sizeof(BlockVertex));
+            m_IBO_water.init(meshIndices_water.data(), meshIndices_water.size());
+
+            VertexBufferLayout meshLayout;
+            meshLayout.PushInt<unsigned char>(3); // x, y, z
+            meshLayout.PushInt<unsigned char>(2, true); // u, v
+            meshLayout.PushInt<unsigned char>(1); // face
+
+            m_VAO_water.init();
+            m_VAO_water.addBuffer(m_VBO_water, meshLayout);
+        }
+
         m_status = Status::BUFFERS_SETUP;
     }
 
@@ -119,8 +154,20 @@ public:
         Renderer::draw(m_VAO_transparent, m_IBO_transparent);
     }
 
+    void drawWater() const {
+        Renderer::draw(m_VAO_water, m_IBO_water);
+    }
+
+    [[nodiscard]] bool hasOpaqueFaces() const {
+        return !m_vertices.empty() && m_IBO.m_count() > 0;
+    }
+
     [[nodiscard]] bool hasTransparentFaces() const {
         return !m_vertices_transparent.empty() && m_IBO_transparent.m_count() > 0;
+    }
+
+    [[nodiscard]] bool hasWaterFaces() const {
+        return !m_vertices_water.empty() && m_IBO_water.m_count() > 0;
     }
 
     [[nodiscard]] virtual bool shouldDrawFace(int x, int y, int z,
@@ -184,14 +231,6 @@ public:
         return m_status;
     }
 
-    [[nodiscard]] const VertexArray &m_vao() const {
-        return m_VAO;
-    }
-
-    [[nodiscard]] const IndexBuffer &m_ibo() const {
-        return m_IBO;
-    }
-
     [[nodiscard]] const AABB &m_box1() const {
         return m_box;
     }
@@ -200,16 +239,8 @@ public:
         return m_vertices;
     }
 
-    [[nodiscard]] const std::vector<BlockVertex> & m_vertices_transparent1() const {
-        return m_vertices_transparent;
-    }
-
     [[nodiscard]] std::vector<BlockFaceData> m_block_face_data() const {
         return m_blockFaceData;
-    }
-
-    [[nodiscard]] std::vector<BlockFaceData> m_block_face_data_transparent() const {
-        return m_blockFaceData_transparent;
     }
 };
 

@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
         // Chunks generation
         world->updateChunks(camera);
 
-        // Render instances, chunks then water
+        // Render instances, opaques block, transparents blocks then water
         grassShader->use();
         grassShader->setUniformMat4f("u_MVP", mvp);
         world->drawInstances(drawCalls);
@@ -101,6 +101,8 @@ int main(int argc, char *argv[]) {
         blockShader->use();
         blockShader->setUniformMat4f("u_MVP", mvp);
         world->drawChunks(camera, frustum, *blockShader, visibleChunksCount, drawCalls);
+
+        world->drawTransparentChunks(*blockShader, drawCalls);
 
         waterShader->use();
         waterShader->setUniformMat4f("u_MVP", mvp);

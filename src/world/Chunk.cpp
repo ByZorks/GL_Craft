@@ -57,6 +57,19 @@ void Chunk::generateVoxel(World &world) {
                 if (world.isCave(worldX, worldY, worldZ, columnHeight)) continue;
                 const BlockType blockType = Block::getBlockType(worldY, columnHeight);
                 m_blockType[index(localX, localY, localZ)] = blockType;
+
+                // Surface features
+                if (worldY != columnHeight + 1) continue;
+                const auto it = m_surfaceFeatures.find(SurfaceFeature(worldX, columnHeight, worldZ));
+                if (it != m_surfaceFeatures.end()) {
+                    switch (it->type) {
+                        case SurfaceFeatureType::TREE: {
+                            addTree(localX, localY, localZ);
+                            break;
+                        }
+                        default: {}
+                    }
+                }
             }
         }
     }
@@ -78,8 +91,10 @@ void Chunk::generateMesh() {
     if (!hasVisibleFaces()) {
         m_blockFaceData.shrink_to_fit();
         m_blockFaceData_transparent.shrink_to_fit();
+        m_blockFaceData_water.shrink_to_fit();
         m_vertices.shrink_to_fit();
         m_vertices_transparent.shrink_to_fit();
+        m_vertices_water.shrink_to_fit();
     }
 
     m_status = Status::MESH_GENERATED;
@@ -109,23 +124,28 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     const auto localXf = static_cast<float>(localX);
     const auto localYf = static_cast<float>(localY);
     const auto localZf = static_cast<float>(localZ);
+    const bool isWater = blockType == BlockType::WATER;
     const bool isTransparent = Block::isTransparent(blockType);
 
     if (shouldDrawFace(localX, localY, localZ, blockType, Face::TOP)) {
-        if (isTransparent) {
+        if (isWater) {
+            Block::addFaceVertices(Face::TOP, blockType, m_vertices_water, localXf, localYf, localZf);
+            m_blockFaceData_water.emplace_back(Face::TOP, 4);
+            Block::addFaceVertices(Face::TOP_INVERSED, blockType, m_vertices_water, localXf, localYf, localZf);
+            m_blockFaceData_water.emplace_back(Face::TOP_INVERSED, 4);
+        } else if (isTransparent) {
             Block::addFaceVertices(Face::TOP, blockType, m_vertices_transparent, localXf, localYf, localZf);
             m_blockFaceData_transparent.emplace_back(Face::TOP, 4);
-            if (blockType == BlockType::WATER) {
-                Block::addFaceVertices(Face::TOP_INVERSED, blockType, m_vertices_transparent, localXf, localYf, localZf);
-                m_blockFaceData_transparent.emplace_back(Face::TOP_INVERSED, 4);
-            }
         } else {
             Block::addFaceVertices(Face::TOP, blockType, m_vertices, localXf, localYf, localZf);
             m_blockFaceData.emplace_back(Face::TOP, 4);
         }
     }
     if (shouldDrawFace(localX, localY, localZ, blockType, Face::BOTTOM)) {
-        if (isTransparent) {
+        if (isWater) {
+            Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices_water, localXf, localYf, localZf);
+            m_blockFaceData_water.emplace_back(Face::BOTTOM, 4);
+        } else if (isTransparent) {
             Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices_transparent, localXf, localYf, localZf);
             m_blockFaceData_transparent.emplace_back(Face::BOTTOM, 4);
         } else {
@@ -134,7 +154,10 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         }
     }
     if (shouldDrawFace(localX, localY, localZ, blockType, Face::FRONT)) {
-        if (isTransparent) {
+        if (isWater) {
+            Block::addFaceVertices(Face::FRONT, blockType, m_vertices_water, localXf, localYf, localZf);
+            m_blockFaceData_water.emplace_back(Face::FRONT, 4);
+        } if (isTransparent) {
             Block::addFaceVertices(Face::FRONT, blockType, m_vertices_transparent, localXf, localYf, localZf);
             m_blockFaceData_transparent.emplace_back(Face::FRONT, 4);
         } else {
@@ -143,7 +166,10 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         }
     }
     if (shouldDrawFace(localX, localY, localZ, blockType, Face::BACK)) {
-        if (isTransparent) {
+        if (isWater) {
+            Block::addFaceVertices(Face::BACK, blockType, m_vertices_water, localXf, localYf, localZf);
+            m_blockFaceData_water.emplace_back(Face::BACK, 4);
+        } else if (isTransparent) {
             Block::addFaceVertices(Face::BACK, blockType, m_vertices_transparent, localXf, localYf, localZf);
             m_blockFaceData_transparent.emplace_back(Face::BACK, 4);
         } else {
@@ -152,7 +178,10 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         }
     }
     if (shouldDrawFace(localX, localY, localZ, blockType, Face::RIGHT)) {
-        if (isTransparent) {
+        if (isWater) {
+            Block::addFaceVertices(Face::RIGHT, blockType, m_vertices_water, localXf, localYf, localZf);
+            m_blockFaceData_water.emplace_back(Face::RIGHT, 4);
+        } else if (isTransparent) {
             Block::addFaceVertices(Face::RIGHT, blockType, m_vertices_transparent, localXf, localYf, localZf);
             m_blockFaceData_transparent.emplace_back(Face::RIGHT, 4);
         } else {
@@ -161,12 +190,56 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         }
     }
     if (shouldDrawFace(localX, localY, localZ, blockType, Face::LEFT)) {
-        if (isTransparent) {
+        if (isWater) {
+            Block::addFaceVertices(Face::LEFT, blockType, m_vertices_water, localXf, localYf, localZf);
+            m_blockFaceData_water.emplace_back(Face::LEFT, 4);
+        } else if (isTransparent) {
             Block::addFaceVertices(Face::LEFT, blockType, m_vertices_transparent, localXf, localYf, localZf);
             m_blockFaceData_transparent.emplace_back(Face::LEFT, 4);
         } else {
             Block::addFaceVertices(Face::LEFT, blockType, m_vertices, localXf, localYf, localZf);
             m_blockFaceData.emplace_back(Face::LEFT, 4);
+        }
+    }
+}
+
+void Chunk::addTree(const int localX, const int localY, const int localZ) {
+    // TODO: Allow for generation across multiple chunks
+    if (localX < 3 || localX >= SIZE - 2 ||
+        localY >= SIZE - 5 ||
+        localZ < 3 || localZ >= SIZE - 2) {
+        return;
+    }
+
+    // Trunk: 1x5x1 = 5 blocks (y=0 to y=4)
+    for (int y = 0; y < 5; ++y) {
+        if (localY + y >= SIZE) continue;
+        m_blockType[index(localX, localY + y, localZ)] = BlockType::LOG;
+    }
+
+    // Leaves: 5x2x5 = 50 blocks (y=3 to y=4)
+    for (int y = 3; y < 5; y++) {
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                if (x == 0 && z == 0) continue;
+                if (localX + x > SIZE ||
+                    localY + y > SIZE ||
+                    localZ + z > SIZE) continue;
+                m_blockType[index(localX + x, localY + y, localZ + z)] = BlockType::LEAVES;
+            }
+        }
+    }
+
+    // Leaves: 3x2x3 = 18 blocks (y=5 to y=6)
+    for (int y = 5; y < 7; y++) {
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                if (std::abs(x) == 1 && std::abs(z) == 1) continue;
+                if (localX + x > SIZE ||
+                    localY + y > SIZE ||
+                    localZ + z > SIZE) continue;
+                m_blockType[index(localX + x, localY + y, localZ + z)] = BlockType::LEAVES;
+            }
         }
     }
 }
