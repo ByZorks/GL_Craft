@@ -36,9 +36,9 @@ public:
     Mesh(const int x, const int y, const int z, const unsigned int size) : m_size(size), m_x(x), m_y(y), m_z(z),
                                                   m_box(AABB(static_cast<float>(x), static_cast<float>(y),
                                                              static_cast<float>(z),
-                                                             static_cast<float>(x) + static_cast<float>(size) - 1,
-                                                             static_cast<float>(y) + static_cast<float>(size) - 1,
-                                                             static_cast<float>(z) + static_cast<float>(size) - 1
+                                                             static_cast<float>(x) + static_cast<float>(size) - 1.0f,
+                                                             static_cast<float>(y) + static_cast<float>(size) - 1.0f,
+                                                             static_cast<float>(z) + static_cast<float>(size) - 1.0f
                                                   )) {
         m_blockType.resize(m_size * m_size * m_size, BlockType::AIR);
     }
