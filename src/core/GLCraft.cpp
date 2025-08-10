@@ -72,7 +72,6 @@ int main(int argc, char *argv[]) {
         // Debug variables
         unsigned int drawCalls = 0;
         unsigned int visibleChunksCount = 0;
-        unsigned int visibleVegetationsCount = 0;
 
         // Handle tab key for UI mode
         debugUI.processInput(window, camera);
@@ -94,15 +93,13 @@ int main(int argc, char *argv[]) {
         // Chunks generation
         world->updateChunks(camera);
 
-        // Render instances, vegetations, chunks then water
+        // Render instances, chunks then water
         grassShader->use();
         grassShader->setUniformMat4f("u_MVP", mvp);
-        world->drawInstances(camera, frustum, visibleVegetationsCount, drawCalls);
+        world->drawInstances(drawCalls);
 
         blockShader->use();
         blockShader->setUniformMat4f("u_MVP", mvp);
-        world->drawVegetations(camera, frustum, *blockShader, visibleVegetationsCount, drawCalls);
-
         world->drawChunks(camera, frustum, *blockShader, visibleChunksCount, drawCalls);
 
         waterShader->use();
@@ -128,8 +125,7 @@ int main(int argc, char *argv[]) {
         Renderer::enableDepthTesting();
 
         // Render ImGui
-        DebugUI::render(visibleChunksCount, visibleVegetationsCount, world->m_loaded_chunks().size(),
-                        world->m_loaded_vegetations().size(), drawCalls, camera);
+        DebugUI::render(visibleChunksCount, world->m_loaded_chunks().size(), drawCalls, camera);
         DebugUI::draw();
 
         // State update

@@ -14,13 +14,25 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
 }
 
 void Chunk::generateVoxel(World &world) {
+    constexpr int waterLevel = 63;
     std::array<std::array<int, SIZE + 2>, SIZE + 2> heightCache{};
-
     for (int localX = 0; localX < SIZE + 2; localX++) {
         const int worldX = m_x + localX;
         for (int localZ = 0; localZ < SIZE + 2; localZ++) {
             const int worldZ = m_z + localZ;
-            heightCache[localX][localZ] = world.getHeight(worldX, worldZ);
+
+            // HeightMap
+            const int columnHeight = world.getHeight(worldX, worldZ);
+            heightCache[localX][localZ] = columnHeight;
+
+            // Surface features
+            if ((columnHeight < waterLevel && m_y < columnHeight) ||
+                columnHeight < m_y ||
+                columnHeight >= m_y + SIZE ||
+                world.isCave(worldX, columnHeight, worldZ, columnHeight)) continue;
+            float surfaceFeatureNoise = (world.m_surface_features_noise().GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) * 0.5f;
+            if (surfaceFeatureNoise < 0.69f) continue;
+            m_surfaceFeatures.emplace(worldX, columnHeight, worldZ, getSurfaceFeatureType(surfaceFeatureNoise));
         }
     }
 
@@ -41,6 +53,7 @@ void Chunk::generateVoxel(World &world) {
             for (int localY = 0; localY < endY; localY++) {
                 const int worldY = m_y + localY;
 
+                // Terrain
                 if (world.isCave(worldX, worldY, worldZ, columnHeight)) continue;
                 const BlockType blockType = Block::getBlockType(worldY, columnHeight);
                 m_blockType[index(localX, localY, localZ)] = blockType;
@@ -77,17 +90,13 @@ int Chunk::index(const int x, const int y, const int z) const {
     return x * stride * stride + y * stride + z;
 }
 
-bool Chunk::hasBlocks() {
-    if (std::any_of(m_blockType.begin(), m_blockType.end(), [](const BlockType type) { return type != BlockType::AIR; })) {
-        m_blockType.clear();
-        return true;
-    }
-    return false;
-}
-
 bool Chunk::hasVisibleFaces() const {
     return (!m_vertices.empty() && !m_blockFaceData.empty()) ||
            (!m_vertices_transparent.empty() && !m_blockFaceData_transparent.empty());
+}
+
+const std::unordered_set<SurfaceFeature> & Chunk::m_surface_features() const {
+    return m_surfaceFeatures;
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {

@@ -75,6 +75,7 @@ public:
     void draw() const;
 
     [[nodiscard]] unsigned int m_instance_count() const;
+    [[nodiscard]] std::vector<glm::vec3> & m_instance_positions();
 };
 
 #endif //INSTANCERENDERER_H
