@@ -79,9 +79,9 @@ void Chunk::generateVoxel(World &world) {
     m_state = State::VOXEL_GENERATED;
 }
 
-void Chunk::generatePendingBlocks(std::vector<std::tuple<int, int, int, BlockType>> &blocks) {
-    for (const auto& block : blocks) {
-        m_blockType[index(std::get<0>(block), std::get<1>(block), std::get<2>(block))] = std::get<3>(block);
+void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks) {
+    for (const auto&[localX, localY, localZ, blockType] : blocks) {
+        m_blockType[index(localX, localY, localZ)] = blockType;
     }
     blocks.clear();
 }

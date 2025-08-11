@@ -188,7 +188,7 @@ void World::drawInstances(unsigned int &drawCalls) const {
     Renderer::enableBackFaceCulling();
 }
 
-void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<std::tuple<int, int, int, BlockType>>> &blockData) {
+void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData) {
     std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
     for (const auto& [key, blocks] : blockData) {
         auto& targetVector = m_chunksData.m_pendingBlocks[key];
@@ -328,7 +328,7 @@ void World::processChunks() {
                 const std::shared_ptr<Chunk> p_chunk = it->second;
                 if (p_chunk->m_state1() < State::MESH_GENERATED) continue;
 
-                std::vector<std::tuple<int, int, int, BlockType>> blocks;
+                std::vector<PendingBlock> blocks;
                 {
                     std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
                     if (auto pending_it = m_chunksData.m_pendingBlocks.find(key); pending_it != m_chunksData.m_pendingBlocks.end()) {

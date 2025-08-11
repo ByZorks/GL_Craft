@@ -5,6 +5,7 @@
 
 #include "ChunkPosition.h"
 #include "Mesh.h"
+#include "PendingBlock.h"
 #include "surfaceFeatures/SurfaceFeature.h"
 
 class World;
@@ -12,7 +13,7 @@ class World;
 class Chunk final : public Mesh {
 private:
     std::unordered_set<SurfaceFeature> m_surfaceFeatures;
-    std::unordered_map<ChunkPosition, std::vector<std::tuple<int, int, int, BlockType>>> m_pendingBlocksForNeighbors;
+    std::unordered_map<ChunkPosition, std::vector<PendingBlock>> m_pendingBlocksForNeighbors;
 
 public:
     static constexpr unsigned int SIZE = 32;
@@ -20,7 +21,7 @@ public:
     Chunk(int x, int y, int z);
 
     void generateVoxel(World &world);
-    void generatePendingBlocks(std::vector<std::tuple<int, int, int, BlockType>> &blocks);
+    void generatePendingBlocks(std::vector<PendingBlock> &blocks);
     void generateMesh() override;
     void flagForUpdate();
     void transferPendingBlocksToWorld(World &world);
