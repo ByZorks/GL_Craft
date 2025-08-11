@@ -11,6 +11,8 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     m_blockFaceData.reserve(avg_faces);
     m_blockFaceData_transparent.reserve(avg_faces_transparent);
     m_blockType.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
+    m_pendingBlocksForNeighbors.reserve(SIZE);
+    m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
 }
 
 void Chunk::generateVoxel(World &world) {
