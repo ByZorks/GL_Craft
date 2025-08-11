@@ -192,11 +192,9 @@ void World::drawInstances(unsigned int &drawCalls) const {
 void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<std::tuple<int, int, int, BlockType>>> &blockData) {
     std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
     for (const auto& [key, blocks] : blockData) {
-        m_chunksData.m_pendingBlocks[key].insert(
-            m_chunksData.m_pendingBlocks[key].end(),
-            blocks.begin(),
-            blocks.end()
-        );
+        auto& targetVector = m_chunksData.m_pendingBlocks[key];
+        targetVector.reserve(targetVector.size() + blocks.size());
+        targetVector.insert(targetVector.end(), blocks.begin(), blocks.end());
     }
 }
 
