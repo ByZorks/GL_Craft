@@ -37,7 +37,7 @@ private:
     InstanceRenderer m_alliumRenderer;
 
     std::unordered_map<std::pair<int, int>, ChunkHeightmap> m_heightMapByChunk;
-    mutable std::mutex m_heightMapMutex;
+    std::mutex m_heightMapMutex;
 
     std::vector<std::shared_ptr<Chunk>> m_displayedNormalMeshes;
     std::vector<std::shared_ptr<Chunk>> m_displayedTransparentMeshes;
