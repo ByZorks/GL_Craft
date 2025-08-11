@@ -37,7 +37,7 @@ void Tree::generateVoxel() {
         }
     }
 
-    m_status = Status::VOXEL_GENERATED;
+    m_state = State::VOXEL_GENERATED;
 }
 
 void Tree::generateMesh() {
@@ -109,5 +109,5 @@ void Tree::generateMesh() {
         }
     }
 
-    m_status = Status::MESH_GENERATED;
+    m_state = State::MESH_GENERATED;
 }

@@ -13,7 +13,6 @@
 #include "surfaceFeatures/flowers/Cornflower.h"
 #include "surfaceFeatures/flowers/Poppy.h"
 #include "surfaceFeatures/grass/ShortGrass.h"
-#include "surfaceFeatures/trees/Tree.h"
 
 World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
     m_terrainHeightGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
@@ -67,11 +66,15 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     m_displayedWaterMeshes.clear();
     bool needInstanceUpdate = false;
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
-        if (chunk->m_status1() == Status::MESH_GENERATED) {
+        if (chunk->m_state1() == State::MESH_GENERATED || chunk->m_state1() == State::NEED_BUFFERS_UPDATE) {
             chunk->setupBuffers();
             needInstanceUpdate = true;
         }
-        if (chunk->m_status1() == Status::BUFFERS_SETUP) m_displayedNormalMeshes.push_back(chunk);
+        if (chunk->m_state1() == State::READY_TO_DRAW) {
+            if (chunk->hasOpaqueFaces()) m_displayedNormalMeshes.push_back(chunk);
+            if (chunk->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(chunk);
+            if (chunk->hasWaterFaces()) m_displayedWaterMeshes.push_back(chunk);
+        }
     }
 
     const bool instanceUpdateRequired = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk() || needInstanceUpdate;
@@ -82,39 +85,35 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         m_alliumRenderer.resetInstances();
     }
 
-    for (const auto& mesh : m_displayedNormalMeshes) {
-        if (auto strong_mesh = mesh.lock()) {
-            if (camera.distanceToCamera(*strong_mesh) > Renderer::m_renderDistance) continue;
-            if (!frustum.isAABBInFrustum(strong_mesh->m_box1())) continue;
-            shader.setUniform3f("u_Offset",
-                                static_cast<float>(strong_mesh->m_x1()),
-                                static_cast<float>(strong_mesh->m_y1()),
-                                static_cast<float>(strong_mesh->m_z1()));
+    for (const auto& strong_mesh : m_displayedNormalMeshes) {
+        if (camera.distanceToCamera(*strong_mesh) > Renderer::m_renderDistance) continue;
+        if (!frustum.isAABBInFrustum(strong_mesh->m_box1())) continue;
+        shader.setUniform3f("u_Offset",
+                            static_cast<float>(strong_mesh->m_x1()),
+                            static_cast<float>(strong_mesh->m_y1()),
+                            static_cast<float>(strong_mesh->m_z1()));
 
-            if (strong_mesh->hasOpaqueFaces()) strong_mesh->draw();
-            if (strong_mesh->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(strong_mesh);
-            if (strong_mesh->hasWaterFaces()) m_displayedWaterMeshes.push_back(strong_mesh);
-            drawCalls++;
-            visibleChunksCount++;
+        strong_mesh->draw();
+        drawCalls++;
+        visibleChunksCount++;
 
-            if (instanceUpdateRequired) {
-                for (const auto& feature : strong_mesh->m_surface_features()) {
-                    switch (feature.type) {
-                        case SurfaceFeatureType::SHORT_GRASS:
-                            m_grassRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
-                            break;
-                        case SurfaceFeatureType::POPPY:
-                            m_poppyRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
-                            break;
-                        case SurfaceFeatureType::CORNFLOWER:
-                            m_cornflowerRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
-                            break;
-                        case SurfaceFeatureType::ALLIUM:
-                            m_alliumRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
-                            break;
-                        default:
-                            break;
-                    }
+        if (instanceUpdateRequired) {
+            for (const auto& feature : strong_mesh->m_surface_features()) {
+                switch (feature.type) {
+                    case SurfaceFeatureType::SHORT_GRASS:
+                        m_grassRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
+                        break;
+                    case SurfaceFeatureType::POPPY:
+                        m_poppyRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
+                        break;
+                    case SurfaceFeatureType::CORNFLOWER:
+                        m_cornflowerRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
+                        break;
+                    case SurfaceFeatureType::ALLIUM:
+                        m_alliumRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
+                        break;
+                    default:
+                        break;
                 }
             }
         }
@@ -129,33 +128,29 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
 }
 
 void World::drawTransparentChunks(Shader &shader, unsigned int &drawCalls) const {
-    for (const auto& mesh : m_displayedTransparentMeshes) {
-        if (const auto strong_mesh = mesh.lock()) {
-            shader.setUniform3f("u_Offset",
-                                static_cast<float>(strong_mesh->m_x1()),
-                                static_cast<float>(strong_mesh->m_y1()),
-                                static_cast<float>(strong_mesh->m_z1()));
+    for (const auto& strong_mesh : m_displayedTransparentMeshes) {
+        shader.setUniform3f("u_Offset",
+                            static_cast<float>(strong_mesh->m_x1()),
+                            static_cast<float>(strong_mesh->m_y1()),
+                            static_cast<float>(strong_mesh->m_z1()));
 
-            strong_mesh->drawTransparent();
-            drawCalls++;
-        }
+        strong_mesh->drawTransparent();
+        drawCalls++;
     }
 }
 
 void World::drawWater(Shader &shader, unsigned int &drawCalls) const {
     if (!m_displayedWaterMeshes.empty()) {
         Renderer::disableDepthMask();
-        for (const auto& mesh : m_displayedWaterMeshes) {
-            if (const auto strong_mesh = mesh.lock()) {
-                shader.setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
-                shader.setUniform3f("u_Offset",
-                                    static_cast<float>(strong_mesh->m_x1()),
-                                    static_cast<float>(strong_mesh->m_y1()),
-                                    static_cast<float>(strong_mesh->m_z1()));
+        for (const auto& strong_mesh : m_displayedWaterMeshes) {
+            shader.setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
+            shader.setUniform3f("u_Offset",
+                                static_cast<float>(strong_mesh->m_x1()),
+                                static_cast<float>(strong_mesh->m_y1()),
+                                static_cast<float>(strong_mesh->m_z1()));
 
-                strong_mesh->drawWater();
-                drawCalls++;
-            }
+            strong_mesh->drawWater();
+            drawCalls++;
         }
         Renderer::enableDepthMask();
     }
@@ -192,6 +187,18 @@ void World::drawInstances(unsigned int &drawCalls) const {
     }
 
     Renderer::enableBackFaceCulling();
+}
+
+void World::addPendingBlocks(
+    const std::unordered_map<std::tuple<int, int, int>, std::vector<std::tuple<int, int, int, BlockType>>> &blockData) {
+    std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
+    for (const auto& [key, blocks] : blockData) {
+        m_chunksData.m_pendingBlocks[key].insert(
+            m_chunksData.m_pendingBlocks[key].end(),
+            blocks.begin(),
+            blocks.end()
+        );
+    }
 }
 
 int World::getHeight(const int worldX, const int worldZ) {
@@ -289,28 +296,61 @@ void World::processChunks() {
         m_chunksData.meshesToDelete.pop();
     }
 
-    // Process chunks that are within the render distance
+    // First pass: voxel + mesh generation
     for (int i = 0; i < maxChunksPerFrame; ++i) {
-        if (m_chunksData.meshesToGenerate.empty()) break;
+        if (m_chunksData.meshesToGenerateVoxel.empty()) break;
 
-        std::tuple<int, int, int> key = m_chunksData.meshesToGenerate.pop();
+        std::tuple<int, int, int> key = m_chunksData.meshesToGenerateVoxel.pop();
         m_threadPool.enqueue([this, key] {
             const auto p_chunk = std::make_shared<Chunk>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
             p_chunk->generateVoxel(*this);
+            p_chunk->transferPendingBlocksToWorld(*this);
             p_chunk->generateMesh();
-            if (!p_chunk->hasVisibleFaces()) {
-                m_chunksData.meshesToDelete.push(p_chunk);
-                return;
-            }
             m_chunksData.meshesToRender.push(p_chunk);
         });
     }
 
+    // Second pass: add ready meshes to loaded meshes
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.meshesToRender.empty()) break;
         std::shared_ptr<Chunk> p_chunk = m_chunksData.meshesToRender.pop();
         std::tuple<int, int, int> key = std::make_tuple(p_chunk->m_x1(), p_chunk->m_y1(), p_chunk->m_z1());
         m_chunksData.loadedMeshes.try_emplace(key, p_chunk);
+    }
+
+    // Third pass: generate pending blocks
+    if (!m_chunksData.m_pendingBlocks.empty()) {
+        std::vector<std::tuple<int, int, int>> keysToProcess;
+        {
+            std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
+            for (const auto &key: m_chunksData.m_pendingBlocks | std::views::keys) {
+                keysToProcess.push_back(key);
+            }
+        }
+
+        for (const auto& key : keysToProcess) {
+            if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
+                std::shared_ptr<Chunk> p_chunk = it->second;
+                if (p_chunk->m_state1() < State::MESH_GENERATED) continue;
+
+                std::vector<std::tuple<int, int, int, BlockType>> blocks;
+                {
+                    std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
+                    if (auto pending_it = m_chunksData.m_pendingBlocks.find(key); pending_it != m_chunksData.m_pendingBlocks.end()) {
+                        blocks = std::move(pending_it->second);
+                        m_chunksData.m_pendingBlocks.erase(pending_it);
+                    }
+                }
+
+                if (!blocks.empty()) {
+                    p_chunk->resetGLBuffers();
+                    p_chunk->resetMesh();
+                    p_chunk->generatePendingBlocks(blocks);
+                    p_chunk->generateMesh();
+                    p_chunk->flagForUpdate();
+                }
+            }
+        }
     }
 }
 
@@ -349,7 +389,7 @@ void World::generateDataForEachChunks(const int cameraWorldX, const int cameraWo
 
             const std::tuple<int, int, int> key = std::make_tuple(chunkX, chunkY, chunkZ);
             if (m_chunksData.loadedMeshes.contains(key)) continue;
-            m_chunksData.meshesToGenerate.push(key);
+            m_chunksData.meshesToGenerateVoxel.push(key);
         }
     }
 }

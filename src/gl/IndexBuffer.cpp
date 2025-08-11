@@ -23,6 +23,14 @@ void IndexBuffer::updateData(const unsigned int *data) const {
     GLCall(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, m_Count * sizeof(unsigned int), data));
 }
 
+void IndexBuffer::deleteBuffer() {
+    if (m_ID != 0) {
+        GLCall(glDeleteBuffers(1, &m_ID));
+        m_ID = 0;
+        m_Count = 0;
+    }
+}
+
 void IndexBuffer::bind() const {
     GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ID));
 }

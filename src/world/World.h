@@ -39,9 +39,9 @@ private:
     std::unordered_map<std::pair<int, int>, ChunkHeightmap> m_heightMapByChunk;
     mutable std::mutex m_heightMapMutex;
 
-    std::vector<std::weak_ptr<Chunk>> m_displayedNormalMeshes;
-    std::vector<std::weak_ptr<Chunk>> m_displayedTransparentMeshes;
-    std::vector<std::weak_ptr<Chunk>> m_displayedWaterMeshes;
+    std::vector<std::shared_ptr<Chunk>> m_displayedNormalMeshes;
+    std::vector<std::shared_ptr<Chunk>> m_displayedTransparentMeshes;
+    std::vector<std::shared_ptr<Chunk>> m_displayedWaterMeshes;
 
     FastNoiseLite m_terrainHeightGenerator;
     FastNoiseLite m_surfaceFeaturesNoise;
@@ -56,6 +56,7 @@ public:
     void drawWater(Shader &shader, unsigned int &drawCalls) const;
     void drawInstances(unsigned int &drawCalls) const;
 
+    void addPendingBlocks(const std::unordered_map<std::tuple<int, int, int>, std::vector<std::tuple<int, int, int, BlockType>>> &blockData);
     int getHeight(int worldX, int worldZ);
     bool isCave(int worldX, int worldY, int worldZ, int columnHeight) const;
 

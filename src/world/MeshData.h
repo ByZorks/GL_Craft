@@ -10,7 +10,11 @@ template<typename MeshType>
 class MeshData {
 public:
     std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<MeshType>> loadedMeshes;
-    ThreadSafeQueue<std::tuple<int, int, int>> meshesToGenerate;
+    std::unordered_map<std::tuple<int, int, int>, std::vector<std::tuple<int, int, int, BlockType>>> m_pendingBlocks;
+    std::mutex m_pendingBlocksMutex;
+    ThreadSafeQueue<std::tuple<int, int, int>> meshesToGenerateVoxel;
+    ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToGeneratePendingBlocks;
+    ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToRemesh;
     ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToDelete;
     ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToRender;
 };

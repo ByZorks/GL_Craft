@@ -74,7 +74,14 @@ void Chunk::generateVoxel(World &world) {
         }
     }
 
-    m_status = Status::VOXEL_GENERATED;
+    m_state = State::VOXEL_GENERATED;
+}
+
+void Chunk::generatePendingBlocks(std::vector<std::tuple<int, int, int, BlockType>> &blocks) {
+    for (const auto& block : blocks) {
+        m_blockType[index(std::get<0>(block), std::get<1>(block), std::get<2>(block))] = std::get<3>(block);
+    }
+    blocks.clear();
 }
 
 void Chunk::generateMesh() {
@@ -97,7 +104,17 @@ void Chunk::generateMesh() {
         m_vertices_water.shrink_to_fit();
     }
 
-    m_status = Status::MESH_GENERATED;
+    m_state = State::MESH_GENERATED;
+}
+
+void Chunk::flagForUpdate() {
+    m_state = State::NEED_BUFFERS_UPDATE;
+}
+
+void Chunk::transferPendingBlocksToWorld(World &world) {
+    if (m_pendingBlocksForNeighbors.empty()) return;
+    world.addPendingBlocks(m_pendingBlocksForNeighbors);
+    m_pendingBlocksForNeighbors.clear();
 }
 
 int Chunk::index(const int x, const int y, const int z) const {
@@ -204,28 +221,17 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 }
 
 void Chunk::addTree(const int localX, const int localY, const int localZ) {
-    // TODO: Allow for generation across multiple chunks
-    if (localX < 3 || localX >= SIZE - 2 ||
-        localY >= SIZE - 5 ||
-        localZ < 3 || localZ >= SIZE - 2) {
-        return;
-    }
-
     // Trunk: 1x5x1 = 5 blocks (y=0 to y=4)
     for (int y = 0; y < 5; ++y) {
-        if (localY + y >= SIZE) continue;
-        m_blockType[index(localX, localY + y, localZ)] = BlockType::LOG;
+        addFeatureBlocks(localX, localY + y, localZ, BlockType::LOG);
     }
 
     // Leaves: 5x2x5 = 50 blocks (y=3 to y=4)
     for (int y = 3; y < 5; y++) {
         for (int x = -2; x <= 2; x++) {
             for (int z = -2; z <= 2; z++) {
-                if (x == 0 && z == 0) continue;
-                if (localX + x > SIZE ||
-                    localY + y > SIZE ||
-                    localZ + z > SIZE) continue;
-                m_blockType[index(localX + x, localY + y, localZ + z)] = BlockType::LEAVES;
+                if (x == 0 && z == 0) continue; // Skip the trunk position
+                addFeatureBlocks(localX + x, localY + y, localZ + z, BlockType::LEAVES);
             }
         }
     }
@@ -234,13 +240,32 @@ void Chunk::addTree(const int localX, const int localY, const int localZ) {
     for (int y = 5; y < 7; y++) {
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
-                if (std::abs(x) == 1 && std::abs(z) == 1) continue;
-                if (localX + x > SIZE ||
-                    localY + y > SIZE ||
-                    localZ + z > SIZE) continue;
-                m_blockType[index(localX + x, localY + y, localZ + z)] = BlockType::LEAVES;
+                if (std::abs(x) == 1 && std::abs(z) == 1) continue; // Skip corners
+                addFeatureBlocks(localX + x, localY + y, localZ + z, BlockType::LEAVES);
             }
         }
+    }
+}
+
+void Chunk::addFeatureBlocks(const int localX, const int localY, const int localZ, BlockType blockType) {
+    if (localX >= 1 && localX <= SIZE &&
+        localY >= 1 && localY <= SIZE &&
+        localZ >= 1 && localZ <= SIZE) {
+        m_blockType[index(localX, localY, localZ)] = blockType;
+    } else {
+        const int worldX = m_x + localX - 1;
+        const int worldY = m_y + localY - 1;
+        const int worldZ = m_z + localZ - 1;
+
+        const int chunkX = static_cast<int>(std::floor(static_cast<float>(worldX) / SIZE)) * static_cast<int>(SIZE);
+        const int chunkY = static_cast<int>(std::floor(static_cast<float>(worldY) / SIZE)) * static_cast<int>(SIZE);
+        const int chunkZ = static_cast<int>(std::floor(static_cast<float>(worldZ) / SIZE)) * static_cast<int>(SIZE);
+
+        const int newLocalX = worldX - chunkX + 1;
+        const int newLocalY = worldY - chunkY + 1;
+        const int newLocalZ = worldZ - chunkZ + 1;
+
+        m_pendingBlocksForNeighbors[{chunkX, chunkY, chunkZ}].emplace_back(newLocalX, newLocalY, newLocalZ, blockType);
     }
 }
 

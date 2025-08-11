@@ -11,6 +11,7 @@ class World;
 class Chunk final : public Mesh {
 private:
     std::unordered_set<SurfaceFeature> m_surfaceFeatures;
+    std::unordered_map<std::tuple<int, int, int>, std::vector<std::tuple<int, int, int, BlockType>>> m_pendingBlocksForNeighbors;
 
 public:
     static constexpr unsigned int SIZE = 32;
@@ -18,7 +19,10 @@ public:
     Chunk(int x, int y, int z);
 
     void generateVoxel(World &world);
+    void generatePendingBlocks(std::vector<std::tuple<int, int, int, BlockType>> &blocks);
     void generateMesh() override;
+    void flagForUpdate();
+    void transferPendingBlocksToWorld(World &world);
 
     [[nodiscard]] int index(int x, int y, int z) const override;
     [[nodiscard]] bool hasVisibleFaces() const;
@@ -28,6 +32,7 @@ public:
 private:
     void addBlockFaces(int localX, int localY, int localZ, BlockType blockType);
     void addTree(int localX, int localY, int localZ);
+    void addFeatureBlocks(int localX, int localY, int localZ, BlockType blockType);
 
     [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const override;
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const override;

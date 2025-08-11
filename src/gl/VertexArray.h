@@ -15,6 +15,7 @@ public:
     void init();
     void addBuffer(const VertexBuffer &vb, const VertexBufferLayout &layout);
     void addInstancedBuffer(const VertexBuffer &vb, unsigned int attributeIndex, unsigned int componentCount = 3) const;
+    void deleteBuffer();
     void bind() const;
     static void unbind();
 };

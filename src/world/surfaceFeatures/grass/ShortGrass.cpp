@@ -8,7 +8,7 @@ ShortGrass::ShortGrass(const int x, const int y, const int z) : Mesh(x, y, z, SI
 void ShortGrass::generateVoxel() {
     m_blockType[0] = BlockType::SHORT_GRASS;
 
-    m_status = Status::VOXEL_GENERATED;
+    m_state = State::VOXEL_GENERATED;
 }
 
 void ShortGrass::generateMesh() {
@@ -18,5 +18,5 @@ void ShortGrass::generateMesh() {
     Block::addFaceVerticesAsBilboard(Face::FRONT, BlockType::SHORT_GRASS, m_vertices, 0.0f, 0.0f, 0.0f);
     m_blockFaceData.emplace_back(Face::FRONT, 4);
 
-    m_status = Status::MESH_GENERATED;
+    m_state = State::MESH_GENERATED;
 }

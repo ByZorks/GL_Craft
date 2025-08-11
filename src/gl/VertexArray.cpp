@@ -42,6 +42,14 @@ void VertexArray::addInstancedBuffer(const VertexBuffer &vb, const unsigned int 
     GLCall(glVertexAttribDivisor(attributeIndex, 1));
 }
 
+void VertexArray::deleteBuffer() {
+    if (m_ID != 0) {
+        GLCall(glDeleteVertexArrays(1, &m_ID));
+        m_ID = 0;
+        m_nextAttributeIndex = 0;
+    }
+}
+
 void VertexArray::bind() const {
     GLCall(glBindVertexArray(m_ID));
 }

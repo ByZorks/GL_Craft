@@ -7,11 +7,12 @@
 #include "../math/AABB.h"
 #include "../render/Renderer.h"
 
-enum class Status : uint8_t {
-    NOT_GENERATED,
+enum class State : uint8_t {
+    UNLOADED,
     VOXEL_GENERATED,
     MESH_GENERATED,
-    BUFFERS_SETUP
+    READY_TO_DRAW,
+    NEED_BUFFERS_UPDATE,
 };
 
 class Mesh {
@@ -25,7 +26,7 @@ protected:
     std::vector<BlockFaceData> m_blockFaceData_transparent;
     std::vector<BlockFaceData> m_blockFaceData_water;
     std::vector<BlockType> m_blockType;
-    Status m_status = Status::NOT_GENERATED;
+    State m_state = State::UNLOADED;
     VertexArray m_VAO;
     VertexArray m_VAO_transparent;
     VertexArray m_VAO_water;
@@ -143,7 +144,28 @@ public:
             m_VAO_water.addBuffer(m_VBO_water, meshLayout);
         }
 
-        m_status = Status::BUFFERS_SETUP;
+        m_state = State::READY_TO_DRAW;
+    }
+
+    void resetGLBuffers() {
+        m_VAO.deleteBuffer();
+        m_VAO_transparent.deleteBuffer();
+        m_VAO_water.deleteBuffer();
+        m_VBO.deleteBuffer();
+        m_VBO_transparent.deleteBuffer();
+        m_VBO_water.deleteBuffer();
+        m_IBO.deleteBuffer();
+        m_IBO_transparent.deleteBuffer();
+        m_IBO_water.deleteBuffer();
+    }
+
+    void resetMesh() {
+        m_vertices.clear();
+        m_vertices_transparent.clear();
+        m_vertices_water.clear();
+        m_blockFaceData.clear();
+        m_blockFaceData_transparent.clear();
+        m_blockFaceData_water.clear();
     }
 
     void draw() const {
@@ -227,8 +249,8 @@ public:
         return m_z;
     }
 
-    [[nodiscard]] Status m_status1() const {
-        return m_status;
+    [[nodiscard]] State m_state1() const {
+        return m_state;
     }
 
     [[nodiscard]] const AABB &m_box1() const {
