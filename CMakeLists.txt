@@ -119,6 +119,7 @@ add_executable(GL_Craft
         src/gl/RenderBuffer.cpp
         src/gl/RenderBuffer.h
         src/world/surfaceFeatures/SurfaceFeature.h
+        src/world/ChunkPosition.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})

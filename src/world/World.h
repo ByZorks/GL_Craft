@@ -56,13 +56,13 @@ public:
     void drawWater(Shader &shader, unsigned int &drawCalls) const;
     void drawInstances(unsigned int &drawCalls) const;
 
-    void addPendingBlocks(const std::unordered_map<std::tuple<int, int, int>, std::vector<std::tuple<int, int, int, BlockType>>> &blockData);
+    void addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<std::tuple<int, int, int, BlockType>>> &blockData);
     int getHeight(int worldX, int worldZ);
     bool isCave(int worldX, int worldY, int worldZ, int columnHeight) const;
 
     [[nodiscard]] const FastNoiseLite & m_noise_generator() const;
     [[nodiscard]] const FastNoiseLite & m_surface_features_noise() const;
-    [[nodiscard]] const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
+    [[nodiscard]] const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
 
 private:
     void processChunks();

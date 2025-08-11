@@ -1,9 +1,10 @@
 #ifndef CHUNK_H
 #define CHUNK_H
+#include <unordered_map>
 #include <unordered_set>
 
+#include "ChunkPosition.h"
 #include "Mesh.h"
-#include "../utils/CustomHash.h"
 #include "surfaceFeatures/SurfaceFeature.h"
 
 class World;
@@ -11,7 +12,7 @@ class World;
 class Chunk final : public Mesh {
 private:
     std::unordered_set<SurfaceFeature> m_surfaceFeatures;
-    std::unordered_map<std::tuple<int, int, int>, std::vector<std::tuple<int, int, int, BlockType>>> m_pendingBlocksForNeighbors;
+    std::unordered_map<ChunkPosition, std::vector<std::tuple<int, int, int, BlockType>>> m_pendingBlocksForNeighbors;
 
 public:
     static constexpr unsigned int SIZE = 32;

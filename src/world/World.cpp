@@ -189,8 +189,7 @@ void World::drawInstances(unsigned int &drawCalls) const {
     Renderer::enableBackFaceCulling();
 }
 
-void World::addPendingBlocks(
-    const std::unordered_map<std::tuple<int, int, int>, std::vector<std::tuple<int, int, int, BlockType>>> &blockData) {
+void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<std::tuple<int, int, int, BlockType>>> &blockData) {
     std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
     for (const auto& [key, blocks] : blockData) {
         m_chunksData.m_pendingBlocks[key].insert(
@@ -284,7 +283,7 @@ const FastNoiseLite & World::m_surface_features_noise() const {
     return m_surfaceFeaturesNoise;
 }
 
-const std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<Chunk>> & World::m_loaded_chunks() const {
+const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & World::m_loaded_chunks() const {
     return m_chunksData.loadedMeshes;
 }
 
@@ -300,9 +299,9 @@ void World::processChunks() {
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.meshesToGenerateVoxel.empty()) break;
 
-        std::tuple<int, int, int> key = m_chunksData.meshesToGenerateVoxel.pop();
+        ChunkPosition key = m_chunksData.meshesToGenerateVoxel.pop();
         m_threadPool.enqueue([this, key] {
-            const auto p_chunk = std::make_shared<Chunk>(std::get<0>(key), std::get<1>(key), std::get<2>(key));
+            const auto p_chunk = std::make_shared<Chunk>(key.x, key.y, key.z);
             p_chunk->generateVoxel(*this);
             p_chunk->transferPendingBlocksToWorld(*this);
             p_chunk->generateMesh();
@@ -314,13 +313,12 @@ void World::processChunks() {
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.meshesToRender.empty()) break;
         std::shared_ptr<Chunk> p_chunk = m_chunksData.meshesToRender.pop();
-        std::tuple<int, int, int> key = std::make_tuple(p_chunk->m_x1(), p_chunk->m_y1(), p_chunk->m_z1());
-        m_chunksData.loadedMeshes.try_emplace(key, p_chunk);
+        m_chunksData.loadedMeshes.try_emplace({p_chunk->m_x1(), p_chunk->m_y1(), p_chunk->m_z1()}, p_chunk);
     }
 
     // Third pass: generate pending blocks
     if (!m_chunksData.m_pendingBlocks.empty()) {
-        std::vector<std::tuple<int, int, int>> keysToProcess;
+        std::vector<ChunkPosition> keysToProcess;
         {
             std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
             for (const auto &key: m_chunksData.m_pendingBlocks | std::views::keys) {
@@ -330,7 +328,7 @@ void World::processChunks() {
 
         for (const auto& key : keysToProcess) {
             if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
-                std::shared_ptr<Chunk> p_chunk = it->second;
+                const std::shared_ptr<Chunk> p_chunk = it->second;
                 if (p_chunk->m_state1() < State::MESH_GENERATED) continue;
 
                 std::vector<std::tuple<int, int, int, BlockType>> blocks;
@@ -387,7 +385,7 @@ void World::generateDataForEachChunks(const int cameraWorldX, const int cameraWo
             const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::SIZE);
             if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
-            const std::tuple<int, int, int> key = std::make_tuple(chunkX, chunkY, chunkZ);
+            const ChunkPosition key = {chunkX, chunkY, chunkZ};
             if (m_chunksData.loadedMeshes.contains(key)) continue;
             m_chunksData.meshesToGenerateVoxel.push(key);
         }
