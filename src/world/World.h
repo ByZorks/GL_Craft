@@ -16,15 +16,6 @@
 
 class Camera;
 
-struct ChunkHeightmap {
-    std::array<int, Chunk::SIZE * Chunk::SIZE> heights;
-
-    [[nodiscard]] int getHeight(const int localX, const int localZ) const {
-        return heights[localX + localZ * Chunk::SIZE];
-    }
-};
-
-
 class World {
 private:
     ThreadPool m_threadPool;
@@ -36,16 +27,11 @@ private:
     InstanceRenderer m_cornflowerRenderer;
     InstanceRenderer m_alliumRenderer;
 
-    std::unordered_map<std::pair<int, int>, ChunkHeightmap> m_heightMapByChunk;
     std::mutex m_heightMapMutex;
 
     std::vector<std::shared_ptr<Chunk>> m_displayedNormalMeshes;
     std::vector<std::shared_ptr<Chunk>> m_displayedTransparentMeshes;
     std::vector<std::shared_ptr<Chunk>> m_displayedWaterMeshes;
-
-    FastNoiseLite m_terrainHeightGenerator;
-    FastNoiseLite m_surfaceFeaturesNoise;
-    FastNoiseLite m_caveGenerator;
 
 public:
     World();
@@ -57,17 +43,23 @@ public:
     void drawInstances(unsigned int &drawCalls) const;
 
     void addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData);
-    int getHeight(int worldX, int worldZ);
-    bool isCave(int worldX, int worldY, int worldZ, int columnHeight) const;
 
-    [[nodiscard]] const FastNoiseLite & m_noise_generator() const;
-    [[nodiscard]] const FastNoiseLite & m_surface_features_noise() const;
+    static int getHeight(int worldX, int worldZ);
+
+    static bool isCave(int worldX, int worldY, int worldZ, int columnHeight);
+
     [[nodiscard]] const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
+    static FastNoiseLite& getSurfaceFeaturesNoise();
 
 private:
     void processChunks();
     void generateDataForEachChunks(int cameraWorldX, int cameraWorldY, int cameraWorldZ);
     void unloadDistantMeshes(const glm::vec3 &cameraChunkPos);
+    static FastNoiseLite makeTerrainNoise();
+    static FastNoiseLite makeSurfaceFeaturesNoise();
+    static FastNoiseLite makeCaveNoise();
+    static FastNoiseLite& getTerrainNoise();
+    static FastNoiseLite& getCaveNoise();
 };
 
 #endif //WORLD_H

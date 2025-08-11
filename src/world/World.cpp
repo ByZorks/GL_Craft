@@ -14,33 +14,12 @@
 #include "surfaceFeatures/grass/ShortGrass.h"
 
 World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
-    m_terrainHeightGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    m_terrainHeightGenerator.SetFrequency(.0055f);
-    m_terrainHeightGenerator.SetFractalType(FastNoiseLite::FractalType_FBm);
-    m_terrainHeightGenerator.SetFractalOctaves(6);
-    m_terrainHeightGenerator.SetFractalLacunarity(2.2f);
-
-    m_surfaceFeaturesNoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    m_surfaceFeaturesNoise.SetFrequency(.5f);
-    m_surfaceFeaturesNoise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    m_surfaceFeaturesNoise.SetFractalOctaves(6);
-
-    m_caveGenerator.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    m_caveGenerator.SetFrequency(.018f);
-    m_caveGenerator.SetFractalType(FastNoiseLite::FractalType_Ridged);
-    m_caveGenerator.SetFractalOctaves(6);
-    m_caveGenerator.SetFractalLacunarity(1.29f);
-    m_caveGenerator.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
-    m_caveGenerator.SetDomainWarpAmp(20.f);
-
     m_grassRenderer.init(ShortGrass(0, 0, 0));
     m_poppyRenderer.init(Poppy(0, 0, 0));
     m_cornflowerRenderer.init(Cornflower(0, 0, 0));
     m_alliumRenderer.init(Allium(0, 0, 0));
 
     m_chunksData.loadedMeshes.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
-
-    m_heightMapByChunk.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
 }
 
 void World::updateChunks(const Camera &camera) {
@@ -199,64 +178,37 @@ void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector
 
 int World::getHeight(const int worldX, const int worldZ) {
     // static cast have to be used on both coords and size or it will crash
-    const int chunkXInHeightMap = static_cast<int>(std::floor(static_cast<double>(worldX) / Chunk::SIZE));
-    const int chunkZInHeightMap = static_cast<int>(std::floor(static_cast<double>(worldZ) / Chunk::SIZE));
-    const std::pair coordsChunk(chunkXInHeightMap, chunkZInHeightMap);
+    constexpr int baseHeight = 58;
+    constexpr int maxHeight = 256;
 
-    const int localXInHeightMap = worldX - chunkXInHeightMap * static_cast<int>(Chunk::SIZE);
-    const int localZInHeightMap = worldZ - chunkZInHeightMap * static_cast<int>(Chunk::SIZE);
+    // 2D noise generation for terrain height
+    const float normalizedNoise = (getTerrainNoise().GetNoise(
+        static_cast<float>(worldX),
+        static_cast<float>(worldZ)
+        ) + 1.0f) / 2.0f;
 
-    // Check cache
-    if (const auto it = m_heightMapByChunk.find(coordsChunk); it != m_heightMapByChunk.end()) {
-        return it->second.getHeight(localXInHeightMap, localZInHeightMap);
+    const float terrainShape = std::pow(normalizedNoise, 4.6f);
+    float columnHeight = std::floor(baseHeight + terrainShape * maxHeight);
+
+    // 3D noise generation for cave system
+    const float normalized3DNoise = (getCaveNoise().GetNoise(
+        static_cast<float>(worldX),
+        columnHeight,
+        static_cast<float>(worldZ)
+        ) + 1.0f) / 2.0f;
+    constexpr float baseCaveThreshold = 0.87f;
+    const float surfaceModifier = 1.0f - std::clamp((columnHeight - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
+    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f;
+
+    // Adjust column height based on cave noise
+    if (std::abs(normalized3DNoise - caveThreshold) < 0.3f) {
+        columnHeight -= (normalized3DNoise - (caveThreshold - 0.3f)) * 10.0f;
     }
 
-    // Generate heigtmap for the chunk if it doesn't exist
-    ChunkHeightmap newHeightMap{};
-    for (int i = 0; i < Chunk::SIZE * Chunk::SIZE; ++i) {
-        constexpr int baseHeight = 58;
-        constexpr int maxHeight = 256;
-        const int localXInChunk = i % static_cast<int>(Chunk::SIZE);
-        const int localZInChunk = i / static_cast<int>(Chunk::SIZE);
-        const int worldXInChunk = chunkXInHeightMap * static_cast<int>(Chunk::SIZE) + localXInChunk;
-        const int worldZInChunk = chunkZInHeightMap * static_cast<int>(Chunk::SIZE) + localZInChunk;
-
-        // 2D noise generation for terrain height
-        const float normalizedNoise = (m_terrainHeightGenerator.GetNoise(
-            static_cast<float>(worldXInChunk),
-            static_cast<float>(worldZInChunk)
-            ) + 1.0f) / 2.0f;
-
-        const float terrainShape = std::pow(normalizedNoise, 4.6f);
-        float columnHeight = std::floor(baseHeight + terrainShape * maxHeight);
-
-        // 3D noise generation for cave system
-        const float normalized3DNoise = (m_caveGenerator.GetNoise(
-            static_cast<float>(worldXInChunk),
-            columnHeight,
-            static_cast<float>(worldZInChunk)
-            ) + 1.0f) / 2.0f;
-        constexpr float baseCaveThreshold = 0.87f;
-        const float surfaceModifier = 1.0f - std::clamp((columnHeight - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
-        const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f;
-
-        // Adjust column height based on cave noise
-        if (std::abs(normalized3DNoise - caveThreshold) < 0.3f) {
-            columnHeight -= (normalized3DNoise - (caveThreshold - 0.3f)) * 10.0f;
-        }
-
-        newHeightMap.heights[localXInChunk + localZInChunk * Chunk::SIZE] = static_cast<int>(columnHeight);
-    }
-
-    {
-        std::lock_guard lock(m_heightMapMutex);
-        m_heightMapByChunk[coordsChunk] = newHeightMap;
-    }
-
-    return m_heightMapByChunk[coordsChunk].getHeight(localXInHeightMap, localZInHeightMap);
+    return static_cast<int>(columnHeight);
 }
 
-bool World::isCave(const int worldX, const int worldY, const int worldZ, const int columnHeight) const {
+bool World::isCave(const int worldX, const int worldY, const int worldZ, const int columnHeight) {
     constexpr int maxHeight = 256;
     constexpr int baseHeight = 58;
     constexpr int waterLevel = 63;
@@ -264,20 +216,12 @@ bool World::isCave(const int worldX, const int worldY, const int worldZ, const i
     if (worldY <= 1 || worldY > maxHeight || (worldY >= columnHeight && columnHeight < waterLevel)) return false;
 
     // 3D noise generation for cave system
-    const float normalized3DNoise = (m_caveGenerator.GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
+    const float normalized3DNoise = (getCaveNoise().GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
     constexpr float baseCaveThreshold = 0.87f;
     const float surfaceModifier = 1.0f - std::clamp(static_cast<float>(worldY - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
     const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f; // Increase threshold near surface
 
     return std::abs(normalized3DNoise - caveThreshold) < 0.3f;
-}
-
-const FastNoiseLite & World::m_noise_generator() const {
-    return m_terrainHeightGenerator;
-}
-
-const FastNoiseLite & World::m_surface_features_noise() const {
-    return m_surfaceFeaturesNoise;
 }
 
 const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & World::m_loaded_chunks() const {
@@ -299,7 +243,7 @@ void World::processChunks() {
         ChunkPosition key = m_chunksData.meshesToGenerateVoxel.pop();
         m_threadPool.enqueue([this, key] {
             const auto p_chunk = std::make_shared<Chunk>(key.x, key.y, key.z);
-            p_chunk->generateVoxel(*this);
+            p_chunk->generateVoxel();
             p_chunk->transferPendingBlocksToWorld(*this);
             p_chunk->generateMesh();
             m_chunksData.meshesToRender.push(p_chunk);
@@ -399,17 +343,50 @@ void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
                              + (z - cameraChunkPos.z) * (z - cameraChunkPos.z);
         return distSq > renderDistanceSq;
     });
+}
 
-    const int cameraHeightmapX = static_cast<int>(std::floor(cameraChunkPos.x / Chunk::SIZE));
-    const int cameraHeightmapZ = static_cast<int>(std::floor(cameraChunkPos.z / Chunk::SIZE));
-    const float heightmapRenderDistanceSq = Renderer::m_renderDistance / Chunk::SIZE * (Renderer::m_renderDistance / Chunk::SIZE);
-    {
-        std::lock_guard lock(m_heightMapMutex);
-        std::erase_if(m_heightMapByChunk, [&](const auto &pos) {
-            const auto [x, z] = pos.first;
-            const float distSq = (x - cameraHeightmapX) * (x - cameraHeightmapX)
-                                + (z - cameraHeightmapZ) * (z - cameraHeightmapZ);
-            return distSq > heightmapRenderDistanceSq;
-        });
-    }
+FastNoiseLite World::makeTerrainNoise() {
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    noise.SetFrequency(.0055f);
+    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+    noise.SetFractalOctaves(6);
+    noise.SetFractalLacunarity(2.2f);
+    return noise;
+}
+
+FastNoiseLite World::makeSurfaceFeaturesNoise() {
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    noise.SetFrequency(.5f);
+    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+    noise.SetFractalOctaves(6);
+    return noise;
+}
+
+FastNoiseLite World::makeCaveNoise() {
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    noise.SetFrequency(.018f);
+    noise.SetFractalType(FastNoiseLite::FractalType_Ridged);
+    noise.SetFractalOctaves(6);
+    noise.SetFractalLacunarity(1.29f);
+    noise.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
+    noise.SetDomainWarpAmp(20.f);
+    return noise;
+}
+
+FastNoiseLite & World::getTerrainNoise() {
+    thread_local FastNoiseLite instance = makeTerrainNoise();
+    return instance;
+}
+
+FastNoiseLite & World::getSurfaceFeaturesNoise() {
+    thread_local FastNoiseLite instance = makeSurfaceFeaturesNoise();
+    return instance;
+}
+
+FastNoiseLite & World::getCaveNoise() {
+    thread_local FastNoiseLite instance = makeCaveNoise();
+    return instance;
 }

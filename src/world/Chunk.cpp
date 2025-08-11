@@ -5,7 +5,8 @@
 Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     constexpr size_t max_faces = 6 * SIZE * SIZE * SIZE;
     constexpr size_t avg_faces = max_faces / 4; // Assuming each block has a quarter of the maximum faces
-    constexpr size_t avg_faces_transparent = avg_faces * static_cast<size_t>(0.2f); // Most don't have many transparent faces
+    constexpr size_t avg_faces_transparent = avg_faces * static_cast<size_t>(0.2f);
+    // Most don't have many transparent faces
     m_vertices.reserve(avg_faces * 4); // 4 vertices per face
     m_vertices_transparent.reserve(avg_faces_transparent * 4);
     m_blockFaceData.reserve(avg_faces);
@@ -15,40 +16,32 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
 }
 
-void Chunk::generateVoxel(World &world) {
-    constexpr int waterLevel = 63;
-    std::array<std::array<int, SIZE + 2>, SIZE + 2> heightCache{};
-    for (int localX = 0; localX < SIZE + 2; localX++) {
-        const int worldX = m_x + localX;
-        for (int localZ = 0; localZ < SIZE + 2; localZ++) {
-            const int worldZ = m_z + localZ;
-
-            // HeightMap
-            const int columnHeight = world.getHeight(worldX, worldZ);
-            heightCache[localX][localZ] = columnHeight;
-
-            // Surface features
-            if ((columnHeight < waterLevel && m_y < columnHeight) ||
-                columnHeight < m_y ||
-                columnHeight >= m_y + SIZE ||
-                world.isCave(worldX, columnHeight, worldZ, columnHeight)) continue;
-            float surfaceFeatureNoise = (world.m_surface_features_noise().GetNoise(static_cast<float>(worldX), static_cast<float>(worldZ)) + 1.0f) * 0.5f;
-            if (surfaceFeatureNoise < 0.69f) continue;
-            m_surfaceFeatures.emplace(worldX, columnHeight, worldZ, getSurfaceFeatureType(surfaceFeatureNoise));
-        }
-    }
-
+void Chunk::generateVoxel() {
     for (int localX = 0; localX < SIZE + 2; localX++) {
         const int worldX = m_x + localX;
 
         for (int localZ = 0; localZ < SIZE + 2; localZ++) {
             const int worldZ = m_z + localZ;
-            const int columnHeight = heightCache[localX][localZ];
+            const int columnHeight = World::getHeight(worldX, worldZ);
 
-            if (columnHeight < m_y - static_cast<int>(SIZE)) continue; // Early exit for aerial chunks, cast is mandatory
+            // Early exit for aerial chunks, cast is mandatory
+            if (columnHeight < m_y - static_cast<int>(SIZE)) continue;
+
+            // Surface features noise
+            constexpr int waterLevel = 63;
+            if (columnHeight >= waterLevel && m_y <= columnHeight + 1 &&
+                columnHeight >= m_y - static_cast<int>(SIZE) &&
+                columnHeight < m_y + static_cast<int>(SIZE) &&
+                !World::isCave(worldX, columnHeight, worldZ, columnHeight)) {
+                const float surfaceFeatureNoise = (World::getSurfaceFeaturesNoise().GetNoise(
+                                                       static_cast<float>(worldX),
+                                                       static_cast<float>(worldZ)) + 1.0f) * 0.5f;
+                if (surfaceFeatureNoise >= 0.69f) {
+                    m_surfaceFeatures.emplace(worldX, columnHeight, worldZ, getSurfaceFeatureType(surfaceFeatureNoise));
+                }
+            }
 
             // Pre-compute the max height for the current column
-            constexpr int waterLevel = 63;
             const int maxHeightInChunk = std::max(columnHeight, waterLevel);
             const int endY = std::min(static_cast<int>(SIZE) + 2, std::max(0, maxHeightInChunk - m_y + 2));
 
@@ -56,7 +49,7 @@ void Chunk::generateVoxel(World &world) {
                 const int worldY = m_y + localY;
 
                 // Terrain
-                if (world.isCave(worldX, worldY, worldZ, columnHeight)) continue;
+                if (World::isCave(worldX, worldY, worldZ, columnHeight)) continue;
                 const BlockType blockType = Block::getBlockType(worldY, columnHeight);
                 m_blockType[index(localX, localY, localZ)] = blockType;
 
@@ -69,18 +62,18 @@ void Chunk::generateVoxel(World &world) {
                             addTree(localX, localY, localZ);
                             break;
                         }
-                        default: {}
+                        default: {
+                        }
                     }
                 }
             }
         }
     }
-
     m_state = State::VOXEL_GENERATED;
 }
 
 void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks) {
-    for (const auto&[localX, localY, localZ, blockType] : blocks) {
+    for (const auto &[localX, localY, localZ, blockType]: blocks) {
         m_blockType[index(localX, localY, localZ)] = blockType;
     }
     blocks.clear();
@@ -92,7 +85,7 @@ void Chunk::generateMesh() {
             for (int localY = 0; localY < SIZE; localY++) {
                 if (!isBlockPresent(localX, localY, localZ)) continue;
 
-                addBlockFaces(localX, localY, localZ, m_blockType[index(localX+1, localY+1, localZ+1)]);
+                addBlockFaces(localX, localY, localZ, m_blockType[index(localX + 1, localY + 1, localZ + 1)]);
             }
         }
     }
@@ -129,12 +122,12 @@ bool Chunk::hasVisibleFaces() const {
            (!m_vertices_transparent.empty() && !m_blockFaceData_transparent.empty());
 }
 
-const std::unordered_set<SurfaceFeature> & Chunk::m_surface_features() const {
+const std::unordered_set<SurfaceFeature> &Chunk::m_surface_features() const {
     return m_surfaceFeatures;
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {
-    return m_blockType[index(localX+1, localY+1, localZ+1)] != BlockType::AIR;
+    return m_blockType[index(localX + 1, localY + 1, localZ + 1)] != BlockType::AIR;
 }
 
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const BlockType blockType) {
@@ -176,7 +169,8 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         if (isWater) {
             Block::addFaceVertices(Face::FRONT, blockType, m_vertices_water, localXf, localYf, localZf);
             m_blockFaceData_water.emplace_back(Face::FRONT, 4);
-        } if (isTransparent) {
+        }
+        if (isTransparent) {
             Block::addFaceVertices(Face::FRONT, blockType, m_vertices_transparent, localXf, localYf, localZf);
             m_blockFaceData_transparent.emplace_back(Face::FRONT, 4);
         } else {
@@ -272,5 +266,5 @@ void Chunk::addFeatureBlocks(const int localX, const int localY, const int local
 }
 
 BlockType Chunk::getBlockType(const int localX, const int localY, const int localZ) const {
-    return m_blockType[index(localX+1, localY+1, localZ+1)];
+    return m_blockType[index(localX + 1, localY + 1, localZ + 1)];
 }

@@ -20,7 +20,7 @@ public:
 
     Chunk(int x, int y, int z);
 
-    void generateVoxel(World &world);
+    void generateVoxel() override;
     void generatePendingBlocks(std::vector<PendingBlock> &blocks);
     void generateMesh() override;
     void flagForUpdate();
