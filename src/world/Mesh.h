@@ -53,7 +53,7 @@ public:
     virtual void generateVoxel();
     virtual void generateMesh();
 
-    void setupBuffers() {
+    void createGLBuffers() {
         // === OPAQUE ===
         if (!m_vertices.empty()) {
             std::vector<unsigned int> meshIndices_opaque;
