@@ -26,26 +26,26 @@ public:
         meshCopy.generateVoxel();
         meshCopy.generateMesh();
 
-        const auto& vertices = meshCopy.m_vertices1();
-        const auto& verticesTransparent = meshCopy.m_vertices_transparent1();
-        const auto& blockFaceData = meshCopy.m_block_face_data();
-        const auto& blockFaceDataTransparent = meshCopy.m_block_face_data_transparent();
+        const auto& vertices = meshCopy.getOpaqueVertices();
+        const auto& blockFaceData = meshCopy.getOpaqueBlockFaceData();
 
+        constexpr int VERTEX_COUNT = 4;
+        constexpr int NUMBER_OF_FACES = 6;
         if (!vertices.empty()) {
             std::vector<unsigned int> meshIndices_opaque;
-            meshIndices_opaque.reserve(blockFaceData.size() * 6); // 6 indices per face
+            meshIndices_opaque.reserve(blockFaceData.size() * NUMBER_OF_FACES); // 6 indices per face
             unsigned int vertexOffsetOpaque = 0;
 
-            for (const auto &[faceType, vertexCount, x, y, z]: blockFaceData) {
+            for (const auto &[faceType, x, y, z]: blockFaceData) {
                 constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
                 constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
                 const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
                                                   ? faceIndicesCW : faceIndicesCCW;
 
-                for (int i = 0; i < 6; ++i) {
+                for (int i = 0; i < NUMBER_OF_FACES; ++i) {
                     meshIndices_opaque.push_back(vertexOffsetOpaque + indices[i]);
                 }
-                vertexOffsetOpaque += vertexCount;
+                vertexOffsetOpaque += VERTEX_COUNT;
             }
 
             m_VBO.init(vertices.data(), vertices.size() * sizeof(BlockVertex));
@@ -76,6 +76,7 @@ public:
     void draw() const;
 
     [[nodiscard]] unsigned int m_instance_count() const;
+    [[nodiscard]] std::vector<glm::vec3> & m_instance_positions();
 };
 
 #endif //INSTANCERENDERER_H

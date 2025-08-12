@@ -162,7 +162,7 @@ glm::mat4 Camera::getViewMatrix() const {
 }
 
 Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
-    constexpr float padding = 2.0f; // Prevent popping
+    constexpr float padding = Chunk::SIZE * 1.7f; // Prevent popping
 
     auto left = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][0],
                        modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][0],
@@ -192,11 +192,12 @@ Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
     );
     top.set_m_d(top.m_d1() + padding);
 
-    const auto near = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][2],
+    auto near = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][2],
                        modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][2],
                        modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][2],
                        modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][2]
     );
+    near.set_m_d(near.m_d1() + padding);
 
     const auto far = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][2],
                       modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][2],

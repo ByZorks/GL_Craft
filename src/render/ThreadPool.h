@@ -16,12 +16,15 @@ public:
 
     template<typename F, typename... Args>
     auto enqueue(F &&f, Args &&... args) -> std::future<decltype(f(args...))>;
+    template<typename F>
+    void enqueue_no_future(F&& f);
 
     [[nodiscard]] size_t m_num_threads() const;
 
 private:
     std::vector<std::thread> m_workers;
     std::queue<std::function<void()> > m_tasks;
+    std::vector<std::function<void()>> m_localTasks;
 
     std::mutex m_mutex;
     std::condition_variable m_condition;
@@ -41,4 +44,14 @@ auto ThreadPool::enqueue(F &&f, Args &&... args) -> std::future<decltype(f(args.
     m_condition.notify_one();
     return res;
 }
+
+template<typename F>
+void ThreadPool::enqueue_no_future(F&& f) {
+    {
+        std::lock_guard lock(m_mutex);
+        m_tasks.emplace(std::forward<F>(f));
+    }
+    m_condition.notify_one();
+}
+
 #endif // THREADPOOL_H

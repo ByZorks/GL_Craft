@@ -28,9 +28,7 @@ void DebugUI::newFrame() {
     ImGui::NewFrame();
 }
 
-void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &visibleVegetations,
-                     const unsigned int &totalChunks, const unsigned int &totalVegetations,
-                     const unsigned int &drawCalls, const Camera &camera) {
+void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCalls, const Camera &camera, const std::function<void()>& renderDistanceCallback) {
     ImGui::Begin("Debug");
     ImGui::Text("Performance:");
     const ImGuiIO &io = ImGui::GetIO();
@@ -39,10 +37,10 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &visi
     ImGui::Separator();
     ImGui::Text("World:");
     ImGui::Text("Rendering: %u/%u chunks", visibleChunks, totalChunks);
-    ImGui::Text("Rendering: %u/%u vegetations", visibleVegetations, totalVegetations);
     int renderDistanceInChunks = static_cast<int>(Renderer::m_renderDistance / Chunk::SIZE);
     if (ImGui::SliderInt("Render Distance (chunks)", &renderDistanceInChunks, 1, 32)) {
         Renderer::m_renderDistance = static_cast<float>(renderDistanceInChunks) * Chunk::SIZE;
+        renderDistanceCallback();
     }
     ImGui::Separator();
     ImGui::Text("Camera:");

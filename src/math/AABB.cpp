@@ -13,6 +13,10 @@ AABB::AABB(const float xMin, const float yMin, const float zMin, const float xMa
     } {
 }
 
-glm::vec3 AABB::getCorner(const int index) const {
-    return m_corners[index];
+glm::vec3 AABB::getNVertex(const Plane &plane) const {
+    return {
+        plane.m_a1() < 0 ? m_corners[1].x : m_corners[0].x,
+        plane.m_b1() < 0 ? m_corners[2].y : m_corners[0].y,
+        plane.m_c1() < 0 ? m_corners[4].z : m_corners[0].z
+    };
 }

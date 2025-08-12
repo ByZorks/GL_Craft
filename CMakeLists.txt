@@ -94,24 +94,23 @@ add_executable(GL_Craft
         src/utils/CustomHash.h
         src/render/ThreadPool.h
         src/render/ThreadPool.cpp
-        src/world/vegetations/trees/Tree.cpp
+        src/world/surfaceFeatures/trees/Tree.cpp
         src/world/Mesh.h
-        src/world/vegetations/trees/Tree.h
+        src/world/surfaceFeatures/trees/Tree.h
         src/world/Mesh.cpp
-        src/world/vegetations/grass/ShortGrass.cpp
-        src/world/vegetations/grass/ShortGrass.h
-        src/world/vegetations/flowers/Flower.h
-        src/world/vegetations/flowers/Flower.cpp
-        src/world/vegetations/flowers/Poppy.cpp
-        src/world/vegetations/flowers/Poppy.h
+        src/world/surfaceFeatures/grass/ShortGrass.cpp
+        src/world/surfaceFeatures/grass/ShortGrass.h
+        src/world/surfaceFeatures/flowers/Flower.h
+        src/world/surfaceFeatures/flowers/Flower.cpp
+        src/world/surfaceFeatures/flowers/Poppy.cpp
+        src/world/surfaceFeatures/flowers/Poppy.h
         src/render/InstanceRenderer.cpp
         src/render/InstanceRenderer.h
-        src/render/InstanceRendererData.h
         src/world/MeshData.h
-        src/world/vegetations/flowers/Cornflower.cpp
-        src/world/vegetations/flowers/Cornflower.h
-        src/world/vegetations/flowers/Allium.cpp
-        src/world/vegetations/flowers/Allium.h
+        src/world/surfaceFeatures/flowers/Cornflower.cpp
+        src/world/surfaceFeatures/flowers/Cornflower.h
+        src/world/surfaceFeatures/flowers/Allium.cpp
+        src/world/surfaceFeatures/flowers/Allium.h
         src/gl/FrameBuffer.cpp
         src/gl/FrameBuffer.h
         src/render/PostProcessingMesh.cpp
@@ -119,6 +118,9 @@ add_executable(GL_Craft
         src/core/WindowUserPointers.h
         src/gl/RenderBuffer.cpp
         src/gl/RenderBuffer.h
+        src/world/surfaceFeatures/SurfaceFeature.h
+        src/world/ChunkPosition.h
+        src/world/PendingBlock.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})

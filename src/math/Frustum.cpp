@@ -10,12 +10,9 @@ Frustum::Frustum(const Plane &left, const Plane &right, const Plane &bottom, con
 
 bool Frustum::isAABBInFrustum(const AABB &box) const {
     for (const auto& plane : m_planes) {
-        int out = 0;
-        for (int i = 0; i < 8; ++i) {
-            const glm::vec3 corner = box.getCorner(i);
-            if (const float distance = plane.m_a1() * corner.x + plane.m_b1() * corner.y + plane.m_c1() * corner.z + plane.m_d1(); distance < 0) out++;
-        }
-        if (out == 8) return false; // All corners are outside the plane
+        if (const glm::vec3 nVertex = box.getNVertex(plane);
+            plane.m_a1() * nVertex.x + plane.m_b1() * nVertex.y + plane.m_c1() * nVertex.z + plane.m_d1() < 0)
+            return false;
     }
 
     return true;

@@ -12,7 +12,6 @@ enum class Face : uint8_t {
 
 struct BlockFaceData {
     Face faceType;
-    uint8_t vertexCount;
     uint8_t x, y, z;
 
     [[nodiscard]] glm::vec3 getPosition() const {

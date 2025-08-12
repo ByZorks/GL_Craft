@@ -3,14 +3,12 @@
 #include "Renderer.h"
 
 void InstanceRenderer::addInstance(const glm::vec3 &position) {
-    if (m_instanceCount < m_instanceBufferCapacity) {
-        if (m_instanceCount >= m_instancePositions.size()) {
-            m_instancePositions.push_back(position);
-        } else {
-            m_instancePositions[m_instanceCount] = position;
-        }
-        m_instanceCount++;
+    if (m_instanceCount >= m_instancePositions.size()) {
+        m_instancePositions.push_back(position);
+    } else {
+        m_instancePositions[m_instanceCount] = position;
     }
+    m_instanceCount++;
 }
 
 void InstanceRenderer::updateInstanceBuffer() {
@@ -31,6 +29,7 @@ void InstanceRenderer::updateInstanceBuffer() {
 
 void InstanceRenderer::resetInstances() {
     m_instanceCount = 0;
+    m_instancePositions.clear();
 }
 
 void InstanceRenderer::draw() const {
@@ -41,4 +40,8 @@ void InstanceRenderer::draw() const {
 
 unsigned int InstanceRenderer::m_instance_count() const {
     return m_instanceCount;
+}
+
+std::vector<glm::vec3> & InstanceRenderer::m_instance_positions() {
+    return m_instancePositions;
 }
