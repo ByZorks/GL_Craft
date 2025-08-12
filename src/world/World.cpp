@@ -26,8 +26,8 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     const int r2 = r * r;
 
     m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)));
-    for (int x = -r; x <= r; x++) {
-        for (int z = -r; z <= r; z++) {
+    for (int x = -r; x <= r; ++x) {
+        for (int z = -r; z <= r; ++z) {
             if (const int d2 = x*x + z*z; d2 <= r2) {
                 m_renderDistanceOffsets.push_back({x, z,
                     static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))});
@@ -91,8 +91,8 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
                             static_cast<float>(strong_mesh->m_z1()));
 
         strong_mesh->draw();
-        drawCalls++;
-        visibleChunksCount++;
+        ++drawCalls;
+        ++visibleChunksCount;
 
         if (instanceUpdateRequired) {
             for (const auto& feature : strong_mesh->m_surface_features()) {
@@ -132,7 +132,7 @@ void World::drawTransparentChunks(Shader &shader, unsigned int &drawCalls) const
                             static_cast<float>(strong_mesh->m_z1()));
 
         strong_mesh->drawTransparent();
-        drawCalls++;
+        ++drawCalls;
     }
 }
 
@@ -147,7 +147,7 @@ void World::drawWater(Shader &shader, unsigned int &drawCalls) const {
                                 static_cast<float>(strong_mesh->m_z1()));
 
             strong_mesh->drawWater();
-            drawCalls++;
+            ++drawCalls;
         }
         Renderer::enableDepthMask();
     }
@@ -165,22 +165,22 @@ void World::drawInstances(unsigned int &drawCalls) const {
 
     if (m_grassRenderer.m_instance_count() > 0) {
         m_grassRenderer.draw();
-        drawCalls++;
+        ++drawCalls;
     }
 
     if (m_poppyRenderer.m_instance_count() > 0) {
         m_poppyRenderer.draw();
-        drawCalls++;
+        ++drawCalls;
     }
 
     if (m_cornflowerRenderer.m_instance_count() > 0) {
         m_cornflowerRenderer.draw();
-        drawCalls++;
+        ++drawCalls;
     }
 
     if (m_alliumRenderer.m_instance_count() > 0) {
         m_alliumRenderer.draw();
-        drawCalls++;
+        ++drawCalls;
     }
 
     Renderer::enableBackFaceCulling();
@@ -202,8 +202,8 @@ void World::updateRenderDistance() {
     const int r2 = r * r;
 
     m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)));
-    for (int x = -r; x <= r; x++) {
-        for (int z = -r; z <= r; z++) {
+    for (int x = -r; x <= r; ++x) {
+        for (int z = -r; z <= r; ++z) {
             if (const int d2 = x*x + z*z; d2 <= r2) {
                 m_renderDistanceOffsets.push_back({x, z,
                     static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))});
@@ -340,7 +340,7 @@ void World::generateChunksPositions(const int cameraWorldX, const int cameraWorl
         const int chunkX = cameraWorldX + static_cast<int>(x * Chunk::SIZE);
         const int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::SIZE);
 
-        for (int y = -maxY; y <= maxY; y++) {
+        for (int y = -maxY; y <= maxY; ++y) {
             const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::SIZE);
             if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
