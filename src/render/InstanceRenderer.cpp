@@ -21,7 +21,7 @@ void InstanceRenderer::updateInstanceBuffer() {
         m_instanceVBO.deleteBuffer();
         m_instanceVBO.init(m_instancePositions.data(), m_instanceBufferCapacity * sizeof(glm::vec3), BufferUsage::DYNAMIC);
 
-        m_VAO.addInstancedBuffer(m_instanceVBO, 3, 3);
+        m_VAO.addInstancedBuffer(m_instanceVBO, 4, 3);
     } else {
         m_instanceVBO.updateData(m_instancePositions.data(), m_instanceCount * sizeof(glm::vec3));
     }
