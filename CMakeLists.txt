@@ -94,9 +94,7 @@ add_executable(GL_Craft
         src/utils/CustomHash.h
         src/render/ThreadPool.h
         src/render/ThreadPool.cpp
-        src/world/surfaceFeatures/trees/Tree.cpp
         src/world/Mesh.h
-        src/world/surfaceFeatures/trees/Tree.h
         src/world/Mesh.cpp
         src/world/surfaceFeatures/grass/ShortGrass.cpp
         src/world/surfaceFeatures/grass/ShortGrass.h
