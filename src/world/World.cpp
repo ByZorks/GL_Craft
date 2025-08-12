@@ -61,11 +61,12 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     m_displayedWaterMeshes.clear();
     bool needInstanceUpdate = false;
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
-        if (chunk->m_state1() == State::MESH_GENERATED || chunk->m_state1() == State::NEED_BUFFERS_UPDATE) {
+        const State state = chunk->m_state1();
+        if (state == State::MESH_GENERATED || state == State::NEED_BUFFERS_UPDATE) {
             chunk->createGLBuffers();
             needInstanceUpdate = true;
         }
-        if (chunk->m_state1() == State::READY_TO_DRAW) {
+        if (state == State::READY_TO_DRAW) {
             if (chunk->hasOpaqueFaces()) m_displayedNormalMeshes.push_back(chunk);
             if (chunk->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(chunk);
             if (chunk->hasWaterFaces()) m_displayedWaterMeshes.push_back(chunk);
