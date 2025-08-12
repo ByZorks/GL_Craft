@@ -354,11 +354,16 @@ void World::generateChunksPositions(const int cameraWorldX, const int cameraWorl
 void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
     const float renderDistanceSq = Renderer::m_renderDistance * Renderer::m_renderDistance;
 
+    const float camX = cameraChunkPos.x;
+    const float camY = cameraChunkPos.y;
+    const float camZ = cameraChunkPos.z;
+
     std::erase_if(m_chunksData.loadedMeshes, [&](const auto &tuple) {
         auto [x, y, z] = tuple.first;
-        const float distSq = (x - cameraChunkPos.x) * (x - cameraChunkPos.x)
-                             + (y - cameraChunkPos.y) * (y - cameraChunkPos.y)
-                             + (z - cameraChunkPos.z) * (z - cameraChunkPos.z);
+        const float dx = x - camX;
+        const float dy = y - camY;
+        const float dz = z - camZ;
+        const float distSq = dx * dx + dy * dy + dz * dz;
         return distSq > renderDistanceSq;
     });
 }
