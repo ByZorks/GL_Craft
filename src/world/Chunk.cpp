@@ -7,7 +7,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     constexpr int NUMBER_OF_FACES = 6;
     constexpr size_t max_faces = NUMBER_OF_FACES * SIZE * SIZE * SIZE;
     constexpr size_t avg_faces = max_faces / VERTEX_PER_FACE; // Assuming each block has a quarter of the maximum faces
-    constexpr size_t avg_faces_transparent = avg_faces * static_cast<size_t>(0.4f);
+    constexpr size_t avg_faces_transparent = avg_faces * static_cast<size_t>(0.2f);
     constexpr size_t avg_faces_water = avg_faces * static_cast<size_t>(0.2f);
 
     m_opaqueData.vertices.reserve(avg_faces * VERTEX_PER_FACE);
@@ -93,7 +93,7 @@ void Chunk::generateMesh() {
             for (int localY = 0; localY < SIZE; localY++) {
                 if (!isBlockPresent(localX, localY, localZ)) continue;
 
-                addBlockFaces(localX, localY, localZ, m_blockType[index(localX + 1, localY + 1, localZ + 1)]);
+                addBlockFaces(localX, localY, localZ, getBlockType(localX, localY, localZ));
             }
         }
     }
