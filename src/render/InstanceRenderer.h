@@ -29,12 +29,13 @@ public:
         const auto& vertices = meshCopy.m_vertices1();
         const auto& blockFaceData = meshCopy.m_block_face_data();
 
+        constexpr int vertexCount = 4;
         if (!vertices.empty()) {
             std::vector<unsigned int> meshIndices_opaque;
             meshIndices_opaque.reserve(blockFaceData.size() * 6); // 6 indices per face
             unsigned int vertexOffsetOpaque = 0;
 
-            for (const auto &[faceType, vertexCount, x, y, z]: blockFaceData) {
+            for (const auto &[faceType, x, y, z]: blockFaceData) {
                 constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
                 constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
                 const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP

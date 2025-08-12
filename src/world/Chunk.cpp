@@ -139,79 +139,24 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     const bool isWater = blockType == BlockType::WATER;
     const bool isTransparent = Block::isTransparent(blockType);
 
-    if (shouldDrawFace(localX, localY, localZ, blockType, Face::TOP)) {
+    constexpr int NUMBER_OF_FACES = 6;
+    for (int i = 0; i < NUMBER_OF_FACES; ++i) {
+        const auto face = static_cast<Face>(i);
+        if (!shouldDrawFace(localX, localY, localZ, blockType, face)) continue;
+
         if (isWater) {
-            Block::addFaceVertices(Face::TOP, blockType, m_vertices_water, localXf, localYf, localZf);
-            m_blockFaceData_water.emplace_back(Face::TOP, 4);
-            Block::addFaceVertices(Face::TOP_INVERSED, blockType, m_vertices_water, localXf, localYf, localZf);
-            m_blockFaceData_water.emplace_back(Face::TOP_INVERSED, 4);
+            Block::addFaceVertices(face, blockType, m_vertices_water, localXf, localYf, localZf);
+            m_blockFaceData_water.emplace_back(face);
+            if (face == Face::TOP) {
+                Block::addFaceVertices(Face::TOP_INVERSED, blockType, m_vertices_water, localXf, localYf, localZf);
+                m_blockFaceData_water.emplace_back(Face::TOP_INVERSED);
+            }
         } else if (isTransparent) {
-            Block::addFaceVertices(Face::TOP, blockType, m_vertices_transparent, localXf, localYf, localZf);
-            m_blockFaceData_transparent.emplace_back(Face::TOP, 4);
+            Block::addFaceVertices(face, blockType, m_vertices_transparent, localXf, localYf, localZf);
+            m_blockFaceData_transparent.emplace_back(face);
         } else {
-            Block::addFaceVertices(Face::TOP, blockType, m_vertices, localXf, localYf, localZf);
-            m_blockFaceData.emplace_back(Face::TOP, 4);
-        }
-    }
-    if (shouldDrawFace(localX, localY, localZ, blockType, Face::BOTTOM)) {
-        if (isWater) {
-            Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices_water, localXf, localYf, localZf);
-            m_blockFaceData_water.emplace_back(Face::BOTTOM, 4);
-        } else if (isTransparent) {
-            Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices_transparent, localXf, localYf, localZf);
-            m_blockFaceData_transparent.emplace_back(Face::BOTTOM, 4);
-        } else {
-            Block::addFaceVertices(Face::BOTTOM, blockType, m_vertices, localXf, localYf, localZf);
-            m_blockFaceData.emplace_back(Face::BOTTOM, 4);
-        }
-    }
-    if (shouldDrawFace(localX, localY, localZ, blockType, Face::FRONT)) {
-        if (isWater) {
-            Block::addFaceVertices(Face::FRONT, blockType, m_vertices_water, localXf, localYf, localZf);
-            m_blockFaceData_water.emplace_back(Face::FRONT, 4);
-        }
-        if (isTransparent) {
-            Block::addFaceVertices(Face::FRONT, blockType, m_vertices_transparent, localXf, localYf, localZf);
-            m_blockFaceData_transparent.emplace_back(Face::FRONT, 4);
-        } else {
-            Block::addFaceVertices(Face::FRONT, blockType, m_vertices, localXf, localYf, localZf);
-            m_blockFaceData.emplace_back(Face::FRONT, 4);
-        }
-    }
-    if (shouldDrawFace(localX, localY, localZ, blockType, Face::BACK)) {
-        if (isWater) {
-            Block::addFaceVertices(Face::BACK, blockType, m_vertices_water, localXf, localYf, localZf);
-            m_blockFaceData_water.emplace_back(Face::BACK, 4);
-        } else if (isTransparent) {
-            Block::addFaceVertices(Face::BACK, blockType, m_vertices_transparent, localXf, localYf, localZf);
-            m_blockFaceData_transparent.emplace_back(Face::BACK, 4);
-        } else {
-            Block::addFaceVertices(Face::BACK, blockType, m_vertices, localXf, localYf, localZf);
-            m_blockFaceData.emplace_back(Face::BACK, 4);
-        }
-    }
-    if (shouldDrawFace(localX, localY, localZ, blockType, Face::RIGHT)) {
-        if (isWater) {
-            Block::addFaceVertices(Face::RIGHT, blockType, m_vertices_water, localXf, localYf, localZf);
-            m_blockFaceData_water.emplace_back(Face::RIGHT, 4);
-        } else if (isTransparent) {
-            Block::addFaceVertices(Face::RIGHT, blockType, m_vertices_transparent, localXf, localYf, localZf);
-            m_blockFaceData_transparent.emplace_back(Face::RIGHT, 4);
-        } else {
-            Block::addFaceVertices(Face::RIGHT, blockType, m_vertices, localXf, localYf, localZf);
-            m_blockFaceData.emplace_back(Face::RIGHT, 4);
-        }
-    }
-    if (shouldDrawFace(localX, localY, localZ, blockType, Face::LEFT)) {
-        if (isWater) {
-            Block::addFaceVertices(Face::LEFT, blockType, m_vertices_water, localXf, localYf, localZf);
-            m_blockFaceData_water.emplace_back(Face::LEFT, 4);
-        } else if (isTransparent) {
-            Block::addFaceVertices(Face::LEFT, blockType, m_vertices_transparent, localXf, localYf, localZf);
-            m_blockFaceData_transparent.emplace_back(Face::LEFT, 4);
-        } else {
-            Block::addFaceVertices(Face::LEFT, blockType, m_vertices, localXf, localYf, localZf);
-            m_blockFaceData.emplace_back(Face::LEFT, 4);
+            Block::addFaceVertices(face, blockType, m_vertices, localXf, localYf, localZf);
+            m_blockFaceData.emplace_back(face);
         }
     }
 }

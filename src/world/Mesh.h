@@ -54,13 +54,14 @@ public:
     virtual void generateMesh();
 
     void createGLBuffers() {
+        constexpr int vertexCount = 4;
         // === OPAQUE ===
         if (!m_vertices.empty()) {
             std::vector<unsigned int> meshIndices_opaque;
             meshIndices_opaque.reserve(m_blockFaceData.size() * 6); // 6 indices per face
             unsigned int vertexOffsetOpaque = 0;
 
-            for (const auto &[faceType, vertexCount, x, y, z]: m_blockFaceData) {
+            for (const auto &[faceType, x, y, z]: m_blockFaceData) {
                 constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
                 constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
                 const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
@@ -90,7 +91,7 @@ public:
             meshIndices_transparent.reserve(m_blockFaceData_transparent.size() * 6); // 6 indices par face
             unsigned int vertexOffsetTransparent = 0;
 
-            for (const auto &[faceType, vertexCount, x, y, z]: m_blockFaceData_transparent) {
+            for (const auto &[faceType, x, y, z]: m_blockFaceData_transparent) {
                 constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
                 constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
                 const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
@@ -120,7 +121,7 @@ public:
             meshIndices_water.reserve(m_blockFaceData_water.size() * 6); // 6 indices par face
             unsigned int vertexOffsetWater = 0;
 
-            for (const auto &[faceType, vertexCount, x, y, z]: m_blockFaceData_water) {
+            for (const auto &[faceType, x, y, z]: m_blockFaceData_water) {
                 constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
                 constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
                 const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
