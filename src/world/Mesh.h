@@ -54,11 +54,12 @@ public:
     virtual void generateMesh();
 
     void createGLBuffers() {
-        constexpr int vertexCount = 4;
+        constexpr int VERTEX_COUNT = 4;
+        constexpr int NUMBER_OF_FACES = 6;
         // === OPAQUE ===
         if (!m_vertices.empty()) {
             std::vector<unsigned int> meshIndices_opaque;
-            meshIndices_opaque.reserve(m_blockFaceData.size() * 6); // 6 indices per face
+            meshIndices_opaque.reserve(m_blockFaceData.size() * NUMBER_OF_FACES);
             unsigned int vertexOffsetOpaque = 0;
 
             for (const auto &[faceType, x, y, z]: m_blockFaceData) {
@@ -67,10 +68,10 @@ public:
                 const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
                                                   ? faceIndicesCW : faceIndicesCCW;
 
-                for (int i = 0; i < 6; ++i) {
+                for (int i = 0; i < NUMBER_OF_FACES; ++i) {
                     meshIndices_opaque.push_back(vertexOffsetOpaque + indices[i]);
                 }
-                vertexOffsetOpaque += vertexCount;
+                vertexOffsetOpaque += VERTEX_COUNT;
             }
 
             m_VBO.init(m_vertices.data(), m_vertices.size() * sizeof(BlockVertex));
@@ -88,7 +89,7 @@ public:
         // === TRANSPARENT ===
         if (!m_vertices_transparent.empty()) {
             std::vector<unsigned int> meshIndices_transparent;
-            meshIndices_transparent.reserve(m_blockFaceData_transparent.size() * 6); // 6 indices par face
+            meshIndices_transparent.reserve(m_blockFaceData_transparent.size() * NUMBER_OF_FACES); // 6 indices par face
             unsigned int vertexOffsetTransparent = 0;
 
             for (const auto &[faceType, x, y, z]: m_blockFaceData_transparent) {
@@ -97,10 +98,10 @@ public:
                 const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
                                                   ? faceIndicesCW : faceIndicesCCW;
 
-                for (int i = 0; i < 6; ++i) {
+                for (int i = 0; i < NUMBER_OF_FACES; ++i) {
                     meshIndices_transparent.push_back(vertexOffsetTransparent + indices[i]);
                 }
-                vertexOffsetTransparent += vertexCount;
+                vertexOffsetTransparent += VERTEX_COUNT;
             }
 
             m_VBO_transparent.init(m_vertices_transparent.data(), m_vertices_transparent.size() * sizeof(BlockVertex));
@@ -118,7 +119,7 @@ public:
         // === WATER ===
         if (!m_vertices_water.empty()) {
             std::vector<unsigned int> meshIndices_water;
-            meshIndices_water.reserve(m_blockFaceData_water.size() * 6); // 6 indices par face
+            meshIndices_water.reserve(m_blockFaceData_water.size() * NUMBER_OF_FACES); // 6 indices par face
             unsigned int vertexOffsetWater = 0;
 
             for (const auto &[faceType, x, y, z]: m_blockFaceData_water) {
@@ -127,10 +128,10 @@ public:
                 const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
                                                   ? faceIndicesCW : faceIndicesCCW;
 
-                for (int i = 0; i < 6; ++i) {
+                for (int i = 0; i < NUMBER_OF_FACES; ++i) {
                     meshIndices_water.push_back(vertexOffsetWater + indices[i]);
                 }
-                vertexOffsetWater += vertexCount;
+                vertexOffsetWater += VERTEX_COUNT;
             }
 
             m_VBO_water.init(m_vertices_water.data(), m_vertices_water.size() * sizeof(BlockVertex));

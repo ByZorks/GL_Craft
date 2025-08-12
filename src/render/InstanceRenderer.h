@@ -29,10 +29,11 @@ public:
         const auto& vertices = meshCopy.m_vertices1();
         const auto& blockFaceData = meshCopy.m_block_face_data();
 
-        constexpr int vertexCount = 4;
+        constexpr int VERTEX_COUNT = 4;
+        constexpr int NUMBER_OF_FACES = 6;
         if (!vertices.empty()) {
             std::vector<unsigned int> meshIndices_opaque;
-            meshIndices_opaque.reserve(blockFaceData.size() * 6); // 6 indices per face
+            meshIndices_opaque.reserve(blockFaceData.size() * NUMBER_OF_FACES); // 6 indices per face
             unsigned int vertexOffsetOpaque = 0;
 
             for (const auto &[faceType, x, y, z]: blockFaceData) {
@@ -41,10 +42,10 @@ public:
                 const unsigned int *indices = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
                                                   ? faceIndicesCW : faceIndicesCCW;
 
-                for (int i = 0; i < 6; ++i) {
+                for (int i = 0; i < NUMBER_OF_FACES; ++i) {
                     meshIndices_opaque.push_back(vertexOffsetOpaque + indices[i]);
                 }
-                vertexOffsetOpaque += vertexCount;
+                vertexOffsetOpaque += VERTEX_COUNT;
             }
 
             m_VBO.init(vertices.data(), vertices.size() * sizeof(BlockVertex));
