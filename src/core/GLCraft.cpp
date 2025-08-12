@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
         const glm::mat4 projection = camera.getProjectionMatrix();
         const glm::mat4 view = camera.getViewMatrix();
         const glm::mat4 mvp = projection * view;
-        static Frustum frustum = Camera::getFrustum(mvp);
+        Frustum frustum = Camera::getFrustum(mvp);
 
         // Uniforms
         instancesShader->use();
@@ -119,10 +119,10 @@ int main(int argc, char *argv[]) {
         blockShader->use();
         world->drawChunks(camera, frustum, *blockShader, visibleChunksCount, drawCalls);
 
-        world->drawTransparentChunks(*blockShader, drawCalls);
+        world->drawTransparentChunks(camera, frustum, *blockShader, drawCalls);
 
         waterShader->use();
-        world->drawWater(*waterShader, drawCalls);
+        world->drawWater(camera, frustum, *waterShader, drawCalls);
 
         // Post-processing
         FrameBuffer::unbind();

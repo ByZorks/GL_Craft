@@ -122,8 +122,10 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     }
 }
 
-void World::drawTransparentChunks(Shader &shader, unsigned int &drawCalls) const {
+void World::drawTransparentChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &drawCalls) const {
     for (const auto& strong_mesh : m_displayedTransparentMeshes) {
+        if (camera.distanceToCamera(*strong_mesh) > Renderer::m_renderDistance) continue;
+        if (!frustum.isAABBInFrustum(strong_mesh->m_box1())) continue;
         shader.setUniform3f("u_Offset",
                             static_cast<float>(strong_mesh->m_x1()),
                             static_cast<float>(strong_mesh->m_y1()),
@@ -134,10 +136,12 @@ void World::drawTransparentChunks(Shader &shader, unsigned int &drawCalls) const
     }
 }
 
-void World::drawWater(Shader &shader, unsigned int &drawCalls) const {
+void World::drawWater(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &drawCalls) const {
     if (!m_displayedWaterMeshes.empty()) {
         Renderer::disableDepthMask();
         for (const auto& strong_mesh : m_displayedWaterMeshes) {
+            if (camera.distanceToCamera(*strong_mesh) > Renderer::m_renderDistance) continue;
+            if (!frustum.isAABBInFrustum(strong_mesh->m_box1())) continue;
             shader.setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
             shader.setUniform3f("u_Offset",
                                 static_cast<float>(strong_mesh->m_x1()),

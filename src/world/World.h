@@ -43,8 +43,8 @@ public:
 
     void updateChunks(const Camera &camera);
     void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &drawCalls);
-    void drawTransparentChunks(Shader &shader, unsigned int &drawCalls) const;
-    void drawWater(Shader &shader, unsigned int &drawCalls) const;
+    void drawTransparentChunks(const Camera &camera, const Frustum &frustum,Shader &shader, unsigned int &drawCalls) const;
+    void drawWater(const Camera &camera, const Frustum &frustum,Shader &shader, unsigned int &drawCalls) const;
     void drawInstances(unsigned int &drawCalls) const;
     void addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData);
     void updateRenderDistance();
