@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     std::cout << glGetString(GL_VERSION) << std::endl;
 
     auto *blockShader = new Shader("../res/shaders/block.vert", "../res/shaders/block.frag");
-    auto *grassShader = new Shader("../res/shaders/grass.vert", "../res/shaders/grass.frag");
+    auto *instancesShader = new Shader("../res/shaders/instances.vert", "../res/shaders/instances.frag");
     auto *waterShader = new Shader("../res/shaders/water.vert", "../res/shaders/water.frag");
     auto *postProcessingShader = new Shader("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
 
@@ -88,38 +88,46 @@ int main(int argc, char *argv[]) {
         const glm::mat4 projection = camera.getProjectionMatrix();
         const glm::mat4 view = camera.getViewMatrix();
         const glm::mat4 mvp = projection * view;
-        Frustum frustum = Camera::getFrustum(mvp);
+        static Frustum frustum = Camera::getFrustum(mvp);
 
-        // Chunks generation
-        world->updateChunks(camera);
-
-        // Render instances, opaques block, transparents blocks then water
-        grassShader->use();
-        grassShader->setUniformMat4f("u_MVP", mvp);
-        world->drawInstances(drawCalls);
+        // Uniforms
+        instancesShader->use();
+        instancesShader->setUniformMat4f("u_MVP", mvp);
 
         blockShader->use();
         blockShader->setUniformMat4f("u_MVP", mvp);
+
+        waterShader->use();
+        waterShader->setUniformMat4f("u_MVP", mvp);
+        waterShader->setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
+
+        postProcessingShader->use();
+        postProcessingShader->setUniform1f("u_RenderDistance", Renderer::m_renderDistance);
+        postProcessingShader->setUniform1b("u_IsUnderWater", camera.isUnderWater(World::getHeight(
+                                               static_cast<int>(camera.m_camera_pos().x),
+                                               static_cast<int>(camera.m_camera_pos().z))));
+        postProcessingShader->setUniform1i("u_SceneTexture", 0);
+        postProcessingShader->setUniform1i("u_DepthTexture", 1);
+
+        // Chunks generation
+        if (camera.hasCameraChangedChunk()) world->updateChunks(camera);
+
+        // Render instances, opaques block, transparents blocks then water
+        instancesShader->use();
+        world->drawInstances(drawCalls);
+
+        blockShader->use();
         world->drawChunks(camera, frustum, *blockShader, visibleChunksCount, drawCalls);
 
         world->drawTransparentChunks(*blockShader, drawCalls);
 
         waterShader->use();
-        waterShader->setUniformMat4f("u_MVP", mvp);
         world->drawWater(*waterShader, drawCalls);
 
         // Post-processing
         FrameBuffer::unbind();
         postProcessingShader->use();
-        postProcessingShader->setUniform1f("u_RenderDistance", Renderer::m_renderDistance);
-        postProcessingShader->setUniform1b("u_IsUnderWater", camera.isUnderWater(world->getHeight(
-                                               static_cast<int>(camera.m_camera_pos().x),
-                                               static_cast<int>(camera.m_camera_pos().z))));
-
-        postProcessingShader->setUniform1i("u_SceneTexture", 0);
         postProcessingMesh->m_fbo().m_color_texture().bind(0);
-
-        postProcessingShader->setUniform1i("u_DepthTexture", 1);
         postProcessingMesh->m_fbo().m_depth_texture().bind(1);
 
         Renderer::disableDepthTesting();
@@ -141,7 +149,7 @@ int main(int argc, char *argv[]) {
     }
 
     delete blockShader;
-    delete grassShader;
+    delete instancesShader;
     delete waterShader;
     delete postProcessingShader;
     delete postProcessingMesh;

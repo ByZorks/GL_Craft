@@ -42,8 +42,6 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
 }
 
 void World::updateChunks(const Camera &camera) {
-    if (!camera.hasCameraChangedChunk()) return;
-
     const int cameraWorldX = static_cast<int>(std::floor(camera.m_camera_pos().x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
     const int cameraWorldY = static_cast<int>(std::floor(camera.m_camera_pos().y / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
     const int cameraWorldZ = static_cast<int>(std::floor(camera.m_camera_pos().z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
