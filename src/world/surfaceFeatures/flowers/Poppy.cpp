@@ -10,11 +10,11 @@ void Poppy::generateVoxel() {
 }
 
 void Poppy::generateMesh() {
-    Block::addFaceVerticesAsBilboard(Face::BACK, BlockType::FLOWER_POPPY, m_vertices, 0.0f, 0.0f, 0.0f);
-    m_blockFaceData.emplace_back(Face::BACK, 4);
+    Block::addFaceVerticesAsBilboard(Face::BACK, BlockType::FLOWER_POPPY, m_opaqueData.vertices, 0.0f, 0.0f, 0.0f);
+    m_opaqueData.blockFaceData.emplace_back(Face::BACK, 4);
 
-    Block::addFaceVerticesAsBilboard(Face::FRONT, BlockType::FLOWER_POPPY, m_vertices, 0.0f, 0.0f, 0.0f);
-    m_blockFaceData.emplace_back(Face::FRONT, 4);
+    Block::addFaceVerticesAsBilboard(Face::FRONT, BlockType::FLOWER_POPPY, m_opaqueData.vertices, 0.0f, 0.0f, 0.0f);
+    m_opaqueData.blockFaceData.emplace_back(Face::FRONT, 4);
 
     m_state = State::MESH_GENERATED;
 }

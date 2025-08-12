@@ -26,8 +26,8 @@ public:
         meshCopy.generateVoxel();
         meshCopy.generateMesh();
 
-        const auto& vertices = meshCopy.m_vertices1();
-        const auto& blockFaceData = meshCopy.m_block_face_data();
+        const auto& vertices = meshCopy.getOpaqueVertices();
+        const auto& blockFaceData = meshCopy.getOpaqueBlockFaceData();
 
         constexpr int VERTEX_COUNT = 4;
         constexpr int NUMBER_OF_FACES = 6;
