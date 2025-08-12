@@ -21,6 +21,7 @@ private:
     ThreadPool m_threadPool;
 
     MeshData<Chunk> m_chunksData;
+    std::vector<ChunkPosition> m_tempKeysToProcess;
 
     InstanceRenderer m_grassRenderer;
     InstanceRenderer m_poppyRenderer;

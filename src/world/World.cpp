@@ -20,6 +20,7 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_alliumRenderer.init(Allium(0, 0, 0));
 
     m_chunksData.loadedMeshes.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
+    m_tempKeysToProcess.reserve(100);
 }
 
 void World::updateChunks(const Camera &camera) {
@@ -259,15 +260,16 @@ void World::processChunks() {
 
     // Third pass: generate pending blocks
     if (!m_chunksData.m_pendingBlocks.empty()) {
-        std::vector<ChunkPosition> keysToProcess;
+        m_tempKeysToProcess.clear();
         {
             std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
+            m_tempKeysToProcess.reserve(m_chunksData.m_pendingBlocks.size());
             for (const auto &key: m_chunksData.m_pendingBlocks | std::views::keys) {
-                keysToProcess.push_back(key);
+                m_tempKeysToProcess.push_back(key);
             }
         }
 
-        for (const auto& key : keysToProcess) {
+        for (const auto& key : m_tempKeysToProcess) {
             if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
                 const std::shared_ptr<Chunk> p_chunk = it->second;
                 if (p_chunk->m_state1() < State::MESH_GENERATED) continue;
