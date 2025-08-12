@@ -23,7 +23,6 @@ public:
     void generateVoxel() override;
     void generatePendingBlocks(std::vector<PendingBlock> &blocks);
     void generateMesh() override;
-    void flagForUpdate();
     void transferPendingBlocksToWorld(World &world);
 
     [[nodiscard]] int index(int x, int y, int z) const override;

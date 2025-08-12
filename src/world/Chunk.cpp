@@ -80,8 +80,11 @@ void Chunk::generateVoxel() {
 void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks) {
     for (const auto &[localX, localY, localZ, blockType]: blocks) {
         m_blockType[index(localX, localY, localZ)] = blockType;
+        addBlockFaces(localX - 1, localY - 1, localZ - 1, blockType);
     }
     blocks.clear();
+
+    m_state = State::NEED_BUFFERS_UPDATE;
 }
 
 void Chunk::generateMesh() {
@@ -102,10 +105,6 @@ void Chunk::generateMesh() {
     }
 
     m_state = State::MESH_GENERATED;
-}
-
-void Chunk::flagForUpdate() {
-    m_state = State::NEED_BUFFERS_UPDATE;
 }
 
 void Chunk::transferPendingBlocksToWorld(World &world) {

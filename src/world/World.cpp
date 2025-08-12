@@ -328,10 +328,7 @@ void World::processChunks() {
 
                 if (!blocks.empty()) {
                     p_chunk->resetGLBuffers();
-                    p_chunk->resetMesh();
                     p_chunk->generatePendingBlocks(blocks);
-                    p_chunk->generateMesh();
-                    p_chunk->flagForUpdate();
                 }
             }
         }
