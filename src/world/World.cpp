@@ -273,7 +273,7 @@ const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & World::m_loade
 }
 
 void World::processChunks() {
-    const int maxChunksPerFrame = static_cast<int>(0.15 * Renderer::m_renderDistance + 0.3 * static_cast<float>(m_threadPool.m_num_threads()));
+    const int maxChunksPerFrame = static_cast<int>(0.1 * Renderer::m_renderDistance + 0.2 * static_cast<float>(m_threadPool.m_num_threads()));
     // Remove chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.meshesToDelete.empty()) break;
