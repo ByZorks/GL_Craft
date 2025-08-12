@@ -282,7 +282,7 @@ void World::processChunks() {
         if (m_chunksData.meshesToGenerateVoxel.empty()) break;
 
         ChunkPosition key = m_chunksData.meshesToGenerateVoxel.pop();
-        m_threadPool.enqueue([this, key] {
+        m_threadPool.enqueue_no_future([this, key] {
             const auto p_chunk = std::make_shared<Chunk>(key.x, key.y, key.z);
             p_chunk->generateVoxel();
             p_chunk->transferPendingBlocksToWorld(*this);
