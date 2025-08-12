@@ -237,11 +237,11 @@ void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std
             const uint8_t u_end = u_start + 1;
             const uint8_t v_start = getTextureV(type, face);
             const uint8_t v_end = v_start + 1;
-            constexpr uint8_t normal = 1;
-            addVertex(block_startX, block_endY, block_startZ, u_start, v_end, normal);
-            addVertex(block_endX, block_endY, block_endZ, u_end, v_end, normal);
-            addVertex(block_endX, block_startY, block_endZ, u_end, v_start, normal);
-            addVertex(block_startX, block_startY, block_startZ, u_start, v_start, normal);
+            constexpr uint8_t faceIndex = 1;
+            addVertex(block_startX, block_endY, block_startZ, u_start, v_end, faceIndex);
+            addVertex(block_endX, block_endY, block_endZ, u_end, v_end, faceIndex);
+            addVertex(block_endX, block_startY, block_endZ, u_end, v_start, faceIndex);
+            addVertex(block_startX, block_startY, block_startZ, u_start, v_start, faceIndex);
             break;
         }
         default:
