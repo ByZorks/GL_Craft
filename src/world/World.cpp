@@ -21,6 +21,24 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
 
     m_chunksData.loadedMeshes.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
     m_tempKeysToProcess.reserve(100);
+
+    const int r = static_cast<int>(Renderer::m_renderDistance / static_cast<float>(Chunk::SIZE));
+    const int r2 = r * r;
+
+    m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)));
+    for (int x = -r; x <= r; x++) {
+        for (int z = -r; z <= r; z++) {
+            if (const int d2 = x*x + z*z; d2 <= r2) {
+                m_renderDistanceOffsets.push_back({x, z,
+                    static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))});
+            }
+        }
+    }
+
+    std::sort(m_renderDistanceOffsets.begin(), m_renderDistanceOffsets.end(),
+              [](const auto &a, const auto &b) {
+                  return a.x*a.x + a.z*a.z < b.x*b.x + b.z*b.z;
+              });
 }
 
 void World::updateChunks(const Camera &camera) {
@@ -32,7 +50,7 @@ void World::updateChunks(const Camera &camera) {
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
     unloadDistantMeshes(cameraChunkPos);
-    generateDataForEachChunks(cameraWorldX, cameraWorldY, cameraWorldZ);
+    generateChunksPositions(cameraWorldX, cameraWorldY, cameraWorldZ);
 }
 
 void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &drawCalls) {
@@ -177,6 +195,28 @@ void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector
     }
 }
 
+void World::updateRenderDistance() {
+    m_renderDistanceOffsets.clear();
+
+    const int r = static_cast<int>(Renderer::m_renderDistance / static_cast<float>(Chunk::SIZE));
+    const int r2 = r * r;
+
+    m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)));
+    for (int x = -r; x <= r; x++) {
+        for (int z = -r; z <= r; z++) {
+            if (const int d2 = x*x + z*z; d2 <= r2) {
+                m_renderDistanceOffsets.push_back({x, z,
+                    static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))});
+            }
+        }
+    }
+
+    std::sort(m_renderDistanceOffsets.begin(), m_renderDistanceOffsets.end(),
+              [](const auto &a, const auto &b) {
+                  return a.x*a.x + a.z*a.z < b.x*b.x + b.z*b.z;
+              });
+}
+
 int World::getHeight(const int worldX, const int worldZ) {
     // static cast have to be used on both coords and size or it will crash
     constexpr int baseHeight = 58;
@@ -295,34 +335,10 @@ void World::processChunks() {
     }
 }
 
-void World::generateDataForEachChunks(const int cameraWorldX, const int cameraWorldY, const int cameraWorldZ) {
-    const int r = static_cast<int>(Renderer::m_renderDistance / static_cast<float>(Chunk::SIZE));
-    const int r2 = r * r;
-
-    // Pre-compute offsets for a circle of chunks around the camera position
-    struct Offset { int x, z, maxY; };
-    std::vector<Offset> circleOffsets;
-    circleOffsets.reserve(static_cast<std::vector<Offset>::size_type>(std::numbers::pi * static_cast<double>(r2)));
-    for (int x = -r; x <= r; x++) {
-        for (int z = -r; z <= r; z++) {
-            if (const int d2 = x*x + z*z; d2 <= r2) {
-                circleOffsets.push_back({x, z,
-                    static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))});
-            }
-        }
-    }
-
-    // Sort offsets by distance
-    std::sort(circleOffsets.begin(), circleOffsets.end(),
-              [&](auto &a, auto &b) {
-                  return a.x*a.x + a.z*a.z
-                   < b.x*b.x + b.z*b.z;
-              });
-
-    // Generate chunks
-    for (auto [x,z, maxY] : circleOffsets) {
-        int chunkX = cameraWorldX + static_cast<int>(x * Chunk::SIZE);
-        int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::SIZE);
+void World::generateChunksPositions(const int cameraWorldX, const int cameraWorldY, const int cameraWorldZ) {
+    for (auto [x,z, maxY] : m_renderDistanceOffsets) {
+        const int chunkX = cameraWorldX + static_cast<int>(x * Chunk::SIZE);
+        const int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::SIZE);
 
         for (int y = -maxY; y <= maxY; y++) {
             const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::SIZE);

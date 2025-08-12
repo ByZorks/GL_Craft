@@ -1,5 +1,7 @@
 #ifndef DEBUGUI_H
 #define DEBUGUI_H
+#include <functional>
+
 #include "GLFW/glfw3.h"
 
 class Camera;
@@ -16,7 +18,7 @@ public:
 
     static void newFrame();
 
-    static void render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCalls, const Camera &camera);
+    static void render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCalls, const Camera &camera, const std::function<void()>& renderDistanceCallback);
 
     static void draw();
 

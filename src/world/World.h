@@ -1,7 +1,6 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <ranges>
 #include <unordered_map>
 
 #include "Chunk.h"
@@ -16,12 +15,17 @@
 
 class Camera;
 
+struct Offset {
+    int x, z, maxY;
+};
+
 class World {
 private:
     ThreadPool m_threadPool;
 
     MeshData<Chunk> m_chunksData;
     std::vector<ChunkPosition> m_tempKeysToProcess;
+    std::vector<Offset> m_renderDistanceOffsets;
 
     InstanceRenderer m_grassRenderer;
     InstanceRenderer m_poppyRenderer;
@@ -42,19 +46,19 @@ public:
     void drawTransparentChunks(Shader &shader, unsigned int &drawCalls) const;
     void drawWater(Shader &shader, unsigned int &drawCalls) const;
     void drawInstances(unsigned int &drawCalls) const;
-
     void addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData);
+    void updateRenderDistance();
 
     static int getHeight(int worldX, int worldZ);
-
     static bool isCave(int worldX, int worldY, int worldZ, int columnHeight);
 
     [[nodiscard]] const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
     static FastNoiseLite& getSurfaceFeaturesNoise();
 
+
 private:
     void processChunks();
-    void generateDataForEachChunks(int cameraWorldX, int cameraWorldY, int cameraWorldZ);
+    void generateChunksPositions(int cameraWorldX, int cameraWorldY, int cameraWorldZ);
     void unloadDistantMeshes(const glm::vec3 &cameraChunkPos);
     static FastNoiseLite makeTerrainNoise();
     static FastNoiseLite makeSurfaceFeaturesNoise();

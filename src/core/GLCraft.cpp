@@ -127,7 +127,9 @@ int main(int argc, char *argv[]) {
         Renderer::enableDepthTesting();
 
         // Render ImGui
-        DebugUI::render(visibleChunksCount, world->m_loaded_chunks().size(), drawCalls, camera);
+        DebugUI::render(visibleChunksCount, world->m_loaded_chunks().size(), drawCalls, camera, [world] {
+            world->updateRenderDistance();
+        });
         DebugUI::draw();
 
         // State update
