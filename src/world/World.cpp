@@ -223,7 +223,6 @@ void World::updateRenderDistance(Shader &postProcessingShader) {
 }
 
 int World::getHeight(const int worldX, const int worldZ) {
-    // static cast have to be used on both coords and size or it will crash
     constexpr int baseHeight = 58;
     constexpr int maxHeight = 256;
 
