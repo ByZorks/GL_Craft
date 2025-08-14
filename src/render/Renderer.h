@@ -14,6 +14,8 @@ public:
     static void init();
     static void clear();
     static float calculateDeltaTime(float currentFrame);
+    static void disableWireFrameMode();
+    static void enableWireFrameMode();
     static void disableDepthTesting();
     static void enableDepthTesting();
     static void disableDepthMask();

@@ -25,6 +25,14 @@ float Renderer::calculateDeltaTime(const float currentFrame) {
     return m_deltaTime;
 }
 
+void Renderer::disableWireFrameMode() {
+    GLCall(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+}
+
+void Renderer::enableWireFrameMode() {
+    GLCall(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+}
+
 void Renderer::disableDepthTesting() {
     GLCall(glDisable(GL_DEPTH_TEST));
 }
