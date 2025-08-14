@@ -81,7 +81,8 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     }
 
     for (const auto& strong_mesh : m_displayedNormalMeshes) {
-        if (camera.distanceToCamera(*strong_mesh) > Renderer::s_renderDistance) continue;
+        const float distance = camera.distanceToCamera(*strong_mesh);
+        if (distance > Renderer::s_renderDistance) continue;
         if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
         shader.setUniform3f("u_Offset",
                             static_cast<float>(strong_mesh->getX()),
@@ -92,7 +93,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         ++drawCalls;
         ++visibleChunksCount;
 
-        if (needInstanceUpdate) {
+        if (needInstanceUpdate && distance < 320.0f) { // They are no longer visible at this distance event if we draw them
             for (const auto& feature : strong_mesh->getSurfaceFeatures()) {
                 switch (feature.type) {
                     case SurfaceFeatureType::SHORT_GRASS:
