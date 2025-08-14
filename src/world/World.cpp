@@ -59,7 +59,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     m_displayedNormalMeshes.clear();
     m_displayedTransparentMeshes.clear();
     m_displayedWaterMeshes.clear();
-    bool needInstanceUpdate = false;
+    bool needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk();
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
         const State state = chunk->m_state1();
         if (state == State::MESH_GENERATED) {
@@ -73,8 +73,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         }
     }
 
-    const bool instanceUpdateRequired = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk() || needInstanceUpdate;
-    if (instanceUpdateRequired) {
+    if (needInstanceUpdate) {
         m_grassRenderer.resetInstances();
         m_poppyRenderer.resetInstances();
         m_cornflowerRenderer.resetInstances();
@@ -93,7 +92,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         ++drawCalls;
         ++visibleChunksCount;
 
-        if (instanceUpdateRequired) {
+        if (needInstanceUpdate) {
             for (const auto& feature : strong_mesh->m_surface_features()) {
                 switch (feature.type) {
                     case SurfaceFeatureType::SHORT_GRASS:
@@ -115,7 +114,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         }
     }
 
-    if (instanceUpdateRequired) {
+    if (needInstanceUpdate) {
         m_grassRenderer.updateInstanceBuffer();
         m_poppyRenderer.updateInstanceBuffer();
         m_cornflowerRenderer.updateInstanceBuffer();
