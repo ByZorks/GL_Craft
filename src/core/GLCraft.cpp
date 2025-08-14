@@ -57,6 +57,10 @@ int main(int argc, char *argv[]) {
     auto *instancesShader = new Shader("../res/shaders/instances.vert", "../res/shaders/instances.frag");
     auto *waterShader = new Shader("../res/shaders/water.vert", "../res/shaders/water.frag");
     auto *postProcessingShader = new Shader("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
+    postProcessingShader->use();
+    postProcessingShader->setUniform1i("u_SceneTexture", 0);
+    postProcessingShader->setUniform1i("u_DepthTexture", 1);
+    postProcessingShader->setUniform1f("u_RenderDistance", Renderer::m_renderDistance);
 
     const auto *atlas = new Texture("../res/textures/atlas/texture_atlas.png");
     atlas->bind();
@@ -88,11 +92,16 @@ int main(int argc, char *argv[]) {
         const glm::mat4 projection = camera.getProjectionMatrix();
         const glm::mat4 view = camera.getViewMatrix();
         const glm::mat4 mvp = projection * view;
-        Frustum frustum = Camera::getFrustum(mvp);
+        const Frustum frustum = Camera::getFrustum(mvp);
+
+        // Chunks generation
+        if (camera.hasCameraChangedChunk()) world->updateChunks(camera);
 
         // Uniforms
-        instancesShader->use();
-        instancesShader->setUniformMat4f("u_MVP", mvp);
+        postProcessingShader->use();
+        postProcessingShader->setUniform1b("u_IsUnderWater", camera.isUnderWater(World::getHeight(
+                                               static_cast<int>(camera.m_camera_pos().x),
+                                               static_cast<int>(camera.m_camera_pos().z))));
 
         blockShader->use();
         blockShader->setUniformMat4f("u_MVP", mvp);
@@ -101,19 +110,10 @@ int main(int argc, char *argv[]) {
         waterShader->setUniformMat4f("u_MVP", mvp);
         waterShader->setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
 
-        postProcessingShader->use();
-        postProcessingShader->setUniform1f("u_RenderDistance", Renderer::m_renderDistance);
-        postProcessingShader->setUniform1b("u_IsUnderWater", camera.isUnderWater(World::getHeight(
-                                               static_cast<int>(camera.m_camera_pos().x),
-                                               static_cast<int>(camera.m_camera_pos().z))));
-        postProcessingShader->setUniform1i("u_SceneTexture", 0);
-        postProcessingShader->setUniform1i("u_DepthTexture", 1);
-
-        // Chunks generation
-        if (camera.hasCameraChangedChunk()) world->updateChunks(camera);
+        instancesShader->use();
+        instancesShader->setUniformMat4f("u_MVP", mvp);
 
         // Render instances, opaques block, transparents blocks then water
-        instancesShader->use();
         world->drawInstances(drawCalls);
 
         blockShader->use();
@@ -135,8 +135,8 @@ int main(int argc, char *argv[]) {
         Renderer::enableDepthTesting();
 
         // Render ImGui
-        DebugUI::render(visibleChunksCount, world->m_loaded_chunks().size(), drawCalls, camera, [world] {
-            world->updateRenderDistance();
+        DebugUI::render(visibleChunksCount, world->m_loaded_chunks().size(), drawCalls, camera, [world, postProcessingShader] {
+            world->updateRenderDistance(*postProcessingShader);
         });
         DebugUI::draw();
 

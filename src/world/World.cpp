@@ -198,7 +198,9 @@ void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector
     }
 }
 
-void World::updateRenderDistance() {
+void World::updateRenderDistance(Shader &postProcessingShader) {
+    postProcessingShader.setUniform1f("u_RenderDistance", Renderer::m_renderDistance);
+
     m_renderDistanceOffsets.clear();
 
     const int r = static_cast<int>(Renderer::m_renderDistance / static_cast<float>(Chunk::SIZE));

@@ -47,7 +47,7 @@ public:
     void drawWater(const Camera &camera, const Frustum &frustum,Shader &shader, unsigned int &drawCalls) const;
     void drawInstances(unsigned int &drawCalls) const;
     void addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData);
-    void updateRenderDistance();
+    void updateRenderDistance(Shader &postProcessingShader);
 
     static int getHeight(int worldX, int worldZ);
     static bool isCave(int worldX, int worldY, int worldZ, int columnHeight);
