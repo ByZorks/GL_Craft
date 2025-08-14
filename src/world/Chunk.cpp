@@ -42,7 +42,8 @@ void Chunk::generateVoxel() {
                                                        static_cast<float>(worldX),
                                                        static_cast<float>(worldZ)) + 1.0f) * 0.5f;
                 if (surfaceFeatureNoise >= 0.69f) {
-                    m_surfaceFeatures.emplace(worldX, columnHeight, worldZ, getSurfaceFeatureType(surfaceFeatureNoise));
+                    const BlockType blockType = Block::getBlockType(columnHeight, columnHeight);
+                    m_surfaceFeatures.emplace(worldX, columnHeight, worldZ, getSurfaceFeatureType(surfaceFeatureNoise, blockType));
                 }
             }
 

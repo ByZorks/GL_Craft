@@ -20,7 +20,8 @@ struct BlockFaceData {
 };
 
 enum class BlockType : uint8_t {
-    AIR, BEDROCK, DIRT, GRASS, STONE, WATER, LOG, LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER, FLOWER_ALLIUM
+    AIR, BEDROCK, DIRT, GRASS, STONE, WATER, LOG, LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER, FLOWER_ALLIUM,
+    SNOW, SNOW_GRASS
 };
 
 struct BlockVertex {
@@ -33,7 +34,7 @@ struct BlockVertex {
 class Block {
 private:
     float m_x, m_y, m_z;
-    static constexpr uint8_t s_textureColumn[12][3] = {
+    static constexpr uint8_t s_textureColumn[14][3] = {
         // [side, top, bottom]
         {0, 0, 0}, // AIR
         {0, 0, 0}, // BEDROCK
@@ -46,9 +47,11 @@ private:
         {1, 1, 1}, // SHORT_GRASS
         {2, 2, 2}, // POPPY
         {3, 3, 3}, // CORNFLOWER
-        {4, 4, 4}  // ALLIUM
+        {4, 4, 4}, // ALLIUM
+        {0, 0, 0}, // SNOW
+        {1, 2, 1}  // SNOW_GRASS
     };
-    static constexpr uint8_t s_textureRow[12][3] = {
+    static constexpr uint8_t s_textureRow[14][3] = {
         // [side, top, bottom]
         {0, 0, 0}, // AIR
         {4, 4, 4}, // BEDROCK
@@ -61,7 +64,9 @@ private:
         {1, 1, 1}, // SHORT_GRASS
         {1, 1, 1}, // POPPY
         {1, 1, 1}, // CORNFLOWER
-        {1, 1, 1}  // ALLIUM
+        {1, 1, 1}, // ALLIUM
+        {0, 0, 0}, // SNOW
+        {0, 0, 4}  // SNOW_GRASS
     };
 
 public:

@@ -30,12 +30,17 @@ struct SurfaceFeature {
     }
 };
 
-static SurfaceFeatureType getSurfaceFeatureType(const float noiseValue) {
-    if (noiseValue >= 0.88f) return SurfaceFeatureType::TREE;
-    if (noiseValue >= 0.70f) return SurfaceFeatureType::SHORT_GRASS;
-    if (noiseValue >= 0.696f) return SurfaceFeatureType::POPPY;
-    if (noiseValue >= 0.693f) return SurfaceFeatureType::CORNFLOWER;
-    if (noiseValue >= 0.690f) return SurfaceFeatureType::ALLIUM;
+static SurfaceFeatureType getSurfaceFeatureType(const float noiseValue, const BlockType &blockType) {
+    if (blockType == BlockType::GRASS || blockType == BlockType::SNOW_GRASS) {
+        if (noiseValue >= 0.88f) return SurfaceFeatureType::TREE;
+        if (noiseValue >= 0.70f) return SurfaceFeatureType::SHORT_GRASS;
+        if (noiseValue >= 0.696f) return SurfaceFeatureType::POPPY;
+        if (noiseValue >= 0.693f) return SurfaceFeatureType::CORNFLOWER;
+        if (noiseValue >= 0.690f) return SurfaceFeatureType::ALLIUM;
+    } else {
+        // Nothing for now
+    }
+
     return SurfaceFeatureType::NONE;
 }
 

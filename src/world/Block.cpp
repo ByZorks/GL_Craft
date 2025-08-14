@@ -14,10 +14,18 @@ BlockType Block::getBlockType(const int y, const int columnHeight) {
     if (y == 1) return BlockType::BEDROCK;
 
     if (y <= columnHeight) {
-        if (y == columnHeight && columnHeight >= waterLevel) return BlockType::GRASS;
-        if (y == columnHeight) return BlockType::DIRT;
+        // Surface block
+        if (y == columnHeight && columnHeight >= waterLevel && y < 150) return BlockType::GRASS;
+        if (y == columnHeight && columnHeight >= waterLevel && y < 200) return BlockType::SNOW_GRASS;
+        if (y == columnHeight && columnHeight >= waterLevel) return BlockType::SNOW;
+        if (y == columnHeight) return BlockType::DIRT; // Disallow cave entrances underwater
+
+        // Subsurface blocks
         if (y < columnHeight - 4) return BlockType::STONE;
-        if (y < columnHeight) return BlockType::DIRT;
+
+        // Near-surface blocks
+        if (y < columnHeight && y < 200) return BlockType::DIRT;
+        if (y < columnHeight) return BlockType::SNOW;
     }
 
     if (y > columnHeight && y <= waterLevel) {
