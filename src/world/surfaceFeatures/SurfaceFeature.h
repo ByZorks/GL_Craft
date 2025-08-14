@@ -31,7 +31,7 @@ struct SurfaceFeature {
 };
 
 static SurfaceFeatureType getSurfaceFeatureType(const float noiseValue) {
-    if (noiseValue >= 0.87f) return SurfaceFeatureType::TREE;
+    if (noiseValue >= 0.88f) return SurfaceFeatureType::TREE;
     if (noiseValue >= 0.70f) return SurfaceFeatureType::SHORT_GRASS;
     if (noiseValue >= 0.696f) return SurfaceFeatureType::POPPY;
     if (noiseValue >= 0.693f) return SurfaceFeatureType::CORNFLOWER;
