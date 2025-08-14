@@ -25,8 +25,8 @@ enum class BlockType : uint8_t {
 };
 
 struct BlockVertex {
-    uint8_t x, y, z; // Position in local coordinates
-    uint8_t texCol, texRow; // Texture row and column in the texture atlas
+    uint8_t position[3]; // Position in local coordinates
+    uint8_t texCoords[2]; // Texture row and column in the texture atlas
     uint8_t face; // Face index to determine the normal vector
     uint8_t AO; // Ambient Occlusion value (0-3)
 };

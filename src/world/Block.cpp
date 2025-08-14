@@ -45,11 +45,8 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
     // Helper lambda to add a vertex directly
     auto addVertex = [&vertices](const float x, const float y, const float z, const uint8_t u, const uint8_t v, const uint8_t faceIndex, const uint8_t ao) {
         vertices.emplace_back(BlockVertex{
-            static_cast<uint8_t>(x),
-            static_cast<uint8_t>(y),
-            static_cast<uint8_t>(z),
-            u,
-            v,
+            {static_cast<uint8_t>(x), static_cast<uint8_t>(y), static_cast<uint8_t>(z)},
+            {u, v},
             faceIndex,
             ao
         });
@@ -217,11 +214,8 @@ void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std
     // Helper lambda to add a vertex directly
     auto addVertex = [&vertices](const float x, const float y, const float z, const uint8_t u, const uint8_t v, const uint8_t faceIndex) {
         vertices.emplace_back(BlockVertex{
-            static_cast<uint8_t>(x),
-            static_cast<uint8_t>(y),
-            static_cast<uint8_t>(z),
-            u,
-            v,
+            {static_cast<uint8_t>(x), static_cast<uint8_t>(y), static_cast<uint8_t>(z)},
+            {u, v},
             faceIndex,
             static_cast<uint8_t>(3)
         });
