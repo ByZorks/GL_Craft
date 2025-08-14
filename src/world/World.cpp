@@ -48,7 +48,9 @@ void World::updateChunks(const Camera &camera) {
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
     unloadDistantMeshes(cameraChunkPos);
-    generateChunksPositions(cameraWorldX, cameraWorldY, cameraWorldZ);
+    m_threadPool.enqueue_no_future([this, cameraWorldX, cameraWorldY, cameraWorldZ] {
+        generateChunksPositions(cameraWorldX, cameraWorldY, cameraWorldZ);
+    });
 }
 
 void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &drawCalls) {
@@ -61,12 +63,10 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     m_displayedWaterMeshes.clear();
     bool needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk();
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
-        const State state = chunk->getState();
-        if (state == State::MESH_GENERATED) {
+        if (const State state = chunk->getState(); state == State::MESH_GENERATED) {
             chunk->createGLBuffers();
             needInstanceUpdate = true;
-        }
-        if (state == State::READY_TO_DRAW) {
+        } else if (state == State::READY_TO_DRAW) { // else if to display new chunks next frame
             if (chunk->hasOpaqueFaces()) m_displayedNormalMeshes.push_back(chunk);
             if (chunk->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(chunk);
             if (chunk->hasWaterFaces()) m_displayedWaterMeshes.push_back(chunk);
