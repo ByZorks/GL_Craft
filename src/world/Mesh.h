@@ -12,7 +12,6 @@ enum class State : uint8_t {
     VOXEL_GENERATED,
     MESH_GENERATED,
     READY_TO_DRAW,
-    NEED_BUFFERS_UPDATE,
 };
 
 struct GLBuffersData {

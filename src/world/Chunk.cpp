@@ -84,7 +84,7 @@ void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks) {
     }
     blocks.clear();
 
-    m_state = State::NEED_BUFFERS_UPDATE;
+    m_state = State::MESH_GENERATED;
 }
 
 void Chunk::generateMesh() {

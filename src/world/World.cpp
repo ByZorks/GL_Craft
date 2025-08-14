@@ -62,7 +62,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     bool needInstanceUpdate = false;
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
         const State state = chunk->m_state1();
-        if (state == State::MESH_GENERATED || state == State::NEED_BUFFERS_UPDATE) {
+        if (state == State::MESH_GENERATED) {
             chunk->createGLBuffers();
             needInstanceUpdate = true;
         }
