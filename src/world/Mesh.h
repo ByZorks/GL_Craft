@@ -97,15 +97,15 @@ public:
     }
 
     [[nodiscard]] bool hasOpaqueFaces() const {
-        return !m_opaqueData.vertices.empty() && m_opaqueData.IBO.m_count() > 0;
+        return !m_opaqueData.vertices.empty() && m_opaqueData.IBO.getCount() > 0;
     }
 
     [[nodiscard]] bool hasTransparentFaces() const {
-        return !m_transparentData.vertices.empty() && m_transparentData.IBO.m_count() > 0;
+        return !m_transparentData.vertices.empty() && m_transparentData.IBO.getCount() > 0;
     }
 
     [[nodiscard]] bool hasWaterFaces() const {
-        return !m_waterData.vertices.empty() && m_waterData.IBO.m_count() > 0;
+        return !m_waterData.vertices.empty() && m_waterData.IBO.getCount() > 0;
     }
 
     [[nodiscard]] virtual bool shouldDrawFace(int x, int y, int z,
@@ -153,23 +153,23 @@ public:
         return x * stride * stride + y * stride + z;
     }
 
-    [[nodiscard]] int m_x1() const {
+    [[nodiscard]] int getX() const {
         return m_x;
     }
 
-    [[nodiscard]] int m_y1() const {
+    [[nodiscard]] int getY() const {
         return m_y;
     }
 
-    [[nodiscard]] int m_z1() const {
+    [[nodiscard]] int getZ() const {
         return m_z;
     }
 
-    [[nodiscard]] State m_state1() const {
+    [[nodiscard]] State getState() const {
         return m_state;
     }
 
-    [[nodiscard]] const AABB &m_box1() const {
+    [[nodiscard]] const AABB &getBoundingBox() const {
         return m_box;
     }
 

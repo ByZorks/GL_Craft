@@ -16,7 +16,7 @@ public:
     void bind() const;
     static void unbind();
 
-    [[nodiscard]] unsigned int m_count() const;
+    [[nodiscard]] unsigned int getCount() const;
 };
 
 #endif //INDEXBUFFER_H

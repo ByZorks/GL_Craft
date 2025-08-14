@@ -17,8 +17,8 @@ public:
     void bind(unsigned int slot = 0) const;
     static void unbind();
 
-    [[nodiscard]] unsigned int m_id() const;
-    void set_m_id(unsigned int m_id);
+    [[nodiscard]] unsigned int getID() const;
+    void setID(unsigned int m_id);
 };
 
 #endif //TEXTURE_H

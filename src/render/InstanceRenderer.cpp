@@ -38,10 +38,10 @@ void InstanceRenderer::draw() const {
     Renderer::drawInstanced(m_VAO, m_IBO, m_instanceCount);
 }
 
-unsigned int InstanceRenderer::m_instance_count() const {
+unsigned int InstanceRenderer::getInstancesCount() const {
     return m_instanceCount;
 }
 
-std::vector<glm::vec3> & InstanceRenderer::m_instance_positions() {
+std::vector<glm::vec3> & InstanceRenderer::getInstancesPositions() {
     return m_instancePositions;
 }

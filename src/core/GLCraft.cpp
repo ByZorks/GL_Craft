@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     postProcessingShader->use();
     postProcessingShader->setUniform1i("u_SceneTexture", 0);
     postProcessingShader->setUniform1i("u_DepthTexture", 1);
-    postProcessingShader->setUniform1f("u_RenderDistance", Renderer::m_renderDistance);
+    postProcessingShader->setUniform1f("u_RenderDistance", Renderer::s_renderDistance);
 
     const auto *atlas = new Texture("../res/textures/atlas/texture_atlas.png");
     atlas->bind();
@@ -80,13 +80,13 @@ int main(int argc, char *argv[]) {
         // Handle tab key for UI mode
         debugUI.processInput(window, camera);
 
-        postProcessingMesh->m_fbo().bind();
+        postProcessingMesh->getFBO().bind();
         Renderer::clear();
         DebugUI::newFrame();
 
         // Update camera position and view matrix
         const float deltaTime = Renderer::calculateDeltaTime(static_cast<float>(glfwGetTime()));
-        if (camera.m_input_enabled() && !io.WantCaptureKeyboard) {
+        if (camera.isInputEnabled() && !io.WantCaptureKeyboard) {
             camera.processInput(window, deltaTime);
         }
         const glm::mat4 projection = camera.getProjectionMatrix();
@@ -100,8 +100,8 @@ int main(int argc, char *argv[]) {
         // Uniforms
         postProcessingShader->use();
         postProcessingShader->setUniform1b("u_IsUnderWater", camera.isUnderWater(World::getHeight(
-                                               static_cast<int>(camera.m_camera_pos().x),
-                                               static_cast<int>(camera.m_camera_pos().z))));
+                                               static_cast<int>(camera.getCameraPos().x),
+                                               static_cast<int>(camera.getCameraPos().z))));
 
         blockShader->use();
         blockShader->setUniformMat4f("u_MVP", mvp);
@@ -127,15 +127,15 @@ int main(int argc, char *argv[]) {
         // Post-processing
         FrameBuffer::unbind();
         postProcessingShader->use();
-        postProcessingMesh->m_fbo().m_color_texture().bind(0);
-        postProcessingMesh->m_fbo().m_depth_texture().bind(1);
+        postProcessingMesh->getFBO().getColorTexture().bind(0);
+        postProcessingMesh->getFBO().getDepthTexture().bind(1);
 
         Renderer::disableDepthTesting();
-        Renderer::draw(postProcessingMesh->m_vao(), postProcessingMesh->m_ibo());
+        Renderer::draw(postProcessingMesh->getVAO(), postProcessingMesh->getIBO());
         Renderer::enableDepthTesting();
 
         // Render ImGui
-        DebugUI::render(visibleChunksCount, world->m_loaded_chunks().size(), drawCalls, camera, [world, postProcessingShader] {
+        DebugUI::render(visibleChunksCount, world->getLoadedChunks().size(), drawCalls, camera, [world, postProcessingShader] {
             world->updateRenderDistance(*postProcessingShader);
         });
         DebugUI::draw();
@@ -165,6 +165,6 @@ void framebuffer_size_callback(GLFWwindow *window, const int width, const int he
     const auto pointers = static_cast<WindowUserPointers *>(glfwGetWindowUserPointer(window));
     if (!pointers) return;
 
-    pointers->camera->set_m_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
+    pointers->camera->setAspectRatio(static_cast<float>(width) / static_cast<float>(height));
     pointers->postProcessingMesh->resize(width, height);
 }

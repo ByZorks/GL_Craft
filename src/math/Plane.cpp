@@ -33,6 +33,6 @@ float Plane::m_d1() const {
     return m_d;
 }
 
-void Plane::set_m_d(const float m_d) {
+void Plane::setD(const float m_d) {
     this->m_d = m_d;
 }

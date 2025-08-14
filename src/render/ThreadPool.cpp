@@ -27,6 +27,6 @@ ThreadPool::~ThreadPool() {
             worker.join();
 }
 
-size_t ThreadPool::m_num_threads() const {
+size_t ThreadPool::getNumberOfThreads() const {
     return m_numThreads;
 }

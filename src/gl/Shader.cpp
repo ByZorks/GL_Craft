@@ -58,10 +58,6 @@ void Shader::setUniformMat4f(const std::string &name, const glm::mat4 &matrix) {
     GLCall(glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &matrix[0][0]));
 }
 
-unsigned int Shader::m_id() const {
-    return m_ID;
-}
-
 std::string Shader::readFile(const std::string &filePath) {
     std::ifstream file(filePath);
     if (!file.is_open()) {

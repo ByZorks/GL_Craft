@@ -52,7 +52,7 @@ public:
     static int getHeight(int worldX, int worldZ);
     static bool isCave(int worldX, int worldY, int worldZ, int columnHeight);
 
-    [[nodiscard]] const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & m_loaded_chunks() const;
+    [[nodiscard]] const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & getLoadedChunks() const;
     static FastNoiseLite& getSurfaceFeaturesNoise();
 
 

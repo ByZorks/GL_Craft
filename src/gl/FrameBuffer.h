@@ -21,8 +21,8 @@ public:
     void bind() const;
     static void unbind();
 
-    [[nodiscard]] const Texture & m_color_texture() const;
-    [[nodiscard]] const Texture & m_depth_texture() const;
+    [[nodiscard]] const Texture & getColorTexture() const;
+    [[nodiscard]] const Texture & getDepthTexture() const;
 };
 
 #endif //GL_CRAFT_FRAMEBUFFER_H

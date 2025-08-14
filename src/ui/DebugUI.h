@@ -17,11 +17,8 @@ public:
     ~DebugUI();
 
     static void newFrame();
-
     static void render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCalls, const Camera &camera, const std::function<void()>& renderDistanceCallback);
-
     static void draw();
-
     void processInput(GLFWwindow *window, Camera &camera);
 };
 

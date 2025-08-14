@@ -26,8 +26,6 @@ public:
     void setUniform3f(const std::string &name, float v0, float v1, float v2);
     void setUniformMat4f(const std::string &name, const glm::mat4 &matrix);
 
-    [[nodiscard]] unsigned int m_id() const;
-
 private:
     static std::string readFile(const std::string &filePath);
     static unsigned int compile(GLenum shaderType, const std::string& shader);

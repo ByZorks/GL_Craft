@@ -18,14 +18,14 @@ void PostProcessingMesh::resize(const int width, const int height) {
     m_FBO = FrameBuffer(width, height);
 }
 
-const VertexArray & PostProcessingMesh::m_vao() const {
+const VertexArray & PostProcessingMesh::getVAO() const {
     return m_VAO;
 }
 
-const IndexBuffer & PostProcessingMesh::m_ibo() const {
+const IndexBuffer & PostProcessingMesh::getIBO() const {
     return m_IBO;
 }
 
-const FrameBuffer & PostProcessingMesh::m_fbo() const {
+const FrameBuffer & PostProcessingMesh::getFBO() const {
     return m_FBO;
 }

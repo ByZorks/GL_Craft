@@ -6,7 +6,7 @@
 
 float Renderer::m_deltaTime = 0.0f;
 float Renderer::m_lastFrame = 0.0f;
-float Renderer::m_renderDistance = 12.0f * static_cast<float>(Chunk::SIZE); // Render distance in blocks
+float Renderer::s_renderDistance = 12.0f * static_cast<float>(Chunk::SIZE); // Render distance in blocks
 
 void Renderer::init() {
     GLCall(glEnable(GL_DEPTH_TEST));
@@ -63,11 +63,11 @@ void Renderer::enableBackFaceCulling() {
 void Renderer::draw(const VertexArray& vao, const IndexBuffer& ibo) {
     vao.bind();
     ibo.bind();
-    GLCall(glDrawElements(GL_TRIANGLES, ibo.m_count(), GL_UNSIGNED_INT, nullptr));
+    GLCall(glDrawElements(GL_TRIANGLES, ibo.getCount(), GL_UNSIGNED_INT, nullptr));
 }
 
 void Renderer::drawInstanced(const VertexArray &vao, const IndexBuffer &ibo, const unsigned int instanceCount) {
     vao.bind();
     ibo.bind();
-    GLCall(glDrawElementsInstanced(GL_TRIANGLES, ibo.m_count(), GL_UNSIGNED_INT, nullptr,instanceCount));
+    GLCall(glDrawElementsInstanced(GL_TRIANGLES, ibo.getCount(), GL_UNSIGNED_INT, nullptr,instanceCount));
 }

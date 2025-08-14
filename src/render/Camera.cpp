@@ -90,9 +90,9 @@ void Camera::mouseCallback(GLFWwindow *window, const double xpos, const double y
 
 // TODO: Use squared distance to avoid sqrt calculation
 float Camera::distanceToCamera(const Mesh& mesh) const {
-    const auto x = static_cast<float>(mesh.m_x1());
-    const auto y = static_cast<float>(mesh.m_y1());
-    const auto z = static_cast<float>(mesh.m_z1());
+    const auto x = static_cast<float>(mesh.getX());
+    const auto y = static_cast<float>(mesh.getY());
+    const auto z = static_cast<float>(mesh.getZ());
     constexpr auto size = static_cast<float>(Chunk::SIZE);
     const glm::vec3 farCorner(x + size - 1, y + size - 1, z + size - 1);
 
@@ -169,35 +169,35 @@ Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
                        modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][0],
                        modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][0]
     );
-    left.set_m_d(left.m_d1() + padding);
+    left.setD(left.m_d1() + padding);
 
     auto right = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][0],
                         modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][0],
                         modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][0],
                         modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][0]
     );
-    right.set_m_d(right.m_d1() + padding);
+    right.setD(right.m_d1() + padding);
 
     auto bottom = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][1],
                          modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][1],
                          modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][1],
                          modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][1]
     );
-    bottom.set_m_d(bottom.m_d1() + padding);
+    bottom.setD(bottom.m_d1() + padding);
 
     auto top = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][1],
                       modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][1],
                       modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][1],
                       modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][1]
     );
-    top.set_m_d(top.m_d1() + padding);
+    top.setD(top.m_d1() + padding);
 
     auto near = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][2],
                        modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][2],
                        modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][2],
                        modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][2]
     );
-    near.set_m_d(near.m_d1() + padding);
+    near.setD(near.m_d1() + padding);
 
     const auto far = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][2],
                       modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][2],
@@ -209,18 +209,18 @@ Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
     return frustum;
 }
 
-bool Camera::m_input_enabled() const {
+bool Camera::isInputEnabled() const {
     return m_inputEnabled;
 }
 
-void Camera::set_m_input_enabled(const bool m_input_enabled) {
+void Camera::setInput(const bool m_input_enabled) {
     this->m_inputEnabled = m_input_enabled;
 }
 
-glm::vec3 Camera::m_camera_pos() const {
+glm::vec3 Camera::getCameraPos() const {
     return m_cameraPos;
 }
 
-void Camera::set_m_aspect_ratio(const float m_aspect_ratio) {
+void Camera::setAspectRatio(const float m_aspect_ratio) {
     m_aspectRatio = m_aspect_ratio;
 }

@@ -30,9 +30,9 @@ public:
 
     void resize(int width, int height);
 
-    [[nodiscard]] const VertexArray & m_vao() const;
-    [[nodiscard]] const IndexBuffer & m_ibo() const;
-    [[nodiscard]] const FrameBuffer & m_fbo() const;
+    [[nodiscard]] const VertexArray & getVAO() const;
+    [[nodiscard]] const IndexBuffer & getIBO() const;
+    [[nodiscard]] const FrameBuffer & getFBO() const;
 };
 
 #endif //GL_CRAFT_POSTPROCESSINGMESH_H

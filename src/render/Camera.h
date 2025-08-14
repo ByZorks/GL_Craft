@@ -35,11 +35,10 @@ public:
     [[nodiscard]] glm::mat4 getProjectionMatrix() const ;
     [[nodiscard]] glm::mat4 getViewMatrix() const;
     static Frustum getFrustum(glm::mat4 modelViewProjecMatrix);
-    [[nodiscard]] bool m_input_enabled() const;
-    void set_m_input_enabled(bool m_input_enabled);
-    [[nodiscard]] glm::vec3 m_camera_pos() const;
-
-    void set_m_aspect_ratio(float m_aspect_ratio);
+    [[nodiscard]] bool isInputEnabled() const;
+    void setInput(bool m_input_enabled);
+    [[nodiscard]] glm::vec3 getCameraPos() const;
+    void setAspectRatio(float m_aspect_ratio);
 };
 
 #endif //CAMERA_H

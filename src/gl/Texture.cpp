@@ -62,10 +62,10 @@ void Texture::unbind() {
     GLCall(glBindTexture(GL_TEXTURE_2D, 0));
 }
 
-unsigned int Texture::m_id() const {
+unsigned int Texture::getID() const {
     return m_ID;
 }
 
-void Texture::set_m_id(const unsigned int m_id) {
+void Texture::setID(const unsigned int m_id) {
     m_ID = m_id;
 }

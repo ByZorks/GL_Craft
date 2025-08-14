@@ -114,8 +114,6 @@ add_executable(GL_Craft
         src/render/PostProcessingMesh.cpp
         src/render/PostProcessingMesh.h
         src/core/WindowUserPointers.h
-        src/gl/RenderBuffer.cpp
-        src/gl/RenderBuffer.h
         src/world/surfaceFeatures/SurfaceFeature.h
         src/world/ChunkPosition.h
         src/world/PendingBlock.h

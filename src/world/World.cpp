@@ -19,10 +19,10 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_cornflowerRenderer.init(Cornflower(0, 0, 0));
     m_alliumRenderer.init(Allium(0, 0, 0));
 
-    m_chunksData.loadedMeshes.reserve(static_cast<size_t>(Renderer::m_renderDistance * Renderer::m_renderDistance * Renderer::m_renderDistance * 0.5f));
+    m_chunksData.loadedMeshes.reserve(static_cast<size_t>(Renderer::s_renderDistance * Renderer::s_renderDistance * Renderer::s_renderDistance * 0.5f));
     m_tempKeysToProcess.reserve(100);
 
-    const int r = static_cast<int>(Renderer::m_renderDistance / static_cast<float>(Chunk::SIZE));
+    const int r = static_cast<int>(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE));
     const int r2 = r * r;
 
     m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)));
@@ -42,9 +42,9 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
 }
 
 void World::updateChunks(const Camera &camera) {
-    const int cameraWorldX = static_cast<int>(std::floor(camera.m_camera_pos().x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
-    const int cameraWorldY = static_cast<int>(std::floor(camera.m_camera_pos().y / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
-    const int cameraWorldZ = static_cast<int>(std::floor(camera.m_camera_pos().z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+    const int cameraWorldX = static_cast<int>(std::floor(camera.getCameraPos().x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+    const int cameraWorldY = static_cast<int>(std::floor(camera.getCameraPos().y / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+    const int cameraWorldZ = static_cast<int>(std::floor(camera.getCameraPos().z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
     unloadDistantMeshes(cameraChunkPos);
@@ -61,7 +61,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     m_displayedWaterMeshes.clear();
     bool needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk();
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
-        const State state = chunk->m_state1();
+        const State state = chunk->getState();
         if (state == State::MESH_GENERATED) {
             chunk->createGLBuffers();
             needInstanceUpdate = true;
@@ -81,19 +81,19 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     }
 
     for (const auto& strong_mesh : m_displayedNormalMeshes) {
-        if (camera.distanceToCamera(*strong_mesh) > Renderer::m_renderDistance) continue;
-        if (!frustum.isAABBInFrustum(strong_mesh->m_box1())) continue;
+        if (camera.distanceToCamera(*strong_mesh) > Renderer::s_renderDistance) continue;
+        if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
         shader.setUniform3f("u_Offset",
-                            static_cast<float>(strong_mesh->m_x1()),
-                            static_cast<float>(strong_mesh->m_y1()),
-                            static_cast<float>(strong_mesh->m_z1()));
+                            static_cast<float>(strong_mesh->getX()),
+                            static_cast<float>(strong_mesh->getY()),
+                            static_cast<float>(strong_mesh->getZ()));
 
         strong_mesh->draw();
         ++drawCalls;
         ++visibleChunksCount;
 
         if (needInstanceUpdate) {
-            for (const auto& feature : strong_mesh->m_surface_features()) {
+            for (const auto& feature : strong_mesh->getSurfaceFeatures()) {
                 switch (feature.type) {
                     case SurfaceFeatureType::SHORT_GRASS:
                         m_grassRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
@@ -124,12 +124,12 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
 
 void World::drawTransparentChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &drawCalls) const {
     for (const auto& strong_mesh : m_displayedTransparentMeshes) {
-        if (camera.distanceToCamera(*strong_mesh) > Renderer::m_renderDistance) continue;
-        if (!frustum.isAABBInFrustum(strong_mesh->m_box1())) continue;
+        if (camera.distanceToCamera(*strong_mesh) > Renderer::s_renderDistance) continue;
+        if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
         shader.setUniform3f("u_Offset",
-                            static_cast<float>(strong_mesh->m_x1()),
-                            static_cast<float>(strong_mesh->m_y1()),
-                            static_cast<float>(strong_mesh->m_z1()));
+                            static_cast<float>(strong_mesh->getX()),
+                            static_cast<float>(strong_mesh->getY()),
+                            static_cast<float>(strong_mesh->getZ()));
 
         strong_mesh->drawTransparent();
         ++drawCalls;
@@ -140,13 +140,13 @@ void World::drawWater(const Camera &camera, const Frustum &frustum, Shader &shad
     if (!m_displayedWaterMeshes.empty()) {
         Renderer::disableDepthMask();
         for (const auto& strong_mesh : m_displayedWaterMeshes) {
-            if (camera.distanceToCamera(*strong_mesh) > Renderer::m_renderDistance) continue;
-            if (!frustum.isAABBInFrustum(strong_mesh->m_box1())) continue;
+            if (camera.distanceToCamera(*strong_mesh) > Renderer::s_renderDistance) continue;
+            if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
             shader.setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
             shader.setUniform3f("u_Offset",
-                                static_cast<float>(strong_mesh->m_x1()),
-                                static_cast<float>(strong_mesh->m_y1()),
-                                static_cast<float>(strong_mesh->m_z1()));
+                                static_cast<float>(strong_mesh->getX()),
+                                static_cast<float>(strong_mesh->getY()),
+                                static_cast<float>(strong_mesh->getZ()));
 
             strong_mesh->drawWater();
             ++drawCalls;
@@ -156,31 +156,31 @@ void World::drawWater(const Camera &camera, const Frustum &frustum, Shader &shad
 }
 
 void World::drawInstances(unsigned int &drawCalls) const {
-    if (m_grassRenderer.m_instance_count() == 0 &&
-        m_poppyRenderer.m_instance_count() == 0 &&
-        m_cornflowerRenderer.m_instance_count() == 0 &&
-        m_alliumRenderer.m_instance_count() == 0) {
+    if (m_grassRenderer.getInstancesCount() == 0 &&
+        m_poppyRenderer.getInstancesCount() == 0 &&
+        m_cornflowerRenderer.getInstancesCount() == 0 &&
+        m_alliumRenderer.getInstancesCount() == 0) {
         return;
     }
 
     Renderer::disableBackFaceCulling();
 
-    if (m_grassRenderer.m_instance_count() > 0) {
+    if (m_grassRenderer.getInstancesCount() > 0) {
         m_grassRenderer.draw();
         ++drawCalls;
     }
 
-    if (m_poppyRenderer.m_instance_count() > 0) {
+    if (m_poppyRenderer.getInstancesCount() > 0) {
         m_poppyRenderer.draw();
         ++drawCalls;
     }
 
-    if (m_cornflowerRenderer.m_instance_count() > 0) {
+    if (m_cornflowerRenderer.getInstancesCount() > 0) {
         m_cornflowerRenderer.draw();
         ++drawCalls;
     }
 
-    if (m_alliumRenderer.m_instance_count() > 0) {
+    if (m_alliumRenderer.getInstancesCount() > 0) {
         m_alliumRenderer.draw();
         ++drawCalls;
     }
@@ -198,11 +198,11 @@ void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector
 }
 
 void World::updateRenderDistance(Shader &postProcessingShader) {
-    postProcessingShader.setUniform1f("u_RenderDistance", Renderer::m_renderDistance);
+    postProcessingShader.setUniform1f("u_RenderDistance", Renderer::s_renderDistance);
 
     m_renderDistanceOffsets.clear();
 
-    const int r = static_cast<int>(Renderer::m_renderDistance / static_cast<float>(Chunk::SIZE));
+    const int r = static_cast<int>(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE));
     const int r2 = r * r;
 
     m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)));
@@ -269,12 +269,12 @@ bool World::isCave(const int worldX, const int worldY, const int worldZ, const i
     return std::abs(normalized3DNoise - caveThreshold) < 0.3f;
 }
 
-const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & World::m_loaded_chunks() const {
+const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & World::getLoadedChunks() const {
     return m_chunksData.loadedMeshes;
 }
 
 void World::processChunks() {
-    const int maxChunksPerFrame = static_cast<int>(0.1 * Renderer::m_renderDistance + 0.2 * static_cast<float>(m_threadPool.m_num_threads()));
+    const int maxChunksPerFrame = static_cast<int>(0.1 * Renderer::s_renderDistance + 0.2 * static_cast<float>(m_threadPool.getNumberOfThreads()));
     // Remove chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.meshesToDelete.empty()) break;
@@ -299,7 +299,7 @@ void World::processChunks() {
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.meshesToRender.empty()) break;
         std::shared_ptr<Chunk> p_chunk = m_chunksData.meshesToRender.pop();
-        m_chunksData.loadedMeshes.try_emplace({p_chunk->m_x1(), p_chunk->m_y1(), p_chunk->m_z1()}, p_chunk);
+        m_chunksData.loadedMeshes.try_emplace({p_chunk->getX(), p_chunk->getY(), p_chunk->getZ()}, p_chunk);
     }
 
     // Third pass: generate pending blocks
@@ -316,7 +316,7 @@ void World::processChunks() {
         for (const auto& key : m_tempKeysToProcess) {
             if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
                 const std::shared_ptr<Chunk> p_chunk = it->second;
-                if (p_chunk->m_state1() < State::MESH_GENERATED) continue;
+                if (p_chunk->getState() < State::MESH_GENERATED) continue;
 
                 std::vector<PendingBlock> blocks;
                 {
@@ -353,7 +353,7 @@ void World::generateChunksPositions(const int cameraWorldX, const int cameraWorl
 }
 
 void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
-    const float renderDistanceSq = Renderer::m_renderDistance * Renderer::m_renderDistance;
+    const float renderDistanceSq = Renderer::s_renderDistance * Renderer::s_renderDistance;
 
     const float camX = cameraChunkPos.x;
     const float camY = cameraChunkPos.y;

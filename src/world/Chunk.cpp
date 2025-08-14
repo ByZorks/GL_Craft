@@ -124,7 +124,7 @@ bool Chunk::hasVisibleFaces() const {
            (!m_waterData.vertices.empty() && !m_waterData.blockFaceData.empty());
 }
 
-const std::unordered_set<SurfaceFeature> &Chunk::m_surface_features() const {
+const std::unordered_set<SurfaceFeature> &Chunk::getSurfaceFeatures() const {
     return m_surfaceFeatures;
 }
 

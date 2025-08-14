@@ -28,7 +28,7 @@ public:
     [[nodiscard]] int index(int x, int y, int z) const override;
     [[nodiscard]] bool hasVisibleFaces() const;
 
-    [[nodiscard]] const std::unordered_set<SurfaceFeature> & m_surface_features() const;
+    [[nodiscard]] const std::unordered_set<SurfaceFeature> & getSurfaceFeatures() const;
 
 private:
     void addBlockFaces(int localX, int localY, int localZ, BlockType blockType);

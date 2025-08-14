@@ -19,7 +19,7 @@ public:
     template<typename F>
     void enqueue_no_future(F&& f);
 
-    [[nodiscard]] size_t m_num_threads() const;
+    [[nodiscard]] size_t getNumberOfThreads() const;
 
 private:
     std::vector<std::thread> m_workers;

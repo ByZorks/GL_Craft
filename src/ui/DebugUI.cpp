@@ -37,14 +37,14 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
     ImGui::Separator();
     ImGui::Text("World:");
     ImGui::Text("Rendering: %u/%u chunks", visibleChunks, totalChunks);
-    int renderDistanceInChunks = static_cast<int>(Renderer::m_renderDistance / Chunk::SIZE);
+    int renderDistanceInChunks = static_cast<int>(Renderer::s_renderDistance / Chunk::SIZE);
     if (ImGui::SliderInt("Render Distance (chunks)", &renderDistanceInChunks, 1, 32)) {
-        Renderer::m_renderDistance = static_cast<float>(renderDistanceInChunks) * Chunk::SIZE;
+        Renderer::s_renderDistance = static_cast<float>(renderDistanceInChunks) * Chunk::SIZE;
         renderDistanceCallback();
     }
     ImGui::Separator();
     ImGui::Text("Camera:");
-    const glm::vec3 cameraPosition = camera.m_camera_pos();
+    const glm::vec3 cameraPosition = camera.getCameraPos();
     ImGui::Text("Position: (%.2f, %.2f, %.2f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
     ImGui::End();
 }
@@ -58,7 +58,7 @@ void DebugUI::processInput(GLFWwindow *window, Camera &camera) {
     if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS && !m_tabKeyPressed) {
         m_uiMode = !m_uiMode;
         glfwSetInputMode(window, GLFW_CURSOR, m_uiMode ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
-        camera.set_m_input_enabled(!m_uiMode);
+        camera.setInput(!m_uiMode);
 
         if (!m_uiMode) {
             camera.resetMousePosition(window);
