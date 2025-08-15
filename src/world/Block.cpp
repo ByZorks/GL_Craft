@@ -1,5 +1,6 @@
 #include "Block.h"
 
+#include <array>
 #include <stdexcept>
 
 #include "Chunk.h"
@@ -35,7 +36,7 @@ BlockType Block::getBlockType(const int y, const int columnHeight) {
     return BlockType::AIR;
 }
 
-void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &vertices, std::vector<bool> &adjacentsFaces, const float block_startX, const float block_startY, const float block_startZ) {
+void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &vertices, const std::array<bool, 26> &adjacentsFaces, const float block_startX, const float block_startY, const float block_startZ) {
     const float block_endX = block_startX + 1.0f;
     const float block_endY = block_startY + 1.0f;
     const float block_endZ = block_startZ + 1.0f;
@@ -279,6 +280,7 @@ uint8_t Block::getTextureV(BlockType type, const Face face) {
 
 int Block::AOIndex(const int x, const int y, const int z) {
     constexpr int stride = 3;
+    constexpr int middleIndex = 13;
     const int idx = (x + 1) * stride * stride + (y + 1) * stride + (z + 1);
-    return idx < 13 ? idx : idx - 1;
+    return idx < middleIndex ? idx : idx - 1;
 }

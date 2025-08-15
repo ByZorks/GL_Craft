@@ -142,13 +142,23 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     const bool isWater = blockType == BlockType::WATER;
     const bool isTransparent = Block::isTransparent(blockType);
 
-    std::vector<bool> adjacentFaces;
-    adjacentFaces.reserve(26);
+    std::array<bool, 26> adjacentFaces{};
     for (int dx = -1; dx <= 1; ++dx) {
+        const int adjustedDX = dx + 1;
+
         for (int dy = -1; dy <= 1; ++dy) {
+            const int adjustedDY = dy + 1;
+
             for (int dz = -1; dz <= 1; ++dz) {
                 if (dx == 0 && dy == 0 && dz == 0) continue;
-                adjacentFaces.emplace_back(!Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz)));
+                constexpr int STRIDE = 3;
+                constexpr int STRIDE_SQ = STRIDE * STRIDE;
+                constexpr int MIDDLE_INDEX = 13;
+
+                const int adjustedDZ = dz + 1;
+                int index = adjustedDX * STRIDE_SQ + adjustedDY * STRIDE + adjustedDZ;
+                index = index < MIDDLE_INDEX ? index : index - 1;
+                adjacentFaces[index] = !Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz));
             }
         }
     }
