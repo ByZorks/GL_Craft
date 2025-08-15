@@ -215,6 +215,10 @@ glm::vec3 Camera::getCameraPos() const {
     return m_cameraPos;
 }
 
+const glm::vec3 & Camera::getCameraFront() const {
+    return m_cameraFront;
+}
+
 void Camera::setAspectRatio(const float m_aspect_ratio) {
     m_aspectRatio = m_aspect_ratio;
 }

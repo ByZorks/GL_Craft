@@ -26,6 +26,7 @@ public:
     void transferPendingBlocksToWorld(World &world);
 
     [[nodiscard]] int index(int x, int y, int z) const override;
+    [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const override;
     [[nodiscard]] bool hasVisibleFaces() const;
 
     [[nodiscard]] const std::unordered_set<SurfaceFeature> & getSurfaceFeatures() const;
@@ -35,7 +36,6 @@ private:
     void addTree(int localX, int localY, int localZ);
     void addFeatureBlocks(int localX, int localY, int localZ, BlockType blockType);
 
-    [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const override;
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const override;
 
 };

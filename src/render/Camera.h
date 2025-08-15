@@ -37,6 +37,8 @@ public:
     [[nodiscard]] bool isInputEnabled() const;
     void setInput(bool m_input_enabled);
     [[nodiscard]] glm::vec3 getCameraPos() const;
+    [[nodiscard]] const glm::vec3 & getCameraFront() const;
+
     void setAspectRatio(float m_aspect_ratio);
 };
 

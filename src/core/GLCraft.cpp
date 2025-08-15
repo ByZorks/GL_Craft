@@ -14,6 +14,7 @@
 #include "imgui.h"
 #include "WindowUserPointers.h"
 #include "../gl/FrameBuffer.h"
+#include "../math/Raycast.h"
 #include "../render/PostProcessingMesh.h"
 #include "../ui/DebugUI.h"
 
@@ -93,6 +94,9 @@ int main(int argc, char *argv[]) {
         const glm::mat4 view = camera.getViewMatrix();
         const glm::mat4 mvp = projection * view;
         const Frustum frustum = Camera::getFrustum(mvp);
+
+        // Raycasting
+        Raycast::castRay(camera.getCameraPos(), camera.getCameraFront(), world->getLoadedChunks());
 
         // Chunks generation
         if (camera.hasCameraChangedChunk()) world->updateChunks(camera);

@@ -116,6 +116,8 @@ add_executable(GL_Craft
         src/world/surfaceFeatures/SurfaceFeature.h
         src/world/ChunkPosition.h
         src/world/PendingBlock.h
+        src/math/Raycast.cpp
+        src/math/Raycast.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})
