@@ -29,6 +29,7 @@ public:
     [[nodiscard]] bool hasCameraChangedChunk() const;
     [[nodiscard]] bool hasCameraChangedBlock() const;
     [[nodiscard]] bool hasCameraChangedDirection() const;
+    [[nodiscard]] bool hasCameraUpdated() const;
     [[nodiscard]] bool isUnderWater(int columnHeight) const;
 
     [[nodiscard]] glm::mat4 getProjectionMatrix() const ;

@@ -1,5 +1,6 @@
 #ifndef BLOCK_H
 #define BLOCK_H
+#include <array>
 #include <vector>
 
 #include "GL/glew.h"
@@ -10,7 +11,7 @@ enum class Face : uint8_t {
 };
 
 enum class BlockType : uint8_t {
-    AIR, BEDROCK, DIRT, GRASS, STONE, WATER, LOG, LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER, FLOWER_ALLIUM,
+    AIR, SURFACE_FEATURE_BASE, BEDROCK, DIRT, GRASS, STONE, WATER, LOG, LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER, FLOWER_ALLIUM,
     SNOW, SNOW_GRASS
 };
 
@@ -21,12 +22,18 @@ struct BlockVertex {
     uint8_t AO; // Ambient Occlusion value (0-3)
 };
 
+struct HighlightedVertex {
+    std::array<uint8_t, 3> position; // Position
+    std::array<uint8_t, 3> color; // Color
+};
+
 class Block {
 private:
     float m_x, m_y, m_z;
-    static constexpr uint8_t s_textureColumn[14][3] = {
+    static constexpr uint8_t s_textureColumn[15][3] = {
         // [side, top, bottom]
         {0, 0, 0}, // AIR
+        {0, 0, 0}, // SURFACE_FEATURE_BASE
         {0, 0, 0}, // BEDROCK
         {1, 1, 1}, // DIRT
         {2, 3, 1}, // GRASS
@@ -41,9 +48,10 @@ private:
         {0, 0, 0}, // SNOW
         {1, 2, 1}  // SNOW_GRASS
     };
-    static constexpr uint8_t s_textureRow[14][3] = {
+    static constexpr uint8_t s_textureRow[15][3] = {
         // [side, top, bottom]
         {0, 0, 0}, // AIR
+        {0, 0, 0}, // SURFACE_FEATURE_BASE
         {4, 4, 4}, // BEDROCK
         {4, 4, 4}, // DIRT
         {4, 4, 4}, // GRASS

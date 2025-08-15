@@ -61,8 +61,8 @@ void Chunk::generateVoxel() {
 
                 // Surface features
                 if (worldY != columnHeight + 1) continue;
-                const auto it = m_surfaceFeatures.find(SurfaceFeature(worldX, columnHeight, worldZ));
-                if (it != m_surfaceFeatures.end()) {
+                if (const auto it = m_surfaceFeatures.find(SurfaceFeature(worldX, columnHeight, worldZ));
+                    it != m_surfaceFeatures.end()) {
                     switch (it->type) {
                         case SurfaceFeatureType::TREE: {
                             addTree(localX, localY, localZ);
@@ -134,7 +134,7 @@ bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ)
 }
 
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const BlockType blockType) {
-    if (blockType == BlockType::AIR) return;
+    if (blockType == BlockType::AIR || blockType == BlockType::SURFACE_FEATURE_BASE) return;
 
     const auto localXf = static_cast<float>(localX);
     const auto localYf = static_cast<float>(localY);

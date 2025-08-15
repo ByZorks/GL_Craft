@@ -118,6 +118,8 @@ add_executable(GL_Craft
         src/world/PendingBlock.h
         src/math/Raycast.cpp
         src/math/Raycast.h
+        src/render/HighlightedBlock.cpp
+        src/render/HighlightedBlock.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})

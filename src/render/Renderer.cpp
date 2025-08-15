@@ -12,6 +12,7 @@ void Renderer::init() {
     GLCall(glEnable(GL_DEPTH_TEST));
     GLCall(glEnable(GL_CULL_FACE));
     GLCall(glFrontFace(GL_CCW));
+    GLCall(glEnable(GL_LINE_SMOOTH));
 }
 
 void Renderer::clear() {
@@ -64,6 +65,12 @@ void Renderer::draw(const VertexArray& vao, const IndexBuffer& ibo) {
     vao.bind();
     ibo.bind();
     GLCall(glDrawElements(GL_TRIANGLES, ibo.getCount(), GL_UNSIGNED_INT, nullptr));
+}
+
+void Renderer::drawLines(const VertexArray &vao, const IndexBuffer &ibo) {
+    vao.bind();
+    ibo.bind();
+    GLCall(glDrawElements(GL_LINES, ibo.getCount(), GL_UNSIGNED_INT, nullptr));
 }
 
 void Renderer::drawInstanced(const VertexArray &vao, const IndexBuffer &ibo, const unsigned int instanceCount) {

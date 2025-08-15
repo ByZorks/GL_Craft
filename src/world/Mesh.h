@@ -8,7 +8,7 @@
 #include "../render/Renderer.h"
 
 enum class State : uint8_t {
-    UNLOADED,
+    UNINITIALIZED,
     VOXEL_GENERATED,
     MESH_GENERATED,
     READY_TO_DRAW,
@@ -46,7 +46,7 @@ protected:
     GLBuffersData m_transparentData;
     GLBuffersData m_waterData;
     std::vector<BlockType> m_blockType;
-    State m_state = State::UNLOADED;
+    State m_state = State::UNINITIALIZED;
     const AABB m_box;
 
 public:

@@ -23,6 +23,7 @@ public:
     static void disableBackFaceCulling();
     static void enableBackFaceCulling();
     static void draw(const VertexArray& vao, const IndexBuffer& ibo);
+    static void drawLines(const VertexArray& vao, const IndexBuffer& ibo);
     static void drawInstanced(const VertexArray& vao, const IndexBuffer& ibo, unsigned int instanceCount);
 
 };

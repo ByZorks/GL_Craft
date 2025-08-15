@@ -141,6 +141,10 @@ bool Camera::hasCameraChangedDirection() const {
     return std::abs(m_lastYaw - m_yaw) > 15.f || std::abs(m_lastPitch - m_pitch) > 15.f;
 }
 
+bool Camera::hasCameraUpdated() const {
+    return hasCameraChangedBlock() || hasCameraChangedDirection();
+}
+
 bool Camera::isUnderWater(const int columnHeight) const {
     constexpr int waterLevel = 63;
     return m_cameraPos.y > static_cast<float>(columnHeight) && m_cameraPos.y <= waterLevel;

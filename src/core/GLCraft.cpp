@@ -15,6 +15,7 @@
 #include "WindowUserPointers.h"
 #include "../gl/FrameBuffer.h"
 #include "../math/Raycast.h"
+#include "../render/HighlightedBlock.h"
 #include "../render/PostProcessingMesh.h"
 #include "../ui/DebugUI.h"
 
@@ -57,6 +58,7 @@ int main(int argc, char *argv[]) {
     auto *blockShader = new Shader("../res/shaders/block.vert", "../res/shaders/block.frag");
     auto *instancesShader = new Shader("../res/shaders/instances.vert", "../res/shaders/instances.frag");
     auto *waterShader = new Shader("../res/shaders/water.vert", "../res/shaders/water.frag");
+    auto *highlightedBlockShader = new Shader("../res/shaders/highlightBlock.vert", "../res/shaders/highlightBlock.frag");
     auto *postProcessingShader = new Shader("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
     postProcessingShader->use();
     postProcessingShader->setUniform1i("u_SceneTexture", 0);
@@ -95,9 +97,6 @@ int main(int argc, char *argv[]) {
         const glm::mat4 mvp = projection * view;
         const Frustum frustum = Camera::getFrustum(mvp);
 
-        // Raycasting
-        Raycast::castRay(camera.getCameraPos(), camera.getCameraFront(), world->getLoadedChunks());
-
         // Chunks generation
         if (camera.hasCameraChangedChunk()) world->updateChunks(camera);
 
@@ -128,6 +127,21 @@ int main(int argc, char *argv[]) {
         waterShader->use();
         world->drawWater(frustum, *waterShader, drawCalls);
 
+        // Raycasting
+        if (std::array<int, 3> selectedBlockCoords = Raycast::castRay(camera.getCameraPos(), camera.getCameraFront(), world->getLoadedChunks());
+            selectedBlockCoords[0] != 0 || selectedBlockCoords[1] != 0 || selectedBlockCoords[2] != 0) {
+            HighlightedBlock highlight(selectedBlockCoords[0], selectedBlockCoords[1], selectedBlockCoords[2]);
+            highlight.createGLBuffers();
+            highlightedBlockShader->use();
+            highlightedBlockShader->setUniform3f("u_Offset",
+                static_cast<float>(highlight.getX()),
+                static_cast<float>(highlight.getY()),
+                static_cast<float>(highlight.getZ()));
+            highlightedBlockShader->setUniformMat4f("u_MVP", mvp);
+            highlight.draw();
+            ++drawCalls;
+        }
+
         // Post-processing
         FrameBuffer::unbind();
         postProcessingShader->use();
@@ -155,6 +169,7 @@ int main(int argc, char *argv[]) {
     delete blockShader;
     delete instancesShader;
     delete waterShader;
+    delete highlightedBlockShader;
     delete postProcessingShader;
     delete postProcessingMesh;
     delete world;
