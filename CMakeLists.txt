@@ -91,8 +91,8 @@ add_executable(GL_Craft
         src/ui/DebugUI.cpp
         src/ui/DebugUI.h
         src/utils/ThreadSafeQueue.h
-        src/render/ThreadPool.h
-        src/render/ThreadPool.cpp
+        src/utils/ThreadPool.h
+        src/utils/ThreadPool.cpp
         src/world/Mesh.h
         src/world/Mesh.cpp
         src/world/surfaceFeatures/grass/ShortGrass.cpp

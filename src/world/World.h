@@ -10,7 +10,7 @@
 #include "../gl/Shader.h"
 #include "../math/Frustum.h"
 #include "../render/InstanceRenderer.h"
-#include "../render/ThreadPool.h"
+#include "../utils/ThreadPool.h"
 
 class Camera;
 
