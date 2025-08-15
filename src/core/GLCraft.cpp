@@ -119,10 +119,10 @@ int main(int argc, char *argv[]) {
         blockShader->use();
         world->drawChunks(camera, frustum, *blockShader, visibleChunksCount, drawCalls);
 
-        world->drawTransparentChunks(camera, frustum, *blockShader, drawCalls);
+        world->drawTransparentChunks(frustum, *blockShader, drawCalls);
 
         waterShader->use();
-        world->drawWater(camera, frustum, *waterShader, drawCalls);
+        world->drawWater(frustum, *waterShader, drawCalls);
 
         // Post-processing
         FrameBuffer::unbind();
@@ -135,8 +135,8 @@ int main(int argc, char *argv[]) {
         Renderer::enableDepthTesting();
 
         // Render ImGui
-        DebugUI::render(visibleChunksCount, world->getLoadedChunks().size(), drawCalls, camera, [world, postProcessingShader] {
-            world->updateRenderDistance(*postProcessingShader);
+        DebugUI::render(visibleChunksCount, world->getLoadedChunks().size(), drawCalls, camera, [world, postProcessingShader, camera] {
+            world->updateRenderDistance(*postProcessingShader, camera);
         });
         DebugUI::draw();
 

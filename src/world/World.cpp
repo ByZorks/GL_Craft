@@ -61,7 +61,8 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     m_displayedNormalMeshes.clear();
     m_displayedTransparentMeshes.clear();
     m_displayedWaterMeshes.clear();
-    bool needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk();
+    bool needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk() || m_renderDistanceChanged;
+    m_renderDistanceChanged = false;
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
         if (const State state = chunk->getState(); state == State::MESH_GENERATED) {
             chunk->createGLBuffers();
@@ -81,8 +82,6 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     }
 
     for (const auto& strong_mesh : m_displayedNormalMeshes) {
-        const float distance = camera.distanceToCamera(*strong_mesh);
-        if (distance > Renderer::s_renderDistance) continue;
         if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
         shader.setUniform3f("u_Offset",
                             static_cast<float>(strong_mesh->getX()),
@@ -93,7 +92,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         ++drawCalls;
         ++visibleChunksCount;
 
-        if (needInstanceUpdate && distance < 320.0f) { // They are no longer visible at this distance event if we draw them
+        if (needInstanceUpdate && camera.distanceToCamera(*strong_mesh) < 320.0f) { // They are no longer visible at this distance event if we draw them
             for (const auto& feature : strong_mesh->getSurfaceFeatures()) {
                 switch (feature.type) {
                     case SurfaceFeatureType::SHORT_GRASS:
@@ -123,9 +122,8 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     }
 }
 
-void World::drawTransparentChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &drawCalls) const {
+void World::drawTransparentChunks(const Frustum &frustum, Shader &shader, unsigned int &drawCalls) const {
     for (const auto& strong_mesh : m_displayedTransparentMeshes) {
-        if (camera.distanceToCamera(*strong_mesh) > Renderer::s_renderDistance) continue;
         if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
         shader.setUniform3f("u_Offset",
                             static_cast<float>(strong_mesh->getX()),
@@ -137,11 +135,10 @@ void World::drawTransparentChunks(const Camera &camera, const Frustum &frustum, 
     }
 }
 
-void World::drawWater(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &drawCalls) const {
+void World::drawWater(const Frustum &frustum, Shader &shader, unsigned int &drawCalls) const {
     if (!m_displayedWaterMeshes.empty()) {
         Renderer::disableDepthMask();
         for (const auto& strong_mesh : m_displayedWaterMeshes) {
-            if (camera.distanceToCamera(*strong_mesh) > Renderer::s_renderDistance) continue;
             if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
             shader.setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
             shader.setUniform3f("u_Offset",
@@ -198,7 +195,7 @@ void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector
     }
 }
 
-void World::updateRenderDistance(Shader &postProcessingShader) {
+void World::updateRenderDistance(Shader &postProcessingShader, const Camera &camera) {
     postProcessingShader.setUniform1f("u_RenderDistance", Renderer::s_renderDistance);
 
     m_renderDistanceOffsets.clear();
@@ -220,6 +217,9 @@ void World::updateRenderDistance(Shader &postProcessingShader) {
               [](const auto &a, const auto &b) {
                   return a.x*a.x + a.z*a.z < b.x*b.x + b.z*b.z;
               });
+
+    updateChunks(camera);
+    m_renderDistanceChanged = true;
 }
 
 int World::getHeight(const int worldX, const int worldZ) {

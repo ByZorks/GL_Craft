@@ -30,6 +30,7 @@ private:
     InstanceRenderer m_poppyRenderer;
     InstanceRenderer m_cornflowerRenderer;
     InstanceRenderer m_alliumRenderer;
+    bool m_renderDistanceChanged = false;
 
     std::mutex m_heightMapMutex;
 
@@ -42,11 +43,11 @@ public:
 
     void updateChunks(const Camera &camera);
     void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &drawCalls);
-    void drawTransparentChunks(const Camera &camera, const Frustum &frustum,Shader &shader, unsigned int &drawCalls) const;
-    void drawWater(const Camera &camera, const Frustum &frustum,Shader &shader, unsigned int &drawCalls) const;
+    void drawTransparentChunks(const Frustum &frustum,Shader &shader, unsigned int &drawCalls) const;
+    void drawWater(const Frustum &frustum,Shader &shader, unsigned int &drawCalls) const;
     void drawInstances(unsigned int &drawCalls) const;
     void addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData);
-    void updateRenderDistance(Shader &postProcessingShader);
+    void updateRenderDistance(Shader &postProcessingShader, const Camera &camera);
 
     static int getHeight(int worldX, int worldZ);
     static bool isCave(int worldX, int worldY, int worldZ, int columnHeight);
