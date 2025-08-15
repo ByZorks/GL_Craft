@@ -71,6 +71,8 @@ int main(int argc, char *argv[]) {
     DebugUI debugUI(window);
     const ImGuiIO &io = ImGui::GetIO();
 
+    const auto *highlightedBlock = new HighlightedBlock();
+
     auto* world = new World();
     Renderer::init();
     while (!glfwWindowShouldClose(window)) {
@@ -130,15 +132,14 @@ int main(int argc, char *argv[]) {
         // Raycasting
         if (std::array<int, 3> selectedBlockCoords = Raycast::castRay(camera.getCameraPos(), camera.getCameraFront(), world->getLoadedChunks());
             selectedBlockCoords[0] != 0 || selectedBlockCoords[1] != 0 || selectedBlockCoords[2] != 0) {
-            HighlightedBlock highlight(selectedBlockCoords[0], selectedBlockCoords[1], selectedBlockCoords[2]);
-            highlight.createGLBuffers();
             highlightedBlockShader->use();
-            highlightedBlockShader->setUniform3f("u_Offset",
-                static_cast<float>(highlight.getX()),
-                static_cast<float>(highlight.getY()),
-                static_cast<float>(highlight.getZ()));
             highlightedBlockShader->setUniformMat4f("u_MVP", mvp);
-            highlight.draw();
+            highlightedBlockShader->setUniform3f("u_Offset",
+                static_cast<float>(selectedBlockCoords[0]),
+                static_cast<float>(selectedBlockCoords[1]),
+                static_cast<float>(selectedBlockCoords[2]));
+
+            highlightedBlock->draw();
             ++drawCalls;
         }
 
@@ -166,10 +167,12 @@ int main(int argc, char *argv[]) {
         glfwPollEvents();
     }
 
+    Raycast::clearCache();
     delete blockShader;
     delete instancesShader;
     delete waterShader;
     delete highlightedBlockShader;
+    delete highlightedBlock;
     delete postProcessingShader;
     delete postProcessingMesh;
     delete world;

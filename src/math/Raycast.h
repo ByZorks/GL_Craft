@@ -19,6 +19,7 @@ private:
 
 public:
     static std::array<int, 3> castRay(const glm::vec3 &pos, const glm::vec3 &dir, const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> &chunks);
+    static void clearCache();
 
 };
 

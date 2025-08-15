@@ -82,3 +82,9 @@ std::array<int, 3> Raycast::castRay(const glm::vec3 &pos, const glm::vec3 &dir,
 
     return {0, 0, 0}; // No block found within the maximum distance
 }
+
+void Raycast::clearCache() {
+    m_cachedChunks[0] = nullptr;
+    m_cachedChunks[1] = nullptr;
+    m_cachedChunks[2] = nullptr;
+}
