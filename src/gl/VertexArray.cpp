@@ -38,7 +38,7 @@ void VertexArray::addInstancedBuffer(const VertexBuffer &vb, const unsigned int 
     bind();
     vb.bind();
     GLCall(glEnableVertexAttribArray(attributeIndex));
-    GLCall(glVertexAttribPointer(attributeIndex, componentCount, GL_FLOAT, GL_FALSE, componentCount * sizeof(float), nullptr));
+    GLCall(glVertexAttribIPointer(attributeIndex, componentCount, GL_INT, componentCount * sizeof(int), nullptr));
     GLCall(glVertexAttribDivisor(attributeIndex, 1));
 }
 

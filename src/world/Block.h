@@ -2,7 +2,6 @@
 #define BLOCK_H
 #include <vector>
 
-#include "vec3.hpp"
 #include "GL/glew.h"
 
 enum class Face : uint8_t {

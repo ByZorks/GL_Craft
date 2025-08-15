@@ -1,6 +1,5 @@
 #ifndef GL_CRAFT_SURFACEFEATURE_H
 #define GL_CRAFT_SURFACEFEATURE_H
-#include <cstdint>
 
 enum class SurfaceFeatureType : uint8_t {
     NONE,
