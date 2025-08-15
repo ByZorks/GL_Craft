@@ -15,7 +15,8 @@ const float CAMERA_FAR = 1024.0;
 const float WATER_FOG_NEAR = 0.1;
 const float WATER_FOG_FAR = 30.0;
 const float FOG_FAR = u_RenderDistance - CHUNK_SIZE;
-const float FOG_NEAR = max(u_RenderDistance - 4 * CHUNK_SIZE, FOG_FAR - CHUNK_SIZE * 0.5);
+const float FOG_NEAR = u_RenderDistance - 3 * CHUNK_SIZE;
+const float ADJUSTED_FOG_NEAR = abs(FOG_FAR - FOG_NEAR) < CHUNK_SIZE * 3 ? FOG_FAR * 0.8 : FOG_NEAR;
 
 float linearDepth(float depth, float near, float far) {
     float z = depth * 2.0 - 1.0;
@@ -38,8 +39,8 @@ void main() {
         color = mix(fogColor, sceneColor, fogFactor);
         return;
     } else {
-        const float fogFactor = clamp((FOG_FAR - distance) / (FOG_FAR - FOG_NEAR), 0.0, 1.0);
-        const vec4 fogColor = vec4(0.6, 0.7, 1.0, 1.0);
+        const float fogFactor = clamp((FOG_FAR - distance) / (FOG_FAR - ADJUSTED_FOG_NEAR), 0.0, 1.0);
+        const vec4 fogColor = vec4(0.54, 0.82, 0.9, 1.0);
         color = mix(fogColor, sceneColor, fogFactor);
         return;
     }
