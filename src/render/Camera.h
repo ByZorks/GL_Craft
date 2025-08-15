@@ -26,7 +26,6 @@ public:
     void resetMousePosition(GLFWwindow *window);
 
     [[nodiscard]] float distanceToCamera(const Mesh& mesh) const;
-    [[nodiscard]] float distanceToCamera(glm::vec3 position) const;
     [[nodiscard]] bool hasCameraChangedChunk() const;
     [[nodiscard]] bool hasCameraChangedBlock() const;
     [[nodiscard]] bool hasCameraChangedDirection() const;

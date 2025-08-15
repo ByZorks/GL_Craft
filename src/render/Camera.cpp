@@ -92,14 +92,10 @@ float Camera::distanceToCamera(const Mesh& mesh) const {
     const auto x = static_cast<float>(mesh.getX());
     const auto y = static_cast<float>(mesh.getY());
     const auto z = static_cast<float>(mesh.getZ());
-    constexpr auto size = static_cast<float>(Chunk::SIZE);
-    const glm::vec3 farCorner(x + size - 1, y + size - 1, z + size - 1);
+    constexpr auto size = static_cast<float>(Chunk::SIZE) * 0.5f;
+    const glm::vec3 middle(x + size, y + size, z + size);
 
-    return glm::distance(m_cameraPos, farCorner);
-}
-
-float Camera::distanceToCamera(const glm::vec3 position) const {
-    return glm::distance(m_cameraPos, position);
+    return glm::distance(m_cameraPos, middle);
 }
 
 void Camera::resetMousePosition(GLFWwindow *window) {
