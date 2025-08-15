@@ -88,7 +88,6 @@ void Camera::mouseCallback(GLFWwindow *window, const double xpos, const double y
     cam->handleMouse(xpos, ypos);
 }
 
-// TODO: Use squared distance to avoid sqrt calculation
 float Camera::distanceToCamera(const Mesh& mesh) const {
     const auto x = static_cast<float>(mesh.getX());
     const auto y = static_cast<float>(mesh.getY());
@@ -99,7 +98,6 @@ float Camera::distanceToCamera(const Mesh& mesh) const {
     return glm::distance(m_cameraPos, farCorner);
 }
 
-// TODO: Use squared distance to avoid sqrt calculation
 float Camera::distanceToCamera(const glm::vec3 position) const {
     return glm::distance(m_cameraPos, position);
 }

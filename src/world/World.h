@@ -11,7 +11,6 @@
 #include "../math/Frustum.h"
 #include "../render/InstanceRenderer.h"
 #include "../render/ThreadPool.h"
-#include "../utils/CustomHash.h"
 
 class Camera;
 

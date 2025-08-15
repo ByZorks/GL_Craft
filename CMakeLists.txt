@@ -91,7 +91,6 @@ add_executable(GL_Craft
         src/ui/DebugUI.cpp
         src/ui/DebugUI.h
         src/utils/ThreadSafeQueue.h
-        src/utils/CustomHash.h
         src/render/ThreadPool.h
         src/render/ThreadPool.cpp
         src/world/Mesh.h
