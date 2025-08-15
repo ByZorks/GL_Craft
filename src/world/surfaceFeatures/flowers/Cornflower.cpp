@@ -11,10 +11,10 @@ void Cornflower::generateVoxel() {
 
 void Cornflower::generateMesh() {
     Block::addFaceVerticesAsBilboard(Face::BACK, BlockType::FLOWER_CORNFLOWER, m_opaqueData.vertices, 0.0f, 0.0f, 0.0f);
-    m_opaqueData.blockFaceData.emplace_back(Face::BACK, 4);
+    m_opaqueData.faces.emplace_back(Face::BACK);
 
     Block::addFaceVerticesAsBilboard(Face::FRONT, BlockType::FLOWER_CORNFLOWER, m_opaqueData.vertices, 0.0f, 0.0f, 0.0f);
-    m_opaqueData.blockFaceData.emplace_back(Face::FRONT, 4);
+    m_opaqueData.faces.emplace_back(Face::FRONT);
 
     m_state = State::MESH_GENERATED;
 }

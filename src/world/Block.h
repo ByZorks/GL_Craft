@@ -10,15 +10,6 @@ enum class Face : uint8_t {
     TOP_INVERSED // TOP is drawn CW, TOP_INVERSED is drawn CCW
 };
 
-struct BlockFaceData {
-    Face faceType;
-    uint8_t x, y, z;
-
-    [[nodiscard]] glm::vec3 getPosition() const {
-        return {static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)};
-    }
-};
-
 enum class BlockType : uint8_t {
     AIR, BEDROCK, DIRT, GRASS, STONE, WATER, LOG, LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER, FLOWER_ALLIUM,
     SNOW, SNOW_GRASS

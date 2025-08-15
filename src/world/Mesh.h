@@ -16,19 +16,19 @@ enum class State : uint8_t {
 
 struct GLBuffersData {
     std::vector<BlockVertex> vertices;
-    std::vector<BlockFaceData> blockFaceData;
+    std::vector<Face> faces;
     VertexArray VAO;
     VertexBuffer VBO;
     IndexBuffer IBO;
 
     void shrinkBuffers() {
         vertices.shrink_to_fit();
-        blockFaceData.shrink_to_fit();
+        faces.shrink_to_fit();
     }
 
     void deleteMesh() {
         vertices.clear();
-        blockFaceData.clear();
+        faces.clear();
     }
 
     void deleteGLBuffer() {
@@ -65,9 +65,9 @@ public:
     virtual void generateMesh();
 
     void createGLBuffers() {
-        if (!m_opaqueData.vertices.empty()) setupGLBuffers(m_opaqueData.vertices, m_opaqueData.blockFaceData, m_opaqueData.VAO, m_opaqueData.VBO, m_opaqueData.IBO);
-        if (!m_transparentData.vertices.empty()) setupGLBuffers(m_transparentData.vertices, m_transparentData.blockFaceData, m_transparentData.VAO, m_transparentData.VBO, m_transparentData.IBO);
-        if (!m_waterData.vertices.empty()) setupGLBuffers(m_waterData.vertices, m_waterData.blockFaceData, m_waterData.VAO, m_waterData.VBO, m_waterData.IBO);
+        if (!m_opaqueData.vertices.empty()) setupGLBuffers(m_opaqueData.vertices, m_opaqueData.faces, m_opaqueData.VAO, m_opaqueData.VBO, m_opaqueData.IBO);
+        if (!m_transparentData.vertices.empty()) setupGLBuffers(m_transparentData.vertices, m_transparentData.faces, m_transparentData.VAO, m_transparentData.VBO, m_transparentData.IBO);
+        if (!m_waterData.vertices.empty()) setupGLBuffers(m_waterData.vertices, m_waterData.faces, m_waterData.VAO, m_waterData.VBO, m_waterData.IBO);
 
         m_state = State::READY_TO_DRAW;
     }
@@ -177,19 +177,19 @@ public:
         return m_opaqueData.vertices;
     }
 
-    [[nodiscard]] std::vector<BlockFaceData> getOpaqueBlockFaceData() const {
-        return m_opaqueData.blockFaceData;
+    [[nodiscard]] std::vector<Face> getOpaqueBlockFaces() const {
+        return m_opaqueData.faces;
     }
 
 private:
-    static void setupGLBuffers(const std::vector<BlockVertex> &vertices, std::vector<BlockFaceData> &blockFaceData,
+    static void setupGLBuffers(const std::vector<BlockVertex> &vertices, const std::vector<Face> &faces,
                       VertexArray &VAO, VertexBuffer &VBO, IndexBuffer &IBO) {
         constexpr int NUMBER_OF_FACES = 6;
         std::vector<unsigned int> indices;
-        indices.reserve(blockFaceData.size() * NUMBER_OF_FACES);
+        indices.reserve(faces.size() * NUMBER_OF_FACES);
         unsigned int vertexOffsetOpaque = 0;
 
-        for (const auto &[faceType, x, y, z]: blockFaceData) {
+        for (const auto &faceType: faces) {
             constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
             constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
             const unsigned int *indicesOrder = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
