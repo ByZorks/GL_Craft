@@ -13,6 +13,7 @@ void Renderer::init() {
     GLCall(glEnable(GL_CULL_FACE));
     GLCall(glFrontFace(GL_CCW));
     GLCall(glEnable(GL_LINE_SMOOTH));
+    GLCall(glLineWidth(2)); // Not all GPUs support this, but it will still benefit most of them
 }
 
 void Renderer::clear() {
