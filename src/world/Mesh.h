@@ -41,13 +41,13 @@ struct GLBuffersData {
 class Mesh {
 protected:
     const unsigned int m_size;
-    int m_x, m_y, m_z;
+    const int m_x, m_y, m_z;
     GLBuffersData m_opaqueData;
     GLBuffersData m_transparentData;
     GLBuffersData m_waterData;
     std::vector<BlockType> m_blockType;
     State m_state = State::UNLOADED;
-    AABB m_box;
+    const AABB m_box;
 
 public:
     Mesh(const int x, const int y, const int z, const unsigned int size) : m_size(size), m_x(x), m_y(y), m_z(z),
