@@ -17,7 +17,7 @@ int Raycast::m_lastChunk2Y = -1;
 int Raycast::m_lastChunk2Z = -1;
 std::array<std::shared_ptr<Chunk>, 3> Raycast::m_cachedChunks = {nullptr, nullptr, nullptr};
 
-std::array<int, 3> Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDir,
+RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDir,
                                     const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &chunks) {
     // DDA Algorithm
     glm::vec3 rayUnitStepSize;
@@ -112,11 +112,18 @@ std::array<int, 3> Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &
         // Get block type
         if (const BlockType block = m_cachedChunks[chunkIndex]->getBlockType(localChunkX, localChunkY, localChunkZ);
             !(block == BlockType::AIR || block == BlockType::WATER)) {
-            return {worldX, worldY, worldZ};
+            return {
+                m_cachedChunks[chunkIndex],
+                {localChunkX, localChunkY, localChunkZ},
+                {worldX, worldY, worldZ},
+                true
+            };
         }
     }
 
-    return {0, 0, 0}; // No block found within the maximum distance
+    RaycastResult result;
+    result.hitBlock = false;
+    return result; // No block found within the maximum distance
 }
 
 void Raycast::clearCache() {

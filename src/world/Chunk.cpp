@@ -114,6 +114,25 @@ void Chunk::transferPendingBlocksToWorld(World &world) {
     m_pendingBlocksForNeighbors.clear();
 }
 
+void Chunk::deleteBlock(const int localX, const int localY, const int localZ) {
+    // Voxel
+    m_blockType[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
+
+    // Remove voxel data and update the mesh
+    m_transparentData.deleteMesh();
+    m_transparentData.deleteGLBuffer();
+    m_waterData.deleteMesh();
+    m_waterData.deleteGLBuffer();
+    m_opaqueData.deleteMesh();
+    m_opaqueData.deleteGLBuffer();
+
+    // Mesh
+    generateMesh();
+
+    // GL Buffers
+    createGLBuffers();
+}
+
 int Chunk::index(const int x, const int y, const int z) const {
     constexpr int stride = static_cast<int>(SIZE) + 2;
     return x * stride * stride + y * stride + z;

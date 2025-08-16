@@ -8,6 +8,13 @@
 #include "../world/Chunk.h"
 #include "../world/ChunkPosition.h"
 
+struct RaycastResult {
+    std::shared_ptr<Chunk> chunk;
+    std::array<int, 3> blockLocalPosition;
+    std::array<int, 3> blockWorldPosition;
+    bool hitBlock;
+};
+
 class Raycast {
 private:
     static int m_lastChunk0X, m_lastChunk0Y, m_lastChunk0Z;
@@ -16,7 +23,7 @@ private:
     static std::array<std::shared_ptr<Chunk>, 3> m_cachedChunks; // In the worst case, we can hit 3 chunks in a row
 
 public:
-    static std::array<int, 3> castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDir, const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> &chunks);
+    static RaycastResult castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDir, const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> &chunks);
     static void clearCache();
 
 };

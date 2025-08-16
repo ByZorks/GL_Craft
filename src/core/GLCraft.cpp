@@ -24,7 +24,10 @@ static int s_WINDOW_WIDTH = 1280;
 static int s_WINDOW_HEIGHT = 720;
 static float s_ASPECT_RATIO = static_cast<float>(s_WINDOW_WIDTH) / static_cast<float>(s_WINDOW_HEIGHT);
 
+static bool s_LEFT_CLICKED = false;
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
 
 int main(int argc, char *argv[]) {
     if (!glfwInit())
@@ -52,6 +55,7 @@ int main(int argc, char *argv[]) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(window, &pointers);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     glfwMaximizeWindow(window);
     glfwSwapInterval(0); // Disable VSync
@@ -137,17 +141,94 @@ int main(int argc, char *argv[]) {
         world->drawWater(frustum, *waterShader, drawCalls);
 
         // Raycasting
-        if (std::array<int, 3> selectedBlockCoords = Raycast::castRay(camera.getCameraPos(), camera.getCameraFront(), world->getLoadedChunks());
-            selectedBlockCoords[0] != 0 || selectedBlockCoords[1] != 0 || selectedBlockCoords[2] != 0) {
+        if (auto [chunk, blockLocalPosition, blockWorldPosition, hitBlock] = Raycast::castRay(camera.getCameraPos(), camera.getCameraFront(), world->getLoadedChunks());
+            hitBlock) {
+            // Highlight the block
             highlightedBlockShader->use();
             highlightedBlockShader->setUniformMat4f("u_MVP", mvp);
             highlightedBlockShader->setUniform3f("u_Offset",
-                static_cast<float>(selectedBlockCoords[0]),
-                static_cast<float>(selectedBlockCoords[1]),
-                static_cast<float>(selectedBlockCoords[2]));
+                static_cast<float>(blockWorldPosition[0]),
+                static_cast<float>(blockWorldPosition[1]),
+                static_cast<float>(blockWorldPosition[2]));
 
             highlightedBlock->draw();
             ++drawCalls;
+
+            // Handle left click to break
+            // TODO: Implement partial mesh update
+            if (s_LEFT_CLICKED && camera.isInputEnabled()) {
+                const auto t1 = std::chrono::high_resolution_clock::now();
+
+                // Delete in the chunk
+                chunk->deleteBlock(blockLocalPosition[0],
+                                            blockLocalPosition[1],
+                                            blockLocalPosition[2]);
+
+                // Update adjacents chunks if the block is at the border of the chunk
+                const bool isAtLeftBorder = blockLocalPosition[0] == 0;
+                const bool isAtRightBorder = blockLocalPosition[0] + 1 == Chunk::SIZE;
+                const bool isAtBottomBorder = blockLocalPosition[1] == 0;
+                const bool isAtTopBorder = blockLocalPosition[1] + 1 == Chunk::SIZE;
+                const bool isAtFrontBorder = blockLocalPosition[2] == 0;
+                const bool isAtBackBorder = blockLocalPosition[2] + 1 == Chunk::SIZE;
+
+                // Retrieve adjacent(s) chunk(s) based on face at chunk border
+                constexpr int chunkSize = Chunk::SIZE;
+                constexpr int minBlockPositionInAdjacentChunk = -1; // chunk will add +1 when accessing the block
+                constexpr int maxBlockPositionInAdjacentChunk = Chunk::SIZE; // chunk will add +1 when accessing the block
+                if (isAtLeftBorder) {
+                    const int leftChunkX = chunk->getX() - chunkSize;
+                    const int leftChunkY = chunk->getY();
+                    const int leftChunkZ = chunk->getZ();
+                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(leftChunkX, leftChunkY, leftChunkZ)) {
+                        adjacentChunk->deleteBlock(maxBlockPositionInAdjacentChunk, blockLocalPosition[1], blockLocalPosition[2]);
+                    }
+                }
+                if (isAtRightBorder) {
+                    const int rightChunkX = chunk->getX() + chunkSize;
+                    const int rightChunkY = chunk->getY();
+                    const int rightChunkZ = chunk->getZ();
+                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(rightChunkX, rightChunkY, rightChunkZ)) {
+                        adjacentChunk->deleteBlock(minBlockPositionInAdjacentChunk, blockLocalPosition[1], blockLocalPosition[2]);
+                    }
+                }
+                if (isAtBottomBorder) {
+                    const int bottomChunkX = chunk->getX();
+                    const int bottomChunkY = chunk->getY() - chunkSize;
+                    const int bottomChunkZ = chunk->getZ();
+                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(bottomChunkX, bottomChunkY, bottomChunkZ)) {
+                        adjacentChunk->deleteBlock(blockLocalPosition[0], maxBlockPositionInAdjacentChunk, blockLocalPosition[2]);
+                    }
+                }
+                if (isAtTopBorder) {
+                    const int topChunkX = chunk->getX();
+                    const int topChunkY = chunk->getY() + chunkSize;
+                    const int topChunkZ = chunk->getZ();
+                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(topChunkX, topChunkY, topChunkZ)) {
+                        adjacentChunk->deleteBlock(blockLocalPosition[0], minBlockPositionInAdjacentChunk, blockLocalPosition[2]);
+                    }
+                }
+                if (isAtFrontBorder) {
+                    const int frontChunkX = chunk->getX();
+                    const int frontChunkY = chunk->getY();
+                    const int frontChunkZ = chunk->getZ() - chunkSize;
+                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(frontChunkX, frontChunkY, frontChunkZ)) {
+                        adjacentChunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], maxBlockPositionInAdjacentChunk);
+                    }
+                }
+                if (isAtBackBorder) {
+                    const int backChunkX = chunk->getX();
+                    const int backChunkY = chunk->getY();
+                    const int backChunkZ = chunk->getZ() + chunkSize;
+                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(backChunkX, backChunkY, backChunkZ)) {
+                        adjacentChunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], minBlockPositionInAdjacentChunk);
+                    }
+                }
+
+                const auto t2 = std::chrono::high_resolution_clock::now();
+                const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+                std::cout << "Block deleted in " << duration << " ms" << std::endl;
+            }
         }
 
         // Post-processing and crosshair to minimize openGl state changes
@@ -173,6 +254,7 @@ int main(int argc, char *argv[]) {
 
         // State update
         camera.updateLastState();
+        s_LEFT_CLICKED = false;
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -206,4 +288,10 @@ void framebuffer_size_callback(GLFWwindow *window, const int width, const int he
     s_WINDOW_WIDTH = width;
     s_WINDOW_HEIGHT = height;
     s_ASPECT_RATIO = static_cast<float>(width) / static_cast<float>(height);
+}
+
+void mouse_button_callback(GLFWwindow* window, const int button, const int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        s_LEFT_CLICKED = true;
+    }
 }

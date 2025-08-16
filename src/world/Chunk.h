@@ -24,6 +24,7 @@ public:
     void generatePendingBlocks(std::vector<PendingBlock> &blocks);
     void generateMesh() override;
     void transferPendingBlocksToWorld(World &world);
+    void deleteBlock(int localX, int localY, int localZ);
 
     [[nodiscard]] int index(int x, int y, int z) const override;
     [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const override;

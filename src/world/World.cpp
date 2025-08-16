@@ -269,6 +269,17 @@ bool World::isCave(const int worldX, const int worldY, const int worldZ, const i
     return std::abs(normalized3DNoise - caveThreshold) < 0.3f;
 }
 
+std::shared_ptr<Chunk> World::getChunk(const int x, const int y, const int z) const {
+    if (const auto it = m_chunksData.loadedMeshes.find({x, y, z}); it != m_chunksData.loadedMeshes.end()) {
+        return it->second;
+    }
+
+    // Should not happen, but if it does, return a null chunk
+    static auto nullChunk = std::make_shared<Chunk>(-1, -1, -1); // Return a null chunk if not found
+    std::cerr << "Chunk not found at (" << x << ", " << y << ", " << z << ")\n";
+    return nullChunk;
+}
+
 const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & World::getLoadedChunks() const {
     return m_chunksData.loadedMeshes;
 }
