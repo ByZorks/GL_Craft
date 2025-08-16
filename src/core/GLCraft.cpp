@@ -118,6 +118,9 @@ int main(int argc, char *argv[]) {
         waterShader->use();
         waterShader->setUniformMat4f("u_MVP", mvp);
         waterShader->setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
+        waterShader->setUniform3f("u_CameraPos", camera.getCameraPos().x,
+                                  camera.getCameraPos().y,
+                                  camera.getCameraPos().z);
 
         instancesShader->use();
         instancesShader->setUniformMat4f("u_MVP", mvp);

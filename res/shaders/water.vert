@@ -8,7 +8,9 @@ layout(location = 3) in uint AO; // Ambient Occlusion values (0-3)
 out vec2 v_texCoord;
 flat out uint v_face;
 out float v_AO;
+out float v_refractionFactor;
 
+uniform vec3 u_CameraPos;
 uniform float u_Time;
 uniform vec3 u_Offset;
 uniform mat4 u_MVP;
@@ -25,6 +27,9 @@ void main() {
                     + cos(u_Time * 1.5 + worldPos.z * 2.5 + worldPos.x * 1.2)) * 0.05;
     }
     gl_Position = u_MVP * vec4(worldPos, 1.0);
+
+    const vec3 toCamera = normalize(u_CameraPos - worldPos);
+    v_refractionFactor = pow(dot(toCamera, vec3(0.0, 1.0, 0.0)), 0.5);
 
     const float tileSize = 1.f / 5.f;
     vec2 animatedTexIndex = vec2(texIndex);
