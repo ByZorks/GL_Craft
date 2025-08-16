@@ -120,6 +120,8 @@ add_executable(GL_Craft
         src/math/Raycast.h
         src/render/HighlightedBlock.cpp
         src/render/HighlightedBlock.h
+        src/ui/Crosshair.cpp
+        src/ui/Crosshair.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})

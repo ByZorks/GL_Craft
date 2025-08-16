@@ -17,10 +17,12 @@
 #include "../math/Raycast.h"
 #include "../render/HighlightedBlock.h"
 #include "../render/PostProcessingMesh.h"
+#include "../ui/Crosshair.h"
 #include "../ui/DebugUI.h"
 
-constexpr int BASE_WIDTH = 1280;
-constexpr int BASE_HEIGHT = 720;
+static int s_WINDOW_WIDTH = 1280;
+static int s_WINDOW_HEIGHT = 720;
+static float s_ASPECT_RATIO = static_cast<float>(s_WINDOW_WIDTH) / static_cast<float>(s_WINDOW_HEIGHT);
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 
@@ -32,7 +34,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow *window = glfwCreateWindow(BASE_WIDTH, BASE_HEIGHT, "GLCraft", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(s_WINDOW_WIDTH, s_WINDOW_HEIGHT, "GLCraft", nullptr, nullptr);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -43,9 +45,10 @@ int main(int argc, char *argv[]) {
     if (glewInit() != GLEW_OK) std::cerr << "glewInit() failed" << std::endl;
 
     // Camera
-    Camera camera(BASE_WIDTH, BASE_HEIGHT);
-    auto *postProcessingMesh = new PostProcessingMesh(BASE_WIDTH, BASE_HEIGHT);
-    WindowUserPointers pointers = {&camera, postProcessingMesh};
+    Camera camera(s_WINDOW_WIDTH, s_WINDOW_HEIGHT);
+    auto *postProcessingMesh = new PostProcessingMesh(s_WINDOW_WIDTH, s_WINDOW_HEIGHT);
+    auto *crosshair = new Crosshair();
+    WindowUserPointers pointers = {&camera, postProcessingMesh, crosshair};
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(window, &pointers);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
@@ -59,6 +62,7 @@ int main(int argc, char *argv[]) {
     auto *instancesShader = new Shader("../res/shaders/instances.vert", "../res/shaders/instances.frag");
     auto *waterShader = new Shader("../res/shaders/water.vert", "../res/shaders/water.frag");
     auto *highlightedBlockShader = new Shader("../res/shaders/highlightBlock.vert", "../res/shaders/highlightBlock.frag");
+    auto *crosshairShader = new Shader("../res/shaders/crosshair.vert", "../res/shaders/crosshair.frag");
     auto *postProcessingShader = new Shader("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
     postProcessingShader->use();
     postProcessingShader->setUniform1i("u_SceneTexture", 0);
@@ -143,7 +147,7 @@ int main(int argc, char *argv[]) {
             ++drawCalls;
         }
 
-        // Post-processing
+        // Post-processing and crosshair to minimize openGl state changes
         FrameBuffer::unbind();
         postProcessingShader->use();
         postProcessingMesh->getFBO().getColorTexture().bind(0);
@@ -151,6 +155,11 @@ int main(int argc, char *argv[]) {
 
         Renderer::disableDepthTesting();
         Renderer::draw(postProcessingMesh->getVAO(), postProcessingMesh->getIBO());
+
+        atlas->bind();
+        crosshairShader->use();
+        crosshairShader->setUniform1f("u_AspectRatio", s_ASPECT_RATIO);
+        crosshair->draw();
         Renderer::enableDepthTesting();
 
         // Render ImGui
@@ -160,7 +169,6 @@ int main(int argc, char *argv[]) {
         DebugUI::draw();
 
         // State update
-        atlas->bind();
         camera.updateLastState();
 
         glfwSwapBuffers(window);
@@ -173,6 +181,8 @@ int main(int argc, char *argv[]) {
     delete waterShader;
     delete highlightedBlockShader;
     delete highlightedBlock;
+    delete crosshairShader;
+    delete crosshair;
     delete postProcessingShader;
     delete postProcessingMesh;
     delete world;
@@ -189,4 +199,8 @@ void framebuffer_size_callback(GLFWwindow *window, const int width, const int he
 
     pointers->camera->setAspectRatio(static_cast<float>(width) / static_cast<float>(height));
     pointers->postProcessingMesh->resize(width, height);
+
+    s_WINDOW_WIDTH = width;
+    s_WINDOW_HEIGHT = height;
+    s_ASPECT_RATIO = static_cast<float>(width) / static_cast<float>(height);
 }
