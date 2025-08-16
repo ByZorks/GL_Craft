@@ -1,8 +1,10 @@
 #include "Raycast.h"
 
 #include <array>
+#include <cfloat>
 #include <cmath>
-#include <iostream>
+
+#include "common.hpp"
 
 int Raycast::m_lastChunk0X = -1;
 int Raycast::m_lastChunk0Y = -1;
@@ -15,17 +17,51 @@ int Raycast::m_lastChunk2Y = -1;
 int Raycast::m_lastChunk2Z = -1;
 std::array<std::shared_ptr<Chunk>, 3> Raycast::m_cachedChunks = {nullptr, nullptr, nullptr};
 
-std::array<int, 3> Raycast::castRay(const glm::vec3 &pos, const glm::vec3 &dir,
+std::array<int, 3> Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDir,
                                     const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &chunks) {
-    float currentDistance = 0.f;
-    while (currentDistance < MAX_DISTANCE) {
-        currentDistance += EPSILON;
+    // DDA Algorithm
+    glm::vec3 rayUnitStepSize;
+    rayUnitStepSize.x = rayDir.x == 0.f ? FLT_MAX : std::abs(1.f / rayDir.x);
+    rayUnitStepSize.y = rayDir.y == 0.f ? FLT_MAX : std::abs(1.f / rayDir.y);
+    rayUnitStepSize.z = rayDir.z == 0.f ? FLT_MAX : std::abs(1.f / rayDir.z);
+    glm::vec3 rayCurrentPos = glm::floor(rayStart);
+    glm::vec3 rayLength1D = {0.f, 0.f, 0.f};
+    glm::vec3 step;
 
+    // Starting point on x, y, z axes
+    for (int i = 0; i < 3; ++i) {
+        if (rayDir[i] < 0.f) {
+            step[i] = -1.f;
+            rayLength1D[i] = (rayStart[i] - rayCurrentPos[i]) * rayUnitStepSize[i];
+        } else {
+            step[i]= 1.f;
+            rayLength1D[i]= (rayCurrentPos[i] + 1.f - rayStart[i]) * rayUnitStepSize[i];
+        }
+    }
+
+    // Walk until collision or maximum distance
+    constexpr float MAX_DISTANCE = 5.f;
+    float distance = 0.f;
+    while (distance < MAX_DISTANCE) {
+        if (rayLength1D.x < rayLength1D.y && rayLength1D.x < rayLength1D.z) {
+            rayCurrentPos.x += step.x;
+            distance = rayLength1D.x;
+            rayLength1D.x += rayUnitStepSize.x;
+        } else if (rayLength1D.y < rayLength1D.x && rayLength1D.y < rayLength1D.z) {
+            rayCurrentPos.y += step.y;
+            distance = rayLength1D.y;
+            rayLength1D.y += rayUnitStepSize.y;
+        } else {
+            rayCurrentPos.z += step.z;
+            distance = rayLength1D.z;
+            rayLength1D.z += rayUnitStepSize.z;
+        }
+
+        // Check collision
         // Chunk coordinates
-        const glm::vec3 currentlyCheckedPos = pos + dir * currentDistance;
-        const int chunkX = static_cast<int>(std::floor(currentlyCheckedPos.x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
-        const int chunkY = static_cast<int>(std::floor(currentlyCheckedPos.y / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
-        const int chunkZ = static_cast<int>(std::floor(currentlyCheckedPos.z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+        const int chunkX = static_cast<int>(std::floor(rayCurrentPos.x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+        const int chunkY = static_cast<int>(std::floor(rayCurrentPos.y / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+        const int chunkZ = static_cast<int>(std::floor(rayCurrentPos.z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
 
         int chunkIndex;
         if (m_lastChunk0X == chunkX && m_lastChunk0Y == chunkY && m_lastChunk0Z == chunkZ) {
@@ -64,9 +100,9 @@ std::array<int, 3> Raycast::castRay(const glm::vec3 &pos, const glm::vec3 &dir,
         }
 
         // World coordinates
-        const int worldX = static_cast<int>(std::floor(currentlyCheckedPos.x));
-        const int worldY = static_cast<int>(std::floor(currentlyCheckedPos.y));
-        const int worldZ = static_cast<int>(std::floor(currentlyCheckedPos.z));
+        const int worldX = static_cast<int>(rayCurrentPos.x);
+        const int worldY = static_cast<int>(rayCurrentPos.y);
+        const int worldZ = static_cast<int>(rayCurrentPos.z);
 
         // Local coordinates
         const int localChunkX = worldX - chunkX;
