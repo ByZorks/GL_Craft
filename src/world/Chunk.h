@@ -1,6 +1,5 @@
 #ifndef CHUNK_H
 #define CHUNK_H
-#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -30,7 +29,6 @@ public:
     [[nodiscard]] int index(int x, int y, int z) const override;
     [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const override;
     [[nodiscard]] BlockType getBlockTypeOrSurfaceFeature(int localX, int localY, int localZ) const;
-    [[nodiscard]] bool hasVisibleFaces() const;
 
     [[nodiscard]] const std::unordered_set<SurfaceFeature> & getSurfaceFeatures() const;
 
@@ -40,6 +38,7 @@ private:
     void addFeatureBlocks(int localX, int localY, int localZ, BlockType blockType);
 
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const override;
+    [[nodiscard]] bool hasVisibleFaces() const;
 
 };
 

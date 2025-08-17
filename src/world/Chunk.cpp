@@ -137,12 +137,6 @@ int Chunk::index(const int x, const int y, const int z) const {
     return x * stride * stride + y * stride + z;
 }
 
-bool Chunk::hasVisibleFaces() const {
-    return (!m_opaqueData.vertices.empty() && !m_opaqueData.faces.empty()) ||
-           (!m_transparentData.vertices.empty() && !m_transparentData.faces.empty()) ||
-           (!m_waterData.vertices.empty() && !m_waterData.faces.empty());
-}
-
 const std::unordered_set<SurfaceFeature> &Chunk::getSurfaceFeatures() const {
     return m_surfaceFeatures;
 }
@@ -272,4 +266,10 @@ BlockType Chunk::getBlockTypeOrSurfaceFeature(const int localX, const int localY
         type = getBlockType(localX, localY, localZ);
     }
     return type;
+}
+
+bool Chunk::hasVisibleFaces() const {
+    return (!m_opaqueData.vertices.empty() && !m_opaqueData.faces.empty()) ||
+           (!m_transparentData.vertices.empty() && !m_transparentData.faces.empty()) ||
+           (!m_waterData.vertices.empty() && !m_waterData.faces.empty());
 }
