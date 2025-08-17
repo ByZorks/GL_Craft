@@ -142,15 +142,15 @@ public:
     }
 
     [[nodiscard]] bool hasOpaqueFaces() const {
-        return !m_opaqueData.vertices.empty() && m_opaqueData.IBO.getCount() > 0;
+        return m_opaqueData.IBO.getCount() > 0;
     }
 
     [[nodiscard]] bool hasTransparentFaces() const {
-        return !m_transparentData.vertices.empty() && m_transparentData.IBO.getCount() > 0;
+        return m_transparentData.IBO.getCount() > 0;
     }
 
     [[nodiscard]] bool hasWaterFaces() const {
-        return !m_waterData.vertices.empty() && m_waterData.IBO.getCount() > 0;
+        return m_waterData.IBO.getCount() > 0;
     }
 
     [[nodiscard]] virtual bool shouldDrawFace(int x, int y, int z,

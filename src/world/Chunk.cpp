@@ -127,7 +127,7 @@ void Chunk::deleteBlock(const int localX, const int localY, const int localZ, co
 
     m_blockType[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
 
-    // Generate temp mesh data
+    // Generate mesh data
     resetMesh();
     generateMesh(false);
 }
