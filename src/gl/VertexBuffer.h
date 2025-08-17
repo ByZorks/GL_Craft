@@ -17,6 +17,12 @@ public:
     VertexBuffer();
     ~VertexBuffer();
 
+    VertexBuffer(const VertexBuffer &other);
+    VertexBuffer & operator=(const VertexBuffer &other);
+
+    VertexBuffer(VertexBuffer &&other) noexcept;
+    VertexBuffer & operator=(VertexBuffer &&other) noexcept;
+
     void init(const void *data, unsigned int size, BufferUsage usage = BufferUsage::STATIC);
     void updateData(const void *data, unsigned int size, unsigned int offset = 0) const;
     void deleteBuffer();

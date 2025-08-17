@@ -10,6 +10,12 @@ public:
     IndexBuffer();
     ~IndexBuffer();
 
+    IndexBuffer(const IndexBuffer &other);
+    IndexBuffer & operator=(const IndexBuffer &other);
+
+    IndexBuffer(IndexBuffer &&other) noexcept;
+    IndexBuffer & operator=(IndexBuffer &&other) noexcept;
+
     void init(const unsigned int *data, unsigned int count);
     void updateData(const unsigned int *data) const;
     void deleteBuffer();

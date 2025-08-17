@@ -11,6 +11,33 @@ VertexArray::~VertexArray() {
     }
 }
 
+VertexArray::VertexArray(const VertexArray &other) = default;
+
+VertexArray & VertexArray::operator=(const VertexArray &other) {
+    if (this == &other)
+        return *this;
+    m_ID = other.m_ID;
+    m_nextAttributeIndex = other.m_nextAttributeIndex;
+    return *this;
+}
+
+VertexArray::VertexArray(VertexArray &&other) noexcept
+        : m_ID(other.m_ID),
+          m_nextAttributeIndex(other.m_nextAttributeIndex) {
+    other.m_ID = 0;
+    other.m_nextAttributeIndex = 0;
+}
+
+VertexArray & VertexArray::operator=(VertexArray &&other) noexcept {
+    if (this == &other)
+        return *this;
+    m_ID = other.m_ID;
+    other.m_ID = 0;
+    m_nextAttributeIndex = other.m_nextAttributeIndex;
+    other.m_nextAttributeIndex = 0;
+    return *this;
+}
+
 void VertexArray::init() {
     GLCall(glGenVertexArrays(1, &m_ID));
     GLCall(glBindVertexArray(m_ID));
