@@ -31,6 +31,7 @@ private:
     InstanceRenderer m_cornflowerRenderer;
     InstanceRenderer m_alliumRenderer;
     bool m_renderDistanceChanged = false;
+    bool m_instancesChanged = false;
 
     std::mutex m_heightMapMutex;
 
@@ -53,11 +54,12 @@ public:
     static bool isCave(int worldX, int worldY, int worldZ, int columnHeight);
     std::shared_ptr<Chunk> getChunk(int x, int y, int z) const;
 
+    [[nodiscard]] ThreadPool & getThreadPool();
     [[nodiscard]] const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & getLoadedChunks() const;
     [[nodiscard]] ThreadSafeQueue<std::shared_ptr<Chunk>> & getMeshesToUpdate();
     static FastNoiseLite& getSurfaceFeaturesNoise();
 
-    [[nodiscard]] ThreadPool & getThreadPool();
+    void setInstancesChanged(bool m_instances_changed);
 
 private:
     void processChunks();

@@ -13,6 +13,7 @@ struct RaycastResult {
     std::array<int, 3> blockLocalPosition;
     std::array<int, 3> blockWorldPosition;
     bool hitBlock;
+    BlockType blockType;
 };
 
 class Raycast {

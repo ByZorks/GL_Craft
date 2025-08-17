@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
         world->drawWater(frustum, *waterShader, drawCalls);
 
         // Raycasting
-        if (auto [chunk, blockLocalPosition, blockWorldPosition, hitBlock] = Raycast::castRay(camera.getCameraPos(), camera.getCameraFront(), world->getLoadedChunks());
+        if (auto [chunk, blockLocalPosition, blockWorldPosition, hitBlock, type] = Raycast::castRay(camera.getCameraPos(), camera.getCameraFront(), world->getLoadedChunks());
             hitBlock) {
             // Highlight the block
             highlightedBlockShader->use();
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
             // TODO: Implement partial mesh update
             if (s_LEFT_CLICKED && camera.isInputEnabled()) {
 
-                world->getThreadPool().enqueue_no_future([chunk, blockLocalPosition, world] {
+                world->getThreadPool().enqueue_no_future([chunk, blockLocalPosition, world, type] {
                     const auto t1 = std::chrono::high_resolution_clock::now();
 
                     // Update adjacents chunks if the block is at the border of the chunk
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
                         const int leftChunkY = chunk->getY();
                         const int leftChunkZ = chunk->getZ();
                         if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(leftChunkX, leftChunkY, leftChunkZ)) {
-                            adjacentChunk->deleteBlock(maxBlockPositionInAdjacentChunk, blockLocalPosition[1], blockLocalPosition[2]);
+                            adjacentChunk->deleteBlock(maxBlockPositionInAdjacentChunk, blockLocalPosition[1], blockLocalPosition[2], type);
                             world->getMeshesToUpdate().push(adjacentChunk);
                         }
                     }
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
                         const int rightChunkY = chunk->getY();
                         const int rightChunkZ = chunk->getZ();
                         if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(rightChunkX, rightChunkY, rightChunkZ)) {
-                            adjacentChunk->deleteBlock(minBlockPositionInAdjacentChunk, blockLocalPosition[1], blockLocalPosition[2]);
+                            adjacentChunk->deleteBlock(minBlockPositionInAdjacentChunk, blockLocalPosition[1], blockLocalPosition[2], type);
                             world->getMeshesToUpdate().push(adjacentChunk);
                         }
                     }
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
                         const int bottomChunkY = chunk->getY() - chunkSize;
                         const int bottomChunkZ = chunk->getZ();
                         if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(bottomChunkX, bottomChunkY, bottomChunkZ)) {
-                            adjacentChunk->deleteBlock(blockLocalPosition[0], maxBlockPositionInAdjacentChunk, blockLocalPosition[2]);
+                            adjacentChunk->deleteBlock(blockLocalPosition[0], maxBlockPositionInAdjacentChunk, blockLocalPosition[2], type);
                             world->getMeshesToUpdate().push(adjacentChunk);
                         }
                     }
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
                         const int topChunkY = chunk->getY() + chunkSize;
                         const int topChunkZ = chunk->getZ();
                         if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(topChunkX, topChunkY, topChunkZ)) {
-                            adjacentChunk->deleteBlock(blockLocalPosition[0], minBlockPositionInAdjacentChunk, blockLocalPosition[2]);
+                            adjacentChunk->deleteBlock(blockLocalPosition[0], minBlockPositionInAdjacentChunk, blockLocalPosition[2], type);
                             world->getMeshesToUpdate().push(adjacentChunk);
                         }
                     }
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
                         const int frontChunkY = chunk->getY();
                         const int frontChunkZ = chunk->getZ() - chunkSize;
                         if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(frontChunkX, frontChunkY, frontChunkZ)) {
-                            adjacentChunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], maxBlockPositionInAdjacentChunk);
+                            adjacentChunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], maxBlockPositionInAdjacentChunk, type);
                             world->getMeshesToUpdate().push(adjacentChunk);
                         }
                     }
@@ -223,16 +223,15 @@ int main(int argc, char *argv[]) {
                         const int backChunkY = chunk->getY();
                         const int backChunkZ = chunk->getZ() + chunkSize;
                         if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(backChunkX, backChunkY, backChunkZ)) {
-                            adjacentChunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], minBlockPositionInAdjacentChunk);
+                            adjacentChunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], minBlockPositionInAdjacentChunk, type);
                             world->getMeshesToUpdate().push(adjacentChunk);
                         }
                     }
 
                     // Delete in the chunk (last to reduce incorrect adjacent chunk mesh until partial mesh update is implemented)
-                    chunk->deleteBlock(blockLocalPosition[0],
-                                                blockLocalPosition[1],
-                                                blockLocalPosition[2]);
+                    chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type);
                     world->getMeshesToUpdate().push(chunk);
+                    if (type == BlockType::SURFACE_FEATURE_BILLBOARD) world->setInstancesChanged(true);
 
                     const auto t2 = std::chrono::high_resolution_clock::now();
                     const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();

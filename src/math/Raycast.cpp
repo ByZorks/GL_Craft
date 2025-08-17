@@ -110,18 +110,19 @@ RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDi
         const int localChunkZ = worldZ - chunkZ;
 
         // Get block type
-        if (const BlockType block = m_cachedChunks[chunkIndex]->getBlockType(localChunkX, localChunkY, localChunkZ);
+        if (const BlockType block = m_cachedChunks[chunkIndex]->getBlockTypeOrSurfaceFeature(localChunkX, localChunkY, localChunkZ);
             !(block == BlockType::AIR || block == BlockType::WATER)) {
             return {
                 m_cachedChunks[chunkIndex],
                 {localChunkX, localChunkY, localChunkZ},
                 {worldX, worldY, worldZ},
-                true
+                true,
+                block
             };
         }
     }
 
-    RaycastResult result;
+    static RaycastResult result;
     result.hitBlock = false;
     return result; // No block found within the maximum distance
 }

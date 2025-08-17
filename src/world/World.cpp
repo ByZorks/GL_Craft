@@ -61,8 +61,10 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     m_displayedNormalMeshes.clear();
     m_displayedTransparentMeshes.clear();
     m_displayedWaterMeshes.clear();
-    bool needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk() || m_renderDistanceChanged;
+    bool needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk() ||
+        m_renderDistanceChanged || m_instancesChanged;
     m_renderDistanceChanged = false;
+    m_instancesChanged = false;
     for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
         if (const State state = chunk->getState(); state == State::MESH_GENERATED) {
             chunk->createGLBuffers();
@@ -355,6 +357,7 @@ void World::processChunks() {
         if (m_chunksData.meshesToUpdate.empty()) break;
         const std::shared_ptr<Chunk> p_chunk = m_chunksData.meshesToUpdate.pop();
         p_chunk->createNewMeshGLBuffers();
+        m_instancesChanged = true;
     }
 }
 
@@ -430,6 +433,10 @@ FastNoiseLite & World::getTerrainNoise() {
 FastNoiseLite & World::getSurfaceFeaturesNoise() {
     thread_local FastNoiseLite instance = makeSurfaceFeaturesNoise();
     return instance;
+}
+
+void World::setInstancesChanged(const bool m_instances_changed) {
+    m_instancesChanged = m_instances_changed;
 }
 
 ThreadPool & World::getThreadPool() {

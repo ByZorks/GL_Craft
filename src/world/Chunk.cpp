@@ -1,5 +1,7 @@
 #include "Chunk.h"
 
+#include <iostream>
+
 #include "World.h"
 
 Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
@@ -34,7 +36,8 @@ void Chunk::generateVoxel() {
 
             // Surface features noise
             constexpr int waterLevel = 63;
-            if (columnHeight >= waterLevel && m_y <= columnHeight + 1 &&
+            if (localX > 0 && localX < SIZE && localZ > 0 && localZ < SIZE && // I think it can cause issues but I didn't find any in my testing
+                columnHeight >= waterLevel && m_y <= columnHeight + 1 &&
                 columnHeight >= m_y - static_cast<int>(SIZE) &&
                 columnHeight < m_y + static_cast<int>(SIZE) &&
                 !World::isCave(worldX, columnHeight, worldZ, columnHeight)) {
@@ -114,8 +117,14 @@ void Chunk::transferPendingBlocksToWorld(World &world) {
     m_pendingBlocksForNeighbors.clear();
 }
 
-void Chunk::deleteBlock(const int localX, const int localY, const int localZ) {
+void Chunk::deleteBlock(const int localX, const int localY, const int localZ, const BlockType type) {
     // Voxel
+    if (type == BlockType::SURFACE_FEATURE_BILLBOARD) {
+        m_blockType[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
+        m_surfaceFeatures.erase(SurfaceFeature(m_x + localX + 1, m_y + localY, m_z + localZ + 1));
+        return;
+    }
+
     m_blockType[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
 
     // Generate temp mesh data
@@ -143,7 +152,7 @@ bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ)
 }
 
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const BlockType blockType) {
-    if (blockType == BlockType::AIR || blockType == BlockType::SURFACE_FEATURE_BASE) return;
+    if (blockType == BlockType::AIR || blockType == BlockType::SURFACE_FEATURE_BILLBOARD) return;
 
     const auto localXf = static_cast<float>(localX);
     const auto localYf = static_cast<float>(localY);
@@ -245,4 +254,22 @@ void Chunk::addFeatureBlocks(const int localX, const int localY, const int local
 
 BlockType Chunk::getBlockType(const int localX, const int localY, const int localZ) const {
     return m_blockType[index(localX + 1, localY + 1, localZ + 1)];
+}
+
+BlockType Chunk::getBlockTypeOrSurfaceFeature(const int localX, const int localY, const int localZ) const {
+    BlockType type;
+    const int worldX = m_x + localX + 1;
+    const int worldY = m_y + localY;
+    const int worldZ = m_z + localZ + 1;
+    if (const auto it = m_surfaceFeatures.find(SurfaceFeature(worldX, worldY, worldZ));
+        it != m_surfaceFeatures.end()) {
+        if (it->type != SurfaceFeatureType::TREE) { // No remesh is done when returning a surface feature, but trees needs it
+            type = BlockType::SURFACE_FEATURE_BILLBOARD;
+        } else {
+            type = getBlockType(localX, localY, localZ);
+        }
+    } else {
+        type = getBlockType(localX, localY, localZ);
+    }
+    return type;
 }
