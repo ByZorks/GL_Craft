@@ -46,12 +46,6 @@ protected:
     GLBuffersData m_opaqueData;
     GLBuffersData m_transparentData;
     GLBuffersData m_waterData;
-
-    // Temporary mesh data for remeshing
-    VertexArray m_tempOpaqueVAO, m_tempTransparentVAO, m_tempWaterVAO;
-    VertexBuffer m_tempOpaqueVBO, m_tempTransparentVBO, m_tempWaterVBO;
-    IndexBuffer m_tempOpaqueIBO, m_tempTransparentIBO, m_tempWaterIBO;
-
     State m_state = State::UNINITIALIZED;
     const AABB m_box;
 
@@ -82,29 +76,40 @@ public:
     }
 
     void createNewMeshGLBuffers() {
+        bool hasNewOpaque = false, hasNewTransparent = false, hasNewWater = false;
+        VertexArray newOpaqueVAO, newTransparentVAO, newWaterVAO;
+        VertexBuffer newOpaqueVBO, newTransparentVBO, newWaterVBO;
+        IndexBuffer newOpaqueIBO, newTransparentIBO, newWaterIBO;
+
         // Create new GL buffers for the temporary mesh data
-        if (!m_opaqueData.vertices.empty())
-            setupGLBuffers(m_opaqueData.vertices, m_opaqueData.faces, m_tempOpaqueVAO, m_tempOpaqueVBO, m_tempOpaqueIBO);
-        if (!m_transparentData.vertices.empty())
-            setupGLBuffers(m_transparentData.vertices, m_transparentData.faces, m_tempTransparentVAO, m_tempTransparentVBO, m_tempTransparentIBO);
-        if (!m_waterData.vertices.empty())
-            setupGLBuffers(m_waterData.vertices, m_waterData.faces, m_tempWaterVAO, m_tempWaterVBO, m_tempWaterIBO);
+        if (!m_opaqueData.vertices.empty()) {
+            setupGLBuffers(m_opaqueData.vertices, m_opaqueData.faces, newOpaqueVAO, newOpaqueVBO, newOpaqueIBO);
+            hasNewOpaque = true;
+        }
+        if (!m_transparentData.vertices.empty()) {
+            setupGLBuffers(m_transparentData.vertices, m_transparentData.faces, newTransparentVAO, newTransparentVBO, newTransparentIBO);
+            hasNewTransparent = true;
+        }
+        if (!m_waterData.vertices.empty()) {
+            setupGLBuffers(m_waterData.vertices, m_waterData.faces, newWaterVAO, newWaterVBO, newWaterIBO);
+            hasNewWater = true;
+        }
 
         // Switch the buffers
-        if (hasOpaqueFaces()) {
-            m_opaqueData.VAO = std::move(m_tempOpaqueVAO);
-            m_opaqueData.VBO = std::move(m_tempOpaqueVBO);
-            m_opaqueData.IBO = std::move(m_tempOpaqueIBO);
+        if (hasNewOpaque) {
+            m_opaqueData.VAO = std::move(newOpaqueVAO);
+            m_opaqueData.VBO = std::move(newOpaqueVBO);
+            m_opaqueData.IBO = std::move(newOpaqueIBO);
         }
-        if (hasTransparentFaces()) {
-            m_transparentData.VAO = std::move(m_tempTransparentVAO);
-            m_transparentData.VBO = std::move(m_tempTransparentVBO);
-            m_transparentData.IBO = std::move(m_tempTransparentIBO);
+        if (hasNewTransparent) {
+            m_transparentData.VAO = std::move(newTransparentVAO);
+            m_transparentData.VBO = std::move(newTransparentVBO);
+            m_transparentData.IBO = std::move(newTransparentIBO);
         }
-        if (hasWaterFaces()) {
-            m_waterData.VAO = std::move(m_tempWaterVAO);
-            m_waterData.VBO = std::move(m_tempWaterVBO);
-            m_waterData.IBO = std::move(m_tempWaterIBO);
+        if (hasNewWater) {
+            m_waterData.VAO = std::move(newWaterVAO);
+            m_waterData.VBO = std::move(newWaterVBO);
+            m_waterData.IBO = std::move(newWaterIBO);
         }
 
         m_state = State::READY_TO_DRAW;
