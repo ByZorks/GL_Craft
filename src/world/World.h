@@ -6,7 +6,7 @@
 #include "Chunk.h"
 
 #include "FastNoiseLite.h"
-#include "MeshData.h"
+#include "MeshManager.h"
 #include "../gl/Shader.h"
 #include "../math/Frustum.h"
 #include "../render/InstanceRenderer.h"
@@ -22,7 +22,7 @@ class World {
 private:
     ThreadPool m_threadPool;
 
-    MeshData<Chunk> m_chunksData;
+    MeshManager<Chunk> m_chunksData;
     std::vector<ChunkPosition> m_tempKeysToProcess;
     std::vector<Offset> m_renderDistanceOffsets;
 
@@ -54,8 +54,10 @@ public:
     std::shared_ptr<Chunk> getChunk(int x, int y, int z) const;
 
     [[nodiscard]] const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & getLoadedChunks() const;
+    [[nodiscard]] ThreadSafeQueue<std::shared_ptr<Chunk>> & getMeshesToUpdate();
     static FastNoiseLite& getSurfaceFeaturesNoise();
 
+    [[nodiscard]] ThreadPool & getThreadPool();
 
 private:
     void processChunks();

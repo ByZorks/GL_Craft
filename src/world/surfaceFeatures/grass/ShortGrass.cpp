@@ -11,12 +11,12 @@ void ShortGrass::generateVoxel() {
     m_state = State::VOXEL_GENERATED;
 }
 
-void ShortGrass::generateMesh() {
+void ShortGrass::generateMesh(const bool setFlag) {
     Block::addFaceVerticesAsBilboard(Face::BACK, BlockType::SHORT_GRASS, m_opaqueData.vertices, 0.0f, 0.0f, 0.0f);
     m_opaqueData.faces.emplace_back(Face::BACK);
 
     Block::addFaceVerticesAsBilboard(Face::FRONT, BlockType::SHORT_GRASS, m_opaqueData.vertices, 0.0f, 0.0f, 0.0f);
     m_opaqueData.faces.emplace_back(Face::FRONT);
 
-    m_state = State::MESH_GENERATED;
+    if (setFlag) m_state = State::MESH_GENERATED;
 }

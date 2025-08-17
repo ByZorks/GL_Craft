@@ -103,7 +103,7 @@ add_executable(GL_Craft
         src/world/surfaceFeatures/flowers/Poppy.h
         src/render/InstanceRenderer.cpp
         src/render/InstanceRenderer.h
-        src/world/MeshData.h
+        src/world/MeshManager.h
         src/world/surfaceFeatures/flowers/Cornflower.cpp
         src/world/surfaceFeatures/flowers/Cornflower.h
         src/world/surfaceFeatures/flowers/Allium.cpp

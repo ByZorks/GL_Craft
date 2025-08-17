@@ -157,77 +157,87 @@ int main(int argc, char *argv[]) {
             // Handle left click to break
             // TODO: Implement partial mesh update
             if (s_LEFT_CLICKED && camera.isInputEnabled()) {
-                const auto t1 = std::chrono::high_resolution_clock::now();
 
-                // Delete in the chunk
-                chunk->deleteBlock(blockLocalPosition[0],
-                                            blockLocalPosition[1],
-                                            blockLocalPosition[2]);
+                world->getThreadPool().enqueue_no_future([chunk, blockLocalPosition, world] {
+                    const auto t1 = std::chrono::high_resolution_clock::now();
 
-                // Update adjacents chunks if the block is at the border of the chunk
-                const bool isAtLeftBorder = blockLocalPosition[0] == 0;
-                const bool isAtRightBorder = blockLocalPosition[0] + 1 == Chunk::SIZE;
-                const bool isAtBottomBorder = blockLocalPosition[1] == 0;
-                const bool isAtTopBorder = blockLocalPosition[1] + 1 == Chunk::SIZE;
-                const bool isAtFrontBorder = blockLocalPosition[2] == 0;
-                const bool isAtBackBorder = blockLocalPosition[2] + 1 == Chunk::SIZE;
+                    // Update adjacents chunks if the block is at the border of the chunk
+                    const bool isAtLeftBorder = blockLocalPosition[0] == 0;
+                    const bool isAtRightBorder = blockLocalPosition[0] + 1 == Chunk::SIZE;
+                    const bool isAtBottomBorder = blockLocalPosition[1] == 0;
+                    const bool isAtTopBorder = blockLocalPosition[1] + 1 == Chunk::SIZE;
+                    const bool isAtFrontBorder = blockLocalPosition[2] == 0;
+                    const bool isAtBackBorder = blockLocalPosition[2] + 1 == Chunk::SIZE;
 
-                // Retrieve adjacent(s) chunk(s) based on face at chunk border
-                constexpr int chunkSize = Chunk::SIZE;
-                constexpr int minBlockPositionInAdjacentChunk = -1; // chunk will add +1 when accessing the block
-                constexpr int maxBlockPositionInAdjacentChunk = Chunk::SIZE; // chunk will add +1 when accessing the block
-                if (isAtLeftBorder) {
-                    const int leftChunkX = chunk->getX() - chunkSize;
-                    const int leftChunkY = chunk->getY();
-                    const int leftChunkZ = chunk->getZ();
-                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(leftChunkX, leftChunkY, leftChunkZ)) {
-                        adjacentChunk->deleteBlock(maxBlockPositionInAdjacentChunk, blockLocalPosition[1], blockLocalPosition[2]);
+                    // Retrieve adjacent(s) chunk(s) based on face at chunk border
+                    constexpr int chunkSize = Chunk::SIZE;
+                    constexpr int minBlockPositionInAdjacentChunk = -1; // chunk will add +1 when accessing the block
+                    constexpr int maxBlockPositionInAdjacentChunk = Chunk::SIZE; // chunk will add +1 when accessing the block
+                    if (isAtLeftBorder) {
+                        const int leftChunkX = chunk->getX() - chunkSize;
+                        const int leftChunkY = chunk->getY();
+                        const int leftChunkZ = chunk->getZ();
+                        if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(leftChunkX, leftChunkY, leftChunkZ)) {
+                            adjacentChunk->deleteBlock(maxBlockPositionInAdjacentChunk, blockLocalPosition[1], blockLocalPosition[2]);
+                            world->getMeshesToUpdate().push(adjacentChunk);
+                        }
                     }
-                }
-                if (isAtRightBorder) {
-                    const int rightChunkX = chunk->getX() + chunkSize;
-                    const int rightChunkY = chunk->getY();
-                    const int rightChunkZ = chunk->getZ();
-                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(rightChunkX, rightChunkY, rightChunkZ)) {
-                        adjacentChunk->deleteBlock(minBlockPositionInAdjacentChunk, blockLocalPosition[1], blockLocalPosition[2]);
+                    if (isAtRightBorder) {
+                        const int rightChunkX = chunk->getX() + chunkSize;
+                        const int rightChunkY = chunk->getY();
+                        const int rightChunkZ = chunk->getZ();
+                        if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(rightChunkX, rightChunkY, rightChunkZ)) {
+                            adjacentChunk->deleteBlock(minBlockPositionInAdjacentChunk, blockLocalPosition[1], blockLocalPosition[2]);
+                            world->getMeshesToUpdate().push(adjacentChunk);
+                        }
                     }
-                }
-                if (isAtBottomBorder) {
-                    const int bottomChunkX = chunk->getX();
-                    const int bottomChunkY = chunk->getY() - chunkSize;
-                    const int bottomChunkZ = chunk->getZ();
-                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(bottomChunkX, bottomChunkY, bottomChunkZ)) {
-                        adjacentChunk->deleteBlock(blockLocalPosition[0], maxBlockPositionInAdjacentChunk, blockLocalPosition[2]);
+                    if (isAtBottomBorder) {
+                        const int bottomChunkX = chunk->getX();
+                        const int bottomChunkY = chunk->getY() - chunkSize;
+                        const int bottomChunkZ = chunk->getZ();
+                        if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(bottomChunkX, bottomChunkY, bottomChunkZ)) {
+                            adjacentChunk->deleteBlock(blockLocalPosition[0], maxBlockPositionInAdjacentChunk, blockLocalPosition[2]);
+                            world->getMeshesToUpdate().push(adjacentChunk);
+                        }
                     }
-                }
-                if (isAtTopBorder) {
-                    const int topChunkX = chunk->getX();
-                    const int topChunkY = chunk->getY() + chunkSize;
-                    const int topChunkZ = chunk->getZ();
-                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(topChunkX, topChunkY, topChunkZ)) {
-                        adjacentChunk->deleteBlock(blockLocalPosition[0], minBlockPositionInAdjacentChunk, blockLocalPosition[2]);
+                    if (isAtTopBorder) {
+                        const int topChunkX = chunk->getX();
+                        const int topChunkY = chunk->getY() + chunkSize;
+                        const int topChunkZ = chunk->getZ();
+                        if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(topChunkX, topChunkY, topChunkZ)) {
+                            adjacentChunk->deleteBlock(blockLocalPosition[0], minBlockPositionInAdjacentChunk, blockLocalPosition[2]);
+                            world->getMeshesToUpdate().push(adjacentChunk);
+                        }
                     }
-                }
-                if (isAtFrontBorder) {
-                    const int frontChunkX = chunk->getX();
-                    const int frontChunkY = chunk->getY();
-                    const int frontChunkZ = chunk->getZ() - chunkSize;
-                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(frontChunkX, frontChunkY, frontChunkZ)) {
-                        adjacentChunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], maxBlockPositionInAdjacentChunk);
+                    if (isAtFrontBorder) {
+                        const int frontChunkX = chunk->getX();
+                        const int frontChunkY = chunk->getY();
+                        const int frontChunkZ = chunk->getZ() - chunkSize;
+                        if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(frontChunkX, frontChunkY, frontChunkZ)) {
+                            adjacentChunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], maxBlockPositionInAdjacentChunk);
+                            world->getMeshesToUpdate().push(adjacentChunk);
+                        }
                     }
-                }
-                if (isAtBackBorder) {
-                    const int backChunkX = chunk->getX();
-                    const int backChunkY = chunk->getY();
-                    const int backChunkZ = chunk->getZ() + chunkSize;
-                    if (std::shared_ptr<Chunk> adjacentChunk = world->getChunk(backChunkX, backChunkY, backChunkZ)) {
-                        adjacentChunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], minBlockPositionInAdjacentChunk);
+                    if (isAtBackBorder) {
+                        const int backChunkX = chunk->getX();
+                        const int backChunkY = chunk->getY();
+                        const int backChunkZ = chunk->getZ() + chunkSize;
+                        if (const std::shared_ptr<Chunk> adjacentChunk = world->getChunk(backChunkX, backChunkY, backChunkZ)) {
+                            adjacentChunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], minBlockPositionInAdjacentChunk);
+                            world->getMeshesToUpdate().push(adjacentChunk);
+                        }
                     }
-                }
 
-                const auto t2 = std::chrono::high_resolution_clock::now();
-                const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-                std::cout << "Block deleted in " << duration << " ms" << std::endl;
+                    // Delete in the chunk (last to reduce incorrect adjacent chunk mesh until partial mesh update is implemented)
+                    chunk->deleteBlock(blockLocalPosition[0],
+                                                blockLocalPosition[1],
+                                                blockLocalPosition[2]);
+                    world->getMeshesToUpdate().push(chunk);
+
+                    const auto t2 = std::chrono::high_resolution_clock::now();
+                    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+                    std::cout << "Block deleted in " << duration << " ms" << std::endl;
+                });
             }
         }
 

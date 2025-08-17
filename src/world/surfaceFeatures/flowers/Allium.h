@@ -7,7 +7,7 @@ public:
     Allium(int x, int y, int z);
 
     void generateVoxel() override;
-    void generateMesh() override;
+    void generateMesh(bool setFlag) override;
 };
 
 #endif //ALLIUM_H

@@ -3,11 +3,12 @@
 #include <memory>
 #include <unordered_map>
 
+#include "ChunkPosition.h"
 #include "PendingBlock.h"
 #include "../utils/ThreadSafeQueue.h"
 
 template<typename MeshType>
-class MeshData {
+class MeshManager {
 public:
     std::unordered_map<ChunkPosition, std::shared_ptr<MeshType>> loadedMeshes;
     std::unordered_map<ChunkPosition, std::vector<PendingBlock>> m_pendingBlocks;
@@ -17,6 +18,7 @@ public:
     ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToRemesh;
     ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToDelete;
     ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToRender;
+    ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToUpdate;
 };
 
 

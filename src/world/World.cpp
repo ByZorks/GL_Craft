@@ -284,6 +284,10 @@ const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & World::getLoad
     return m_chunksData.loadedMeshes;
 }
 
+ThreadSafeQueue<std::shared_ptr<Chunk>> & World::getMeshesToUpdate() {
+    return m_chunksData.meshesToUpdate;
+}
+
 void World::processChunks() {
     const int maxChunksPerFrame = static_cast<int>(0.1 * Renderer::s_renderDistance + 0.2 * static_cast<float>(m_threadPool.getNumberOfThreads()));
     // Remove chunks that are no longer needed
@@ -301,7 +305,7 @@ void World::processChunks() {
             const auto p_chunk = std::make_shared<Chunk>(key.x, key.y, key.z);
             p_chunk->generateVoxel();
             p_chunk->transferPendingBlocksToWorld(*this);
-            p_chunk->generateMesh();
+            p_chunk->generateMesh(true);
             m_chunksData.meshesToRender.push(p_chunk);
         });
     }
@@ -344,6 +348,13 @@ void World::processChunks() {
                 }
             }
         }
+    }
+
+    // Fourth pass: update GL buffers for chunks that need it
+    for (int i = 0; i < maxChunksPerFrame; ++i) {
+        if (m_chunksData.meshesToUpdate.empty()) break;
+        const std::shared_ptr<Chunk> p_chunk = m_chunksData.meshesToUpdate.pop();
+        p_chunk->createNewMeshGLBuffers();
     }
 }
 
@@ -419,6 +430,10 @@ FastNoiseLite & World::getTerrainNoise() {
 FastNoiseLite & World::getSurfaceFeaturesNoise() {
     thread_local FastNoiseLite instance = makeSurfaceFeaturesNoise();
     return instance;
+}
+
+ThreadPool & World::getThreadPool() {
+    return m_threadPool;
 }
 
 FastNoiseLite & World::getCaveNoise() {

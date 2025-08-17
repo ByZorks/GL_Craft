@@ -25,7 +25,7 @@ public:
 
         MeshType meshCopy = mesh;
         meshCopy.generateVoxel();
-        meshCopy.generateMesh();
+        meshCopy.generateMesh(false);
 
         const auto& vertices = meshCopy.getOpaqueVertices();
         const auto& faces = meshCopy.getOpaqueBlockFaces();

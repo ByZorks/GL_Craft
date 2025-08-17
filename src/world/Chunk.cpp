@@ -88,7 +88,7 @@ void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks) {
     m_state = State::MESH_GENERATED;
 }
 
-void Chunk::generateMesh() {
+void Chunk::generateMesh(const bool setFlag) {
     for (int localX = 0; localX < SIZE; localX++) {
         for (int localZ = 0; localZ < SIZE; localZ++) {
             for (int localY = 0; localY < SIZE; localY++) {
@@ -105,7 +105,7 @@ void Chunk::generateMesh() {
         m_waterData.shrinkBuffers();
     }
 
-    m_state = State::MESH_GENERATED;
+    if (setFlag) m_state = State::MESH_GENERATED;
 }
 
 void Chunk::transferPendingBlocksToWorld(World &world) {
@@ -118,19 +118,9 @@ void Chunk::deleteBlock(const int localX, const int localY, const int localZ) {
     // Voxel
     m_blockType[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
 
-    // Remove voxel data and update the mesh
-    m_transparentData.deleteMesh();
-    m_transparentData.deleteGLBuffer();
-    m_waterData.deleteMesh();
-    m_waterData.deleteGLBuffer();
-    m_opaqueData.deleteMesh();
-    m_opaqueData.deleteGLBuffer();
-
-    // Mesh
-    generateMesh();
-
-    // GL Buffers
-    createGLBuffers();
+    // Generate temp mesh data
+    resetMesh();
+    generateMesh(false);
 }
 
 int Chunk::index(const int x, const int y, const int z) const {

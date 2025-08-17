@@ -1,5 +1,6 @@
 #ifndef CHUNK_H
 #define CHUNK_H
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -22,7 +23,7 @@ public:
 
     void generateVoxel() override;
     void generatePendingBlocks(std::vector<PendingBlock> &blocks);
-    void generateMesh() override;
+    void generateMesh(bool setFlag) override;
     void transferPendingBlocksToWorld(World &world);
     void deleteBlock(int localX, int localY, int localZ);
 

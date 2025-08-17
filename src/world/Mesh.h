@@ -42,10 +42,16 @@ class Mesh {
 protected:
     const unsigned int m_size;
     const int m_x, m_y, m_z;
+    std::vector<BlockType> m_blockType;
     GLBuffersData m_opaqueData;
     GLBuffersData m_transparentData;
     GLBuffersData m_waterData;
-    std::vector<BlockType> m_blockType;
+
+    // Temporary mesh data for remeshing
+    VertexArray m_tempOpaqueVAO, m_tempTransparentVAO, m_tempWaterVAO;
+    VertexBuffer m_tempOpaqueVBO, m_tempTransparentVBO, m_tempWaterVBO;
+    IndexBuffer m_tempOpaqueIBO, m_tempTransparentIBO, m_tempWaterIBO;
+
     State m_state = State::UNINITIALIZED;
     const AABB m_box;
 
@@ -62,12 +68,44 @@ public:
     virtual ~Mesh() = default;
 
     virtual void generateVoxel();
-    virtual void generateMesh();
+    virtual void generateMesh(bool setFlag);
 
     void createGLBuffers() {
-        if (!m_opaqueData.vertices.empty()) setupGLBuffers(m_opaqueData.vertices, m_opaqueData.faces, m_opaqueData.VAO, m_opaqueData.VBO, m_opaqueData.IBO);
-        if (!m_transparentData.vertices.empty()) setupGLBuffers(m_transparentData.vertices, m_transparentData.faces, m_transparentData.VAO, m_transparentData.VBO, m_transparentData.IBO);
-        if (!m_waterData.vertices.empty()) setupGLBuffers(m_waterData.vertices, m_waterData.faces, m_waterData.VAO, m_waterData.VBO, m_waterData.IBO);
+        if (!m_opaqueData.vertices.empty())
+            setupGLBuffers(m_opaqueData.vertices, m_opaqueData.faces, m_opaqueData.VAO, m_opaqueData.VBO, m_opaqueData.IBO);
+        if (!m_transparentData.vertices.empty())
+            setupGLBuffers(m_transparentData.vertices, m_transparentData.faces, m_transparentData.VAO, m_transparentData.VBO, m_transparentData.IBO);
+        if (!m_waterData.vertices.empty())
+            setupGLBuffers(m_waterData.vertices, m_waterData.faces, m_waterData.VAO, m_waterData.VBO, m_waterData.IBO);
+
+        m_state = State::READY_TO_DRAW;
+    }
+
+    void createNewMeshGLBuffers() {
+        // Create new GL buffers for the temporary mesh data
+        if (!m_opaqueData.vertices.empty())
+            setupGLBuffers(m_opaqueData.vertices, m_opaqueData.faces, m_tempOpaqueVAO, m_tempOpaqueVBO, m_tempOpaqueIBO);
+        if (!m_transparentData.vertices.empty())
+            setupGLBuffers(m_transparentData.vertices, m_transparentData.faces, m_tempTransparentVAO, m_tempTransparentVBO, m_tempTransparentIBO);
+        if (!m_waterData.vertices.empty())
+            setupGLBuffers(m_waterData.vertices, m_waterData.faces, m_tempWaterVAO, m_tempWaterVBO, m_tempWaterIBO);
+
+        // Switch the buffers
+        if (hasOpaqueFaces()) {
+            m_opaqueData.VAO = std::move(m_tempOpaqueVAO);
+            m_opaqueData.VBO = std::move(m_tempOpaqueVBO);
+            m_opaqueData.IBO = std::move(m_tempOpaqueIBO);
+        }
+        if (hasTransparentFaces()) {
+            m_transparentData.VAO = std::move(m_tempTransparentVAO);
+            m_transparentData.VBO = std::move(m_tempTransparentVBO);
+            m_transparentData.IBO = std::move(m_tempTransparentIBO);
+        }
+        if (hasWaterFaces()) {
+            m_waterData.VAO = std::move(m_tempWaterVAO);
+            m_waterData.VBO = std::move(m_tempWaterVBO);
+            m_waterData.IBO = std::move(m_tempWaterIBO);
+        }
 
         m_state = State::READY_TO_DRAW;
     }
@@ -76,6 +114,8 @@ public:
         m_opaqueData.deleteGLBuffer();
         m_transparentData.deleteGLBuffer();
         m_waterData.deleteGLBuffer();
+
+        m_state = State::MESH_GENERATED;
     }
 
     void resetMesh() {
