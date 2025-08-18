@@ -36,6 +36,27 @@ BlockType Block::getBlockType(const int y, const int columnHeight) {
     return BlockType::AIR;
 }
 
+const char *Block::getBlockName(const BlockType blockType) {
+    switch (blockType) {
+        case BlockType::AIR: return "AIR";
+        case BlockType::SURFACE_FEATURE_BILLBOARD: return "SURFACE_FEATURE_BILLBOARD";
+        case BlockType::BEDROCK: return "BEDROCK";
+        case BlockType::DIRT: return "DIRT";
+        case BlockType::GRASS: return "GRASS";
+        case BlockType::STONE: return "STONE";
+        case BlockType::WATER: return "WATER";
+        case BlockType::LOG: return "LOG";
+        case BlockType::LEAVES: return "LEAVES";
+        case BlockType::SHORT_GRASS: return "SHORT_GRASS";
+        case BlockType::FLOWER_POPPY: return "FLOWER_POPPY";
+        case BlockType::FLOWER_CORNFLOWER: return "FLOWER_CORNFLOWER";
+        case BlockType::FLOWER_ALLIUM: return "FLOWER_ALLIUM";
+        case BlockType::SNOW: return "SNOW";
+        case BlockType::SNOW_GRASS: return "SNOW_GRASS";
+        default: return "UNKNOWN";
+    }
+}
+
 void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &vertices, const std::array<bool, 26> &adjacentsFaces, const float block_startX, const float block_startY, const float block_startZ) {
     const float block_endX = block_startX + 1.0f;
     const float block_endY = block_startY + 1.0f;

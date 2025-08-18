@@ -319,6 +319,8 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
 }
 
 void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blockToPlace) {
+    if (blockToPlace == BlockType::AIR) return;
+
     // TODO: Implement partial mesh update
     m_threadPool.enqueue_no_future([this, hit, blockToPlace] {
         const auto t1 = std::chrono::high_resolution_clock::now();

@@ -34,7 +34,7 @@ void DebugUI::newFrame() {
     ImGui::NewFrame();
 }
 
-void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCalls, const Camera &camera, const std::function<void()>& renderDistanceCallback) {
+void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCalls, const Camera &camera, const BlockType &selectedBlockType, const std::function<void()>& renderDistanceCallback) {
     ImGui::Begin("Debug");
     ImGui::Text("Performance:");
     const ImGuiIO &io = ImGui::GetIO();
@@ -52,6 +52,9 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
     ImGui::Text("Camera:");
     const glm::vec3 cameraPosition = camera.getPos();
     ImGui::Text("Position: (%.2f, %.2f, %.2f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+    ImGui::Separator();
+    ImGui::Text("Player:");
+    ImGui::Text("Selected Block Type: %s", Block::getBlockName(selectedBlockType));
     ImGui::End();
 }
 

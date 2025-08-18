@@ -2,6 +2,7 @@
 #define DEBUGUI_H
 #include <functional>
 
+#include "../world/Block.h"
 #include "GLFW/glfw3.h"
 
 class Camera;
@@ -19,7 +20,7 @@ public:
 
     static void init(GLFWwindow *window);
     static void newFrame();
-    static void render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCalls, const Camera &camera, const std::function<void()>& renderDistanceCallback);
+    static void render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCalls, const Camera &camera, const BlockType &selectedBlockType, const std::function<void()>& renderDistanceCallback);
     static void draw();
     void processInput(GLFWwindow *window, Camera &camera);
 };

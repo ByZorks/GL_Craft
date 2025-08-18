@@ -1,6 +1,7 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 #include <array>
+#include <string>
 #include <vector>
 
 #include "GL/glew.h"
@@ -71,6 +72,7 @@ public:
     Block(float x, float y, float z);
 
     static BlockType getBlockType(int y, int columnHeight);
+    static const char *getBlockName(BlockType blockType);
     static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, const std::array<bool, 26> &adjacentsFaces, float block_startX, float block_startY, float block_startZ);
     static void addFaceVerticesAsBilboard(Face face, BlockType type, std::vector<BlockVertex> &vertices, float block_startX, float block_startY, float block_startZ);
     static uint8_t computeVertexAO(bool side1, bool side2, bool corner);

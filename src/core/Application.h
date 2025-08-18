@@ -1,5 +1,6 @@
 #ifndef GL_CRAFT_APPLICATION_H
 #define GL_CRAFT_APPLICATION_H
+#include "../entity/Player.h"
 #include "../gl/Shader.h"
 #include "../gl/UniformBuffer.h"
 #include "../render/BlockSelector.h"
@@ -34,11 +35,11 @@ private:
     Frustum m_frustum;
     BlockSelector m_blockSelector;
     RaycastResult m_raycastResult;
+    Player m_player;
 
     unsigned int m_drawCalls = 0;
     unsigned int m_visibleChunksCount = 0;
-    bool m_leftClicked = false;
-    bool m_rightClicked = false;
+    bool m_leftClicked, m_rightClicked, m_middleClicked = false;
     float m_aspectRatio = 16.0f / 9.0f;
     int m_MVPUniformBufferBindingSlot = 0;
     int m_atlasTextureSlot = 0;

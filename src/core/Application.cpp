@@ -167,7 +167,9 @@ void Application::update() {
         if (m_leftClicked) {
             m_world->deleteBlockAndUpdateNeighbors(m_raycastResult);
         } else if (m_rightClicked) {
-            m_world->placeBlockAndUpdateNeighbors(m_raycastResult, BlockType::DIRT);
+            m_world->placeBlockAndUpdateNeighbors(m_raycastResult, m_player.getSelectedBlockType());
+        } else if (m_middleClicked) {
+            m_player.setSelectedBlockType(m_raycastResult.blockType);
         }
     }
 }
@@ -209,7 +211,7 @@ void Application::render() {
     Renderer::enableDepthTesting();
 
     // ImGui
-    DebugUI::render(m_visibleChunksCount, m_world->getLoadedChunks().size(), m_drawCalls, m_camera, [this] {
+    DebugUI::render(m_visibleChunksCount, m_world->getLoadedChunks().size(), m_drawCalls, m_camera, m_player.getSelectedBlockType(), [this] {
         m_world->updateRenderDistance(*m_postProcessingShader, m_camera);
     });
     DebugUI::draw();
@@ -219,6 +221,7 @@ void Application::stateUpdate() {
     m_camera.updateLastState();
     m_leftClicked = false;
     m_rightClicked = false;
+    m_middleClicked = false;
 }
 
 void Application::cleanup() {
@@ -262,5 +265,8 @@ void Application::onMouseEvent(const int button, const int action) {
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
         m_rightClicked = true;
+    }
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
+        m_middleClicked = true;
     }
 }
