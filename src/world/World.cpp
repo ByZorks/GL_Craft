@@ -238,6 +238,8 @@ void World::updateRenderDistance(Shader &postProcessingShader, const Camera &cam
 }
 
 void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
+    if (hit.blockType == BlockType::BEDROCK) return;
+
     // TODO: Implement partial mesh update
     m_threadPool.enqueue_no_future([this, hit] {
         const auto t1 = std::chrono::high_resolution_clock::now();
