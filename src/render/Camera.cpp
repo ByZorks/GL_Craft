@@ -218,11 +218,11 @@ void Camera::setInput(const bool m_input_enabled) {
     this->m_inputEnabled = m_input_enabled;
 }
 
-glm::vec3 Camera::getCameraPos() const {
+const glm::vec3 & Camera::getPos() const {
     return m_cameraPos;
 }
 
-const glm::vec3 & Camera::getCameraFront() const {
+const glm::vec3 & Camera::getFront() const {
     return m_cameraFront;
 }
 

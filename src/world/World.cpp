@@ -42,9 +42,9 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
 }
 
 void World::updateChunks(const Camera &camera) {
-    const int cameraWorldX = static_cast<int>(std::floor(camera.getCameraPos().x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
-    const int cameraWorldY = static_cast<int>(std::floor(camera.getCameraPos().y / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
-    const int cameraWorldZ = static_cast<int>(std::floor(camera.getCameraPos().z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+    const int cameraWorldX = static_cast<int>(std::floor(camera.getPos().x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+    const int cameraWorldY = static_cast<int>(std::floor(camera.getPos().y / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+    const int cameraWorldZ = static_cast<int>(std::floor(camera.getPos().z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
     unloadDistantMeshes(cameraChunkPos);
@@ -310,6 +310,285 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         const auto t2 = std::chrono::high_resolution_clock::now();
         const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         std::cout << "Block deleted in " << duration << " ms" << std::endl;
+    });
+}
+
+void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blockToPlace) {
+    // TODO: Implement partial mesh update
+    m_threadPool.enqueue_no_future([this, hit, blockToPlace] {
+        const auto t1 = std::chrono::high_resolution_clock::now();
+
+        const BlockType type = hit.blockType;
+        const auto& blockLocalPosition = hit.blockLocalPosition;
+        const std::shared_ptr<Chunk> chunk = hit.chunk;
+
+        // Determine coords based on normal
+        const int offsetX = hit.normal.x == 0 ? 0 : hit.normal.x > 0 ? 1 : -1;
+        const int offsetY = hit.normal.y == 0 ? 0 : hit.normal.y > 0 ? 1 : -1;
+        const int offsetZ = hit.normal.z == 0 ? 0 : hit.normal.z > 0 ? 1 : -1;
+
+        // Update adjacents chunks if the block is at the border of the chunk
+        const bool isAtLeftBorder = blockLocalPosition[0] == 0;
+        const bool isAtRightBorder = blockLocalPosition[0] + 1 == Chunk::SIZE;
+        const bool isAtBottomBorder = blockLocalPosition[1] == 0;
+        const bool isAtTopBorder = blockLocalPosition[1] + 1 == Chunk::SIZE;
+        const bool isAtFrontBorder = blockLocalPosition[2] == 0;
+        const bool isAtBackBorder = blockLocalPosition[2] + 1 == Chunk::SIZE;
+
+        const int localX = blockLocalPosition[0] + offsetX;
+        const int localY = blockLocalPosition[1] + offsetY;
+        const int localZ = blockLocalPosition[2] + offsetZ;
+
+        // Retrieve adjacent(s) chunk(s) based on face at chunk border
+        constexpr int chunkSize = Chunk::SIZE;
+        constexpr int minBlockPositionInAdjacentChunk = -1; // chunk will add +1 when accessing the block
+        constexpr int maxBlockPositionInAdjacentChunk = Chunk::SIZE; // chunk will add +1 when accessing the block
+        if (isAtLeftBorder) {
+            const int leftChunkX = chunk->getX() - chunkSize;
+            const int leftChunkY = chunk->getY();
+            const int leftChunkZ = chunk->getZ();
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(leftChunkX, leftChunkY, leftChunkZ)) {
+                adjacentChunk->addBlock(maxBlockPositionInAdjacentChunk + offsetX, localY, localZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtRightBorder) {
+            const int rightChunkX = chunk->getX() + chunkSize;
+            const int rightChunkY = chunk->getY();
+            const int rightChunkZ = chunk->getZ();
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(rightChunkX, rightChunkY, rightChunkZ)) {
+                adjacentChunk->addBlock(minBlockPositionInAdjacentChunk + offsetX, localY, localZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtBottomBorder) {
+            const int bottomChunkX = chunk->getX();
+            const int bottomChunkY = chunk->getY() - chunkSize;
+            const int bottomChunkZ = chunk->getZ();
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(bottomChunkX, bottomChunkY, bottomChunkZ)) {
+                adjacentChunk->addBlock(localX, maxBlockPositionInAdjacentChunk + offsetY, localZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtTopBorder) {
+            const int topChunkX = chunk->getX();
+            const int topChunkY = chunk->getY() + chunkSize;
+            const int topChunkZ = chunk->getZ();
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(topChunkX, topChunkY, topChunkZ)) {
+                adjacentChunk->addBlock(localX, minBlockPositionInAdjacentChunk + offsetY, localZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtFrontBorder) {
+            const int frontChunkX = chunk->getX();
+            const int frontChunkY = chunk->getY();
+            const int frontChunkZ = chunk->getZ() - chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(frontChunkX, frontChunkY, frontChunkZ)) {
+                adjacentChunk->addBlock(localX, localY, maxBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtBackBorder) {
+            const int backChunkX = chunk->getX();
+            const int backChunkY = chunk->getY();
+            const int backChunkZ = chunk->getZ() + chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(backChunkX, backChunkY, backChunkZ)) {
+                adjacentChunk->addBlock(localX, localY, minBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtLeftBorder && isAtBottomBorder) {
+            const int chunkX = chunk->getX() - chunkSize;
+            const int chunkY = chunk->getY() - chunkSize;
+            const int chunkZ = chunk->getZ();
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(maxBlockPositionInAdjacentChunk + offsetX, maxBlockPositionInAdjacentChunk + offsetY, localZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtLeftBorder && isAtTopBorder) {
+            const int chunkX = chunk->getX() - chunkSize;
+            const int chunkY = chunk->getY() + chunkSize;
+            const int chunkZ = chunk->getZ();
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(maxBlockPositionInAdjacentChunk + offsetX, minBlockPositionInAdjacentChunk + offsetY, localZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtRightBorder && isAtBottomBorder) {
+            const int chunkX = chunk->getX() + chunkSize;
+            const int chunkY = chunk->getY() - chunkSize;
+            const int chunkZ = chunk->getZ();
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(minBlockPositionInAdjacentChunk + offsetX, maxBlockPositionInAdjacentChunk + offsetY, localZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtRightBorder && isAtTopBorder) {
+            const int chunkX = chunk->getX() + chunkSize;
+            const int chunkY = chunk->getY() + chunkSize;
+            const int chunkZ = chunk->getZ();
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(minBlockPositionInAdjacentChunk + offsetX, minBlockPositionInAdjacentChunk + offsetY, localZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+
+        if (isAtLeftBorder && isAtFrontBorder) {
+            const int chunkX = chunk->getX() - chunkSize;
+            const int chunkY = chunk->getY();
+            const int chunkZ = chunk->getZ() - chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(maxBlockPositionInAdjacentChunk + offsetX, localY, maxBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtLeftBorder && isAtBackBorder) {
+            const int chunkX = chunk->getX() - chunkSize;
+            const int chunkY = chunk->getY();
+            const int chunkZ = chunk->getZ() + chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(maxBlockPositionInAdjacentChunk + offsetX, localY, minBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtRightBorder && isAtFrontBorder) {
+            const int chunkX = chunk->getX() + chunkSize;
+            const int chunkY = chunk->getY();
+            const int chunkZ = chunk->getZ() - chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(minBlockPositionInAdjacentChunk + offsetX, localY, maxBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtRightBorder && isAtBackBorder) {
+            const int chunkX = chunk->getX() + chunkSize;
+            const int chunkY = chunk->getY();
+            const int chunkZ = chunk->getZ() + chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(minBlockPositionInAdjacentChunk + offsetX, localY, minBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+
+        if (isAtBottomBorder && isAtFrontBorder) {
+            const int chunkX = chunk->getX();
+            const int chunkY = chunk->getY() - chunkSize;
+            const int chunkZ = chunk->getZ() - chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(localX, maxBlockPositionInAdjacentChunk + offsetY, maxBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtBottomBorder && isAtBackBorder) {
+            const int chunkX = chunk->getX();
+            const int chunkY = chunk->getY() - chunkSize;
+            const int chunkZ = chunk->getZ() + chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(localX, maxBlockPositionInAdjacentChunk + offsetY, minBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtTopBorder && isAtFrontBorder) {
+            const int chunkX = chunk->getX();
+            const int chunkY = chunk->getY() + chunkSize;
+            const int chunkZ = chunk->getZ() - chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(localX, minBlockPositionInAdjacentChunk + offsetY, maxBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtTopBorder && isAtBackBorder) {
+            const int chunkX = chunk->getX();
+            const int chunkY = chunk->getY() + chunkSize;
+            const int chunkZ = chunk->getZ() + chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(localX, minBlockPositionInAdjacentChunk + offsetY, minBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+
+        if (isAtLeftBorder && isAtBottomBorder && isAtFrontBorder) {
+            const int chunkX = chunk->getX() - chunkSize;
+            const int chunkY = chunk->getY() - chunkSize;
+            const int chunkZ = chunk->getZ() - chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(maxBlockPositionInAdjacentChunk + offsetX, maxBlockPositionInAdjacentChunk + offsetY, maxBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtLeftBorder && isAtBottomBorder && isAtBackBorder) {
+            const int chunkX = chunk->getX() - chunkSize;
+            const int chunkY = chunk->getY() - chunkSize;
+            const int chunkZ = chunk->getZ() + chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(maxBlockPositionInAdjacentChunk + offsetX, maxBlockPositionInAdjacentChunk + offsetY, minBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtLeftBorder && isAtTopBorder && isAtFrontBorder) {
+            const int chunkX = chunk->getX() - chunkSize;
+            const int chunkY = chunk->getY() + chunkSize;
+            const int chunkZ = chunk->getZ() - chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(maxBlockPositionInAdjacentChunk + offsetX, minBlockPositionInAdjacentChunk + offsetY, maxBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtLeftBorder && isAtTopBorder && isAtBackBorder) {
+            const int chunkX = chunk->getX() - chunkSize;
+            const int chunkY = chunk->getY() + chunkSize;
+            const int chunkZ = chunk->getZ() + chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(maxBlockPositionInAdjacentChunk + offsetX, minBlockPositionInAdjacentChunk + offsetY, minBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtRightBorder && isAtBottomBorder && isAtFrontBorder) {
+            const int chunkX = chunk->getX() + chunkSize;
+            const int chunkY = chunk->getY() - chunkSize;
+            const int chunkZ = chunk->getZ() - chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(minBlockPositionInAdjacentChunk + offsetX, maxBlockPositionInAdjacentChunk + offsetY, maxBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtRightBorder && isAtBottomBorder && isAtBackBorder) {
+            const int chunkX = chunk->getX() + chunkSize;
+            const int chunkY = chunk->getY() - chunkSize;
+            const int chunkZ = chunk->getZ() + chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(minBlockPositionInAdjacentChunk + offsetX, maxBlockPositionInAdjacentChunk + offsetY, minBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtRightBorder && isAtTopBorder && isAtFrontBorder) {
+            const int chunkX = chunk->getX() + chunkSize;
+            const int chunkY = chunk->getY() + chunkSize;
+            const int chunkZ = chunk->getZ() - chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(minBlockPositionInAdjacentChunk + offsetX, minBlockPositionInAdjacentChunk + offsetY, maxBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+        if (isAtRightBorder && isAtTopBorder && isAtBackBorder) {
+            const int chunkX = chunk->getX() + chunkSize;
+            const int chunkY = chunk->getY() + chunkSize;
+            const int chunkZ = chunk->getZ() + chunkSize;
+            if (const std::shared_ptr<Chunk> adjacentChunk = getChunk(chunkX, chunkY, chunkZ)) {
+                adjacentChunk->addBlock(minBlockPositionInAdjacentChunk + offsetX, minBlockPositionInAdjacentChunk + offsetY, minBlockPositionInAdjacentChunk + offsetZ, blockToPlace);
+                getMeshesToUpdate().push(adjacentChunk);
+            }
+        }
+
+        // Delete in the chunk (last to reduce incorrect adjacent chunk mesh until partial mesh update is implemented)
+        chunk->addBlock(localX, localY, localZ, blockToPlace);
+        getMeshesToUpdate().push(chunk);
+        if (type == BlockType::SURFACE_FEATURE_BILLBOARD) setInstancesChanged(true);
+
+        const auto t2 = std::chrono::high_resolution_clock::now();
+        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        std::cout << "Block placed in " << duration << " ms" << std::endl;
     });
 }
 

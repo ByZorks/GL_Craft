@@ -25,6 +25,7 @@ public:
     void generateMesh(bool setFlag) override;
     void transferPendingBlocksToWorld(World &world);
     void deleteBlock(int localX, int localY, int localZ, BlockType type);
+    void addBlock(int localX, int localY, int localZ, BlockType type);
 
     [[nodiscard]] int index(int x, int y, int z) const override;
     [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const override;

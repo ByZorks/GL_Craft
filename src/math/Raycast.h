@@ -11,9 +11,10 @@
 struct RaycastResult {
     std::shared_ptr<Chunk> chunk;
     std::array<int, 3> blockLocalPosition;
-    std::array<int, 3> blockWorldPosition;
+    glm::vec3 blockWorldPosition;
     bool hitBlock;
     BlockType blockType;
+    glm::ivec3 normal;
 };
 
 class Raycast {

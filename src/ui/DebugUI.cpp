@@ -50,7 +50,7 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
     }
     ImGui::Separator();
     ImGui::Text("Camera:");
-    const glm::vec3 cameraPosition = camera.getCameraPos();
+    const glm::vec3 cameraPosition = camera.getPos();
     ImGui::Text("Position: (%.2f, %.2f, %.2f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
     ImGui::End();
 }

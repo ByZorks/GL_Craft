@@ -41,20 +41,24 @@ RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDi
 
     // Walk until collision or maximum distance
     constexpr float MAX_DISTANCE = 5.f;
+    glm::ivec3 hitNormal = {0, 0, 0};
     float distance = 0.f;
     while (distance < MAX_DISTANCE) {
         if (rayLength1D.x < rayLength1D.y && rayLength1D.x < rayLength1D.z) {
             rayCurrentPos.x += step.x;
             distance = rayLength1D.x;
             rayLength1D.x += rayUnitStepSize.x;
+            hitNormal = {-step.x, 0, 0};
         } else if (rayLength1D.y < rayLength1D.x && rayLength1D.y < rayLength1D.z) {
             rayCurrentPos.y += step.y;
             distance = rayLength1D.y;
             rayLength1D.y += rayUnitStepSize.y;
+            hitNormal = {0, -step.y, 0};
         } else {
             rayCurrentPos.z += step.z;
             distance = rayLength1D.z;
             rayLength1D.z += rayUnitStepSize.z;
+            hitNormal = {0, 0, -step.z};
         }
 
         // Check collision
@@ -117,7 +121,8 @@ RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDi
                 {localChunkX, localChunkY, localChunkZ},
                 {worldX, worldY, worldZ},
                 true,
-                block
+                block,
+                hitNormal
             };
         }
     }

@@ -150,20 +150,24 @@ void Application::update() {
     // Uniforms
     m_postProcessingShader->use();
     m_postProcessingShader->setUniform1b("u_IsUnderWater", m_camera.isUnderWater(World::getHeight(
-                                           static_cast<int>(m_camera.getCameraPos().x),
-                                           static_cast<int>(m_camera.getCameraPos().z))));
+                                           static_cast<int>(m_camera.getPos().x),
+                                           static_cast<int>(m_camera.getPos().z))));
 
     m_waterShader->use();
     m_waterShader->setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
-    m_waterShader->setUniform3f("u_CameraPos", m_camera.getCameraPos().x,
-                              m_camera.getCameraPos().y,
-                              m_camera.getCameraPos().z);
+    m_waterShader->setUniform3f("u_CameraPos", m_camera.getPos().x,
+                              m_camera.getPos().y,
+                              m_camera.getPos().z);
 
     // Raycasting
-    if (m_raycastResult = Raycast::castRay(m_camera.getCameraPos(), m_camera.getCameraFront(), m_world->getLoadedChunks());
+    if (m_raycastResult = Raycast::castRay(m_camera.getPos(), m_camera.getFront(), m_world->getLoadedChunks());
         m_raycastResult.hitBlock) {
-        if (m_leftClicked && m_camera.isInputEnabled()) {
+        if (!m_camera.isInputEnabled()) return;
+
+        if (m_leftClicked) {
             m_world->deleteBlockAndUpdateNeighbors(m_raycastResult);
+        } else if (m_rightClicked) {
+            m_world->placeBlockAndUpdateNeighbors(m_raycastResult, BlockType::DIRT);
         }
     }
 }
@@ -214,6 +218,7 @@ void Application::render() {
 void Application::stateUpdate() {
     m_camera.updateLastState();
     m_leftClicked = false;
+    m_rightClicked = false;
 }
 
 void Application::cleanup() {
@@ -254,5 +259,8 @@ void Application::onFrameBufferResize(const int width, const int height) {
 void Application::onMouseEvent(const int button, const int action) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         m_leftClicked = true;
+    }
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+        m_rightClicked = true;
     }
 }

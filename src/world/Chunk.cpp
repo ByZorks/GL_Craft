@@ -132,6 +132,15 @@ void Chunk::deleteBlock(const int localX, const int localY, const int localZ, co
     generateMesh(false);
 }
 
+void Chunk::addBlock(const int localX, const int localY, const int localZ, const BlockType type) {
+    // Voxel
+    m_blockType[index(localX + 1, localY + 1, localZ + 1)] = type;
+
+    // Generate mesh data
+    resetMesh();
+    generateMesh(false);
+}
+
 int Chunk::index(const int x, const int y, const int z) const {
     constexpr int stride = static_cast<int>(SIZE) + 2;
     return x * stride * stride + y * stride + z;

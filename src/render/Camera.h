@@ -40,8 +40,8 @@ public:
     static Frustum getFrustum(glm::mat4 modelViewProjecMatrix);
     [[nodiscard]] bool isInputEnabled() const;
     void setInput(bool m_input_enabled);
-    [[nodiscard]] glm::vec3 getCameraPos() const;
-    [[nodiscard]] const glm::vec3 & getCameraFront() const;
+    [[nodiscard]] const glm::vec3 & getPos() const;
+    [[nodiscard]] const glm::vec3 & getFront() const;
 
     void setAspectRatio(float m_aspect_ratio);
 };

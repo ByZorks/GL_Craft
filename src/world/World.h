@@ -51,6 +51,7 @@ public:
     void addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData);
     void updateRenderDistance(Shader &postProcessingShader, const Camera &camera);
     void deleteBlockAndUpdateNeighbors(const RaycastResult &hit);
+    void placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blockToPlace);
 
     static int getHeight(int worldX, int worldZ);
     static bool isCave(int worldX, int worldY, int worldZ, int columnHeight);
