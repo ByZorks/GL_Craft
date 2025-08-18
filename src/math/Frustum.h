@@ -8,6 +8,7 @@ private:
     Plane m_planes[6];
 
 public:
+    Frustum();
     Frustum(const Plane& left, const Plane& right, const Plane &bottom, const Plane &top, const Plane &near, const Plane& far);
 
     [[nodiscard]] bool isAABBInFrustum(const AABB& box) const;

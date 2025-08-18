@@ -1,6 +1,6 @@
 #include "VertexArray.h"
 
-#include "../core/OpenGLDebug.h"
+#include "OpenGLDebug.h"
 #include "GL/glew.h"
 
 VertexArray::VertexArray() = default;

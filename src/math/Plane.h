@@ -6,6 +6,7 @@ private:
     float m_a, m_b, m_c, m_d;
 
 public:
+    Plane();
     Plane(float a, float b, float c, float d);
 
 private:

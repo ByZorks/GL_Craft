@@ -1,4 +1,4 @@
-#include "../core/OpenGLDebug.h"
+#include "OpenGLDebug.h"
 
 #include <iostream>
 #include <GL/glew.h>

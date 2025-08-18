@@ -7,19 +7,25 @@
 #include "../world/Chunk.h"
 #include "../render/Camera.h"
 
-DebugUI::DebugUI(GLFWwindow *window): m_uiMode(false), m_tabKeyPressed(false) {
-    ImGuiContext *ctx = ImGui::CreateContext();
-    ImGui::SetCurrentContext(ctx);
+DebugUI::DebugUI() : m_uiMode(false), m_tabKeyPressed(false) {}
 
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 460 core");
-    ImGui::StyleColorsDark();
+DebugUI::DebugUI(GLFWwindow *window): m_uiMode(false), m_tabKeyPressed(false) {
+    init(window);
 }
 
 DebugUI::~DebugUI() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+}
+
+void DebugUI::init(GLFWwindow *window) {
+    ImGuiContext *ctx = ImGui::CreateContext();
+    ImGui::SetCurrentContext(ctx);
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 460 core");
+    ImGui::StyleColorsDark();
 }
 
 void DebugUI::newFrame() {

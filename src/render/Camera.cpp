@@ -159,6 +159,14 @@ glm::mat4 Camera::getViewMatrix() const {
     return glm::lookAt(m_cameraPos, m_cameraPos + m_cameraFront, m_cameraUp);
 }
 
+void Camera::calculateMVP() {
+    m_mvp = getProjectionMatrix() * getViewMatrix();
+}
+
+glm::mat4 Camera::getMVP() const {
+    return m_mvp;
+}
+
 Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
     constexpr float padding = Chunk::SIZE * 1.7f; // Prevent popping
 

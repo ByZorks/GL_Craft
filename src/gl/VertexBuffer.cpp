@@ -1,6 +1,6 @@
 #include "VertexBuffer.h"
 
-#include "../core/OpenGLDebug.h"
+#include "OpenGLDebug.h"
 #include "GL/glew.h"
 
 VertexBuffer::VertexBuffer() = default;

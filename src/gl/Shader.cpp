@@ -6,7 +6,7 @@
 #include <sstream>
 #include <utility>
 
-#include "../core/OpenGLDebug.h"
+#include "OpenGLDebug.h"
 #include "glm.hpp"
 
 Shader::Shader(std::string vertexPath, std::string fragmentPath) : m_vertexFilePath(std::move(vertexPath)),

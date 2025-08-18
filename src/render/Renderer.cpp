@@ -1,6 +1,6 @@
 #include "Renderer.h"
 
-#include "../core/OpenGLDebug.h"
+#include "../gl/OpenGLDebug.h"
 #include "../world/Chunk.h"
 #include "GL/glew.h"
 

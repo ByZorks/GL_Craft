@@ -9,6 +9,7 @@
 #include "MeshManager.h"
 #include "../gl/Shader.h"
 #include "../math/Frustum.h"
+#include "../math/Raycast.h"
 #include "../render/InstanceRenderer.h"
 #include "../utils/ThreadPool.h"
 
@@ -49,6 +50,7 @@ public:
     void drawInstances(unsigned int &drawCalls) const;
     void addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData);
     void updateRenderDistance(Shader &postProcessingShader, const Camera &camera);
+    void deleteBlockAndUpdateNeighbors(const RaycastResult &hit);
 
     static int getHeight(int worldX, int worldZ);
     static bool isCave(int worldX, int worldY, int worldZ, int columnHeight);

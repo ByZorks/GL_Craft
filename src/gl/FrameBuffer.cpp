@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../core/OpenGLDebug.h"
+#include "OpenGLDebug.h"
 #include "GL/glew.h"
 
 FrameBuffer::FrameBuffer(const int width, const int height) : m_Width(width), m_Height(height),

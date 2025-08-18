@@ -12,10 +12,12 @@ private:
     bool m_tabKeyPressed;
 
 public:
+    DebugUI();
     explicit DebugUI(GLFWwindow *window);
 
     ~DebugUI();
 
+    static void init(GLFWwindow *window);
     static void newFrame();
     static void render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCalls, const Camera &camera, const std::function<void()>& renderDistanceCallback);
     static void draw();

@@ -13,6 +13,7 @@ private:
     bool m_firstMouse;
     glm::vec3 m_cameraPos, m_cameraFront, m_cameraUp;
     float m_FOVDegrees, m_aspectRatio, m_nearPlane, m_farPlane;
+    glm::mat4 m_mvp;
     glm::vec3 m_lastCameraChunkPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
     glm::vec3 m_lastCameraBlockPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
 
@@ -34,6 +35,8 @@ public:
 
     [[nodiscard]] glm::mat4 getProjectionMatrix() const ;
     [[nodiscard]] glm::mat4 getViewMatrix() const;
+    void calculateMVP();
+    [[nodiscard]] glm::mat4 getMVP() const;
     static Frustum getFrustum(glm::mat4 modelViewProjecMatrix);
     [[nodiscard]] bool isInputEnabled() const;
     void setInput(bool m_input_enabled);

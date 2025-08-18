@@ -4,6 +4,8 @@
 
 #include "vec3.hpp"
 
+Frustum::Frustum() = default;
+
 Frustum::Frustum(const Plane &left, const Plane &right, const Plane &bottom, const Plane &top, const Plane &near,
                  const Plane &far) : m_planes{left, right, bottom, top, near, far} {
 }

@@ -52,12 +52,14 @@ elseif (WIN32)
 endif ()
 
 add_executable(GL_Craft
-        src/core/GLCraft.cpp
+        src/core/Application.cpp
+        src/core/Application.h
+        src/core/Main.cpp
         src/gl/Shader.cpp
         src/gl/Shader.cpp
         src/gl/Shader.h
-        src/core/OpenGLDebug.h
-        src/core/OpenGLDebug.cpp
+        src/gl/OpenGLDebug.h
+        src/gl/OpenGLDebug.cpp
         src/gl/VertexBuffer.h
         src/gl/VertexBuffer.cpp
         src/gl/VertexArray.h
@@ -122,6 +124,8 @@ add_executable(GL_Craft
         src/render/HighlightedBlock.h
         src/ui/Crosshair.cpp
         src/ui/Crosshair.h
+        src/render/BlockSelector.cpp
+        src/render/BlockSelector.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})
