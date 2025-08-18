@@ -169,6 +169,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     const bool isTransparent = Block::isTransparent(blockType);
 
     std::array<bool, 26> adjacentFaces{};
+    const bool isTopBlockTransparent = Block::isTransparent(getBlockType(localX, localY + 1, localZ));
     for (int dx = -1; dx <= 1; ++dx) {
         const int adjustedDX = dx + 1;
 
@@ -184,7 +185,12 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
                 const int adjustedDZ = dz + 1;
                 int index = adjustedDX * STRIDE_SQ + adjustedDY * STRIDE + adjustedDZ;
                 index = index < MIDDLE_INDEX ? index : index - 1;
-                adjacentFaces[index] = !Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz));
+                const bool isAdjacentBlockTransparent = Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz));
+                if (dy == 1 && blockType == BlockType::WATER && !isTopBlockTransparent) {
+                    adjacentFaces[index] = true; // AO is applied when top block is not transparent
+                } else {
+                    adjacentFaces[index] = !isAdjacentBlockTransparent;
+                }
             }
         }
     }

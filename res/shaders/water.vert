@@ -48,5 +48,5 @@ void main() {
     v_face = face;
 
     const float AO_f = float(AO) / 3.0; // Normalize AO to 0-1 range
-    v_AO = AO_f == 0.0 ? 0.1 : AO_f; // Prevent completely dark faces
+    v_AO = AO_f == 0.0 ? 0.33 : AO_f; // Prevent completely dark faces
 }

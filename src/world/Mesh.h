@@ -171,6 +171,7 @@ public:
         const bool neighborTransparent = Block::isTransparent(neighborType);
 
         if (currentBlockType == BlockType::LEAVES && neighborTransparent) return true; // Leaves block, always draw face
+        if (currentBlockType == BlockType::WATER && face == Face::TOP && neighborType != BlockType::WATER) return true; // Always draw water top face if neighbor is not water
         if (currentBlockType == neighborType) return false; // Same block type, no need to draw face
 
         const bool currentTransparent = Block::isTransparent(currentBlockType);
