@@ -261,7 +261,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
             chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type);
             getMeshesToUpdate().push(chunk);
 
-            if (type == BlockType::SURFACE_FEATURE_BILLBOARD) {
+            if (Block::isInstance(type)) {
                 setInstancesChanged(true);
             }
 
@@ -308,7 +308,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type);
         getMeshesToUpdate().push(chunk);
 
-        if (type == BlockType::SURFACE_FEATURE_BILLBOARD) {
+        if (Block::isInstance(type)) {
             setInstancesChanged(true);
         }
 
@@ -432,7 +432,7 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
             }
         }
 
-        if (blockToPlace == BlockType::SURFACE_FEATURE_BILLBOARD) {
+        if (Block::isInstance(blockToPlace)) {
             setInstancesChanged(true);
         }
 

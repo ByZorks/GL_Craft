@@ -39,7 +39,6 @@ BlockType Block::getBlockType(const int y, const int columnHeight) {
 const char *Block::getBlockName(const BlockType blockType) {
     switch (blockType) {
         case BlockType::AIR: return "AIR";
-        case BlockType::SURFACE_FEATURE_BILLBOARD: return "SURFACE_FEATURE_BILLBOARD";
         case BlockType::BEDROCK: return "BEDROCK";
         case BlockType::DIRT: return "DIRT";
         case BlockType::GRASS: return "GRASS";
@@ -284,7 +283,12 @@ uint8_t Block::computeVertexAO(const bool side1, const bool side2, const bool co
 }
 
 bool Block::isTransparent(const BlockType type) {
-    return type == BlockType::WATER || type == BlockType::AIR || type == BlockType::LEAVES;
+    return type == BlockType::WATER || type == BlockType::AIR || type == BlockType::LEAVES || isInstance(type);
+}
+
+bool Block::isInstance(const BlockType type) {
+    return type == BlockType::SHORT_GRASS || type == BlockType::FLOWER_POPPY ||
+           type == BlockType::FLOWER_CORNFLOWER || type == BlockType::FLOWER_ALLIUM;
 }
 
 uint8_t Block::getTextureU(BlockType type, const Face face) {

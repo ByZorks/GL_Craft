@@ -119,7 +119,7 @@ void Chunk::transferPendingBlocksToWorld(World &world) {
 
 void Chunk::deleteBlock(const int localX, const int localY, const int localZ, const BlockType type) {
     // Voxel
-    if (type == BlockType::SURFACE_FEATURE_BILLBOARD) {
+    if (Block::isInstance(type)) {
         m_blockType[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
         m_surfaceFeatures.erase(SurfaceFeature(m_x + localX + 1, m_y + localY, m_z + localZ + 1));
         return;
@@ -134,6 +134,11 @@ void Chunk::deleteBlock(const int localX, const int localY, const int localZ, co
 
 void Chunk::addBlock(const int localX, const int localY, const int localZ, const BlockType type) {
     // Voxel
+    if (Block::isInstance(type)) {
+        m_blockType[index(localX + 1, localY + 1, localZ + 1)] = type;
+        m_surfaceFeatures.emplace(m_x + localX + 1, m_y + localY, m_z + localZ + 1, getSurfaceFeatureTypeFromBlockType(type));
+        return;
+    }
     m_blockType[index(localX + 1, localY + 1, localZ + 1)] = type;
 
     // Generate mesh data
@@ -155,7 +160,7 @@ bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ)
 }
 
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const BlockType blockType) {
-    if (blockType == BlockType::AIR || blockType == BlockType::SURFACE_FEATURE_BILLBOARD) return;
+    if (blockType == BlockType::AIR || Block::isInstance(blockType)) return;
 
     const auto localXf = static_cast<float>(localX);
     const auto localYf = static_cast<float>(localY);
@@ -266,11 +271,7 @@ BlockType Chunk::getBlockTypeOrSurfaceFeature(const int localX, const int localY
     const int worldZ = m_z + localZ + 1;
     if (const auto it = m_surfaceFeatures.find(SurfaceFeature(worldX, worldY, worldZ));
         it != m_surfaceFeatures.end()) {
-        if (it->type != SurfaceFeatureType::TREE) { // No remesh is done when returning a surface feature, but trees needs it
-            type = BlockType::SURFACE_FEATURE_BILLBOARD;
-        } else {
-            type = getBlockType(localX, localY, localZ);
-        }
+        type = getBlockTypeOfSurfaceFeature(it->type);
     } else {
         type = getBlockType(localX, localY, localZ);
     }

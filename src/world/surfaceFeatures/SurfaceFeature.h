@@ -43,6 +43,40 @@ static SurfaceFeatureType getSurfaceFeatureType(const float noiseValue, const Bl
     return SurfaceFeatureType::NONE;
 }
 
+static BlockType getBlockTypeOfSurfaceFeature(const SurfaceFeatureType type) {
+    switch (type) {
+        case SurfaceFeatureType::NONE:
+            return BlockType::AIR;
+        case SurfaceFeatureType::TREE:
+            return BlockType::LOG; // Assuming trees are made of logs
+        case SurfaceFeatureType::SHORT_GRASS:
+            return BlockType::SHORT_GRASS;
+        case SurfaceFeatureType::POPPY:
+            return BlockType::FLOWER_POPPY;
+        case SurfaceFeatureType::CORNFLOWER:
+            return BlockType::FLOWER_CORNFLOWER;
+        case SurfaceFeatureType::ALLIUM:
+            return BlockType::FLOWER_ALLIUM;
+        default:
+            return BlockType::AIR;
+    }
+}
+
+static SurfaceFeatureType getSurfaceFeatureTypeFromBlockType(const BlockType &blockType) {
+    switch (blockType) {
+        case BlockType::SHORT_GRASS:
+            return SurfaceFeatureType::SHORT_GRASS;
+        case BlockType::FLOWER_POPPY:
+            return SurfaceFeatureType::POPPY;
+        case BlockType::FLOWER_CORNFLOWER:
+            return SurfaceFeatureType::CORNFLOWER;
+        case BlockType::FLOWER_ALLIUM:
+            return SurfaceFeatureType::ALLIUM;
+        default:
+            return SurfaceFeatureType::NONE;
+    }
+}
+
 template<>
 struct std::hash<SurfaceFeature> {
     std::size_t operator()(const SurfaceFeature& obj) const noexcept {
