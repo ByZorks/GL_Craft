@@ -29,9 +29,8 @@ public:
     PostProcessingMesh(int width, int height);
 
     void resize(int width, int height);
+    void draw() const;
 
-    [[nodiscard]] const VertexArray & getVAO() const;
-    [[nodiscard]] const IndexBuffer & getIBO() const;
     [[nodiscard]] const FrameBuffer & getFBO() const;
 };
 

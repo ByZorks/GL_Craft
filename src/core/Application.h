@@ -39,6 +39,10 @@ private:
     unsigned int m_visibleChunksCount = 0;
     bool m_leftClicked = false;
     float m_aspectRatio = 16.0f / 9.0f;
+    int m_MVPUniformBufferBindingSlot = 0;
+    int m_atlasTextureSlot = 0;
+    int m_postProcessingSceneTextureSlot = 1;
+    int m_postProcessingDepthTextureSlot = 2;
 
 public:
     Application(int width, int height, const char *title);

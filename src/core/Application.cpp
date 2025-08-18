@@ -83,26 +83,40 @@ void Application::initGL() {
 }
 
 void Application::initResources() {
-    m_blockShader = std::make_unique<Shader>("../res/shaders/block.vert", "../res/shaders/block.frag");
-    m_instancesShader = std::make_unique<Shader>("../res/shaders/instances.vert", "../res/shaders/instances.frag");
-    m_waterShader = std::make_unique<Shader>("../res/shaders/water.vert", "../res/shaders/water.frag");
-    m_highlightedBlockShader = std::make_unique<Shader>("../res/shaders/highlightBlock.vert", "../res/shaders/highlightBlock.frag");
-    m_crosshairShader = std::make_unique<Shader>("../res/shaders/crosshair.vert", "../res/shaders/crosshair.frag");
-    m_postProcessingShader = std::make_unique<Shader>("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
-    m_postProcessingShader->use();
-    m_postProcessingShader->setUniform1i("u_SceneTexture", 0);
-    m_postProcessingShader->setUniform1i("u_DepthTexture", 1);
-    m_postProcessingShader->setUniform1f("u_RenderDistance", Renderer::s_renderDistance);
-
     m_atlas = std::make_unique<Texture>("../res/textures/atlas/atlas.png");
     m_MVPBuffer = std::make_unique<UniformBuffer>();
-    m_MVPBuffer->init(nullptr, sizeof(glm::mat4), 0);
+    m_MVPBuffer->init(nullptr, sizeof(glm::mat4), m_MVPUniformBufferBindingSlot);
 
     int width, height;
     glfwGetWindowSize(m_window, &width, &height);
     m_postProcessingMesh = std::make_unique<PostProcessingMesh>(width, height);
     m_crosshairMesh = std::make_unique<Crosshair>();
     m_highlightedBlockMesh = std::make_unique<HighlightedBlock>();
+
+    m_blockShader = std::make_unique<Shader>("../res/shaders/block.vert", "../res/shaders/block.frag");
+    m_blockShader->use();
+    m_blockShader->setUniform1i("u_Texture", m_atlasTextureSlot);
+
+    m_instancesShader = std::make_unique<Shader>("../res/shaders/instances.vert", "../res/shaders/instances.frag");
+    m_instancesShader->use();
+    m_instancesShader->setUniform1i("u_Texture", m_atlasTextureSlot);
+
+    m_waterShader = std::make_unique<Shader>("../res/shaders/water.vert", "../res/shaders/water.frag");
+    m_waterShader->use();
+    m_waterShader->setUniform1i("u_Texture", m_atlasTextureSlot);
+
+    m_highlightedBlockShader = std::make_unique<Shader>("../res/shaders/highlightBlock.vert", "../res/shaders/highlightBlock.frag");
+
+    m_crosshairShader = std::make_unique<Shader>("../res/shaders/crosshair.vert", "../res/shaders/crosshair.frag");
+    m_crosshairShader->use();
+    m_crosshairShader->setUniform1i("u_Texture", m_atlasTextureSlot);
+    m_crosshairShader->setUniform1f("u_AspectRatio", m_aspectRatio);
+
+    m_postProcessingShader = std::make_unique<Shader>("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
+    m_postProcessingShader->use();
+    m_postProcessingShader->setUniform1i("u_SceneTexture", m_postProcessingSceneTextureSlot);
+    m_postProcessingShader->setUniform1i("u_DepthTexture", m_postProcessingDepthTextureSlot);
+    m_postProcessingShader->setUniform1f("u_RenderDistance", Renderer::s_renderDistance);
 
     m_world = std::make_unique<World>();
     DebugUI::init(m_window);
@@ -157,6 +171,7 @@ void Application::update() {
 void Application::render() {
     // Clear the screen
     m_postProcessingMesh->getFBO().bind();
+    m_atlas->bind(m_atlasTextureSlot);
     Renderer::clear();
     DebugUI::newFrame();
 
@@ -177,17 +192,15 @@ void Application::render() {
     }
 
     // Post-processing and crosshair to minimize openGl state changes
-    FrameBuffer::unbind();
-    m_postProcessingShader->use();
-    m_postProcessingMesh->getFBO().getColorTexture().bind(0);
-    m_postProcessingMesh->getFBO().getDepthTexture().bind(1);
-
     Renderer::disableDepthTesting();
-    Renderer::draw(m_postProcessingMesh->getVAO(), m_postProcessingMesh->getIBO());
+    FrameBuffer::unbind();
+    m_postProcessingMesh->getFBO().getColorTexture().bind(m_postProcessingSceneTextureSlot);
+    m_postProcessingMesh->getFBO().getDepthTexture().bind(m_postProcessingDepthTextureSlot);
+    m_postProcessingShader->use();
+    m_postProcessingMesh->draw();
 
-    m_atlas->bind();
+    m_atlas->bind(m_atlasTextureSlot);
     m_crosshairShader->use();
-    m_crosshairShader->setUniform1f("u_AspectRatio", m_aspectRatio);
     m_crosshairMesh->draw();
     Renderer::enableDepthTesting();
 
@@ -232,6 +245,10 @@ void Application::onFrameBufferResize(const int width, const int height) {
     m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
     m_camera.setAspectRatio(m_aspectRatio);
     if (m_postProcessingMesh) m_postProcessingMesh->resize(width, height);
+    if (m_crosshairShader) {
+        m_crosshairShader->use();
+        m_crosshairShader->setUniform1f("u_AspectRatio", m_aspectRatio);
+    }
 }
 
 void Application::onMouseEvent(const int button, const int action) {
