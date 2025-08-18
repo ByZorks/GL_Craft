@@ -37,8 +37,8 @@ void Camera::updateLastState() {
     if (std::abs(m_lastPitch - m_pitch) > 15.f) m_lastPitch = m_pitch;
 }
 
-void Camera::processInput(GLFWwindow *window, const float deltaTime) {
-    const float cameraSpeed = 15.0f * deltaTime;
+void Camera::processInput(GLFWwindow *window, const double deltaTime) {
+    const float cameraSpeed = 15.0f * static_cast<float>(deltaTime);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         m_cameraPos += cameraSpeed * m_cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)

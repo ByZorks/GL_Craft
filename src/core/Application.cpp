@@ -26,7 +26,7 @@ void Application::run() {
 
     while (!glfwWindowShouldClose(m_window)) {
         const double currentTime = glfwGetTime();
-        const auto deltaTime = static_cast<float>(currentTime - lastTime);
+        const double deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
         processInput(deltaTime);
@@ -106,7 +106,7 @@ void Application::initResources() {
     m_blockSelector.init(m_highlightedBlockShader, m_highlightedBlockMesh);
 }
 
-void Application::processInput(const float deltaTime) {
+void Application::processInput(const double deltaTime) {
     if (glfwGetKey(m_window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(m_window, true);
 
     m_debugUI.processInput(m_window, m_camera); // Tab key for ImGui

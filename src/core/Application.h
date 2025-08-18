@@ -50,7 +50,7 @@ private:
     void initGLFW(int width, int height, const char *title);
     static void initGL();
     void initResources();
-    void processInput(float deltaTime);
+    void processInput(double deltaTime);
     void update();
     void render();
     void stateUpdate();
