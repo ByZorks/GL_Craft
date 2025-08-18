@@ -23,7 +23,6 @@ public:
     void updateLastState();
     void processInput(GLFWwindow *window, double deltaTime);
     void handleMouse(double xpos, double ypos);
-    static void mouseCallback(GLFWwindow *window, double xpos, double ypos);
     void resetMousePosition(GLFWwindow *window);
 
     [[nodiscard]] float distanceToCamera(const Mesh& mesh) const;

@@ -2,22 +2,21 @@
 
 #include <iostream>
 
-#include "WindowUserPointers.h"
 #include "../math/Raycast.h"
-
-bool Application::m_leftClicked = false;
-float Application::m_aspectRatio = 16.0f / 9.0f;
 
 Application::Application(const int width, const int height, const char *title) : m_camera(width, height) {
     initGLFW(width, height, title);
-    initGL();
-    initResources();
-
-    glfwMaximizeWindow(m_window); // Needs to be called after glfw, gl and meshes initialization
 }
 
 Application::~Application() {
     cleanup();
+}
+
+void Application::init() {
+    initGL();
+    initResources();
+
+    glfwMaximizeWindow(m_window); // Needs to be called after glfw and meshes initialization
 }
 
 void Application::run() {
@@ -56,17 +55,21 @@ void Application::initGLFW(const int width, const int height, const char *title)
 
     glfwMakeContextCurrent(m_window);
 
-    glfwSetFramebufferSizeCallback(m_window, framebufferSizeCallback);
-    glfwSetCursorPosCallback(m_window, Camera::mouseCallback);
-    glfwSetMouseButtonCallback(m_window, mouseButtonCallback);
+    glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow *window, const int w, const int h) {
+        auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
+        app->onFrameBufferResize(w, h);
+    });
+    glfwSetCursorPosCallback(m_window, [](GLFWwindow *window, const double xpos, const double ypos) {
+        auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
+        app->onMouseMove(xpos, ypos);
+    });
+    glfwSetMouseButtonCallback(m_window, [](GLFWwindow *window, const int button, const int action, const int mods) {
+        auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
+        app->onMouseEvent(button, action);
+    });
 
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    m_windowUserPointers = {
-        .camera = &m_camera,
-        .postProcessingMesh = nullptr, // Doesn't exist yet, will be set in initResources
-        .crosshair = nullptr
-    };
-    glfwSetWindowUserPointer(m_window, &m_windowUserPointers);
+    glfwSetWindowUserPointer(m_window, this);
 
     glfwSwapInterval(0); // Disable VSync
 }
@@ -80,33 +83,30 @@ void Application::initGL() {
 }
 
 void Application::initResources() {
-    m_blockShader = new Shader("../res/shaders/block.vert", "../res/shaders/block.frag");
-    m_instancesShader = new Shader("../res/shaders/instances.vert", "../res/shaders/instances.frag");
-    m_waterShader = new Shader("../res/shaders/water.vert", "../res/shaders/water.frag");
-    m_highlightedBlockShader = new Shader("../res/shaders/highlightBlock.vert", "../res/shaders/highlightBlock.frag");
-    m_crosshairShader = new Shader("../res/shaders/crosshair.vert", "../res/shaders/crosshair.frag");
-    m_postProcessingShader = new Shader("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
+    m_blockShader = std::make_unique<Shader>("../res/shaders/block.vert", "../res/shaders/block.frag");
+    m_instancesShader = std::make_unique<Shader>("../res/shaders/instances.vert", "../res/shaders/instances.frag");
+    m_waterShader = std::make_unique<Shader>("../res/shaders/water.vert", "../res/shaders/water.frag");
+    m_highlightedBlockShader = std::make_unique<Shader>("../res/shaders/highlightBlock.vert", "../res/shaders/highlightBlock.frag");
+    m_crosshairShader = std::make_unique<Shader>("../res/shaders/crosshair.vert", "../res/shaders/crosshair.frag");
+    m_postProcessingShader = std::make_unique<Shader>("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
     m_postProcessingShader->use();
     m_postProcessingShader->setUniform1i("u_SceneTexture", 0);
     m_postProcessingShader->setUniform1i("u_DepthTexture", 1);
     m_postProcessingShader->setUniform1f("u_RenderDistance", Renderer::s_renderDistance);
 
-    m_atlas = new Texture("../res/textures/atlas/texture_atlas.png");
-
-    m_MVPBuffer = new UniformBuffer();
+    m_atlas = std::make_unique<Texture>("../res/textures/atlas/atlas.png");
+    m_MVPBuffer = std::make_unique<UniformBuffer>();
     m_MVPBuffer->init(nullptr, sizeof(glm::mat4), 0);
 
     int width, height;
     glfwGetWindowSize(m_window, &width, &height);
-    m_postProcessingMesh = new PostProcessingMesh(width, height);
-    m_crosshairMesh = new Crosshair();
-    m_highlightedBlockMesh = new HighlightedBlock();
-    m_windowUserPointers.postProcessingMesh = m_postProcessingMesh;
-    m_windowUserPointers.crosshair = m_crosshairMesh;
+    m_postProcessingMesh = std::make_unique<PostProcessingMesh>(width, height);
+    m_crosshairMesh = std::make_unique<Crosshair>();
+    m_highlightedBlockMesh = std::make_unique<HighlightedBlock>();
 
-    m_world = new World();
+    m_world = std::make_unique<World>();
     DebugUI::init(m_window);
-    m_blockSelector.init(m_highlightedBlockShader, m_highlightedBlockMesh);
+    m_blockSelector.init(m_highlightedBlockShader.get(), m_highlightedBlockMesh.get());
 }
 
 void Application::processInput(const double deltaTime) {
@@ -114,9 +114,7 @@ void Application::processInput(const double deltaTime) {
 
     m_debugUI.processInput(m_window, m_camera); // Tab key for ImGui
 
-    if (m_camera.isInputEnabled()) {
-        m_camera.processInput(m_window, deltaTime);
-    }
+    if (m_camera.isInputEnabled()) m_camera.processInput(m_window, deltaTime);
 }
 
 void Application::update() {
@@ -208,35 +206,35 @@ void Application::stateUpdate() {
 void Application::cleanup() {
     m_raycastResult = RaycastResult{};
     Raycast::clearCache();
-    delete m_blockShader;
-    delete m_instancesShader;
-    delete m_waterShader;
-    delete m_highlightedBlockShader;
-    delete m_atlas;
-    delete m_MVPBuffer;
-    delete m_highlightedBlockMesh;
-    delete m_crosshairShader;
-    delete m_crosshairMesh;
-    delete m_postProcessingShader;
-    delete m_postProcessingMesh;
-    delete m_world;
+    m_world.reset();
+    m_postProcessingMesh.reset();
+    m_highlightedBlockMesh.reset();
+    m_crosshairMesh.reset();
+    m_blockShader.reset();
+    m_instancesShader.reset();
+    m_waterShader.reset();
+    m_highlightedBlockShader.reset();
+    m_crosshairShader.reset();
+    m_postProcessingShader.reset();
+    m_atlas.reset();
+    m_MVPBuffer.reset();
 
     glfwDestroyWindow(m_window);
     glfwTerminate();
 }
 
-void Application::framebufferSizeCallback(GLFWwindow *window, const int width, const int height) {
-    glViewport(0, 0, width, height);
-    const auto pointers = static_cast<WindowUserPointers *>(glfwGetWindowUserPointer(window));
-    if (!pointers) return;
-
-    pointers->camera->setAspectRatio(static_cast<float>(width) / static_cast<float>(height));
-    pointers->postProcessingMesh->resize(width, height);
-
-    m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+void Application::onMouseMove(const double xpos, const double ypos) {
+    if (m_camera.isInputEnabled()) m_camera.handleMouse(xpos, ypos);
 }
 
-void Application::mouseButtonCallback(GLFWwindow *window, const int button, const int action, int mods) {
+void Application::onFrameBufferResize(const int width, const int height) {
+    glViewport(0, 0, width, height);
+    m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+    m_camera.setAspectRatio(m_aspectRatio);
+    if (m_postProcessingMesh) m_postProcessingMesh->resize(width, height);
+}
+
+void Application::onMouseEvent(const int button, const int action) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         m_leftClicked = true;
     }

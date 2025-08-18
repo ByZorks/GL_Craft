@@ -1,6 +1,5 @@
 #ifndef GL_CRAFT_APPLICATION_H
 #define GL_CRAFT_APPLICATION_H
-#include "WindowUserPointers.h"
 #include "../gl/Shader.h"
 #include "../gl/UniformBuffer.h"
 #include "../render/BlockSelector.h"
@@ -15,38 +14,37 @@
 class Application {
 private:
     GLFWwindow* m_window{};
-    WindowUserPointers m_windowUserPointers{};
+
+    std::unique_ptr<World> m_world;
+    std::unique_ptr<PostProcessingMesh> m_postProcessingMesh;
+    std::unique_ptr<HighlightedBlock> m_highlightedBlockMesh;
+    std::unique_ptr<Crosshair> m_crosshairMesh;
+
+    std::unique_ptr<Shader> m_blockShader;
+    std::unique_ptr<Shader> m_instancesShader;
+    std::unique_ptr<Shader> m_waterShader;
+    std::unique_ptr<Shader> m_highlightedBlockShader;
+    std::unique_ptr<Shader> m_crosshairShader;
+    std::unique_ptr<Shader> m_postProcessingShader;
+    std::unique_ptr<Texture> m_atlas;
+    std::unique_ptr<UniformBuffer> m_MVPBuffer;
+
     Camera m_camera;
-    World* m_world{};
     DebugUI m_debugUI;
     Frustum m_frustum;
     BlockSelector m_blockSelector;
     RaycastResult m_raycastResult;
 
-    PostProcessingMesh* m_postProcessingMesh{};
-    HighlightedBlock* m_highlightedBlockMesh{};
-    Crosshair* m_crosshairMesh{};
-
-    Shader* m_blockShader{};
-    Shader* m_instancesShader{};
-    Shader* m_waterShader{};
-    Shader* m_highlightedBlockShader{};
-    Shader* m_crosshairShader{};
-    Shader* m_postProcessingShader{};
-
-    Texture* m_atlas{};
-
-    UniformBuffer* m_MVPBuffer{};
-
     unsigned int m_drawCalls = 0;
     unsigned int m_visibleChunksCount = 0;
-    static bool m_leftClicked;
-    static float m_aspectRatio;
+    bool m_leftClicked = false;
+    float m_aspectRatio = 16.0f / 9.0f;
 
 public:
     Application(int width, int height, const char *title);
     ~Application();
 
+    void init();
     void run();
 
 private:
@@ -59,8 +57,9 @@ private:
     void stateUpdate();
     void cleanup();
 
-    static void framebufferSizeCallback(GLFWwindow *window, int width, int height);
-    static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
+    void onMouseMove(double xpos, double ypos);
+    void onFrameBufferResize(int width, int height);
+    void onMouseEvent(int button, int action);
 };
 
 #endif //GL_CRAFT_APPLICATION_H

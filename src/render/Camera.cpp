@@ -2,7 +2,6 @@
 
 #include <cmath>
 
-#include "../core/WindowUserPointers.h"
 #include "../math/Plane.h"
 #include "ext/matrix_clip_space.hpp"
 #include "ext/matrix_transform.hpp"
@@ -78,14 +77,6 @@ void Camera::handleMouse(const double xpos, const double ypos) {
     direction.y = glm::sin(glm::radians(m_pitch));
     direction.z = glm::sin(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch));
     m_cameraFront = glm::normalize(direction);
-}
-
-void Camera::mouseCallback(GLFWwindow *window, const double xpos, const double ypos) {
-    const auto pointers = static_cast<WindowUserPointers*>(glfwGetWindowUserPointer(window));
-    if (!pointers) return;
-    const auto cam = pointers->camera;
-    if (!cam || !cam->m_inputEnabled) return;
-    cam->handleMouse(xpos, ypos);
 }
 
 float Camera::distanceToCamera(const Mesh& mesh) const {
