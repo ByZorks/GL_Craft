@@ -19,7 +19,9 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_cornflowerRenderer.init(Cornflower(0, 0, 0));
     m_alliumRenderer.init(Allium(0, 0, 0));
 
-    m_chunksData.loadedMeshes.reserve(static_cast<size_t>(Renderer::s_renderDistance * Renderer::s_renderDistance * Renderer::s_renderDistance * 0.5f));
+    m_chunksData.loadedMeshes.reserve(
+        static_cast<size_t>(Renderer::s_renderDistance * Renderer::s_renderDistance * Renderer::s_renderDistance *
+                            0.5f));
     m_tempKeysToProcess.reserve(100);
 
     const int r = static_cast<int>(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE));
@@ -28,23 +30,28 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
     m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)));
     for (int x = -r; x <= r; ++x) {
         for (int z = -r; z <= r; ++z) {
-            if (const int d2 = x*x + z*z; d2 <= r2) {
-                m_renderDistanceOffsets.push_back({x, z,
-                    static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))});
+            if (const int d2 = x * x + z * z; d2 <= r2) {
+                m_renderDistanceOffsets.push_back({
+                    x, z,
+                    static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))
+                });
             }
         }
     }
 
     std::sort(m_renderDistanceOffsets.begin(), m_renderDistanceOffsets.end(),
               [](const auto &a, const auto &b) {
-                  return a.x*a.x + a.z*a.z < b.x*b.x + b.z*b.z;
+                  return a.x * a.x + a.z * a.z < b.x * b.x + b.z * b.z;
               });
 }
 
 void World::updateChunks(const Camera &camera) {
-    const int cameraWorldX = static_cast<int>(std::floor(camera.getPos().x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
-    const int cameraWorldY = static_cast<int>(std::floor(camera.getPos().y / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
-    const int cameraWorldZ = static_cast<int>(std::floor(camera.getPos().z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+    const int cameraWorldX = static_cast<int>(std::floor(camera.getPos().x / static_cast<float>(Chunk::SIZE))) *
+                             static_cast<int>(Chunk::SIZE);
+    const int cameraWorldY = static_cast<int>(std::floor(camera.getPos().y / static_cast<float>(Chunk::SIZE))) *
+                             static_cast<int>(Chunk::SIZE);
+    const int cameraWorldZ = static_cast<int>(std::floor(camera.getPos().z / static_cast<float>(Chunk::SIZE))) *
+                             static_cast<int>(Chunk::SIZE);
     const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
     unloadDistantMeshes(cameraChunkPos);
@@ -53,7 +60,8 @@ void World::updateChunks(const Camera &camera) {
     });
 }
 
-void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &drawCalls) {
+void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount,
+                       unsigned int &drawCalls) {
     // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_chunksData.loadedMeshes
     processChunks();
 
@@ -62,10 +70,10 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
     m_displayedTransparentMeshes.clear();
     m_displayedWaterMeshes.clear();
     bool needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk() ||
-        m_renderDistanceChanged || m_instancesChanged;
+                              m_renderDistanceChanged || m_instancesChanged;
     m_renderDistanceChanged = false;
     m_instancesChanged = false;
-    for (const auto& chunk : m_chunksData.loadedMeshes | std::views::values) {
+    for (const auto &chunk: m_chunksData.loadedMeshes | std::views::values) {
         const State state = chunk->getState();
         if (state == State::MESH_GENERATED) {
             chunk->createGLBuffers();
@@ -85,7 +93,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         m_alliumRenderer.resetInstances();
     }
 
-    for (const auto& strong_mesh : m_displayedNormalMeshes) {
+    for (const auto &strong_mesh: m_displayedNormalMeshes) {
         if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
         shader.setUniform3f("u_Offset",
                             static_cast<float>(strong_mesh->getX()),
@@ -96,8 +104,9 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         ++drawCalls;
         ++visibleChunksCount;
 
-        if (needInstanceUpdate && camera.distanceToCamera(*strong_mesh) < 320.0f) { // They are no longer visible at this distance event if we draw them
-            for (const auto& feature : strong_mesh->getSurfaceFeatures()) {
+        if (needInstanceUpdate && camera.distanceToCamera(*strong_mesh) < 320.0f) {
+            // They are no longer visible at this distance event if we draw them
+            for (const auto &feature: strong_mesh->getSurfaceFeatures()) {
                 switch (feature.type) {
                     case SurfaceFeatureType::SHORT_GRASS:
                         m_grassRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
@@ -127,7 +136,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
 }
 
 void World::drawTransparentChunks(const Frustum &frustum, Shader &shader, unsigned int &drawCalls) const {
-    for (const auto& strong_mesh : m_displayedTransparentMeshes) {
+    for (const auto &strong_mesh: m_displayedTransparentMeshes) {
         if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
         shader.setUniform3f("u_Offset",
                             static_cast<float>(strong_mesh->getX()),
@@ -142,7 +151,7 @@ void World::drawTransparentChunks(const Frustum &frustum, Shader &shader, unsign
 void World::drawWater(const Frustum &frustum, Shader &shader, unsigned int &drawCalls) const {
     if (!m_displayedWaterMeshes.empty()) {
         Renderer::disableDepthMask();
-        for (const auto& strong_mesh : m_displayedWaterMeshes) {
+        for (const auto &strong_mesh: m_displayedWaterMeshes) {
             if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
             shader.setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
             shader.setUniform3f("u_Offset",
@@ -190,10 +199,10 @@ void World::drawInstances(unsigned int &drawCalls) const {
     Renderer::enableBackFaceCulling();
 }
 
-void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData) {
+void World::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &blockData) {
     std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
-    for (const auto& [key, blocks] : blockData) {
-        auto& targetVector = m_chunksData.m_pendingBlocks[key];
+    for (const auto &[key, blocks]: blockData) {
+        auto &targetVector = m_chunksData.m_pendingBlocks[key];
         targetVector.reserve(targetVector.size() + blocks.size());
         targetVector.insert(targetVector.end(), blocks.begin(), blocks.end());
     }
@@ -210,16 +219,18 @@ void World::updateRenderDistance(Shader &postProcessingShader, const Camera &cam
     m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)));
     for (int x = -r; x <= r; ++x) {
         for (int z = -r; z <= r; ++z) {
-            if (const int d2 = x*x + z*z; d2 <= r2) {
-                m_renderDistanceOffsets.push_back({x, z,
-                    static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))});
+            if (const int d2 = x * x + z * z; d2 <= r2) {
+                m_renderDistanceOffsets.push_back({
+                    x, z,
+                    static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))
+                });
             }
         }
     }
 
     std::sort(m_renderDistanceOffsets.begin(), m_renderDistanceOffsets.end(),
               [](const auto &a, const auto &b) {
-                  return a.x*a.x + a.z*a.z < b.x*b.x + b.z*b.z;
+                  return a.x * a.x + a.z * a.z < b.x * b.x + b.z * b.z;
               });
 
     updateChunks(camera);
@@ -232,7 +243,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         const auto t1 = std::chrono::high_resolution_clock::now();
 
         const BlockType type = hit.blockType;
-        const auto& blockLocalPosition = hit.blockLocalPosition;
+        const auto &blockLocalPosition = hit.blockLocalPosition;
         const std::shared_ptr<Chunk> chunk = hit.chunk;
 
         // Update adjacents chunks if the block is at the border of the chunk
@@ -291,73 +302,85 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
 
         // Edges : adjacent chunks
         if (isAtLeftBorder && isAtBottomBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY() - chunkSize, chunk->getZ())) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX() - chunkSize, chunk->getY() - chunkSize, chunk->getZ())) {
                 adjacentChunk->deleteBlock(maxBlockPos, maxBlockPos, blockLocalPosition[2], type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtLeftBorder && isAtTopBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY() + chunkSize, chunk->getZ())) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX() - chunkSize, chunk->getY() + chunkSize, chunk->getZ())) {
                 adjacentChunk->deleteBlock(maxBlockPos, minBlockPos, blockLocalPosition[2], type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtRightBorder && isAtBottomBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY() - chunkSize, chunk->getZ())) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX() + chunkSize, chunk->getY() - chunkSize, chunk->getZ())) {
                 adjacentChunk->deleteBlock(minBlockPos, maxBlockPos, blockLocalPosition[2], type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtRightBorder && isAtTopBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY() + chunkSize, chunk->getZ())) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX() + chunkSize, chunk->getY() + chunkSize, chunk->getZ())) {
                 adjacentChunk->deleteBlock(minBlockPos, minBlockPos, blockLocalPosition[2], type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtLeftBorder && isAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY(), chunk->getZ() - chunkSize)) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX() - chunkSize, chunk->getY(), chunk->getZ() - chunkSize)) {
                 adjacentChunk->deleteBlock(maxBlockPos, blockLocalPosition[1], maxBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtLeftBorder && isAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY(), chunk->getZ() + chunkSize)) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX() - chunkSize, chunk->getY(), chunk->getZ() + chunkSize)) {
                 adjacentChunk->deleteBlock(maxBlockPos, blockLocalPosition[1], minBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtRightBorder && isAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY(), chunk->getZ() - chunkSize)) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX() + chunkSize, chunk->getY(), chunk->getZ() - chunkSize)) {
                 adjacentChunk->deleteBlock(minBlockPos, blockLocalPosition[1], maxBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtRightBorder && isAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY(), chunk->getZ() + chunkSize)) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX() + chunkSize, chunk->getY(), chunk->getZ() + chunkSize)) {
                 adjacentChunk->deleteBlock(minBlockPos, blockLocalPosition[1], minBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtBottomBorder && isAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX(), chunk->getY() - chunkSize, chunk->getZ() - chunkSize)) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX(), chunk->getY() - chunkSize, chunk->getZ() - chunkSize)) {
                 adjacentChunk->deleteBlock(blockLocalPosition[0], maxBlockPos, maxBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtBottomBorder && isAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX(), chunk->getY() - chunkSize, chunk->getZ() + chunkSize)) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX(), chunk->getY() - chunkSize, chunk->getZ() + chunkSize)) {
                 adjacentChunk->deleteBlock(blockLocalPosition[0], maxBlockPos, minBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtTopBorder && isAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX(), chunk->getY() + chunkSize, chunk->getZ() - chunkSize)) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX(), chunk->getY() + chunkSize, chunk->getZ() - chunkSize)) {
                 adjacentChunk->deleteBlock(blockLocalPosition[0], minBlockPos, maxBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtTopBorder && isAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX(), chunk->getY() + chunkSize, chunk->getZ() + chunkSize)) {
+            if (const auto adjacentChunk =
+                    getChunk(chunk->getX(), chunk->getY() + chunkSize, chunk->getZ() + chunkSize)) {
                 adjacentChunk->deleteBlock(blockLocalPosition[0], minBlockPos, minBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
@@ -365,49 +388,57 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
 
         // Corners : adjacent chunks
         if (isAtLeftBorder && isAtBottomBorder && isAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY() - chunkSize, chunk->getZ() - chunkSize)) {
+            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY() - chunkSize,
+                                                    chunk->getZ() - chunkSize)) {
                 adjacentChunk->deleteBlock(maxBlockPos, maxBlockPos, maxBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtLeftBorder && isAtBottomBorder && isAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY() - chunkSize, chunk->getZ() + chunkSize)) {
+            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY() - chunkSize,
+                                                    chunk->getZ() + chunkSize)) {
                 adjacentChunk->deleteBlock(maxBlockPos, maxBlockPos, minBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtLeftBorder && isAtTopBorder && isAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY() + chunkSize, chunk->getZ() - chunkSize)) {
+            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY() + chunkSize,
+                                                    chunk->getZ() - chunkSize)) {
                 adjacentChunk->deleteBlock(maxBlockPos, minBlockPos, maxBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtLeftBorder && isAtTopBorder && isAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY() + chunkSize, chunk->getZ() + chunkSize)) {
+            if (const auto adjacentChunk = getChunk(chunk->getX() - chunkSize, chunk->getY() + chunkSize,
+                                                    chunk->getZ() + chunkSize)) {
                 adjacentChunk->deleteBlock(maxBlockPos, minBlockPos, minBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtRightBorder && isAtBottomBorder && isAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY() - chunkSize, chunk->getZ() - chunkSize)) {
+            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY() - chunkSize,
+                                                    chunk->getZ() - chunkSize)) {
                 adjacentChunk->deleteBlock(minBlockPos, maxBlockPos, maxBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtRightBorder && isAtBottomBorder && isAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY() - chunkSize, chunk->getZ() + chunkSize)) {
+            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY() - chunkSize,
+                                                    chunk->getZ() + chunkSize)) {
                 adjacentChunk->deleteBlock(minBlockPos, maxBlockPos, minBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtRightBorder && isAtTopBorder && isAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY() + chunkSize, chunk->getZ() - chunkSize)) {
+            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY() + chunkSize,
+                                                    chunk->getZ() - chunkSize)) {
                 adjacentChunk->deleteBlock(minBlockPos, minBlockPos, maxBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
         }
         if (isAtRightBorder && isAtTopBorder && isAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY() + chunkSize, chunk->getZ() + chunkSize)) {
+            if (const auto adjacentChunk = getChunk(chunk->getX() + chunkSize, chunk->getY() + chunkSize,
+                                                    chunk->getZ() + chunkSize)) {
                 adjacentChunk->deleteBlock(minBlockPos, minBlockPos, minBlockPos, type);
                 getMeshesToUpdate().push(adjacentChunk);
             }
@@ -440,8 +471,6 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
         const int newLocalZ = hit.blockLocalPosition[2] + offsetZ;
 
         constexpr int chunkSize = Chunk::SIZE;
-        constexpr int minBlockPos = -1; // chunk will add +1 when accessing the block
-        constexpr int maxBlockPos = Chunk::SIZE; // chunk will add +1 when accessing the block
 
         std::shared_ptr<Chunk> targetChunk = chunk;
         int targetX = newLocalX;
@@ -496,165 +525,44 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
         const bool willBeAtFrontBorder = targetZ == 0;
         const bool willBeAtBackBorder = targetZ == Chunk::SIZE - 1;
 
-        // Faces: adjacent chunks
-        if (willBeAtLeftBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() - chunkSize, targetChunk->getY(), targetChunk->getZ())) {
-                adjacentChunk->addBlock(maxBlockPos, targetY, targetZ, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtRightBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() + chunkSize, targetChunk->getY(), targetChunk->getZ())) {
-                adjacentChunk->addBlock(minBlockPos, targetY, targetZ, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtBottomBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX(), targetChunk->getY() - chunkSize, targetChunk->getZ())) {
-                adjacentChunk->addBlock(targetX, maxBlockPos, targetZ, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtTopBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX(), targetChunk->getY() + chunkSize, targetChunk->getZ())) {
-                adjacentChunk->addBlock(targetX, minBlockPos, targetZ, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX(), targetChunk->getY(), targetChunk->getZ() - chunkSize)) {
-                adjacentChunk->addBlock(targetX, targetY, maxBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX(), targetChunk->getY(), targetChunk->getZ() + chunkSize)) {
-                adjacentChunk->addBlock(targetX, targetY, minBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
+        if (!willBeAtLeftBorder && !willBeAtRightBorder &&
+            !willBeAtBottomBorder && !willBeAtTopBorder &&
+            !willBeAtFrontBorder && !willBeAtBackBorder) {
+            const auto t2 = std::chrono::high_resolution_clock::now();
+            const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+            std::cout << "Block placed in " << duration << " ms" << std::endl;
+            return;
         }
 
-        // Edges : adjacent chunks
-        if (willBeAtLeftBorder && willBeAtBottomBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() - chunkSize, targetChunk->getY() - chunkSize, targetChunk->getZ())) {
-                adjacentChunk->addBlock(maxBlockPos, maxBlockPos, targetZ, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtLeftBorder && willBeAtTopBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() - chunkSize, targetChunk->getY() + chunkSize, targetChunk->getZ())) {
-                adjacentChunk->addBlock(maxBlockPos, minBlockPos, targetZ, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtRightBorder && willBeAtBottomBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() + chunkSize, targetChunk->getY() - chunkSize, targetChunk->getZ())) {
-                adjacentChunk->addBlock(minBlockPos, maxBlockPos, targetZ, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtRightBorder && willBeAtTopBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() + chunkSize, targetChunk->getY() + chunkSize, targetChunk->getZ())) {
-                adjacentChunk->addBlock(minBlockPos, minBlockPos, targetZ, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtLeftBorder && willBeAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() - chunkSize, targetChunk->getY(), targetChunk->getZ() - chunkSize)) {
-                adjacentChunk->addBlock(maxBlockPos, targetY, maxBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtLeftBorder && willBeAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() - chunkSize, targetChunk->getY(), targetChunk->getZ() + chunkSize)) {
-                adjacentChunk->addBlock(maxBlockPos, targetY, minBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtRightBorder && willBeAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() + chunkSize, targetChunk->getY(), targetChunk->getZ() - chunkSize)) {
-                adjacentChunk->addBlock(minBlockPos, targetY, maxBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtRightBorder && willBeAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() + chunkSize, targetChunk->getY(), targetChunk->getZ() + chunkSize)) {
-                adjacentChunk->addBlock(minBlockPos, targetY, minBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtBottomBorder && willBeAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX(), targetChunk->getY() - chunkSize, targetChunk->getZ() - chunkSize)) {
-                adjacentChunk->addBlock(targetX, maxBlockPos, maxBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtBottomBorder && willBeAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX(), targetChunk->getY() - chunkSize, targetChunk->getZ() + chunkSize)) {
-                adjacentChunk->addBlock(targetX, maxBlockPos, minBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtTopBorder && willBeAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX(), targetChunk->getY() + chunkSize, targetChunk->getZ() - chunkSize)) {
-                adjacentChunk->addBlock(targetX, minBlockPos, maxBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtTopBorder && willBeAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX(), targetChunk->getY() + chunkSize, targetChunk->getZ() + chunkSize)) {
-                adjacentChunk->addBlock(targetX, minBlockPos, minBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
+        // Update adjacent chunks if the new block is at the border of the chunk
+        for (int i = -1; i <= 1; ++i) {
+            for (int j = -1; j <= 1; ++j) {
+                for (int k = -1; k <= 1; ++k) {
+                    if (i == 0 && j == 0 && k == 0) {
+                        continue;
+                    }
 
-        // Corners : adjacent chunks
-        if (willBeAtLeftBorder && willBeAtBottomBorder && willBeAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() - chunkSize, targetChunk->getY() - chunkSize, targetChunk->getZ() - chunkSize)) {
-                adjacentChunk->addBlock(maxBlockPos, maxBlockPos, maxBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtLeftBorder && willBeAtBottomBorder && willBeAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() - chunkSize, targetChunk->getY() - chunkSize, targetChunk->getZ() + chunkSize)) {
-                adjacentChunk->addBlock(maxBlockPos, maxBlockPos, minBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtLeftBorder && willBeAtTopBorder && willBeAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() - chunkSize, targetChunk->getY() + chunkSize, targetChunk->getZ() - chunkSize)) {
-                adjacentChunk->addBlock(maxBlockPos, minBlockPos, maxBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtLeftBorder && willBeAtTopBorder && willBeAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() - chunkSize, targetChunk->getY() + chunkSize, targetChunk->getZ() + chunkSize)) {
-                adjacentChunk->addBlock(maxBlockPos, minBlockPos, minBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtRightBorder && willBeAtBottomBorder && willBeAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() + chunkSize, targetChunk->getY() - chunkSize, targetChunk->getZ() - chunkSize)) {
-                adjacentChunk->addBlock(minBlockPos, maxBlockPos, maxBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtRightBorder && willBeAtBottomBorder && willBeAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() + chunkSize, targetChunk->getY() - chunkSize, targetChunk->getZ() + chunkSize)) {
-                adjacentChunk->addBlock(minBlockPos, maxBlockPos, minBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtRightBorder && willBeAtTopBorder && willBeAtFrontBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() + chunkSize, targetChunk->getY() + chunkSize, targetChunk->getZ() - chunkSize)) {
-                adjacentChunk->addBlock(minBlockPos, minBlockPos, maxBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
-            }
-        }
-        if (willBeAtRightBorder && willBeAtTopBorder && willBeAtBackBorder) {
-            if (const auto adjacentChunk = getChunk(targetChunk->getX() + chunkSize, targetChunk->getY() + chunkSize, targetChunk->getZ() + chunkSize)) {
-                adjacentChunk->addBlock(minBlockPos, minBlockPos, minBlockPos, blockToPlace);
-                getMeshesToUpdate().push(adjacentChunk);
+                    if (i == -1 && !willBeAtLeftBorder || i == 1 && !willBeAtRightBorder ||
+                        j == -1 && !willBeAtBottomBorder || j == 1 && !willBeAtTopBorder ||
+                        k == -1 && !willBeAtFrontBorder || k == 1 && !willBeAtBackBorder) {
+                        continue;
+                    }
+
+                    if (const auto adjacentChunk = getChunk(
+                        targetChunk->getX() + i * chunkSize,
+                        targetChunk->getY() + j * chunkSize,
+                        targetChunk->getZ() + k * chunkSize)) {
+                        constexpr int minBlockPos = -1; // chunk will add +1 when accessing the block
+                        constexpr int maxBlockPos = Chunk::SIZE; // chunk will add +1 when accessing the block
+
+                        const int adjX = i == 0 ? targetX : i == -1 ? maxBlockPos : minBlockPos;
+                        const int adjY = j == 0 ? targetY : j == -1 ? maxBlockPos : minBlockPos;
+                        const int adjZ = k == 0 ? targetZ : k == -1 ? maxBlockPos : minBlockPos;
+
+                        adjacentChunk->addBlock(adjX, adjY, adjZ, blockToPlace);
+                        getMeshesToUpdate().push(adjacentChunk);
+                    }
+                }
             }
         }
 
@@ -674,19 +582,19 @@ int World::getHeight(const int worldX, const int worldZ) {
 
     // 2D noise generation for terrain height
     const float normalizedNoise = (getTerrainNoise().GetNoise(
-        static_cast<float>(worldX),
-        static_cast<float>(worldZ)
-        ) + 1.0f) / 2.0f;
+                                       static_cast<float>(worldX),
+                                       static_cast<float>(worldZ)
+                                   ) + 1.0f) / 2.0f;
 
     const float terrainShape = std::pow(normalizedNoise, 4.6f);
     float columnHeight = std::floor(baseHeight + terrainShape * maxHeight);
 
     // 3D noise generation for cave system
     const float normalized3DNoise = (getCaveNoise().GetNoise(
-        static_cast<float>(worldX),
-        columnHeight,
-        static_cast<float>(worldZ)
-        ) + 1.0f) / 2.0f;
+                                         static_cast<float>(worldX),
+                                         columnHeight,
+                                         static_cast<float>(worldZ)
+                                     ) + 1.0f) / 2.0f;
     constexpr float baseCaveThreshold = 0.87f;
     const float surfaceModifier = 1.0f - std::clamp((columnHeight - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
     const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f;
@@ -707,9 +615,12 @@ bool World::isCave(const int worldX, const int worldY, const int worldZ, const i
     if (worldY <= 1 || worldY > maxHeight || (worldY >= columnHeight && columnHeight < waterLevel)) return false;
 
     // 3D noise generation for cave system
-    const float normalized3DNoise = (getCaveNoise().GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ)) + 1.0f) / 2.0f; // Normalize to [0, 1]
+    const float normalized3DNoise = (getCaveNoise().GetNoise(static_cast<float>(worldX), static_cast<float>(worldY),
+                                                             static_cast<float>(worldZ)) + 1.0f) / 2.0f;
+    // Normalize to [0, 1]
     constexpr float baseCaveThreshold = 0.87f;
-    const float surfaceModifier = 1.0f - std::clamp(static_cast<float>(worldY - baseHeight) / (maxHeight * 0.7f), 0.0f, 1.0f);
+    const float surfaceModifier = 1.0f - std::clamp(static_cast<float>(worldY - baseHeight) / (maxHeight * 0.7f), 0.0f,
+                                                    1.0f);
     const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f; // Increase threshold near surface
 
     return std::abs(normalized3DNoise - caveThreshold) < 0.3f;
@@ -726,16 +637,17 @@ std::shared_ptr<Chunk> World::getChunk(const int x, const int y, const int z) co
     return nullChunk;
 }
 
-const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & World::getLoadedChunks() const {
+const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &World::getLoadedChunks() const {
     return m_chunksData.loadedMeshes;
 }
 
-ThreadSafeQueue<std::shared_ptr<Chunk>> & World::getMeshesToUpdate() {
+ThreadSafeQueue<std::shared_ptr<Chunk> > &World::getMeshesToUpdate() {
     return m_chunksData.meshesToUpdate;
 }
 
 void World::processChunks() {
-    const int maxChunksPerFrame = static_cast<int>(0.1 * Renderer::s_renderDistance + 0.2 * static_cast<float>(m_threadPool.getNumberOfThreads()));
+    const int maxChunksPerFrame = static_cast<int>(
+        0.1 * Renderer::s_renderDistance + 0.2 * static_cast<float>(m_threadPool.getNumberOfThreads()));
     // Remove chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.meshesToDelete.empty()) break;
@@ -765,8 +677,7 @@ void World::processChunks() {
 
     // Third pass: generate pending blocks
     if (!m_chunksData.m_pendingBlocks.empty()) {
-        m_tempKeysToProcess.clear();
-        {
+        m_tempKeysToProcess.clear(); {
             std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
             m_tempKeysToProcess.reserve(m_chunksData.m_pendingBlocks.size());
             for (const auto &key: m_chunksData.m_pendingBlocks | std::views::keys) {
@@ -774,15 +685,15 @@ void World::processChunks() {
             }
         }
 
-        for (const auto& key : m_tempKeysToProcess) {
+        for (const auto &key: m_tempKeysToProcess) {
             if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
                 const std::shared_ptr<Chunk> p_chunk = it->second;
                 if (p_chunk->getState() < State::MESH_GENERATED) continue;
 
-                std::vector<PendingBlock> blocks;
-                {
+                std::vector<PendingBlock> blocks; {
                     std::lock_guard lock(m_chunksData.m_pendingBlocksMutex);
-                    if (auto pending_it = m_chunksData.m_pendingBlocks.find(key); pending_it != m_chunksData.m_pendingBlocks.end()) {
+                    if (auto pending_it = m_chunksData.m_pendingBlocks.find(key);
+                        pending_it != m_chunksData.m_pendingBlocks.end()) {
                         blocks = std::move(pending_it->second);
                         m_chunksData.m_pendingBlocks.erase(pending_it);
                     }
@@ -806,7 +717,7 @@ void World::processChunks() {
 }
 
 void World::generateChunksPositions(const int cameraWorldX, const int cameraWorldY, const int cameraWorldZ) {
-    for (auto [x,z, maxY] : m_renderDistanceOffsets) {
+    for (auto [x,z, maxY]: m_renderDistanceOffsets) {
         const int chunkX = cameraWorldX + static_cast<int>(x * Chunk::SIZE);
         const int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::SIZE);
 
@@ -869,12 +780,12 @@ FastNoiseLite World::makeCaveNoise() {
     return noise;
 }
 
-FastNoiseLite & World::getTerrainNoise() {
+FastNoiseLite &World::getTerrainNoise() {
     thread_local FastNoiseLite instance = makeTerrainNoise();
     return instance;
 }
 
-FastNoiseLite & World::getSurfaceFeaturesNoise() {
+FastNoiseLite &World::getSurfaceFeaturesNoise() {
     thread_local FastNoiseLite instance = makeSurfaceFeaturesNoise();
     return instance;
 }
@@ -883,11 +794,11 @@ void World::setInstancesChanged(const bool m_instances_changed) {
     m_instancesChanged = m_instances_changed;
 }
 
-ThreadPool & World::getThreadPool() {
+ThreadPool &World::getThreadPool() {
     return m_threadPool;
 }
 
-FastNoiseLite & World::getCaveNoise() {
+FastNoiseLite &World::getCaveNoise() {
     thread_local FastNoiseLite instance = makeCaveNoise();
     return instance;
 }
