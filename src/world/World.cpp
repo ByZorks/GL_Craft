@@ -148,10 +148,11 @@ void World::drawTransparentChunks(const Frustum &frustum, Shader &shader, unsign
     }
 }
 
-void World::drawWater(const Frustum &frustum, Shader &shader, unsigned int &drawCalls) const {
+void World::drawWater(const Frustum &frustum, Shader &shader, const glm::vec3 &cameraPos, unsigned int &drawCalls) const {
     if (!m_displayedWaterMeshes.empty()) {
         Renderer::disableDepthMask();
         shader.setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
+        shader.setUniform3f("u_CameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
         for (const auto &strong_mesh: m_displayedWaterMeshes) {
             if (!frustum.isAABBInFrustum(strong_mesh->getBoundingBox())) continue;
             shader.setUniform3f("u_Offset",

@@ -37,7 +37,7 @@ private:
 
     unsigned int m_drawCalls = 0;
     unsigned int m_visibleChunksCount = 0;
-    bool m_leftClicked, m_rightClicked, m_middleClicked = false;
+    bool m_leftClicked = false, m_rightClicked = false, m_middleClicked = false;
     float m_aspectRatio = 16.0f / 9.0f;
     int m_MVPUniformBufferBindingSlot = 0;
     int m_atlasTextureSlot = 0;

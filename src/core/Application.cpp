@@ -147,16 +147,12 @@ void Application::update() {
     if (m_camera.hasCameraChangedChunk()) m_world->updateChunks(m_camera);
 
     // Uniforms
-    m_postProcessingShader->use();
-    m_postProcessingShader->setUniform1b("u_IsUnderWater", m_camera.isUnderWater(World::getHeight(
-                                           static_cast<int>(m_camera.getPos().x),
-                                           static_cast<int>(m_camera.getPos().z))));
-
-    m_waterShader->use();
-    m_waterShader->setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
-    m_waterShader->setUniform3f("u_CameraPos", m_camera.getPos().x,
-                              m_camera.getPos().y,
-                              m_camera.getPos().z);
+    if (m_camera.hasCameraChangedBlock()) {
+        m_postProcessingShader->use();
+        m_postProcessingShader->setUniform1b("u_IsUnderWater", m_camera.isUnderWater(World::getHeight(
+                                               static_cast<int>(m_camera.getPos().x),
+                                               static_cast<int>(m_camera.getPos().z))));
+    }
 
     // Raycasting
     if (m_raycastResult = Raycast::castRay(m_camera.getPos(), m_camera.getFront(), m_world->getLoadedChunks());
@@ -187,7 +183,7 @@ void Application::render() {
     m_world->drawChunks(m_camera, m_frustum, *m_blockShader, m_visibleChunksCount, m_drawCalls);
     m_world->drawTransparentChunks(m_frustum, *m_blockShader, m_drawCalls);
     m_waterShader->use();
-    m_world->drawWater(m_frustum, *m_waterShader, m_drawCalls);
+    m_world->drawWater(m_frustum, *m_waterShader, m_camera.getPos(), m_drawCalls);
 
     // Block highlighting
     if (m_raycastResult.hitBlock) {
