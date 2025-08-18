@@ -207,7 +207,8 @@ void Application::stateUpdate() {
     m_leftClicked = false;
 }
 
-void Application::cleanup() const {
+void Application::cleanup() {
+    m_raycastResult = RaycastResult{};
     Raycast::clearCache();
     delete m_blockShader;
     delete m_instancesShader;
