@@ -120,7 +120,6 @@ void Application::initResources() {
 
     m_world = std::make_unique<World>();
     DebugUI::init(m_window);
-    m_blockSelector.init(m_highlightedBlockShader.get(), m_highlightedBlockMesh.get());
 }
 
 void Application::processInput(const double deltaTime) {
@@ -192,7 +191,11 @@ void Application::render() {
 
     // Block highlighting
     if (m_raycastResult.hitBlock) {
-        m_blockSelector.render(m_raycastResult,m_camera.getMVP());
+        m_highlightedBlockShader->use();
+        m_highlightedBlockShader->setUniform3f("u_Offset",
+            m_raycastResult.blockWorldPosition[0],
+            m_raycastResult.blockWorldPosition[1],
+            m_raycastResult.blockWorldPosition[2]);
         m_highlightedBlockMesh->draw();
         ++m_drawCalls;
     }

@@ -123,8 +123,6 @@ add_executable(GL_Craft
         src/render/HighlightedBlock.h
         src/ui/Crosshair.cpp
         src/ui/Crosshair.h
-        src/render/BlockSelector.cpp
-        src/render/BlockSelector.h
         src/gl/UniformBuffer.cpp
         src/gl/UniformBuffer.h
         src/entity/Player.cpp

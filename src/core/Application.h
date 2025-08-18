@@ -3,7 +3,6 @@
 #include "../entity/Player.h"
 #include "../gl/Shader.h"
 #include "../gl/UniformBuffer.h"
-#include "../render/BlockSelector.h"
 #include "../render/Camera.h"
 #include "../render/HighlightedBlock.h"
 #include "../render/PostProcessingMesh.h"
@@ -33,7 +32,6 @@ private:
     Camera m_camera;
     DebugUI m_debugUI;
     Frustum m_frustum;
-    BlockSelector m_blockSelector;
     RaycastResult m_raycastResult;
     Player m_player;
 
