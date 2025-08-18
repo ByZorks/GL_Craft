@@ -61,7 +61,7 @@ private:
     void stateUpdate();
     void cleanup();
 
-    void onMouseMove(double xpos, double ypos);
+    void onMouseMove(double xPos, double yPos);
     void onFrameBufferResize(int width, int height);
     void onMouseEvent(int button, int action);
 };

@@ -247,8 +247,8 @@ void Application::cleanup() {
     glfwTerminate();
 }
 
-void Application::onMouseMove(const double xpos, const double ypos) {
-    if (m_camera.isInputEnabled()) m_camera.handleMouse(xpos, ypos);
+void Application::onMouseMove(const double xPos, const double yPos) {
+    if (m_camera.isInputEnabled()) m_camera.handleMouse(xPos, yPos);
 }
 
 void Application::onFrameBufferResize(const int width, const int height) {
