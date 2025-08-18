@@ -6,9 +6,11 @@ layout(location = 2) in uint face; // Face index
 layout(location = 3) in uint AO; // Ambient Occlusion values (0-3)
 layout(location = 4) in ivec3 instancePos; // Instance position in world space
 
-out vec2 v_texCoord;
+layout(std140, binding = 0) uniform MVP {
+    mat4 u_MVP; // Model-View-Projection matrix
+};
 
-uniform mat4 u_MVP;
+out vec2 v_texCoord;
 
 void main() {
     const vec3 worldPos = ivec3(position) + instancePos;

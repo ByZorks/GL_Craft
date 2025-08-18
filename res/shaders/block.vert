@@ -5,12 +5,15 @@ layout(location = 1) in uvec2 texIndex; // Texture column and row for atlas mapp
 layout(location = 2) in uint face; // Face index (0-5 for 6 faces)
 layout(location = 3) in uint AO; // Ambient Occlusion values (0-3)
 
+layout(std140, binding = 0) uniform MVP {
+    mat4 u_MVP; // Model-View-Projection matrix
+};
+
 out vec2 v_texCoord;
 flat out uint v_face;
 out float v_AO;
 
 uniform vec3 u_Offset;
-uniform mat4 u_MVP;
 
 void main() {
     const vec3 worldPos = position + u_Offset;

@@ -93,6 +93,9 @@ void Application::initResources() {
 
     m_atlas = new Texture("../res/textures/atlas/texture_atlas.png");
 
+    m_MVPBuffer = new UniformBuffer();
+    m_MVPBuffer->init(nullptr, sizeof(glm::mat4), 0);
+
     int width, height;
     glfwGetWindowSize(m_window, &width, &height);
     m_postProcessingMesh = new PostProcessingMesh(width, height);
@@ -127,6 +130,7 @@ void Application::update() {
     // Update camera position and view matrix
     m_camera.calculateMVP();
     m_frustum = Camera::getFrustum(m_camera.getMVP());
+    m_MVPBuffer->updateData(m_camera.getMVPData(), sizeof(glm::mat4));
 
     // Chunks generation
     if (m_camera.hasCameraChangedChunk()) m_world->updateChunks(m_camera);
@@ -137,18 +141,11 @@ void Application::update() {
                                            static_cast<int>(m_camera.getCameraPos().x),
                                            static_cast<int>(m_camera.getCameraPos().z))));
 
-    m_blockShader->use();
-    m_blockShader->setUniformMat4f("u_MVP", m_camera.getMVP());
-
     m_waterShader->use();
-    m_waterShader->setUniformMat4f("u_MVP", m_camera.getMVP());
     m_waterShader->setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
     m_waterShader->setUniform3f("u_CameraPos", m_camera.getCameraPos().x,
                               m_camera.getCameraPos().y,
                               m_camera.getCameraPos().z);
-
-    m_instancesShader->use();
-    m_instancesShader->setUniformMat4f("u_MVP", m_camera.getMVP());
 
     // Raycasting
     if (m_raycastResult = Raycast::castRay(m_camera.getCameraPos(), m_camera.getCameraFront(), m_world->getLoadedChunks());
@@ -166,6 +163,7 @@ void Application::render() {
     DebugUI::newFrame();
 
     // Instances, chunks, transparent, and water rendering
+    m_instancesShader->use();
     m_world->drawInstances(m_drawCalls);
     m_blockShader->use();
     m_world->drawChunks(m_camera, m_frustum, *m_blockShader, m_visibleChunksCount, m_drawCalls);
@@ -214,6 +212,8 @@ void Application::cleanup() {
     delete m_instancesShader;
     delete m_waterShader;
     delete m_highlightedBlockShader;
+    delete m_atlas;
+    delete m_MVPBuffer;
     delete m_highlightedBlockMesh;
     delete m_crosshairShader;
     delete m_crosshairMesh;

@@ -2,6 +2,7 @@
 #define GL_CRAFT_APPLICATION_H
 #include "WindowUserPointers.h"
 #include "../gl/Shader.h"
+#include "../gl/UniformBuffer.h"
 #include "../render/BlockSelector.h"
 #include "../render/Camera.h"
 #include "../render/HighlightedBlock.h"
@@ -34,6 +35,8 @@ private:
     Shader* m_postProcessingShader{};
 
     Texture* m_atlas{};
+
+    UniformBuffer* m_MVPBuffer{};
 
     unsigned int m_drawCalls = 0;
     unsigned int m_visibleChunksCount = 0;

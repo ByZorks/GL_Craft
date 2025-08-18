@@ -126,6 +126,8 @@ add_executable(GL_Craft
         src/ui/Crosshair.h
         src/render/BlockSelector.cpp
         src/render/BlockSelector.h
+        src/gl/UniformBuffer.cpp
+        src/gl/UniformBuffer.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})

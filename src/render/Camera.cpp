@@ -167,6 +167,10 @@ glm::mat4 Camera::getMVP() const {
     return m_mvp;
 }
 
+const void * Camera::getMVPData() const {
+    return  &m_mvp[0][0];
+}
+
 Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
     constexpr float padding = Chunk::SIZE * 1.7f; // Prevent popping
 
