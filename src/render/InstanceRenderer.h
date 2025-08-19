@@ -14,7 +14,7 @@ private:
     StorageBuffer m_instanceSSBO;
     std::vector<BlockVertex> m_vertices;
 
-    std::vector<std::array<int, 4>> m_instancePositions;
+    std::vector<std::array<int, 3>> m_instancePositions;
     unsigned int m_instanceCount = 0;
     size_t m_instanceBufferCapacity = 0;
     bool m_buffersInitialized = false;
@@ -38,17 +38,20 @@ public:
         // Instance buffer
         constexpr size_t initialCapacity = 10000;
         m_instancePositions.reserve(initialCapacity);
-        m_instanceSSBO.init(nullptr, initialCapacity * sizeof(std::array<int, 4>), 2);
+        m_instanceSSBO.init(nullptr, initialCapacity * sizeof(std::array<int, 3>), 2);
 
         m_instanceBufferCapacity = initialCapacity;
         m_buffersInitialized = true;
     }
-    void addInstance(const std::array<int, 4> &position);
+    void addInstance(const std::array<int, 3> &position);
     void updateInstanceBuffer();
     void resetInstances();
     void draw() const;
 
     [[nodiscard]] unsigned int getInstancesCount() const;
+
+private:
+
 };
 
 #endif //INSTANCERENDERER_H

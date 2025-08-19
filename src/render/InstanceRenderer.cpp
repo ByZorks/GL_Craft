@@ -2,7 +2,7 @@
 
 #include "Renderer.h"
 
-void InstanceRenderer::addInstance(const std::array<int, 4> &position) {
+void InstanceRenderer::addInstance(const std::array<int, 3> &position) {
     if (m_instanceCount >= m_instancePositions.size()) {
         m_instancePositions.push_back(position);
     } else {
@@ -19,9 +19,9 @@ void InstanceRenderer::updateInstanceBuffer() {
         m_instanceBufferCapacity = m_instanceCount * 2;
 
         m_instanceSSBO.deleteBuffer();
-        m_instanceSSBO.init(m_instancePositions.data(), m_instanceBufferCapacity * sizeof(std::array<int, 4>), 2);
+        m_instanceSSBO.init(m_instancePositions.data(), m_instanceBufferCapacity * sizeof(std::array<int, 3>), 2);
     } else {
-        m_instanceSSBO.updateData(m_instancePositions.data(), m_instanceCount * sizeof(std::array<int, 4>));
+        m_instanceSSBO.updateData(m_instancePositions.data(), m_instanceCount * sizeof(std::array<int, 3>));
     }
 }
 

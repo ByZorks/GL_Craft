@@ -12,7 +12,7 @@ layout(std430, binding = 1) readonly buffer blockVertexPullData {
 };
 
 layout (std430, binding = 2) readonly buffer instanceData {
-    ivec3 instancePos[]; // Instance position in world space
+    int instancePos[]; // Instance position in world space
 };
 
 layout(std140, binding = 0) uniform MVP {
@@ -63,9 +63,13 @@ void main() {
     const BlockVertex data = unpackVertexData(packedData);
 
     // Position and offset calculation
+    const int instancePosX = instancePos[gl_InstanceID * 3];
+    const int instancePosY = instancePos[gl_InstanceID * 3 + 1];
+    const int instancePosZ = instancePos[gl_InstanceID * 3 + 2];
+    const vec3 instancePos = vec3(instancePosX, instancePosY, instancePosZ);
     const int quadVertexIndex = indices[currentVertexID];
     const vec3 offset = faceOffsets[data.face][quadVertexIndex];
-    const vec3 worldPos = vec3(instancePos[gl_InstanceID]) + offset;
+    const vec3 worldPos = instancePos + offset;
     gl_Position = u_MVP * vec4(worldPos, 1.0);
 
     // Texture coordinates
