@@ -21,7 +21,7 @@ void PostProcessingMesh::resize(const int width, const int height) {
 }
 
 void PostProcessingMesh::draw() const {
-    Renderer::draw(m_VAO, m_IBO);
+    Renderer::drawElements(m_VAO, m_IBO);
 }
 
 const FrameBuffer & PostProcessingMesh::getFBO() const {

@@ -2,7 +2,7 @@
 #define MESH_H
 
 #include "Block.h"
-#include "../gl/IndexBuffer.h"
+#include "../gl/StorageBuffer.h"
 #include "../gl/VertexArray.h"
 #include "../math/AABB.h"
 #include "../render/Renderer.h"
@@ -16,25 +16,20 @@ enum class State : uint8_t {
 
 struct GLBuffersData {
     std::vector<BlockVertex> vertices;
-    std::vector<Face> faces;
     VertexArray VAO;
-    VertexBuffer VBO;
-    IndexBuffer IBO;
+    StorageBuffer SSBO;
+    bool hasFaces = true;
 
     void shrinkBuffers() {
         vertices.shrink_to_fit();
-        faces.shrink_to_fit();
     }
 
     void deleteMesh() {
         vertices.clear();
-        faces.clear();
     }
 
     void deleteGLBuffer() {
         VAO.deleteBuffer();
-        VBO.deleteBuffer();
-        IBO.deleteBuffer();
     }
 };
 
@@ -65,51 +60,55 @@ public:
     virtual void generateMesh(bool setFlag);
 
     void createGLBuffers() {
-        if (!m_opaqueData.vertices.empty())
-            setupGLBuffers(m_opaqueData.vertices, m_opaqueData.faces, m_opaqueData.VAO, m_opaqueData.VBO, m_opaqueData.IBO);
-        if (!m_transparentData.vertices.empty())
-            setupGLBuffers(m_transparentData.vertices, m_transparentData.faces, m_transparentData.VAO, m_transparentData.VBO, m_transparentData.IBO);
-        if (!m_waterData.vertices.empty())
-            setupGLBuffers(m_waterData.vertices, m_waterData.faces, m_waterData.VAO, m_waterData.VBO, m_waterData.IBO);
+        if (!m_opaqueData.vertices.empty()) {
+            setupGLBuffers(m_opaqueData.vertices, m_opaqueData.VAO, m_opaqueData.SSBO);
+        } else {
+            m_opaqueData.hasFaces = false;
+        }
+        if (!m_transparentData.vertices.empty()) {
+            setupGLBuffers(m_transparentData.vertices, m_transparentData.VAO, m_transparentData.SSBO);
+        } else {
+            m_transparentData.hasFaces = false;
+        }
+        if (!m_waterData.vertices.empty()) {
+            setupGLBuffers(m_waterData.vertices, m_waterData.VAO, m_waterData.SSBO);
+        } else {
+            m_waterData.hasFaces = false;
+        }
 
         m_state = State::READY_TO_DRAW;
     }
 
     void createNewMeshGLBuffers() {
         bool hasNewOpaque = false, hasNewTransparent = false, hasNewWater = false;
-        VertexArray newOpaqueVAO, newTransparentVAO, newWaterVAO;
-        VertexBuffer newOpaqueVBO, newTransparentVBO, newWaterVBO;
-        IndexBuffer newOpaqueIBO, newTransparentIBO, newWaterIBO;
+        StorageBuffer newOpaqueSSBO, newTransparentSSBO, newWaterSSBO;
 
         // Create new GL buffers for the temporary mesh data
         if (!m_opaqueData.vertices.empty()) {
-            setupGLBuffers(m_opaqueData.vertices, m_opaqueData.faces, newOpaqueVAO, newOpaqueVBO, newOpaqueIBO);
+            setupGLBuffers(m_opaqueData.vertices, m_opaqueData.VAO,newOpaqueSSBO);
             hasNewOpaque = true;
         }
         if (!m_transparentData.vertices.empty()) {
-            setupGLBuffers(m_transparentData.vertices, m_transparentData.faces, newTransparentVAO, newTransparentVBO, newTransparentIBO);
+            setupGLBuffers(m_transparentData.vertices, m_transparentData.VAO, newTransparentSSBO);
             hasNewTransparent = true;
         }
         if (!m_waterData.vertices.empty()) {
-            setupGLBuffers(m_waterData.vertices, m_waterData.faces, newWaterVAO, newWaterVBO, newWaterIBO);
+            setupGLBuffers(m_waterData.vertices, m_waterData.VAO, newWaterSSBO);
             hasNewWater = true;
         }
 
         // Switch the buffers
         if (hasNewOpaque) {
-            m_opaqueData.VAO = std::move(newOpaqueVAO);
-            m_opaqueData.VBO = std::move(newOpaqueVBO);
-            m_opaqueData.IBO = std::move(newOpaqueIBO);
+            m_opaqueData.SSBO = std::move(newOpaqueSSBO);
+            m_opaqueData.hasFaces = true;
         }
         if (hasNewTransparent) {
-            m_transparentData.VAO = std::move(newTransparentVAO);
-            m_transparentData.VBO = std::move(newTransparentVBO);
-            m_transparentData.IBO = std::move(newTransparentIBO);
+            m_transparentData.SSBO = std::move(newTransparentSSBO);
+            m_transparentData.hasFaces = true;
         }
         if (hasNewWater) {
-            m_waterData.VAO = std::move(newWaterVAO);
-            m_waterData.VBO = std::move(newWaterVBO);
-            m_waterData.IBO = std::move(newWaterIBO);
+            m_waterData.SSBO = std::move(newWaterSSBO);
+            m_waterData.hasFaces = true;
         }
 
         m_state = State::READY_TO_DRAW;
@@ -130,27 +129,27 @@ public:
     }
 
     void draw() const {
-        Renderer::draw(m_opaqueData.VAO, m_opaqueData.IBO);
+        Renderer::drawWithVertexPulling(m_opaqueData.VAO, m_opaqueData.SSBO, m_opaqueData.vertices.size() * 6); // 6 vertices per face
     }
 
     void drawTransparent() const {
-        Renderer::draw(m_transparentData.VAO, m_transparentData.IBO);
+        Renderer::drawWithVertexPulling(m_transparentData.VAO, m_transparentData.SSBO, m_transparentData.vertices.size() * 6);
     }
 
     void drawWater() const {
-        Renderer::draw(m_waterData.VAO, m_waterData.IBO);
+        Renderer::drawWithVertexPulling(m_waterData.VAO, m_waterData.SSBO, m_waterData.vertices.size() * 6);
     }
 
     [[nodiscard]] bool hasOpaqueFaces() const {
-        return m_opaqueData.IBO.getCount() > 0;
+        return m_opaqueData.hasFaces;
     }
 
     [[nodiscard]] bool hasTransparentFaces() const {
-        return m_transparentData.IBO.getCount() > 0;
+        return m_transparentData.hasFaces;
     }
 
     [[nodiscard]] bool hasWaterFaces() const {
-        return m_waterData.IBO.getCount() > 0;
+        return m_waterData.hasFaces;
     }
 
     [[nodiscard]] virtual bool shouldDrawFace(int x, int y, int z,
@@ -223,43 +222,10 @@ public:
         return m_opaqueData.vertices;
     }
 
-    [[nodiscard]] std::vector<Face> getOpaqueBlockFaces() const {
-        return m_opaqueData.faces;
-    }
-
 private:
-    static void setupGLBuffers(const std::vector<BlockVertex> &vertices, const std::vector<Face> &faces,
-                      VertexArray &VAO, VertexBuffer &VBO, IndexBuffer &IBO) {
-        constexpr int NUMBER_OF_FACES = 6;
-        std::vector<unsigned int> indices;
-        indices.reserve(faces.size() * NUMBER_OF_FACES);
-        unsigned int vertexOffsetOpaque = 0;
-
-        for (const auto &faceType: faces) {
-            constexpr unsigned int faceIndicesCCW[6] = {0, 2, 1, 0, 3, 2};
-            constexpr unsigned int faceIndicesCW[6] = {0, 1, 2, 0, 2, 3};
-            const unsigned int *indicesOrder = faceType == Face::BACK || faceType == Face::LEFT || faceType == Face::TOP
-                                              ? faceIndicesCW : faceIndicesCCW;
-
-            for (int i = 0; i < NUMBER_OF_FACES; ++i) {
-                indices.push_back(vertexOffsetOpaque + indicesOrder[i]);
-            }
-
-            constexpr int VERTEX_COUNT = 4;
-            vertexOffsetOpaque += VERTEX_COUNT;
-        }
-
-        VBO.init(vertices.data(), vertices.size() * sizeof(BlockVertex));
-        IBO.init(indices.data(), indices.size());
-
-        VertexBufferLayout meshLayout;
-        meshLayout.PushInt<unsigned char>(3); // x, y, z
-        meshLayout.PushInt<unsigned char>(2, true); // u, v
-        meshLayout.PushInt<unsigned char>(1); // face
-        meshLayout.PushInt<unsigned char>(1); // AO
-
+    static void setupGLBuffers(const std::vector<BlockVertex> &vertices, VertexArray &VAO, StorageBuffer &SSBO) {
         VAO.init();
-        VAO.addBuffer(VBO, meshLayout);
+        SSBO.init(vertices.data(), static_cast<unsigned int>(vertices.size() * sizeof(BlockVertex)), 1);
     }
 };
 

@@ -7,7 +7,7 @@ Crosshair::Crosshair() {
 }
 
 void Crosshair::draw() const {
-    Renderer::draw(m_VAO, m_IBO);
+    Renderer::drawElements(m_VAO, m_IBO);
 }
 
 void Crosshair::createGLBuffers() {

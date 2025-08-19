@@ -1,6 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 #include "../gl/IndexBuffer.h"
+#include "../gl/StorageBuffer.h"
 #include "../gl/VertexArray.h"
 
 class Renderer {
@@ -22,9 +23,11 @@ public:
     static void enableDepthMask();
     static void disableBackFaceCulling();
     static void enableBackFaceCulling();
-    static void draw(const VertexArray& vao, const IndexBuffer& ibo);
     static void drawLines(const VertexArray& vao, const IndexBuffer& ibo);
-    static void drawInstanced(const VertexArray& vao, const IndexBuffer& ibo, unsigned int instanceCount);
+    static void drawWithVertexPulling(const VertexArray& vao, const StorageBuffer &ssbo, unsigned int vertexCount);
+    static void drawWithVertexPullingInstanced(const VertexArray& vao, const StorageBuffer &ssbo, const StorageBuffer &instanceSsbo, unsigned int vertexCount, unsigned int instanceCount);
+    static void drawElements(const VertexArray& vao, const IndexBuffer& ibo);
+    static void drawElementsInstanced(const VertexArray& vao, const IndexBuffer& ibo, unsigned int instanceCount);
 
 };
 

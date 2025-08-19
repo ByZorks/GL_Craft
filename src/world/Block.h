@@ -1,7 +1,6 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 #include <array>
-#include <string>
 #include <vector>
 
 #include "GL/glew.h"
@@ -17,10 +16,10 @@ enum class BlockType : uint8_t {
 };
 
 struct BlockVertex {
-    uint8_t position[3]; // Position in local coordinates
-    uint8_t texCoords[2]; // Texture row and column in the texture atlas
-    uint8_t face; // Face index to determine the normal vector
-    uint8_t AO; // Ambient Occlusion value (0-3)
+    alignas(16) unsigned int position[3];
+    alignas(16) unsigned int texCoords[2];
+    unsigned int faceType;
+    alignas(16) unsigned int AO[4];
 };
 
 struct HighlightedVertex {

@@ -2,7 +2,7 @@
 
 #include "Renderer.h"
 
-void InstanceRenderer::addInstance(const std::array<int, 3> &position) {
+void InstanceRenderer::addInstance(const std::array<int, 4> &position) {
     if (m_instanceCount >= m_instancePositions.size()) {
         m_instancePositions.push_back(position);
     } else {
@@ -18,12 +18,10 @@ void InstanceRenderer::updateInstanceBuffer() {
     if (m_instanceCount > m_instanceBufferCapacity) {
         m_instanceBufferCapacity = m_instanceCount * 2;
 
-        m_instanceVBO.deleteBuffer();
-        m_instanceVBO.init(m_instancePositions.data(), m_instanceBufferCapacity * sizeof(std::array<int, 3>), BufferUsage::DYNAMIC);
-
-        m_VAO.addInstancedBuffer(m_instanceVBO, 4, 3);
+        m_instanceSSBO.deleteBuffer();
+        m_instanceSSBO.init(m_instancePositions.data(), m_instanceBufferCapacity * sizeof(std::array<int, 4>), 2);
     } else {
-        m_instanceVBO.updateData(m_instancePositions.data(), m_instanceCount * sizeof(std::array<int, 3>));
+        m_instanceSSBO.updateData(m_instancePositions.data(), m_instanceCount * sizeof(std::array<int, 4>));
     }
 }
 
@@ -35,13 +33,9 @@ void InstanceRenderer::resetInstances() {
 void InstanceRenderer::draw() const {
     if (m_instanceCount == 0 || !m_buffersInitialized) return;
 
-    Renderer::drawInstanced(m_VAO, m_IBO, m_instanceCount);
+    Renderer::drawWithVertexPullingInstanced(m_VAO, m_SSBO, m_instanceSSBO,  m_vertices.size() * 6, m_instanceCount);
 }
 
 unsigned int InstanceRenderer::getInstancesCount() const {
     return m_instanceCount;
-}
-
-std::vector<std::array<int, 3>> & InstanceRenderer::getInstancesPositions() {
-    return m_instancePositions;
 }

@@ -5,19 +5,15 @@
 #include "World.h"
 
 Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
-    constexpr int VERTEX_PER_FACE = 4;
     constexpr int NUMBER_OF_FACES = 6;
     constexpr size_t max_faces = NUMBER_OF_FACES * SIZE * SIZE * SIZE;
-    constexpr size_t avg_faces = max_faces / VERTEX_PER_FACE; // Assuming each block has a quarter of the maximum faces
-    constexpr size_t avg_faces_transparent = avg_faces * static_cast<size_t>(0.2f);
-    constexpr size_t avg_faces_water = avg_faces * static_cast<size_t>(0.2f);
+    constexpr size_t avg_vertices_opaque = max_faces * static_cast<size_t>(0.01f);
+    constexpr size_t avg_faces_transparent = max_faces * static_cast<size_t>(0.001f);
+    constexpr size_t avg_faces_water = max_faces * static_cast<size_t>(0.001f);
 
-    m_opaqueData.vertices.reserve(avg_faces * VERTEX_PER_FACE);
-    m_transparentData.vertices.reserve(avg_faces_transparent * VERTEX_PER_FACE);
-    m_waterData.vertices.reserve(avg_faces_water * VERTEX_PER_FACE);
-    m_opaqueData.faces.reserve(avg_faces);
-    m_transparentData.faces.reserve(avg_faces_transparent);
-    m_waterData.faces.reserve(avg_faces_water);
+    m_opaqueData.vertices.reserve(avg_vertices_opaque);
+    m_transparentData.vertices.reserve(avg_faces_transparent);
+    m_waterData.vertices.reserve(avg_faces_water);
     m_blockType.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
     m_pendingBlocksForNeighbors.reserve(SIZE);
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
@@ -202,17 +198,13 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 
         if (isWater) {
             Block::addFaceVertices(face, blockType, m_waterData.vertices, adjacentFaces, localXf, localYf, localZf);
-            m_waterData.faces.emplace_back(face);
             if (face == Face::TOP) {
                 Block::addFaceVertices(Face::TOP_INVERSED, blockType, m_waterData.vertices, adjacentFaces, localXf, localYf, localZf);
-                m_waterData.faces.emplace_back(Face::TOP_INVERSED);
             }
         } else if (isTransparent) {
             Block::addFaceVertices(face, blockType, m_transparentData.vertices, adjacentFaces, localXf, localYf, localZf);
-            m_transparentData.faces.emplace_back(face);
         } else {
             Block::addFaceVertices(face, blockType, m_opaqueData.vertices, adjacentFaces, localXf, localYf, localZf);
-            m_opaqueData.faces.emplace_back(face);
         }
     }
 }
@@ -285,7 +277,5 @@ BlockType Chunk::getBlockTypeOrSurfaceFeature(const int localX, const int localY
 }
 
 bool Chunk::hasVisibleFaces() const {
-    return (!m_opaqueData.vertices.empty() && !m_opaqueData.faces.empty()) ||
-           (!m_transparentData.vertices.empty() && !m_transparentData.faces.empty()) ||
-           (!m_waterData.vertices.empty() && !m_waterData.faces.empty());
+    return !m_opaqueData.vertices.empty() || !m_transparentData.vertices.empty() || !m_waterData.vertices.empty();
 }

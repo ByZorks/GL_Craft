@@ -62,19 +62,33 @@ void Renderer::enableBackFaceCulling() {
     GLCall(glEnable(GL_CULL_FACE));
 }
 
-void Renderer::draw(const VertexArray& vao, const IndexBuffer& ibo) {
-    vao.bind();
-    ibo.bind();
-    GLCall(glDrawElements(GL_TRIANGLES, ibo.getCount(), GL_UNSIGNED_INT, nullptr));
-}
-
 void Renderer::drawLines(const VertexArray &vao, const IndexBuffer &ibo) {
     vao.bind();
     ibo.bind();
     GLCall(glDrawElements(GL_LINES, ibo.getCount(), GL_UNSIGNED_INT, nullptr));
 }
 
-void Renderer::drawInstanced(const VertexArray &vao, const IndexBuffer &ibo, const unsigned int instanceCount) {
+void Renderer::drawElements(const VertexArray& vao, const IndexBuffer& ibo) {
+    vao.bind();
+    ibo.bind();
+    GLCall(glDrawElements(GL_TRIANGLES, ibo.getCount(), GL_UNSIGNED_INT, nullptr));
+}
+
+void Renderer::drawWithVertexPulling(const VertexArray &vao, const StorageBuffer &ssbo, const unsigned int vertexCount) {
+    vao.bind();
+    ssbo.bind();
+    GLCall(glDrawArrays(GL_TRIANGLES, 0, vertexCount));
+}
+
+void Renderer::drawWithVertexPullingInstanced(const VertexArray &vao, const StorageBuffer &ssbo, const StorageBuffer &instanceSsbo, const unsigned int vertexCount,
+    const unsigned int instanceCount) {
+    vao.bind();
+    ssbo.bind();
+    instanceSsbo.bind();
+    GLCall(glDrawArraysInstanced(GL_TRIANGLES, 0, vertexCount, instanceCount));
+}
+
+void Renderer::drawElementsInstanced(const VertexArray &vao, const IndexBuffer &ibo, const unsigned int instanceCount) {
     vao.bind();
     ibo.bind();
     GLCall(glDrawElementsInstanced(GL_TRIANGLES, ibo.getCount(), GL_UNSIGNED_INT, nullptr,instanceCount));
