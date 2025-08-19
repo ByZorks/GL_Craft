@@ -14,6 +14,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
     m_transparentData.vertices.reserve(avg_faces_transparent);
     m_waterData.vertices.reserve(avg_faces_water);
+    m_blockType.reserve((SIZE + 2) * (SIZE + 2) * (SIZE + 2)); // +2 for boundary checks
     m_blockType.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
     m_pendingBlocksForNeighbors.reserve(SIZE);
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);

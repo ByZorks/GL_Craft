@@ -52,6 +52,7 @@ public:
                                                              static_cast<float>(y) + static_cast<float>(size) - 1.0f,
                                                              static_cast<float>(z) + static_cast<float>(size) - 1.0f
                                                   )) {
+        m_blockType.reserve(m_size * m_size * m_size);
         m_blockType.resize(m_size * m_size * m_size, BlockType::AIR);
     }
     virtual ~Mesh() = default;
