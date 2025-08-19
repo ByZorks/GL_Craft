@@ -43,7 +43,7 @@ void StorageBuffer::init(const void *data, const unsigned int size, const unsign
     m_bindingPoint = bindingPoint;
     GLCall(glGenBuffers(1, &m_ID));
     GLCall(glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ID));
-    GLCall(glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_STATIC_DRAW));
+    GLCall(glBufferStorage(GL_SHADER_STORAGE_BUFFER, size, data, GL_DYNAMIC_STORAGE_BIT));
     GLCall(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID));
 }
 
