@@ -158,9 +158,9 @@ bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ)
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const BlockType blockType) {
     if (blockType == BlockType::AIR || Block::isInstance(blockType)) return;
 
-    const auto localXf = static_cast<float>(localX);
-    const auto localYf = static_cast<float>(localY);
-    const auto localZf = static_cast<float>(localZ);
+    const auto localXf = static_cast<unsigned int>(localX);
+    const auto localYf = static_cast<unsigned int>(localY);
+    const auto localZf = static_cast<unsigned int>(localZ);
     const bool isWater = blockType == BlockType::WATER;
     const bool isTransparent = Block::isTransparent(blockType);
 

@@ -8,7 +8,7 @@ struct BlockVertex {
 };
 
 layout(std430, binding = 1) readonly buffer blockVertexPullData {
-    BlockVertex vertices[];
+    uvec2 packedVertices[];
 };
 
 layout (std430, binding = 2) readonly buffer instanceData {
@@ -37,11 +37,30 @@ const vec2 texOffsets[4] = vec2[4](
 
 const int indices[6] = {0, 2, 1, 0, 3, 2};
 
+BlockVertex unpackVertexData(uvec2 packedData) {
+    BlockVertex v;
+
+    v.position.x = (packedData.x >> 0)  & 0x1Fu;  // 5 bits
+    v.position.y = (packedData.x >> 5)  & 0x1Fu;
+    v.position.z = (packedData.x >> 13) & 0x1Fu;
+    v.face       = (packedData.x >> 18) & 0x7u;   // 3 bits
+
+    v.texIndex.x = (packedData.y >> 0)  & 0xFu;   // 4 bits
+    v.texIndex.y = (packedData.y >> 4)  & 0xFu;
+    v.AO.x       = (packedData.y >> 8)  & 0x3u;   // 2 bits
+    v.AO.y       = (packedData.y >> 10) & 0x3u;
+    v.AO.z       = (packedData.y >> 12) & 0x3u;
+    v.AO.w       = (packedData.y >> 14) & 0x3u;
+
+    return v;
+}
+
 void main() {
     // Pull data from the buffer
     const int index = gl_VertexID / 6;
     const int currentVertexID = gl_VertexID % 6;
-    const BlockVertex data = vertices[index];
+    const uvec2 packedData = packedVertices[index];
+    const BlockVertex data = unpackVertexData(packedData);
 
     // Position and offset calculation
     const int quadVertexIndex = indices[currentVertexID];

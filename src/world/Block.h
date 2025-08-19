@@ -16,10 +16,9 @@ enum class BlockType : uint8_t {
 };
 
 struct BlockVertex {
-    alignas(16) unsigned int position[3];
-    alignas(16) unsigned int texCoords[2];
-    unsigned int faceType;
-    alignas(16) unsigned int AO[4];
+    // Data[0]: position, facetype
+    // Data[1]: texture coordinates, AO
+    unsigned int packedData[2];
 };
 
 struct HighlightedVertex {
@@ -70,14 +69,15 @@ public:
 
     static BlockType getBlockType(int y, int columnHeight);
     static const char *getBlockName(BlockType blockType);
-    static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, const std::array<bool, 26> &adjacentsFaces, float block_startX, float block_startY, float block_startZ);
-    static void addFaceVerticesAsBilboard(Face face, BlockType type, std::vector<BlockVertex> &vertices, float block_startX, float block_startY, float block_startZ);
+    static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, const std::array<bool, 26> &adjacentsFaces, unsigned int startX, unsigned int startY, unsigned int startZ);
+    static void addFaceVerticesAsBilboard(Face face, BlockType type, std::vector<BlockVertex> &vertices, unsigned int startX, unsigned int startY, unsigned int startZ);
     static uint8_t computeVertexAO(bool side1, bool side2, bool corner);
 
     static bool isTransparent(BlockType type);
     static bool isInstance(BlockType type);
 
 private:
+    static BlockVertex packVertexData(const unsigned int position[3], const unsigned int texCoords[2], unsigned int faceIndex, const unsigned int ao[4]);
     static uint8_t getTextureU(BlockType type, Face face);
     static uint8_t getTextureV(BlockType type, Face face);
     [[nodiscard]] static int AOIndex(int x, int y, int z);
