@@ -100,7 +100,7 @@ public:
 
         // == OPAQUE ==
         if (!m_opaqueData.vertices.empty()) {
-            if (m_opaqueData.SSBO.getBindingPoint() != 0) {
+            if (m_opaqueData.SSBO.getBindingPoint() == 999) { // 999 is a placeholder for uninitialized SSBO
                 setupGLBuffers(m_opaqueData.vertices, m_opaqueData.SSBO);
             } else {
                 m_opaqueData.SSBO.updateData(m_opaqueData.vertices.data(), static_cast<unsigned int>(m_opaqueData.vertices.size() * sizeof(BlockVertex)));
@@ -112,7 +112,7 @@ public:
 
         // == TRANSPARENT ==
         if (!m_transparentData.vertices.empty()) {
-            if (m_transparentData.SSBO.getBindingPoint() != 0) {
+            if (m_transparentData.SSBO.getBindingPoint() == 999) {
                 setupGLBuffers(m_transparentData.vertices, m_transparentData.SSBO);
             } else {
                 m_transparentData.SSBO.updateData(m_transparentData.vertices.data(), static_cast<unsigned int>(m_transparentData.vertices.size() * sizeof(BlockVertex)));
@@ -124,7 +124,7 @@ public:
 
         // == WATER ==
         if (!m_waterData.vertices.empty()) {
-            if (m_waterData.SSBO.getBindingPoint() != 0) {
+            if (m_waterData.SSBO.getBindingPoint() == 999) {
                 setupGLBuffers(m_waterData.vertices, m_waterData.SSBO);
             } else {
                 m_waterData.SSBO.updateData(m_waterData.vertices.data(), static_cast<unsigned int>(m_waterData.vertices.size() * sizeof(BlockVertex)));
