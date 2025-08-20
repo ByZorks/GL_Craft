@@ -16,9 +16,8 @@ enum class BlockType : uint8_t {
 };
 
 struct BlockVertex {
-    // Data[0]: position, facetype
-    // Data[1]: texture coordinates, AO
-    unsigned int packedData[2];
+    // Data[0]: position, texture index, facetype, AO
+    unsigned int packedData;
 };
 
 struct HighlightedVertex {
@@ -77,9 +76,10 @@ public:
     static bool isInstance(BlockType type);
 
 private:
-    static BlockVertex packVertexData(const unsigned int position[3], const unsigned int texCoords[2], unsigned int faceIndex, const unsigned int ao[4]);
+    static BlockVertex packVertexData(const unsigned int position[3], unsigned int texIndex, unsigned int faceIndex, const unsigned int ao[4]);
     static uint8_t getTextureU(BlockType type, Face face);
     static uint8_t getTextureV(BlockType type, Face face);
+    static unsigned int getTextureIndex(BlockType type, Face face);
     [[nodiscard]] static int AOIndex(int x, int y, int z);
 };
 

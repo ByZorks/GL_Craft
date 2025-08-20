@@ -8,7 +8,7 @@ struct BlockVertex {
 };
 
 layout(std430, binding = 1) readonly buffer blockVertexPullData {
-    uvec2 packedVertices[];
+    uint packedVertices[];
 };
 
 layout (std430, binding = 2) readonly buffer instanceData {
@@ -37,20 +37,27 @@ const vec2 texOffsets[4] = vec2[4](
 
 const int indices[6] = {0, 2, 1, 0, 3, 2};
 
-BlockVertex unpackVertexData(uvec2 packedData) {
+BlockVertex unpackVertexData(uint packedData) {
     BlockVertex v;
 
-    v.position.x = (packedData.x >> 0)  & 0x1Fu;  // 5 bits
-    v.position.y = (packedData.x >> 5)  & 0x1Fu;
-    v.position.z = (packedData.x >> 13) & 0x1Fu;
-    v.face       = (packedData.x >> 18) & 0x7u;   // 3 bits
+    // Postion (15 bits)
+    v.position.x = (packedData >> 0)  & 0x1Fu;
+    v.position.y = (packedData >> 5)  & 0x1Fu;
+    v.position.z = (packedData >> 10) & 0x1Fu;
 
-    v.texIndex.x = (packedData.y >> 0)  & 0xFu;   // 4 bits
-    v.texIndex.y = (packedData.y >> 4)  & 0xFu;
-    v.AO.x       = (packedData.y >> 8)  & 0x3u;   // 2 bits
-    v.AO.y       = (packedData.y >> 10) & 0x3u;
-    v.AO.z       = (packedData.y >> 12) & 0x3u;
-    v.AO.w       = (packedData.y >> 14) & 0x3u;
+    // TexIndex (5 bits)
+    const uint texIndex = (packedData >> 15) & 0x1Fu;
+    v.texIndex.x = texIndex % 5u; // Column in the texture atlas
+    v.texIndex.y = texIndex / 5u; // Row in the texture atlas
+
+    // FaceIndex (3 bits)
+    v.face = (packedData >> 20) & 0x7u;
+
+    // AO (8 bits)
+    v.AO.x = (packedData >> 23) & 0x3u;
+    v.AO.y = (packedData >> 25) & 0x3u;
+    v.AO.z = (packedData >> 27) & 0x3u;
+    v.AO.w = (packedData >> 29) & 0x3u;
 
     return v;
 }
@@ -59,7 +66,7 @@ void main() {
     // Pull data from the buffer
     const int index = gl_VertexID / 6;
     const int currentVertexID = gl_VertexID % 6;
-    const uvec2 packedData = packedVertices[index];
+    const uint packedData = packedVertices[index];
     const BlockVertex data = unpackVertexData(packedData);
 
     // Position and offset calculation
