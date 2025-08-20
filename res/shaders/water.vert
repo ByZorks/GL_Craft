@@ -87,9 +87,8 @@ void main() {
     const int quadVertexIndex = indices[currentVertexID];
     const vec3 offset = faceOffsets[data.face][quadVertexIndex];
     vec3 worldPos = vec3(data.position) + offset + u_Offset;
-    // The 2 first vertex drawn are the top vertices
-    bool isTopVertex = (data.face == 4u || data.face == 6u) || (data.face < 4u && (gl_VertexID % 4 < 2));
-    if (isTopVertex) {
+    // Top vertex
+    if (offset.y > 0.5) {
         worldPos.y -= .2;
         worldPos.y += (sin(u_Time * 2.5 + worldPos.x * 2.0 + worldPos.z * 1.5)
                     + cos(u_Time * 1.5 + worldPos.z * 2.5 + worldPos.x * 1.2)) * 0.05;
