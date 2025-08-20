@@ -21,14 +21,13 @@ private:
 
 public:
     template<typename MeshType>
-    void init(const MeshType &mesh) {
+    void init(MeshType &&mesh) {
         if (m_buffersInitialized) return;
 
-        MeshType meshCopy = mesh;
-        meshCopy.generateVoxel();
-        meshCopy.generateMesh(false);
+        mesh.generateVoxel();
+        mesh.generateMesh(false);
 
-        m_vertices = meshCopy.getOpaqueVertices();
+        m_vertices = mesh.getOpaqueVerticesCopy();
 
         if (!m_vertices.empty()) {
             m_VAO.init();

@@ -1,6 +1,8 @@
 #ifndef MESH_H
 #define MESH_H
 
+#include <mutex>
+
 #include "Block.h"
 #include "../gl/StorageBuffer.h"
 #include "../gl/VertexArray.h"
@@ -15,7 +17,9 @@ enum class State : uint8_t {
 };
 
 struct GLBuffersData {
+    mutable std::mutex m_verticesMutex;
     std::vector<BlockVertex> vertices;
+    unsigned int verticesSize = 0; // vertices.size(); Used to draw the mesh, so we must only update it once the GL buffers are ready
     VertexArray VAO;
     StorageBuffer SSBO;
     bool hasFaces = true;
@@ -25,11 +29,8 @@ struct GLBuffersData {
     }
 
     void deleteMesh() {
+        std::lock_guard lock(m_verticesMutex);
         vertices.clear();
-    }
-
-    void deleteGLBuffer() {
-        VAO.deleteBuffer();
     }
 };
 
@@ -61,6 +62,10 @@ public:
     virtual void generateMesh(bool setFlag);
 
     void createGLBuffers() {
+        std::scoped_lock lock(m_opaqueData.m_verticesMutex,
+                      m_transparentData.m_verticesMutex,
+                      m_waterData.m_verticesMutex);
+
         if (!m_opaqueData.vertices.empty()) {
             setupGLBuffers(m_opaqueData.vertices, m_opaqueData.VAO, m_opaqueData.SSBO);
         } else {
@@ -77,50 +82,59 @@ public:
             m_waterData.hasFaces = false;
         }
 
+        m_opaqueData.verticesSize = static_cast<unsigned int>(m_opaqueData.vertices.size());
+        m_transparentData.verticesSize = static_cast<unsigned int>(m_transparentData.vertices.size());
+        m_waterData.verticesSize = static_cast<unsigned int>(m_waterData.vertices.size());
+
         m_state = State::READY_TO_DRAW;
     }
 
-    void createNewMeshGLBuffers() {
-        bool hasNewOpaque = false, hasNewTransparent = false, hasNewWater = false;
-        StorageBuffer newOpaqueSSBO, newTransparentSSBO, newWaterSSBO;
+    void updateGLBuffers() {
+        std::scoped_lock lock(m_opaqueData.m_verticesMutex,
+                      m_transparentData.m_verticesMutex,
+                      m_waterData.m_verticesMutex);
 
-        // Create new GL buffers for the temporary mesh data
+        // == OPAQUE ==
         if (!m_opaqueData.vertices.empty()) {
-            setupGLBuffers(m_opaqueData.vertices, m_opaqueData.VAO,newOpaqueSSBO);
-            hasNewOpaque = true;
-        }
-        if (!m_transparentData.vertices.empty()) {
-            setupGLBuffers(m_transparentData.vertices, m_transparentData.VAO, newTransparentSSBO);
-            hasNewTransparent = true;
-        }
-        if (!m_waterData.vertices.empty()) {
-            setupGLBuffers(m_waterData.vertices, m_waterData.VAO, newWaterSSBO);
-            hasNewWater = true;
+            if (m_opaqueData.SSBO.getBindingPoint() != 0) {
+                setupGLBuffers(m_opaqueData.vertices, m_opaqueData.VAO, m_opaqueData.SSBO);
+            } else {
+                m_opaqueData.SSBO.updateData(m_opaqueData.vertices.data(), static_cast<unsigned int>(m_opaqueData.vertices.size() * sizeof(BlockVertex)));
+            }
+            m_opaqueData.hasFaces = true;
+        } else {
+            m_opaqueData.hasFaces = false;
         }
 
-        // Switch the buffers
-        if (hasNewOpaque) {
-            m_opaqueData.SSBO = std::move(newOpaqueSSBO);
-            m_opaqueData.hasFaces = true;
-        }
-        if (hasNewTransparent) {
-            m_transparentData.SSBO = std::move(newTransparentSSBO);
+        // == TRANSPARENT ==
+        if (!m_transparentData.vertices.empty()) {
+            if (m_transparentData.SSBO.getBindingPoint() != 0) {
+                setupGLBuffers(m_transparentData.vertices, m_transparentData.VAO, m_transparentData.SSBO);
+            } else {
+                m_transparentData.SSBO.updateData(m_transparentData.vertices.data(), static_cast<unsigned int>(m_transparentData.vertices.size() * sizeof(BlockVertex)));
+            }
             m_transparentData.hasFaces = true;
+        } else {
+            m_transparentData.hasFaces = false;
         }
-        if (hasNewWater) {
-            m_waterData.SSBO = std::move(newWaterSSBO);
+
+        // == WATER ==
+        if (!m_waterData.vertices.empty()) {
+            if (m_waterData.SSBO.getBindingPoint() != 0) {
+                setupGLBuffers(m_waterData.vertices, m_waterData.VAO, m_waterData.SSBO);
+            } else {
+                m_waterData.SSBO.updateData(m_waterData.vertices.data(), static_cast<unsigned int>(m_waterData.vertices.size() * sizeof(BlockVertex)));
+            }
             m_waterData.hasFaces = true;
+        } else {
+            m_waterData.hasFaces = false;
         }
+
+        m_opaqueData.verticesSize = static_cast<unsigned int>(m_opaqueData.vertices.size());
+        m_transparentData.verticesSize = static_cast<unsigned int>(m_transparentData.vertices.size());
+        m_waterData.verticesSize = static_cast<unsigned int>(m_waterData.vertices.size());
 
         m_state = State::READY_TO_DRAW;
-    }
-
-    void resetGLBuffers() {
-        m_opaqueData.deleteGLBuffer();
-        m_transparentData.deleteGLBuffer();
-        m_waterData.deleteGLBuffer();
-
-        m_state = State::MESH_GENERATED;
     }
 
     void resetMesh() {
@@ -130,15 +144,15 @@ public:
     }
 
     void draw() const {
-        Renderer::drawWithVertexPulling(m_opaqueData.VAO, m_opaqueData.SSBO, m_opaqueData.vertices.size() * 6); // 6 vertices per face
+        Renderer::drawWithVertexPulling(m_opaqueData.VAO, m_opaqueData.SSBO, m_opaqueData.verticesSize * 6); // 6 vertices per face
     }
 
     void drawTransparent() const {
-        Renderer::drawWithVertexPulling(m_transparentData.VAO, m_transparentData.SSBO, m_transparentData.vertices.size() * 6);
+        Renderer::drawWithVertexPulling(m_transparentData.VAO, m_transparentData.SSBO, m_transparentData.verticesSize * 6);
     }
 
     void drawWater() const {
-        Renderer::drawWithVertexPulling(m_waterData.VAO, m_waterData.SSBO, m_waterData.vertices.size() * 6);
+        Renderer::drawWithVertexPulling(m_waterData.VAO, m_waterData.SSBO, m_waterData.verticesSize* 6);
     }
 
     [[nodiscard]] bool hasOpaqueFaces() const {
@@ -219,8 +233,9 @@ public:
         return m_box;
     }
 
-    [[nodiscard]] const std::vector<BlockVertex> & getOpaqueVertices() const {
-        return m_opaqueData.vertices;
+    [[nodiscard]] std::vector<BlockVertex> getOpaqueVerticesCopy() const {
+        std::lock_guard lock(m_opaqueData.m_verticesMutex);
+        return m_opaqueData.vertices; // Only used for instance rendering, so a copy is fine
     }
 
 private:

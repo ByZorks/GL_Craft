@@ -84,8 +84,6 @@ void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks) {
         addBlockFaces(localX - 1, localY - 1, localZ - 1, blockType);
     }
     blocks.clear();
-
-    m_state = State::MESH_GENERATED;
 }
 
 void Chunk::generateMesh(const bool setFlag) {
@@ -198,13 +196,16 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         if (!shouldDrawFace(localX, localY, localZ, blockType, face)) continue;
 
         if (isWater) {
+            std::lock_guard lock(m_waterData.m_verticesMutex);
             Block::addFaceVertices(face, blockType, m_waterData.vertices, adjacentFaces, localXf, localYf, localZf);
             if (face == Face::TOP) {
                 Block::addFaceVertices(Face::TOP_INVERSED, blockType, m_waterData.vertices, adjacentFaces, localXf, localYf, localZf);
             }
         } else if (isTransparent) {
+            std::lock_guard lock(m_transparentData.m_verticesMutex);
             Block::addFaceVertices(face, blockType, m_transparentData.vertices, adjacentFaces, localXf, localYf, localZf);
         } else {
+            std::lock_guard lock(m_opaqueData.m_verticesMutex);
             Block::addFaceVertices(face, blockType, m_opaqueData.vertices, adjacentFaces, localXf, localYf, localZf);
         }
     }
@@ -278,5 +279,8 @@ BlockType Chunk::getBlockTypeOrSurfaceFeature(const int localX, const int localY
 }
 
 bool Chunk::hasVisibleFaces() const {
+    std::scoped_lock lock(m_opaqueData.m_verticesMutex,
+                      m_transparentData.m_verticesMutex,
+                      m_waterData.m_verticesMutex);
     return !m_opaqueData.vertices.empty() || !m_transparentData.vertices.empty() || !m_waterData.vertices.empty();
 }

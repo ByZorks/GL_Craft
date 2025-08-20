@@ -14,10 +14,10 @@
 #include "surfaceFeatures/grass/ShortGrass.h"
 
 World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
-    m_grassRenderer.init(ShortGrass(0, 0, 0));
-    m_poppyRenderer.init(Poppy(0, 0, 0));
-    m_cornflowerRenderer.init(Cornflower(0, 0, 0));
-    m_alliumRenderer.init(Allium(0, 0, 0));
+    m_grassRenderer.init(std::move(ShortGrass(0, 0, 0)));
+    m_poppyRenderer.init(std::move(Poppy(0, 0, 0)));
+    m_cornflowerRenderer.init(std::move(Cornflower(0, 0, 0)));
+    m_alliumRenderer.init(std::move(Allium(0, 0, 0)));
 
     m_chunksData.loadedMeshes.reserve(
         static_cast<size_t>(Renderer::s_renderDistance * Renderer::s_renderDistance * Renderer::s_renderDistance *
@@ -262,7 +262,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
             !isAtFrontBorder && !isAtBackBorder) {
             // If the block is not at the border, we can delete it without updating neighbors
             chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type);
-            getMeshesToUpdate().push(chunk);
+            m_chunksData.meshesToUpdate.push(chunk);
 
             if (Block::isInstance(type)) {
                 setInstancesChanged(true);
@@ -301,7 +301,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
                         const int adjZ = k == 0 ? blockLocalPosition[2] : k == -1 ? maxBlockPos : minBlockPos;
 
                         adjacentChunk->deleteBlock(adjX, adjY, adjZ, type);
-                        getMeshesToUpdate().push(adjacentChunk);
+                        m_chunksData.meshesToUpdate.push(adjacentChunk);
                     }
                 }
             }
@@ -309,7 +309,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
 
         // Delete in current chunk last to avoid popping issues because meshing is too slow
         chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type);
-        getMeshesToUpdate().push(chunk);
+        m_chunksData.meshesToUpdate.push(chunk);
 
         if (Block::isInstance(type)) {
             setInstancesChanged(true);
@@ -384,7 +384,7 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
 
         // Place the block in the target chunk
         targetChunk->addBlock(targetX, targetY, targetZ, blockToPlace);
-        getMeshesToUpdate().push(targetChunk);
+        m_chunksData.meshesToUpdate.push(targetChunk);
 
         // Check borders for new block position
         const bool willBeAtLeftBorder = targetX == 0;
@@ -429,7 +429,7 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
                         const int adjZ = k == 0 ? targetZ : k == -1 ? maxBlockPos : minBlockPos;
 
                         adjacentChunk->addBlock(adjX, adjY, adjZ, blockToPlace);
-                        getMeshesToUpdate().push(adjacentChunk);
+                        m_chunksData.meshesToUpdate.push(adjacentChunk);
                     }
                 }
             }
@@ -569,8 +569,10 @@ void World::processChunks() {
                 }
 
                 if (!blocks.empty()) {
-                    p_chunk->resetGLBuffers();
-                    p_chunk->generatePendingBlocks(blocks);
+                    m_threadPool.enqueue_no_future([this, p_chunk, blocks = std::move(blocks)]() mutable {
+                        p_chunk->generatePendingBlocks(blocks);
+                        m_chunksData.meshesToUpdate.push(p_chunk);
+                    });
                 }
             }
         }
@@ -580,7 +582,7 @@ void World::processChunks() {
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.meshesToUpdate.empty()) break;
         const std::shared_ptr<Chunk> p_chunk = m_chunksData.meshesToUpdate.pop();
-        p_chunk->createNewMeshGLBuffers();
+        p_chunk->updateGLBuffers();
         m_instancesChanged = true;
     }
 }

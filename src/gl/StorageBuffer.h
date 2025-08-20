@@ -5,6 +5,7 @@ class StorageBuffer {
 private:
     unsigned int m_ID = 0;
     unsigned int m_bindingPoint = 999;
+    unsigned int m_size = 0;
 
 public:
     StorageBuffer();
@@ -16,10 +17,12 @@ public:
     StorageBuffer & operator=(StorageBuffer &&other) noexcept;
 
     void init(const void *data, unsigned int size, unsigned int bindingPoint);
-    void updateData(const void *data, unsigned int size, unsigned int offset = 0) const;
+    void updateData(const void *data, unsigned int size, unsigned int offset = 0);
     void deleteBuffer();
     void bind() const;
     static void unbind();
+
+    [[nodiscard]] unsigned int getBindingPoint() const;
 };
 
 #endif //GL_CRAFT_STORAGEBUFFER_H
