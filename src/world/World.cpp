@@ -46,47 +46,30 @@ World::World() : m_threadPool(std::max(1u, std::thread::hardware_concurrency()))
 }
 
 void World::updateChunks(const Camera &camera) {
-    const int cameraWorldX = static_cast<int>(std::floor(camera.getPos().x / static_cast<float>(Chunk::SIZE))) *
+    if (camera.hasCameraChangedChunk()) {
+        const int cameraWorldX = static_cast<int>(std::floor(camera.getPos().x / static_cast<float>(Chunk::SIZE))) *
                              static_cast<int>(Chunk::SIZE);
-    const int cameraWorldY = static_cast<int>(std::floor(camera.getPos().y / static_cast<float>(Chunk::SIZE))) *
-                             static_cast<int>(Chunk::SIZE);
-    const int cameraWorldZ = static_cast<int>(std::floor(camera.getPos().z / static_cast<float>(Chunk::SIZE))) *
-                             static_cast<int>(Chunk::SIZE);
-    const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
+        const int cameraWorldY = static_cast<int>(std::floor(camera.getPos().y / static_cast<float>(Chunk::SIZE))) *
+                                 static_cast<int>(Chunk::SIZE);
+        const int cameraWorldZ = static_cast<int>(std::floor(camera.getPos().z / static_cast<float>(Chunk::SIZE))) *
+                                 static_cast<int>(Chunk::SIZE);
+        const glm::vec3 cameraChunkPos(cameraWorldX, cameraWorldY, cameraWorldZ);
 
-    unloadDistantMeshes(cameraChunkPos);
-    m_threadPool.enqueue_no_future([this, cameraWorldX, cameraWorldY, cameraWorldZ] {
-        generateChunksPositions(cameraWorldX, cameraWorldY, cameraWorldZ);
-    });
+        unloadDistantMeshes(cameraChunkPos);
+        m_threadPool.enqueue_no_future([this, cameraWorldX, cameraWorldY, cameraWorldZ] {
+            generateChunksPositions(cameraWorldX, cameraWorldY, cameraWorldZ);
+        });
+    }
+
+    m_needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk() ||
+                          m_renderDistanceChanged;
+    processChunksQueues();
+    sortChunks();
 }
 
 void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount,
                        unsigned int &drawCalls) {
-    // Remove chunks that are no longer needed, generate voxel and mesh for new chunks, store them in m_chunksData.loadedMeshes
-    processChunks();
-
-    // Setup buffers for chunks that are ready to be rendered
-    m_displayedNormalMeshes.clear();
-    m_displayedTransparentMeshes.clear();
-    m_displayedWaterMeshes.clear();
-    bool needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk() ||
-                              m_renderDistanceChanged || m_instancesChanged;
-    m_renderDistanceChanged = false;
-    m_instancesChanged = false;
-    for (const auto &chunk: m_chunksData.loadedMeshes | std::views::values) {
-        const State state = chunk->getState();
-        if (state == State::MESH_GENERATED) {
-            chunk->createGLBuffers();
-            needInstanceUpdate = true;
-        }
-        if (state == State::READY_TO_DRAW) {
-            if (chunk->hasOpaqueFaces()) m_displayedNormalMeshes.push_back(chunk);
-            if (chunk->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(chunk);
-            if (chunk->hasWaterFaces()) m_displayedWaterMeshes.push_back(chunk);
-        }
-    }
-
-    if (needInstanceUpdate) {
+    if (m_needInstanceUpdate) {
         m_grassRenderer.resetInstances();
         m_poppyRenderer.resetInstances();
         m_cornflowerRenderer.resetInstances();
@@ -104,7 +87,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         ++drawCalls;
         ++visibleChunksCount;
 
-        if (needInstanceUpdate && camera.distanceToCamera(*strong_mesh) < 320.0f) {
+        if (m_needInstanceUpdate && camera.distanceToCamera(*strong_mesh) < 320.0f) {
             // They are no longer visible at this distance event if we draw them
             for (const auto &feature: strong_mesh->getSurfaceFeatures()) {
                 switch (feature.type) {
@@ -127,7 +110,7 @@ void World::drawChunks(const Camera &camera, const Frustum &frustum, Shader &sha
         }
     }
 
-    if (needInstanceUpdate) {
+    if (m_needInstanceUpdate) {
         m_grassRenderer.updateInstanceBuffer();
         m_poppyRenderer.updateInstanceBuffer();
         m_cornflowerRenderer.updateInstanceBuffer();
@@ -265,7 +248,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
             m_chunksData.meshesToUpdate.push(chunk);
 
             if (Block::isInstance(type)) {
-                setInstancesChanged(true);
+                m_needInstanceUpdate = true;
             }
 
             const auto t2 = std::chrono::high_resolution_clock::now();
@@ -312,7 +295,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         m_chunksData.meshesToUpdate.push(chunk);
 
         if (Block::isInstance(type)) {
-            setInstancesChanged(true);
+            m_needInstanceUpdate = true;
         }
 
         const auto t2 = std::chrono::high_resolution_clock::now();
@@ -436,7 +419,7 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
         }
 
         if (Block::isInstance(blockToPlace)) {
-            setInstancesChanged(true);
+            m_needInstanceUpdate = true;
         }
 
         const auto t2 = std::chrono::high_resolution_clock::now();
@@ -514,7 +497,7 @@ ThreadSafeQueue<std::shared_ptr<Chunk> > &World::getMeshesToUpdate() {
     return m_chunksData.meshesToUpdate;
 }
 
-void World::processChunks() {
+void World::processChunksQueues() {
     const int maxChunksPerFrame = static_cast<int>(
         0.1 * Renderer::s_renderDistance + 0.2 * static_cast<float>(m_threadPool.getNumberOfThreads()));
     // Remove chunks that are no longer needed
@@ -583,7 +566,27 @@ void World::processChunks() {
         if (m_chunksData.meshesToUpdate.empty()) break;
         const std::shared_ptr<Chunk> p_chunk = m_chunksData.meshesToUpdate.pop();
         p_chunk->updateGLBuffers();
-        m_instancesChanged = true;
+        m_needInstanceUpdate = true;
+    }
+}
+
+void World::sortChunks() {
+    // Setup buffers for chunks that are ready to be rendered
+    m_displayedNormalMeshes.clear();
+    m_displayedTransparentMeshes.clear();
+    m_displayedWaterMeshes.clear();
+    m_renderDistanceChanged = false;
+    for (const auto &chunk: m_chunksData.loadedMeshes | std::views::values) {
+        const State state = chunk->getState();
+        if (state == State::MESH_GENERATED) {
+            chunk->createGLBuffers();
+            m_needInstanceUpdate = true;
+        }
+        if (state == State::READY_TO_DRAW) {
+            if (chunk->hasOpaqueFaces()) m_displayedNormalMeshes.push_back(chunk);
+            if (chunk->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(chunk);
+            if (chunk->hasWaterFaces()) m_displayedWaterMeshes.push_back(chunk);
+        }
     }
 }
 
@@ -659,10 +662,6 @@ FastNoiseLite &World::getTerrainNoise() {
 FastNoiseLite &World::getSurfaceFeaturesNoise() {
     thread_local FastNoiseLite instance = makeSurfaceFeaturesNoise();
     return instance;
-}
-
-void World::setInstancesChanged(const bool m_instances_changed) {
-    m_instancesChanged = m_instances_changed;
 }
 
 ThreadPool &World::getThreadPool() {

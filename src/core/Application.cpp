@@ -144,7 +144,7 @@ void Application::update() {
     m_MVPBuffer->updateData(m_camera.getMVPData(), sizeof(glm::mat4));
 
     // Chunks generation
-    if (m_camera.hasCameraChangedChunk()) m_world->updateChunks(m_camera);
+    m_world->updateChunks(m_camera);
 
     // Uniforms
     if (m_camera.hasCameraChangedBlock()) {

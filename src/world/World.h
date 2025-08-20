@@ -32,9 +32,7 @@ private:
     InstanceRenderer m_cornflowerRenderer;
     InstanceRenderer m_alliumRenderer;
     bool m_renderDistanceChanged = false;
-    bool m_instancesChanged = false;
-
-    std::mutex m_heightMapMutex;
+    bool m_needInstanceUpdate = false;
 
     std::vector<std::shared_ptr<Chunk>> m_displayedNormalMeshes;
     std::vector<std::shared_ptr<Chunk>> m_displayedTransparentMeshes;
@@ -62,10 +60,9 @@ public:
     [[nodiscard]] ThreadSafeQueue<std::shared_ptr<Chunk>> & getMeshesToUpdate();
     static FastNoiseLite& getSurfaceFeaturesNoise();
 
-    void setInstancesChanged(bool m_instances_changed);
-
 private:
-    void processChunks();
+    void processChunksQueues();
+    void sortChunks();
     void generateChunksPositions(int cameraWorldX, int cameraWorldY, int cameraWorldZ);
     void unloadDistantMeshes(const glm::vec3 &cameraChunkPos);
     static FastNoiseLite makeTerrainNoise();
