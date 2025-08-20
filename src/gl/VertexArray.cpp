@@ -39,8 +39,10 @@ VertexArray & VertexArray::operator=(VertexArray &&other) noexcept {
 }
 
 void VertexArray::init() {
-    GLCall(glGenVertexArrays(1, &m_ID));
-    GLCall(glBindVertexArray(m_ID));
+    if (m_ID == 0) {
+        GLCall(glGenVertexArrays(1, &m_ID));
+        GLCall(glBindVertexArray(m_ID));
+    }
 }
 
 void VertexArray::addBuffer(const VertexBuffer &vb, const VertexBufferLayout &layout) {
