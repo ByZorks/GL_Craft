@@ -7,12 +7,12 @@ struct BlockVertex {
     uvec4 AO;// Ambient Occlusion values for each vertex (0-3)
 };
 
-layout(std430, binding = 1) readonly buffer blockVertexPullData {
-    uint packedVertices[];
-};
-
 layout(std140, binding = 0) uniform MVP {
     mat4 u_MVP;// Model-View-Projection matrix
+};
+
+layout(std430, binding = 1) readonly buffer blockVertexPullData {
+    uint packedVertices[];
 };
 
 out vec2 v_texCoord;
@@ -92,5 +92,5 @@ void main() {
 
     // Ambient Occlusion
     const float AO_f = float(data.AO[quadVertexIndex]) / 3.0;// Normalize AO to 0-1 range
-    v_AO = AO_f == 0.0 ? 0.1 : AO_f;// Prevent completely dark faces
+    v_AO = max(AO_f, 0.1); // Prevent completely dark faces
 }

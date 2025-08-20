@@ -7,16 +7,16 @@ struct BlockVertex {
     uvec4 AO;// Ambient Occlusion values for each vertex (0-3)
 };
 
+layout(std140, binding = 0) uniform MVP {
+    mat4 u_MVP; // Model-View-Projection matrix
+};
+
 layout(std430, binding = 1) readonly buffer blockVertexPullData {
     uint packedVertices[];
 };
 
 layout (std430, binding = 2) readonly buffer instanceData {
     int instancePos[]; // Instance position in world space
-};
-
-layout(std140, binding = 0) uniform MVP {
-    mat4 u_MVP; // Model-View-Projection matrix
 };
 
 out vec2 v_texCoord;
