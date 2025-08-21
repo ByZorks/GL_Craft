@@ -7,7 +7,7 @@ public:
     Cornflower(int x, int y, int z);
 
     void generateVoxel() override;
-    void generateMesh(bool setFlag, MeshsingResult &result) override;
+    void generateMesh() override;
 };
 
 #endif //CORNFLOWER_H

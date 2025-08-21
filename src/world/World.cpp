@@ -67,6 +67,7 @@ void World::updateChunks(const Camera &camera, const Frustum &frustum) {
     sortChunks(frustum, camera);
     m_indirectRendererNeedsUpdate = false;
     m_needInstanceUpdate = false;
+    m_renderDistanceChanged = false;
 }
 
 void World::draw(const Shader &blockShader, const Shader &waterShader, const Shader &instancesShader, unsigned int &drawCmd) const {
@@ -181,7 +182,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
             !isAtBottomBorder && !isAtTopBorder &&
             !isAtFrontBorder && !isAtBackBorder) {
             // If the block is not at the border, we can delete it without updating neighbors
-            MeshsingResult result;
+            MeshingResult result;
             chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type,
                                result);
 
@@ -223,7 +224,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
                         const int adjY = j == 0 ? blockLocalPosition[1] : j == -1 ? maxBlockPos : minBlockPos;
                         const int adjZ = k == 0 ? blockLocalPosition[2] : k == -1 ? maxBlockPos : minBlockPos;
 
-                        MeshsingResult result;
+                        MeshingResult result;
                         adjacentChunk->deleteBlock(adjX, adjY, adjZ, type, result);
 
                         result.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
@@ -237,7 +238,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         }
 
         // Delete in current chunk last to avoid popping issues because meshing is too slow
-        MeshsingResult result;
+        MeshingResult result;
         chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type, result);
 
         result.position = {chunk->getX(), chunk->getY(), chunk->getZ()};
@@ -318,7 +319,7 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
 
         // Scope so IDE does not complain about shadowed variables
         {
-            MeshsingResult result;
+            MeshingResult result;
             targetChunk->addBlock(targetX, targetY, targetZ, blockToPlace, result);
 
             result.position = {targetChunk->getX(), targetChunk->getY(), targetChunk->getZ()};
@@ -370,7 +371,7 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
                         const int adjY = j == 0 ? targetY : j == -1 ? maxBlockPos : minBlockPos;
                         const int adjZ = k == 0 ? targetZ : k == -1 ? maxBlockPos : minBlockPos;
 
-                        MeshsingResult result;
+                        MeshingResult result;
                         adjacentChunk->addBlock(adjX, adjY, adjZ, blockToPlace, result);
 
                         result.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
@@ -456,39 +457,37 @@ const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &World::getLoad
 void World::processChunksQueues() {
     const int maxChunksPerFrame = static_cast<int>(
         0.1 * Renderer::s_renderDistance + 0.2 * static_cast<float>(m_threadPool.getNumberOfThreads()));
-    // Remove chunks that are no longer needed
+
+    // Destroy chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.meshesToDelete.empty()) break;
         m_chunksData.meshesToDelete.pop();
     }
 
-    // First pass: generate mesh
+    // First pass: generate voxel and mesh
     for (int i = 0; i < maxChunksPerFrame; ++i) {
-        if (m_chunksData.voxelGenerated.empty()) break;
+        if (m_chunksData.meshesToGenerate.empty()) break;
 
-        std::shared_ptr<Chunk> p_chunk = m_chunksData.voxelGenerated.pop();
+        const ChunkPosition key = m_chunksData.meshesToGenerate.pop();
+        const auto p_chunk = std::make_shared<Chunk>(key.x, key.y, key.z);
+        m_chunksData.loadedMeshes.insert({key, p_chunk});
 
-        if (const ChunkPosition key = {p_chunk->getX(), p_chunk->getY(), p_chunk->getZ()};
-            m_chunksData.loadedMeshes.try_emplace(key, p_chunk).second) {
-            m_threadPool.enqueue_no_future([this, p_chunk] {
-                MeshsingResult result;
-                p_chunk->transferPendingBlocksToWorld(*this);
-                p_chunk->generateMesh(true, result);
-
-                result.position = {p_chunk->getX(), p_chunk->getY(), p_chunk->getZ()};
-                result.needIndirectRendererUpdate = true;
-                result.needInstanceUpdate = true;
-
-                m_chunksData.completedMeshes.push(result);
-            });
-        }
+        m_threadPool.enqueue_no_future([this, p_chunk] {
+            p_chunk->generateVoxel();
+            p_chunk->generateMesh();
+            m_needInstanceUpdate = true;
+            m_indirectRendererNeedsUpdate = true;
+            p_chunk->transferPendingBlocksToWorld(*this);
+        });
 
     }
 
     // Second pass: generate pending blocks
+    // Check if no pending blocks have been added/removed since the last frame because needed chunk was not loaded yet
     if (!m_chunksData.pendingBlocks.empty() && m_chunksData.pendingBlocks.size() != m_chunksData.lastPendingBlockSize) {
         m_chunksData.lastPendingBlockSize = m_chunksData.pendingBlocks.size();
-        m_tempKeysToProcess.clear(); {
+        m_tempKeysToProcess.clear();
+        {
             std::lock_guard lock(m_chunksData.pendingBlocksMutex);
             m_tempKeysToProcess.reserve(m_chunksData.pendingBlocks.size());
             for (const auto &key: m_chunksData.pendingBlocks | std::views::keys) {
@@ -499,7 +498,7 @@ void World::processChunksQueues() {
         for (const auto &key: m_tempKeysToProcess) {
             if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
                 const std::shared_ptr<Chunk> p_chunk = it->second;
-                if (p_chunk->getState() < State::MESH_GENERATED) continue;
+                if (p_chunk->getState() < State::READY_TO_DRAW) continue;
 
                 std::vector<PendingBlock> blocks;
                 {
@@ -513,7 +512,7 @@ void World::processChunksQueues() {
 
                 if (!blocks.empty()) {
                     m_threadPool.enqueue_no_future([this, p_chunk, blocks = std::move(blocks)]() mutable {
-                        MeshsingResult result;
+                        MeshingResult result;
                         p_chunk->generatePendingBlocks(blocks, result);
 
                         result.position = {p_chunk->getX(), p_chunk->getY(), p_chunk->getZ()};
@@ -538,14 +537,15 @@ void World::processChunksQueues() {
             it != m_chunksData.loadedMeshes.end()) {
             const std::shared_ptr<Chunk> p_chunk = it->second;
 
-            p_chunk->getOpaqueVertices().swap(opaqueVertices);
-            p_chunk->getTransparentVertices().swap(transparentVertices);
-            p_chunk->getWaterVertices().swap(waterVertices);
-            p_chunk->setHasOpaqueFaces(hasOpaqueFaces);
-            p_chunk->setHasTransparentFaces(hasTransparentFaces);
-            p_chunk->setHasWaterFaces(hasWaterFaces);
-            p_chunk->updateVertexCount();
-            p_chunk->setState(State::READY_TO_DRAW);
+            if (needIndirectRendererUpdate && !needInstanceUpdate) {
+                p_chunk->getOpaqueVertices().swap(opaqueVertices);
+                p_chunk->getTransparentVertices().swap(transparentVertices);
+                p_chunk->getWaterVertices().swap(waterVertices);
+                p_chunk->setHasOpaqueFaces(hasOpaqueFaces);
+                p_chunk->setHasTransparentFaces(hasTransparentFaces);
+                p_chunk->setHasWaterFaces(hasWaterFaces);
+                p_chunk->updateVertexCount();
+            }
 
             m_needInstanceUpdate |= needInstanceUpdate;
             m_indirectRendererNeedsUpdate |= needIndirectRendererUpdate;
@@ -558,7 +558,6 @@ void World::sortChunks(const Frustum &frustum, const Camera &camera) {
     m_displayedNormalMeshes.clear();
     m_displayedTransparentMeshes.clear();
     m_displayedWaterMeshes.clear();
-    m_renderDistanceChanged = false;
     for (const auto &chunk: m_chunksData.loadedMeshes | std::views::values) {
         if (chunk->getState() == State::READY_TO_DRAW && frustum.isAABBInFrustum(chunk->getBoundingBox())) {
             if (chunk->hasOpaqueFaces()) m_displayedNormalMeshes.push_back(chunk);
@@ -572,34 +571,30 @@ void World::sortChunks(const Frustum &frustum, const Camera &camera) {
         m_poppyRenderer.resetInstances();
         m_cornflowerRenderer.resetInstances();
         m_alliumRenderer.resetInstances();
-    }
 
-    // Instances
-    for (const auto &strong_mesh: m_displayedNormalMeshes) {
-        if (m_needInstanceUpdate && camera.distanceToCamera(*strong_mesh) < 320.0f) {
-            // They are no longer visible at this distance event if we draw them
-            for (const auto &feature: strong_mesh->getSurfaceFeatures()) {
-                switch (feature.type) {
-                    case SurfaceFeatureType::SHORT_GRASS:
-                        m_grassRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
-                        break;
-                    case SurfaceFeatureType::POPPY:
-                        m_poppyRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
-                        break;
-                    case SurfaceFeatureType::CORNFLOWER:
-                        m_cornflowerRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
-                        break;
-                    case SurfaceFeatureType::ALLIUM:
-                        m_alliumRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
-                        break;
-                    default:
-                        break;
+        for (const auto &strong_mesh: m_displayedNormalMeshes) {
+            if (camera.distanceToCamera(*strong_mesh) < 320.0f) { // They are no longer visible at this distance event if we draw them
+                for (const auto &feature: strong_mesh->getSurfaceFeatures()) {
+                    switch (feature.type) {
+                        case SurfaceFeatureType::SHORT_GRASS:
+                            m_grassRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
+                            break;
+                        case SurfaceFeatureType::POPPY:
+                            m_poppyRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
+                            break;
+                        case SurfaceFeatureType::CORNFLOWER:
+                            m_cornflowerRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
+                            break;
+                        case SurfaceFeatureType::ALLIUM:
+                            m_alliumRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
         }
-    }
 
-    if (m_needInstanceUpdate) {
         m_grassRenderer.updateInstanceBuffer();
         m_poppyRenderer.updateInstanceBuffer();
         m_cornflowerRenderer.updateInstanceBuffer();
@@ -620,12 +615,7 @@ void World::generateChunksPositions(const int cameraWorldX, const int cameraWorl
 
             const ChunkPosition key = {chunkX, chunkY, chunkZ};
             if (m_chunksData.loadedMeshes.contains(key)) continue;
-
-            m_threadPool.enqueue_no_future([this, key] {
-                const auto p_chunk = std::make_shared<Chunk>(key.x, key.y, key.z);
-                p_chunk->generateVoxel();
-                m_chunksData.voxelGenerated.push(p_chunk);
-            });
+            m_chunksData.meshesToGenerate.push(key);
         }
     }
 }

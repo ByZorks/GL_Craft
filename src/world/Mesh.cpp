@@ -1,5 +1,4 @@
 #include "Mesh.h"
 
 void Mesh::generateVoxel() {}
-
-void Mesh::generateMesh(bool setFlag, MeshsingResult &result) {}
+void Mesh::generateMesh() {}

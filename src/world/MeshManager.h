@@ -7,7 +7,7 @@
 #include "PendingBlock.h"
 #include "../utils/ThreadSafeQueue.h"
 
-struct MeshsingResult {
+struct MeshingResult {
     ChunkPosition position;
     std::vector<BlockVertex> opaqueVertices;
     std::vector<BlockVertex> transparentVertices;
@@ -26,9 +26,9 @@ public:
     std::unordered_map<ChunkPosition, std::vector<PendingBlock>> pendingBlocks;
     std::mutex pendingBlocksMutex;
     unsigned int lastPendingBlockSize = 0;
-    ThreadSafeQueue<std::shared_ptr<MeshType>> voxelGenerated;
+    ThreadSafeQueue<ChunkPosition> meshesToGenerate;
     ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToDelete;
-    ThreadSafeQueue<MeshsingResult> completedMeshes;
+    ThreadSafeQueue<MeshingResult> completedMeshes;
 };
 
 

@@ -26,8 +26,7 @@ public:
         if (m_buffersInitialized) return;
 
         mesh.generateVoxel();
-        MeshsingResult result;
-        mesh.generateMesh(false, result);
+        mesh.generateMesh();
 
         m_vertices = mesh.getOpaqueVerticesCopy();
 

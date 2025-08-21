@@ -7,19 +7,18 @@
 #include "../gl/VertexArray.h"
 #include "../math/AABB.h"
 
-struct MeshsingResult;
+struct MeshingResult;
 
 enum class State : uint8_t {
     UNINITIALIZED,
     VOXEL_GENERATED,
-    MESH_GENERATED,
     READY_TO_DRAW,
 };
 
 struct buffersData {
     mutable std::mutex m_verticesMutex;
     std::vector<BlockVertex> vertices;
-    unsigned int verticesCount = 0; // vertices.size(); Used to draw the mesh, so we must only update it once the GL buffers are ready
+    unsigned int verticesCount = 0; // vertices.size() * 6; Used to draw the mesh, so we must only update it once the GL buffers are ready
     bool hasFaces = false;
 
     void shrinkBuffers() {
@@ -57,7 +56,7 @@ public:
     virtual ~Mesh() = default;
 
     virtual void generateVoxel();
-    virtual void generateMesh(bool setFlag, MeshsingResult &result);
+    virtual void generateMesh();
 
     void updateVertexCount() {
         m_opaqueData.verticesCount = static_cast<unsigned int>(m_opaqueData.vertices.size() * 6); // Only 1 vertex is stored

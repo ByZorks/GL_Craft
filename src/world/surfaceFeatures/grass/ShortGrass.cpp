@@ -10,10 +10,10 @@ void ShortGrass::generateVoxel() {
     m_state = State::VOXEL_GENERATED;
 }
 
-void ShortGrass::generateMesh(const bool setFlag, MeshsingResult &result) {
+void ShortGrass::generateMesh() {
     Block::addFaceVerticesAsBilboard(Face::BACK, BlockType::SHORT_GRASS, m_opaqueData.vertices, 0.0f, 0.0f, 0.0f);
 
     Block::addFaceVerticesAsBilboard(Face::FRONT, BlockType::SHORT_GRASS, m_opaqueData.vertices, 0.0f, 0.0f, 0.0f);
 
-    if (setFlag) m_state = State::MESH_GENERATED;
+    m_state = State::READY_TO_DRAW;
 }
