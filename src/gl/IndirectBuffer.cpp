@@ -10,9 +10,20 @@ IndirectBuffer::~IndirectBuffer() {
 }
 
 void IndirectBuffer::init(const void *data, const unsigned int size) {
+    m_size = size;
     GLCall(glGenBuffers(1, &m_ID));
     bind();
     GLCall(glBufferData(GL_DRAW_INDIRECT_BUFFER, size, data, GL_STATIC_DRAW));
+}
+
+void IndirectBuffer::updateData(const void *data, const unsigned int size, const unsigned int offset) {
+    if (m_size < size + offset) {
+        deleteBuffer();
+        init(data, size);
+    } else {
+        bind();
+        GLCall(glBufferSubData(GL_DRAW_INDIRECT_BUFFER, offset, size, data));
+    }
 }
 
 void IndirectBuffer::deleteBuffer() {

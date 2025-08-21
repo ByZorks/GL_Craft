@@ -324,6 +324,7 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
             result.position = {targetChunk->getX(), targetChunk->getY(), targetChunk->getZ()};
             result.needIndirectRendererUpdate = !isInstance;
             result.needInstanceUpdate = isInstance;
+            m_chunksData.completedMeshes.push(std::move(result));
         }
 
 
@@ -375,6 +376,7 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
                         result.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
                         result.needIndirectRendererUpdate = !isInstance;
                         result.needInstanceUpdate = isInstance;
+                        m_chunksData.completedMeshes.push(std::move(result));
                     }
                 }
             }

@@ -5,7 +5,12 @@
 #include "Renderer.h"
 #include "../world/Mesh.h"
 
-IndirectRenderer::IndirectRenderer() = default;
+IndirectRenderer::IndirectRenderer() {
+    constexpr size_t totalCount = Chunk::SIZE * Chunk::SIZE * Chunk::SIZE * 0.5;
+    m_IBO.init(nullptr, sizeof(DrawArraysIndirectCommand) * totalCount);
+    m_SSBO.init(nullptr, totalCount * sizeof(BlockVertex), 1);
+    m_offsetsSSBO.init(nullptr, totalCount * sizeof(std::array<int, 4>), 2);
+}
 
 void IndirectRenderer::createDrawCommands(const std::vector<std::shared_ptr<Chunk>> &opaqueMeshes, const std::vector<std::shared_ptr<Chunk>> &transparentMeshes, const std::vector<std::shared_ptr<Chunk>> &waterMeshes) {
     resetDrawCommands();
@@ -19,17 +24,14 @@ void IndirectRenderer::createDrawCommands(const std::vector<std::shared_ptr<Chun
     m_waterFirstCmd = m_opaqueCount + m_transparentCount;
     size_t offset = 0;
 
-
     DrawArraysIndirectCommand cmds[totalCount];
-    m_offsetsSSBO.init(nullptr, std::max(totalCount, static_cast<size_t>(1)) * sizeof(std::array<int, 4>), 2);
-
     for (size_t localIndex = 0; localIndex < m_opaqueCount; ++localIndex) {
         cmds[localIndex].count = opaqueMeshes[localIndex]->getOpaqueVertexCount();
         cmds[localIndex].instanceCount = 1;
         cmds[localIndex].first = offset;
         cmds[localIndex].baseInstance = localIndex; // Used for vertex pulling
         offset += opaqueMeshes[localIndex]->getOpaqueVertexCount();
-        const std::array<int, 4> offsets = {
+        const std::array<int, 4> offsets = { // 4 integers for x, y, z, and a padding value
             opaqueMeshes[localIndex]->getX(),
             opaqueMeshes[localIndex]->getY(),
             opaqueMeshes[localIndex]->getZ()
@@ -67,11 +69,7 @@ void IndirectRenderer::createDrawCommands(const std::vector<std::shared_ptr<Chun
         m_offsetsSSBO.updateData(offsets.data(), offsets.size() * sizeof(int), globalIndex * sizeof(std::array<int,4>));
     }
 
-    if (totalCount > 0) {
-        m_IBO.init(cmds, sizeof(DrawArraysIndirectCommand) * totalCount);
-    } else {
-        m_IBO.init(nullptr, sizeof(DrawArraysIndirectCommand));
-    }
+    m_IBO.updateData(cmds, totalCount * sizeof(DrawArraysIndirectCommand), 0);
 
     std::vector<BlockVertex> allVertices;
     allVertices.reserve(totalCount);
@@ -88,17 +86,10 @@ void IndirectRenderer::createDrawCommands(const std::vector<std::shared_ptr<Chun
         allVertices.insert(allVertices.end(), vertices.begin(), vertices.end());
     }
 
-    if (allVertices.empty()) {
-        m_SSBO.init(nullptr, sizeof(BlockVertex), 1); // Initialize with a single element to avoid issues
-    } else {
-        m_SSBO.init(allVertices.data(), static_cast<unsigned int>(allVertices.size() * sizeof(BlockVertex)), 1);
-    }
+    m_SSBO.updateData(allVertices.data(), allVertices.size() * sizeof(BlockVertex));
 }
 
 void IndirectRenderer::resetDrawCommands() {
-    m_IBO.deleteBuffer();
-    m_offsetsSSBO.deleteBuffer();
-    m_SSBO.deleteBuffer();
     m_opaqueCount = 0;
     m_transparentCount = 0;
     m_waterCount = 0;
