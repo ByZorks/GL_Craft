@@ -59,6 +59,7 @@ public:
     [[nodiscard]] ThreadPool & getThreadPool();
     [[nodiscard]] const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & getLoadedChunks() const;
     static FastNoiseLite& getSurfaceFeaturesNoise();
+    [[nodiscard]] unsigned int getVisibleChunksCount() const;
 
 private:
     void processChunksQueues();

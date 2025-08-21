@@ -136,8 +136,7 @@ void Application::update() {
         throw std::runtime_error("World not initialized");
     }
 
-    m_drawCalls = 0;
-    m_visibleChunksCount = 0;
+    m_drawCmds = 0;
 
     // Update camera position and view matrix
     m_camera.calculateMVP();
@@ -185,7 +184,7 @@ void Application::render() {
     DebugUI::newFrame();
 
     // Instances, chunks, transparent, and water rendering
-    m_world->draw(*m_blockShader, *m_waterShader, *m_instancesShader, m_drawCalls);
+    m_world->draw(*m_blockShader, *m_waterShader, *m_instancesShader, m_drawCmds);
 
     // Block highlighting
     if (m_raycastResult.hitBlock) {
@@ -195,7 +194,7 @@ void Application::render() {
             m_raycastResult.blockWorldPosition[1],
             m_raycastResult.blockWorldPosition[2]);
         m_highlightedBlockMesh->draw();
-        ++m_drawCalls;
+        ++m_drawCmds;
     }
 
     // Post-processing and crosshair to minimize openGl state changes
@@ -212,7 +211,7 @@ void Application::render() {
     Renderer::enableDepthTesting();
 
     // ImGui
-    DebugUI::render(m_visibleChunksCount, m_world->getLoadedChunks().size(), m_drawCalls, m_camera, m_player.getSelectedBlockType(), [this] {
+    DebugUI::render(m_world->getVisibleChunksCount(), m_world->getLoadedChunks().size(), m_drawCmds, m_camera, m_player.getSelectedBlockType(), [this] {
         m_world->updateRenderDistance(*m_postProcessingShader, m_camera, m_frustum);
     });
     DebugUI::draw();

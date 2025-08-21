@@ -678,6 +678,11 @@ FastNoiseLite &World::getSurfaceFeaturesNoise() {
     return instance;
 }
 
+unsigned int World::getVisibleChunksCount() const {
+    return static_cast<unsigned int>(
+        m_displayedNormalMeshes.size() + m_displayedTransparentMeshes.size() + m_displayedWaterMeshes.size());
+}
+
 ThreadPool &World::getThreadPool() {
     return m_threadPool;
 }
