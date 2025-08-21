@@ -9,7 +9,7 @@ void Poppy::generateVoxel() {
     m_state = State::VOXEL_GENERATED;
 }
 
-void Poppy::generateMesh(const bool setFlag) {
+void Poppy::generateMesh(const bool setFlag, MeshsingResult &result) {
     Block::addFaceVerticesAsBilboard(Face::BACK, BlockType::FLOWER_POPPY, m_opaqueData.vertices, 0.0f, 0.0f, 0.0f);
 
     Block::addFaceVerticesAsBilboard(Face::FRONT, BlockType::FLOWER_POPPY, m_opaqueData.vertices, 0.0f, 0.0f, 0.0f);

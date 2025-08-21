@@ -19,7 +19,7 @@ void InstanceRenderer::updateInstanceBuffer() {
         m_instanceBufferCapacity = m_instanceCount * 2;
 
         m_instanceSSBO.deleteBuffer();
-        m_instanceSSBO.init(m_instancePositions.data(), m_instanceBufferCapacity * sizeof(std::array<int, 3>), 2);
+        m_instanceSSBO.init(m_instancePositions.data(), m_instanceBufferCapacity * sizeof(std::array<int, 3>), 3);
     } else {
         m_instanceSSBO.updateData(m_instancePositions.data(), m_instanceCount * sizeof(std::array<int, 3>));
     }

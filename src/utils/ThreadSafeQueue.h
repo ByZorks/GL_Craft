@@ -20,6 +20,14 @@ public:
         condVar_.notify_one();
     }
 
+    void push(const T&& item) {
+        {
+            std::lock_guard lk(mutex_);
+            queue_.push(item);
+        }
+        condVar_.notify_one();
+    }
+
     void done() {
         {
             std::lock_guard lk(mutex_);

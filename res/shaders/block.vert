@@ -15,11 +15,13 @@ layout(std430, binding = 1) readonly buffer blockVertexPullData {
     uint packedVertices[];
 };
 
+layout(std430, binding = 2) readonly buffer blockOffsetPullData {
+    ivec3 positionOffset[];
+};
+
 out vec2 v_texCoord;
 flat out uint v_face;
 out float v_AO;
-
-uniform vec3 u_Offset;
 
 const vec3 faceOffsets[6][4] = {
     // FRONT (+Z)
@@ -82,8 +84,8 @@ void main() {
 
     // Position and offset calculation
     const int quadVertexIndex = indices[currentVertexID];
-    const vec3 offset = faceOffsets[data.face][quadVertexIndex];
-    const vec3 worldPos = vec3(data.position) + offset + u_Offset;
+    const vec3 vertexOffset = faceOffsets[data.face][quadVertexIndex];
+    const vec3 worldPos = vec3(data.position) + vertexOffset + positionOffset[gl_BaseInstance];
     gl_Position = u_MVP * vec4(worldPos, 1.0);
 
     // Texture coordinates

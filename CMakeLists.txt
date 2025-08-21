@@ -129,6 +129,10 @@ add_executable(GL_Craft
         src/entity/Player.h
         src/gl/StorageBuffer.cpp
         src/gl/StorageBuffer.h
+        src/render/IndirectRenderer.cpp
+        src/render/IndirectRenderer.h
+        src/gl/IndirectBuffer.cpp
+        src/gl/IndirectBuffer.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})

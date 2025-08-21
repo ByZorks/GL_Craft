@@ -9,7 +9,7 @@ class Camera {
 private:
     bool m_inputEnabled = true;
     float m_lastX, m_lastY;
-    float m_yaw, m_pitch, m_lastYaw, m_lastPitch;
+    float m_yaw, m_pitch, m_lastYaw, m_lastPitch, m_lastSticterYaw, m_lastStricterPitch;
     bool m_firstMouse;
     glm::vec3 m_cameraPos, m_cameraFront, m_cameraUp;
     float m_FOVDegrees, m_aspectRatio, m_nearPlane, m_farPlane;
@@ -29,6 +29,7 @@ public:
     [[nodiscard]] bool hasCameraChangedChunk() const;
     [[nodiscard]] bool hasCameraChangedBlock() const;
     [[nodiscard]] bool hasCameraChangedDirection() const;
+    [[nodiscard]] bool hasCameraChangedDirectionStricter() const;
     [[nodiscard]] bool hasCameraUpdated() const;
     [[nodiscard]] bool isUnderWater(int columnHeight) const;
 

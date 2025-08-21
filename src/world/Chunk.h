@@ -21,20 +21,19 @@ public:
     Chunk(int x, int y, int z);
 
     void generateVoxel() override;
-    void generatePendingBlocks(std::vector<PendingBlock> &blocks);
-    void generateMesh(bool setFlag) override;
+    void generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshsingResult &result);
+    void generateMesh(bool setFlag, MeshsingResult &result) override;
     void transferPendingBlocksToWorld(World &world);
-    void deleteBlock(int localX, int localY, int localZ, BlockType type);
-    void addBlock(int localX, int localY, int localZ, BlockType type);
+    void deleteBlock(int localX, int localY, int localZ, BlockType type, MeshsingResult &result);
+    void addBlock(int localX, int localY, int localZ, BlockType type, MeshsingResult &result);
 
     [[nodiscard]] int index(int x, int y, int z) const override;
     [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const override;
     [[nodiscard]] BlockType getBlockTypeOrSurfaceFeature(int localX, int localY, int localZ) const;
-
     [[nodiscard]] const std::unordered_set<SurfaceFeature> & getSurfaceFeatures() const;
 
 private:
-    void addBlockFaces(int localX, int localY, int localZ, BlockType blockType);
+    void addBlockFaces(int localX, int localY, int localZ, BlockType blockType, MeshsingResult &result) const;
     void addTree(int localX, int localY, int localZ);
     void addFeatureBlocks(int localX, int localY, int localZ, BlockType blockType);
 

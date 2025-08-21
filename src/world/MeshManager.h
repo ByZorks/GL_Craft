@@ -7,18 +7,28 @@
 #include "PendingBlock.h"
 #include "../utils/ThreadSafeQueue.h"
 
+struct MeshsingResult {
+    ChunkPosition position;
+    std::vector<BlockVertex> opaqueVertices;
+    std::vector<BlockVertex> transparentVertices;
+    std::vector<BlockVertex> waterVertices;
+    bool hasOpaqueFaces = false;
+    bool hasTransparentFaces = false;
+    bool hasWaterFaces = false;
+    bool needInstanceUpdate = false;
+    bool needIndirectRendererUpdate = false;
+};
+
 template<typename MeshType>
 class MeshManager {
 public:
     std::unordered_map<ChunkPosition, std::shared_ptr<MeshType>> loadedMeshes;
-    std::unordered_map<ChunkPosition, std::vector<PendingBlock>> m_pendingBlocks;
-    std::mutex m_pendingBlocksMutex;
-    ThreadSafeQueue<ChunkPosition> meshesToGenerateVoxel;
-    ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToGeneratePendingBlocks;
-    ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToRemesh;
+    std::unordered_map<ChunkPosition, std::vector<PendingBlock>> pendingBlocks;
+    std::mutex pendingBlocksMutex;
+    unsigned int lastPendingBlockSize = 0;
+    ThreadSafeQueue<std::shared_ptr<MeshType>> voxelGenerated;
     ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToDelete;
-    ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToRender;
-    ThreadSafeQueue<std::shared_ptr<MeshType>> meshesToUpdate;
+    ThreadSafeQueue<MeshsingResult> completedMeshes;
 };
 
 

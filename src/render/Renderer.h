@@ -1,6 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 #include "../gl/IndexBuffer.h"
+#include "../gl/IndirectBuffer.h"
 #include "../gl/StorageBuffer.h"
 #include "../gl/VertexArray.h"
 
@@ -26,6 +27,7 @@ public:
     static void drawLines(const VertexArray& vao, const IndexBuffer& ibo);
     static void drawWithVertexPulling(const VertexArray& vao, const StorageBuffer &ssbo, unsigned int vertexCount);
     static void drawWithVertexPullingInstanced(const VertexArray& vao, const StorageBuffer &ssbo, const StorageBuffer &instanceSsbo, unsigned int vertexCount, unsigned int instanceCount);
+    static void drawMultiWithVertexPulling(const IndirectBuffer &ibo, const StorageBuffer &ssbo, const StorageBuffer &offsetsSsbo, unsigned int drawCount, const void *offset);
     static void drawElements(const VertexArray& vao, const IndexBuffer& ibo);
     static void drawElementsInstanced(const VertexArray& vao, const IndexBuffer& ibo, unsigned int instanceCount);
 

@@ -10,6 +10,7 @@
 #include "../gl/Shader.h"
 #include "../math/Frustum.h"
 #include "../math/Raycast.h"
+#include "../render/IndirectRenderer.h"
 #include "../render/InstanceRenderer.h"
 #include "../utils/ThreadPool.h"
 
@@ -27,6 +28,9 @@ private:
     std::vector<ChunkPosition> m_tempKeysToProcess;
     std::vector<Offset> m_renderDistanceOffsets;
 
+    IndirectRenderer m_indirectRenderer;
+    bool m_indirectRendererNeedsUpdate = false;
+
     InstanceRenderer m_grassRenderer;
     InstanceRenderer m_poppyRenderer;
     InstanceRenderer m_cornflowerRenderer;
@@ -41,13 +45,10 @@ private:
 public:
     World();
 
-    void updateChunks(const Camera &camera);
-    void drawChunks(const Camera &camera, const Frustum &frustum, Shader &shader, unsigned int &visibleChunksCount, unsigned int &drawCalls);
-    void drawTransparentChunks(const Frustum &frustum,Shader &shader, unsigned int &drawCalls) const;
-    void drawWater(const Frustum &frustum,Shader &shader, const glm::vec3 &cameraPos, unsigned int &drawCalls) const;
-    void drawInstances(unsigned int &drawCalls) const;
+    void updateChunks(const Camera &camera, const Frustum &frustum);
+    void draw(const Shader &blockShader, const Shader &waterShader, const Shader &instancesShader, unsigned int &drawCmd) const;
     void addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData);
-    void updateRenderDistance(Shader &postProcessingShader, const Camera &camera);
+    void updateRenderDistance(Shader &postProcessingShader, const Camera &camera, const Frustum &frustum);
     void deleteBlockAndUpdateNeighbors(const RaycastResult &hit);
     void placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blockToPlace);
 
@@ -57,12 +58,12 @@ public:
 
     [[nodiscard]] ThreadPool & getThreadPool();
     [[nodiscard]] const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & getLoadedChunks() const;
-    [[nodiscard]] ThreadSafeQueue<std::shared_ptr<Chunk>> & getMeshesToUpdate();
     static FastNoiseLite& getSurfaceFeaturesNoise();
 
 private:
     void processChunksQueues();
-    void sortChunks();
+    void sortChunks(const Frustum &frustum, const Camera &camera);
+    void drawInstances(unsigned int &drawCmd) const;
     void generateChunksPositions(int cameraWorldX, int cameraWorldY, int cameraWorldZ);
     void unloadDistantMeshes(const glm::vec3 &cameraChunkPos);
     static FastNoiseLite makeTerrainNoise();

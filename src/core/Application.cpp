@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "../math/Raycast.h"
+#include "../render/Renderer.h"
 
 Application::Application(const int width, const int height, const char *title) : m_camera(width, height) {
     initGLFW(width, height, title);
@@ -144,7 +145,7 @@ void Application::update() {
     m_MVPBuffer->updateData(m_camera.getMVPData(), sizeof(glm::mat4));
 
     // Chunks generation
-    m_world->updateChunks(m_camera);
+    m_world->updateChunks(m_camera, m_frustum);
 
     // Uniforms
     if (m_camera.hasCameraChangedBlock()) {
@@ -153,6 +154,13 @@ void Application::update() {
                                                static_cast<int>(m_camera.getPos().x),
                                                static_cast<int>(m_camera.getPos().z))));
     }
+
+    m_waterShader->use();
+    m_waterShader->setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
+    m_waterShader->setUniform3f("u_CameraPos",
+                                m_camera.getPos().x,
+                                m_camera.getPos().y,
+                                m_camera.getPos().z);
 
     // Raycasting
     if (m_raycastResult = Raycast::castRay(m_camera.getPos(), m_camera.getFront(), m_world->getLoadedChunks());
@@ -177,13 +185,7 @@ void Application::render() {
     DebugUI::newFrame();
 
     // Instances, chunks, transparent, and water rendering
-    m_instancesShader->use();
-    m_world->drawInstances(m_drawCalls);
-    m_blockShader->use();
-    m_world->drawChunks(m_camera, m_frustum, *m_blockShader, m_visibleChunksCount, m_drawCalls);
-    m_world->drawTransparentChunks(m_frustum, *m_blockShader, m_drawCalls);
-    m_waterShader->use();
-    m_world->drawWater(m_frustum, *m_waterShader, m_camera.getPos(), m_drawCalls);
+    m_world->draw(*m_blockShader, *m_waterShader, *m_instancesShader, m_drawCalls);
 
     // Block highlighting
     if (m_raycastResult.hitBlock) {
@@ -211,7 +213,7 @@ void Application::render() {
 
     // ImGui
     DebugUI::render(m_visibleChunksCount, m_world->getLoadedChunks().size(), m_drawCalls, m_camera, m_player.getSelectedBlockType(), [this] {
-        m_world->updateRenderDistance(*m_postProcessingShader, m_camera);
+        m_world->updateRenderDistance(*m_postProcessingShader, m_camera, m_frustum);
     });
     DebugUI::draw();
 }

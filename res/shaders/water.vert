@@ -15,6 +15,10 @@ layout(std430, binding = 1) readonly buffer blockVertexPullData {
     uint packedVertices[];
 };
 
+layout(std430, binding = 2) readonly buffer blockOffsetPullData {
+    ivec3 positionOffset[];
+};
+
 out vec2 v_texCoord;
 flat out uint v_face;
 out float v_AO;
@@ -22,7 +26,6 @@ out float v_refractionFactor;
 
 uniform vec3 u_CameraPos;
 uniform float u_Time;
-uniform vec3 u_Offset;
 
 const vec3 faceOffsets[6][4] = {
     // FRONT (+Z)
@@ -85,10 +88,10 @@ void main() {
 
     // Position and offset calculation
     const int quadVertexIndex = indices[currentVertexID];
-    const vec3 offset = faceOffsets[data.face][quadVertexIndex];
-    vec3 worldPos = vec3(data.position) + offset + u_Offset;
+    const vec3 vertexOffset = faceOffsets[data.face][quadVertexIndex];
+    vec3 worldPos = vec3(data.position) + vertexOffset + positionOffset[gl_BaseInstance];
     // Top vertex
-    if (offset.y > 0.5) {
+    if (vertexOffset.y > 0.5) {
         worldPos.y -= .2;
         worldPos.y += (sin(u_Time * 2.5 + worldPos.x * 2.0 + worldPos.z * 1.5)
                     + cos(u_Time * 1.5 + worldPos.z * 2.5 + worldPos.x * 1.2)) * 0.05;

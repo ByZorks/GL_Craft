@@ -2,4 +2,4 @@
 
 void Mesh::generateVoxel() {}
 
-void Mesh::generateMesh(bool setFlag) {}
+void Mesh::generateMesh(bool setFlag, MeshsingResult &result) {}

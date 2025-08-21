@@ -83,3 +83,7 @@ void StorageBuffer::unbind() {
 unsigned int StorageBuffer::getBindingPoint() const {
     return m_bindingPoint;
 }
+
+bool StorageBuffer::isValid() const {
+    return m_ID != 0;
+}

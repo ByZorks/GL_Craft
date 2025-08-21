@@ -6,6 +6,7 @@
 
 #include "../world/Chunk.h"
 #include "../render/Camera.h"
+#include "../render/Renderer.h"
 
 DebugUI::DebugUI() : m_uiMode(false), m_tabKeyPressed(false) {}
 
@@ -34,12 +35,12 @@ void DebugUI::newFrame() {
     ImGui::NewFrame();
 }
 
-void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCalls, const Camera &camera, const BlockType &selectedBlockType, const std::function<void()>& renderDistanceCallback) {
+void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCmds, const Camera &camera, const BlockType &selectedBlockType, const std::function<void()>& renderDistanceCallback) {
     ImGui::Begin("Debug");
     ImGui::Text("Performance:");
     const ImGuiIO &io = ImGui::GetIO();
     ImGui::Text("Application average %.3f ms/frame (%.0f FPS)", 1000.0f / io.Framerate, io.Framerate);
-    ImGui::Text("Draw Calls: %u", drawCalls);
+    ImGui::Text("Draw commands: %u", drawCmds);
     ImGui::Separator();
     ImGui::Text("World:");
     ImGui::Text("Rendering: %u/%u chunks", visibleChunks, totalChunks);

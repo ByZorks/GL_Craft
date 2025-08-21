@@ -4,10 +4,10 @@
 #include <mutex>
 
 #include "Block.h"
-#include "../gl/StorageBuffer.h"
 #include "../gl/VertexArray.h"
 #include "../math/AABB.h"
-#include "../render/Renderer.h"
+
+struct MeshsingResult;
 
 enum class State : uint8_t {
     UNINITIALIZED,
@@ -16,12 +16,11 @@ enum class State : uint8_t {
     READY_TO_DRAW,
 };
 
-struct GLBuffersData {
+struct buffersData {
     mutable std::mutex m_verticesMutex;
     std::vector<BlockVertex> vertices;
-    unsigned int verticesSize = 0; // vertices.size(); Used to draw the mesh, so we must only update it once the GL buffers are ready
-    StorageBuffer SSBO;
-    bool hasFaces = true;
+    unsigned int verticesCount = 0; // vertices.size(); Used to draw the mesh, so we must only update it once the GL buffers are ready
+    bool hasFaces = false;
 
     void shrinkBuffers() {
         vertices.shrink_to_fit();
@@ -38,10 +37,9 @@ protected:
     const unsigned int m_size;
     const int m_x, m_y, m_z;
     std::vector<BlockType> m_blockType;
-    VertexArray VAO; // Not really used as we are using vertex pulling, only one needed to issue draw calls
-    GLBuffersData m_opaqueData;
-    GLBuffersData m_transparentData;
-    GLBuffersData m_waterData;
+    buffersData m_opaqueData;
+    buffersData m_transparentData;
+    buffersData m_waterData;
     State m_state = State::UNINITIALIZED;
     const AABB m_box;
 
@@ -59,86 +57,12 @@ public:
     virtual ~Mesh() = default;
 
     virtual void generateVoxel();
-    virtual void generateMesh(bool setFlag);
+    virtual void generateMesh(bool setFlag, MeshsingResult &result);
 
-    void createGLBuffers() {
-        VAO.init();
-
-        std::scoped_lock lock(m_opaqueData.m_verticesMutex,
-                      m_transparentData.m_verticesMutex,
-                      m_waterData.m_verticesMutex);
-
-        if (!m_opaqueData.vertices.empty()) {
-            setupGLBuffers(m_opaqueData.vertices, m_opaqueData.SSBO);
-        } else {
-            m_opaqueData.hasFaces = false;
-        }
-        if (!m_transparentData.vertices.empty()) {
-            setupGLBuffers(m_transparentData.vertices, m_transparentData.SSBO);
-        } else {
-            m_transparentData.hasFaces = false;
-        }
-        if (!m_waterData.vertices.empty()) {
-            setupGLBuffers(m_waterData.vertices, m_waterData.SSBO);
-        } else {
-            m_waterData.hasFaces = false;
-        }
-
-        m_opaqueData.verticesSize = static_cast<unsigned int>(m_opaqueData.vertices.size());
-        m_transparentData.verticesSize = static_cast<unsigned int>(m_transparentData.vertices.size());
-        m_waterData.verticesSize = static_cast<unsigned int>(m_waterData.vertices.size());
-
-        m_state = State::READY_TO_DRAW;
-    }
-
-    void updateGLBuffers() {
-        VAO.init();
-
-        std::scoped_lock lock(m_opaqueData.m_verticesMutex,
-                      m_transparentData.m_verticesMutex,
-                      m_waterData.m_verticesMutex);
-
-        // == OPAQUE ==
-        if (!m_opaqueData.vertices.empty()) {
-            if (m_opaqueData.SSBO.getBindingPoint() == 999) { // 999 is a placeholder for uninitialized SSBO
-                setupGLBuffers(m_opaqueData.vertices, m_opaqueData.SSBO);
-            } else {
-                m_opaqueData.SSBO.updateData(m_opaqueData.vertices.data(), static_cast<unsigned int>(m_opaqueData.vertices.size() * sizeof(BlockVertex)));
-            }
-            m_opaqueData.hasFaces = true;
-        } else {
-            m_opaqueData.hasFaces = false;
-        }
-
-        // == TRANSPARENT ==
-        if (!m_transparentData.vertices.empty()) {
-            if (m_transparentData.SSBO.getBindingPoint() == 999) {
-                setupGLBuffers(m_transparentData.vertices, m_transparentData.SSBO);
-            } else {
-                m_transparentData.SSBO.updateData(m_transparentData.vertices.data(), static_cast<unsigned int>(m_transparentData.vertices.size() * sizeof(BlockVertex)));
-            }
-            m_transparentData.hasFaces = true;
-        } else {
-            m_transparentData.hasFaces = false;
-        }
-
-        // == WATER ==
-        if (!m_waterData.vertices.empty()) {
-            if (m_waterData.SSBO.getBindingPoint() == 999) {
-                setupGLBuffers(m_waterData.vertices, m_waterData.SSBO);
-            } else {
-                m_waterData.SSBO.updateData(m_waterData.vertices.data(), static_cast<unsigned int>(m_waterData.vertices.size() * sizeof(BlockVertex)));
-            }
-            m_waterData.hasFaces = true;
-        } else {
-            m_waterData.hasFaces = false;
-        }
-
-        m_opaqueData.verticesSize = static_cast<unsigned int>(m_opaqueData.vertices.size());
-        m_transparentData.verticesSize = static_cast<unsigned int>(m_transparentData.vertices.size());
-        m_waterData.verticesSize = static_cast<unsigned int>(m_waterData.vertices.size());
-
-        m_state = State::READY_TO_DRAW;
+    void updateVertexCount() {
+        m_opaqueData.verticesCount = static_cast<unsigned int>(m_opaqueData.vertices.size() * 6); // Only 1 vertex is stored
+        m_transparentData.verticesCount = static_cast<unsigned int>(m_transparentData.vertices.size() * 6);
+        m_waterData.verticesCount = static_cast<unsigned int>(m_waterData.vertices.size() * 6);
     }
 
     void resetMesh() {
@@ -147,28 +71,28 @@ public:
         m_waterData.deleteMesh();
     }
 
-    void draw() const {
-        Renderer::drawWithVertexPulling(VAO, m_opaqueData.SSBO, m_opaqueData.verticesSize * 6); // 6 vertices per face
-    }
-
-    void drawTransparent() const {
-        Renderer::drawWithVertexPulling(VAO, m_transparentData.SSBO, m_transparentData.verticesSize * 6);
-    }
-
-    void drawWater() const {
-        Renderer::drawWithVertexPulling(VAO, m_waterData.SSBO, m_waterData.verticesSize* 6);
-    }
-
     [[nodiscard]] bool hasOpaqueFaces() const {
         return m_opaqueData.hasFaces;
+    }
+
+    void setHasOpaqueFaces(const bool hasFaces) {
+        m_opaqueData.hasFaces = hasFaces;
     }
 
     [[nodiscard]] bool hasTransparentFaces() const {
         return m_transparentData.hasFaces;
     }
 
+    void setHasTransparentFaces(const bool hasFaces) {
+        m_transparentData.hasFaces = hasFaces;
+    }
+
     [[nodiscard]] bool hasWaterFaces() const {
         return m_waterData.hasFaces;
+    }
+
+    void setHasWaterFaces(const bool hasFaces) {
+        m_waterData.hasFaces = hasFaces;
     }
 
     [[nodiscard]] virtual bool shouldDrawFace(int x, int y, int z,
@@ -233,6 +157,10 @@ public:
         return m_state;
     }
 
+    void setState(const State m_state) {
+        this->m_state = m_state;
+    }
+
     [[nodiscard]] const AABB &getBoundingBox() const {
         return m_box;
     }
@@ -242,9 +170,40 @@ public:
         return m_opaqueData.vertices; // Only used for instance rendering, so a copy is fine
     }
 
-private:
-    static void setupGLBuffers(const std::vector<BlockVertex> &vertices, StorageBuffer &SSBO) {
-        SSBO.init(vertices.data(), static_cast<unsigned int>(vertices.size() * sizeof(BlockVertex)), 1);
+    [[nodiscard]] const std::vector<BlockVertex> & getOpaqueVertices() const {
+        return m_opaqueData.vertices;
+    }
+
+    [[nodiscard]] std::vector<BlockVertex> & getOpaqueVertices() {
+        return m_opaqueData.vertices;
+    }
+
+    [[nodiscard]] const std::vector<BlockVertex> & getTransparentVertices() const {
+        return m_transparentData.vertices;
+    }
+
+    [[nodiscard]] std::vector<BlockVertex> & getTransparentVertices() {
+        return m_transparentData.vertices;
+    }
+
+    [[nodiscard]] const std::vector<BlockVertex> & getWaterVertices() const {
+        return m_waterData.vertices;
+    }
+
+    [[nodiscard]] std::vector<BlockVertex> & getWaterVertices() {
+        return m_waterData.vertices;
+    }
+
+    [[nodiscard]] unsigned int getOpaqueVertexCount() const {
+        return m_opaqueData.verticesCount;
+    }
+
+    [[nodiscard]] unsigned int getTransparentVertexCount() const {
+        return m_transparentData.verticesCount;
+    }
+
+    [[nodiscard]] unsigned int getWaterVertexCount() const {
+        return m_waterData.verticesCount;
     }
 };
 

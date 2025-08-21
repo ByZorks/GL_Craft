@@ -9,7 +9,7 @@
 Camera::Camera(const unsigned int windowWidth,
                const unsigned int windowHeight) : m_lastX(static_cast<float>(windowWidth) / 2.0f),
                                                   m_lastY(static_cast<float>(windowHeight) / 2.0f),
-                                                  m_yaw(-90.0f), m_pitch(0.0f), m_lastYaw(0.f), m_lastPitch(.0f),
+                                                  m_yaw(-90.0f), m_pitch(0.0f), m_lastYaw(0.f), m_lastPitch(.0f), m_lastSticterYaw(0.0f), m_lastStricterPitch(0.0f),
                                                   m_firstMouse(true), m_cameraPos(glm::vec3(0.0f, 110, .0f)),
                                                   m_cameraFront(glm::vec3(0.0f, 0.0f, 0.0f)),
                                                   m_cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
@@ -34,6 +34,8 @@ void Camera::updateLastState() {
 
     if (std::abs(m_lastYaw - m_yaw) > 15.f) m_lastYaw = m_yaw;
     if (std::abs(m_lastPitch - m_pitch) > 15.f) m_lastPitch = m_pitch;
+    if (std::abs(m_lastSticterYaw - m_yaw) > 5.f) m_lastSticterYaw = m_yaw;
+    if (std::abs(m_lastStricterPitch - m_pitch) > 5.f) m_lastStricterPitch = m_pitch;
 }
 
 void Camera::processInput(GLFWwindow *window, const double deltaTime) {
@@ -130,6 +132,10 @@ bool Camera::hasCameraChangedBlock() const {
 
 bool Camera::hasCameraChangedDirection() const {
     return std::abs(m_lastYaw - m_yaw) > 15.f || std::abs(m_lastPitch - m_pitch) > 15.f;
+}
+
+bool Camera::hasCameraChangedDirectionStricter() const {
+    return std::abs(m_lastSticterYaw - m_yaw) > 5.f || std::abs(m_lastStricterPitch - m_pitch) > 5.f;
 }
 
 bool Camera::hasCameraUpdated() const {

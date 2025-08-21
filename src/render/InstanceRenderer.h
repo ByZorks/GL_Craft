@@ -6,6 +6,7 @@
 #include "../gl/StorageBuffer.h"
 #include "../gl/VertexArray.h"
 #include "../world/Block.h"
+#include "../world/MeshManager.h"
 
 class InstanceRenderer {
 private:
@@ -25,7 +26,8 @@ public:
         if (m_buffersInitialized) return;
 
         mesh.generateVoxel();
-        mesh.generateMesh(false);
+        MeshsingResult result;
+        mesh.generateMesh(false, result);
 
         m_vertices = mesh.getOpaqueVerticesCopy();
 
@@ -37,7 +39,7 @@ public:
         // Instance buffer
         constexpr size_t initialCapacity = 10000;
         m_instancePositions.reserve(initialCapacity);
-        m_instanceSSBO.init(nullptr, initialCapacity * sizeof(std::array<int, 3>), 2);
+        m_instanceSSBO.init(nullptr, initialCapacity * sizeof(std::array<int, 3>), 3);
 
         m_instanceBufferCapacity = initialCapacity;
         m_buffersInitialized = true;
