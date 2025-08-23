@@ -29,7 +29,7 @@ private:
     std::vector<Offset> m_renderDistanceOffsets;
 
     IndirectRenderer m_indirectRenderer;
-    bool m_indirectRendererNeedsUpdate = false;
+    unsigned int m_visibleChunksCount = 0;
 
     InstanceRenderer m_grassRenderer;
     InstanceRenderer m_poppyRenderer;
@@ -37,10 +37,6 @@ private:
     InstanceRenderer m_alliumRenderer;
     bool m_renderDistanceChanged = false;
     bool m_needInstanceUpdate = false;
-
-    std::vector<std::shared_ptr<Chunk>> m_displayedNormalMeshes;
-    std::vector<std::shared_ptr<Chunk>> m_displayedTransparentMeshes;
-    std::vector<std::shared_ptr<Chunk>> m_displayedWaterMeshes;
 
 public:
     World();

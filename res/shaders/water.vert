@@ -51,6 +51,8 @@ const vec2 texOffsets[4] = vec2[4](
 
 const int indices[6] = {0, 2, 1, 0, 3, 2};
 
+const int MAX_VERTICES_PER_CHUNK =  32 * 32 * 32 * 6;
+
 BlockVertex unpackVertexData(uint packedData) {
     BlockVertex v;
 
@@ -80,7 +82,7 @@ void main() {
     // Pull data from the buffer
     const int index = gl_VertexID / 6;
     const int currentVertexID = gl_VertexID % 6;
-    const uint packedData = packedVertices[index];
+    const uint packedData = packedVertices[gl_DrawID * MAX_VERTICES_PER_CHUNK + index];
     const BlockVertex data = unpackVertexData(packedData);
 
     // Face index
@@ -89,7 +91,7 @@ void main() {
     // Position and offset calculation
     const int quadVertexIndex = indices[currentVertexID];
     const vec3 vertexOffset = faceOffsets[data.face][quadVertexIndex];
-    vec3 worldPos = vec3(data.position) + vertexOffset + positionOffset[gl_BaseInstance];
+    vec3 worldPos = vec3(data.position) + vertexOffset + positionOffset[gl_DrawID];
     // Top vertex
     if (vertexOffset.y > 0.5) {
         worldPos.y -= .2;

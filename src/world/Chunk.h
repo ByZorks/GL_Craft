@@ -14,6 +14,9 @@ class Chunk final : public Mesh {
 private:
     std::unordered_set<SurfaceFeature> m_surfaceFeatures;
     std::unordered_map<ChunkPosition, std::vector<PendingBlock>> m_pendingBlocksForNeighbors;
+    unsigned int m_gpuOpaqueSlot = UINT_MAX;
+    unsigned int m_gpuTransparentSlot = UINT_MAX;
+    unsigned int m_gpuWaterSlot = UINT_MAX;
 
 public:
     static constexpr unsigned int SIZE = 32;
@@ -32,6 +35,12 @@ public:
     [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const override;
     [[nodiscard]] BlockType getBlockTypeOrSurfaceFeature(int localX, int localY, int localZ) const;
     [[nodiscard]] const std::unordered_set<SurfaceFeature> & getSurfaceFeatures() const;
+    [[nodiscard]] unsigned int getGPUSlotOpaque() const;
+    void setGPUSlotOpaque(unsigned int m_gpu_opaque_slot);
+    [[nodiscard]] unsigned int getGPUSlotTransparent() const;
+    void setGPUSlotTransparent(unsigned int m_gpu_transparent_slot);
+    [[nodiscard]] unsigned int getGPUSlotWater() const;
+    void setGPUSlotWater(unsigned int m_gpu_water_slot);
 
 private:
     void addBlockFaces(int localX, int localY, int localZ, BlockType blockType);

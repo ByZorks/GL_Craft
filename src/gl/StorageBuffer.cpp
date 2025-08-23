@@ -79,11 +79,3 @@ void StorageBuffer::bind() const {
 void StorageBuffer::unbind() {
     GLCall(glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0));
 }
-
-unsigned int StorageBuffer::getBindingPoint() const {
-    return m_bindingPoint;
-}
-
-bool StorageBuffer::isValid() const {
-    return m_ID != 0;
-}

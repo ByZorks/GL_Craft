@@ -81,7 +81,6 @@ void Chunk::generateVoxel() {
 void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResult &result) {
     for (const auto &[localX, localY, localZ, blockType]: blocks) {
         m_blockType[index(localX, localY, localZ)] = blockType;
-        // addBlockFaces(localX - 1, localY - 1, localZ - 1, blockType, result);
     }
     blocks.clear();
 
@@ -174,6 +173,30 @@ BlockType Chunk::getBlockTypeOrSurfaceFeature(const int localX, const int localY
 
 const std::unordered_set<SurfaceFeature> &Chunk::getSurfaceFeatures() const {
     return m_surfaceFeatures;
+}
+
+unsigned int Chunk::getGPUSlotOpaque() const {
+    return m_gpuOpaqueSlot;
+}
+
+void Chunk::setGPUSlotOpaque(const unsigned int m_gpu_opaque_slot) {
+    m_gpuOpaqueSlot = m_gpu_opaque_slot;
+}
+
+unsigned int Chunk::getGPUSlotTransparent() const {
+    return m_gpuTransparentSlot;
+}
+
+void Chunk::setGPUSlotTransparent(const unsigned int m_gpu_transparent_slot) {
+    m_gpuTransparentSlot = m_gpu_transparent_slot;
+}
+
+unsigned int Chunk::getGPUSlotWater() const {
+    return m_gpuWaterSlot;
+}
+
+void Chunk::setGPUSlotWater(const unsigned int m_gpu_water_slot) {
+    m_gpuWaterSlot = m_gpu_water_slot;
 }
 
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const BlockType blockType) {

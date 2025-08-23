@@ -41,6 +41,7 @@ protected:
     buffersData m_waterData;
     State m_state = State::UNINITIALIZED;
     const AABB m_box;
+    bool m_wasInFrustum = false;
 
 public:
     Mesh(const int x, const int y, const int z, const unsigned int size) : m_size(size), m_x(x), m_y(y), m_z(z),
@@ -162,6 +163,14 @@ public:
 
     [[nodiscard]] const AABB &getBoundingBox() const {
         return m_box;
+    }
+
+    void setWasInFrustum(const bool isInFrustum) {
+        m_wasInFrustum = isInFrustum;
+    }
+
+    [[nodiscard]] bool wasInFrustum() const {
+        return m_wasInFrustum;
     }
 
     [[nodiscard]] std::vector<BlockVertex> getOpaqueVerticesCopy() const {

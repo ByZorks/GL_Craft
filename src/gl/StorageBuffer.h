@@ -21,9 +21,6 @@ public:
     void deleteBuffer();
     void bind() const;
     static void unbind();
-
-    [[nodiscard]] unsigned int getBindingPoint() const;
-    [[nodiscard]] bool isValid() const;
 };
 
 #endif //GL_CRAFT_STORAGEBUFFER_H

@@ -63,9 +63,9 @@ void World::updateChunks(const Camera &camera, const Frustum &frustum) {
 
     m_needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk() ||
                           m_renderDistanceChanged;
+    m_visibleChunksCount = 0;
     processChunksQueues();
     sortChunks(frustum, camera);
-    m_indirectRendererNeedsUpdate = false;
     m_needInstanceUpdate = false;
     m_renderDistanceChanged = false;
 }
@@ -470,13 +470,12 @@ void World::processChunksQueues() {
 
         const ChunkPosition key = m_chunksData.meshesToGenerate.pop();
         const auto p_chunk = std::make_shared<Chunk>(key.x, key.y, key.z);
-        m_chunksData.loadedMeshes.insert({key, p_chunk});
+        m_chunksData.loadedMeshes.try_emplace(key, p_chunk);
 
         m_threadPool.enqueue_no_future([this, p_chunk] {
             p_chunk->generateVoxel();
             p_chunk->generateMesh();
             m_needInstanceUpdate = true;
-            m_indirectRendererNeedsUpdate = true;
             p_chunk->transferPendingBlocksToWorld(*this);
         });
 
@@ -537,7 +536,7 @@ void World::processChunksQueues() {
             it != m_chunksData.loadedMeshes.end()) {
             const std::shared_ptr<Chunk> p_chunk = it->second;
 
-            if (needIndirectRendererUpdate && !needInstanceUpdate) {
+            if (needIndirectRendererUpdate) {
                 p_chunk->getOpaqueVertices().swap(opaqueVertices);
                 p_chunk->getTransparentVertices().swap(transparentVertices);
                 p_chunk->getWaterVertices().swap(waterVertices);
@@ -545,36 +544,46 @@ void World::processChunksQueues() {
                 p_chunk->setHasTransparentFaces(hasTransparentFaces);
                 p_chunk->setHasWaterFaces(hasWaterFaces);
                 p_chunk->updateVertexCount();
+
+                m_indirectRenderer.updateChunk(p_chunk);
             }
 
             m_needInstanceUpdate |= needInstanceUpdate;
-            m_indirectRendererNeedsUpdate |= needIndirectRendererUpdate;
         }
     }
 }
 
 void World::sortChunks(const Frustum &frustum, const Camera &camera) {
-    // Setup buffers for chunks that are ready to be rendered
-    m_displayedNormalMeshes.clear();
-    m_displayedTransparentMeshes.clear();
-    m_displayedWaterMeshes.clear();
-    for (const auto &chunk: m_chunksData.loadedMeshes | std::views::values) {
-        if (chunk->getState() == State::READY_TO_DRAW && frustum.isAABBInFrustum(chunk->getBoundingBox())) {
-            if (chunk->hasOpaqueFaces()) m_displayedNormalMeshes.push_back(chunk);
-            if (chunk->hasTransparentFaces()) m_displayedTransparentMeshes.push_back(chunk);
-            if (chunk->hasWaterFaces()) m_displayedWaterMeshes.push_back(chunk);
-        }
-    }
-
     if (m_needInstanceUpdate) {
         m_grassRenderer.resetInstances();
         m_poppyRenderer.resetInstances();
         m_cornflowerRenderer.resetInstances();
         m_alliumRenderer.resetInstances();
+    }
 
-        for (const auto &strong_mesh: m_displayedNormalMeshes) {
-            if (camera.distanceToCamera(*strong_mesh) < 320.0f) { // They are no longer visible at this distance event if we draw them
-                for (const auto &feature: strong_mesh->getSurfaceFeatures()) {
+    for (const auto &chunk: m_chunksData.loadedMeshes | std::views::values) {
+        if (chunk->getState() < State::READY_TO_DRAW) continue;
+
+        const bool isInFrutum = frustum.isAABBInFrustum(chunk->getBoundingBox());
+
+        // Update indirect renderer when chunk exit frustum
+        if (!isInFrutum && chunk->wasInFrustum()) {
+            m_indirectRenderer.removeChunk(chunk);
+            chunk->setWasInFrustum(false);
+            continue;
+        }
+
+        // Update indirect renderer when chunk enter frustum
+        if (isInFrutum) {
+            if (!chunk->wasInFrustum()) {
+                m_indirectRenderer.addChunk(chunk);
+                chunk->setWasInFrustum(true);
+            }
+            m_visibleChunksCount++;
+
+            // Surface features
+            if (m_needInstanceUpdate && camera.distanceToCamera(*chunk) < 320.0f) { // They are no longer visible at this distance event if we draw them
+                for (const auto &feature: chunk->getSurfaceFeatures()) {
                     switch (feature.type) {
                         case SurfaceFeatureType::SHORT_GRASS:
                             m_grassRenderer.addInstance({feature.x - 1, feature.y, feature.z - 1});
@@ -594,14 +603,14 @@ void World::sortChunks(const Frustum &frustum, const Camera &camera) {
                 }
             }
         }
+    }
 
+    if (m_needInstanceUpdate) {
         m_grassRenderer.updateInstanceBuffer();
         m_poppyRenderer.updateInstanceBuffer();
         m_cornflowerRenderer.updateInstanceBuffer();
         m_alliumRenderer.updateInstanceBuffer();
     }
-
-    if (m_indirectRendererNeedsUpdate || camera.hasCameraChangedDirectionStricter()) m_indirectRenderer.createDrawCommands(m_displayedNormalMeshes, m_displayedTransparentMeshes, m_displayedWaterMeshes);
 }
 
 void World::generateChunksPositions(const int cameraWorldX, const int cameraWorldY, const int cameraWorldZ) {
@@ -627,13 +636,17 @@ void World::unloadDistantMeshes(const glm::vec3 &cameraChunkPos) {
     const float camY = cameraChunkPos.y;
     const float camZ = cameraChunkPos.z;
 
-    std::erase_if(m_chunksData.loadedMeshes, [&](const auto &tuple) {
-        auto [x, y, z] = tuple.first;
+    std::erase_if(m_chunksData.loadedMeshes, [&](const auto &chunk) {
+        auto [x, y, z] = chunk.first;
         const float dx = x - camX;
         const float dy = y - camY;
         const float dz = z - camZ;
-        const float distSq = dx * dx + dy * dy + dz * dz;
-        return distSq > renderDistanceSq;
+        if (const float distSq = dx * dx + dy * dy + dz * dz;
+            distSq > renderDistanceSq) {
+            m_indirectRenderer.removeChunk(chunk.second);
+            return true;
+        }
+        return false;
     });
 }
 
@@ -679,8 +692,7 @@ FastNoiseLite &World::getSurfaceFeaturesNoise() {
 }
 
 unsigned int World::getVisibleChunksCount() const {
-    return static_cast<unsigned int>(
-        m_displayedNormalMeshes.size() + m_displayedTransparentMeshes.size() + m_displayedWaterMeshes.size());
+    return m_visibleChunksCount;
 }
 
 ThreadPool &World::getThreadPool() {
