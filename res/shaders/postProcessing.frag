@@ -14,9 +14,9 @@ const float CAMERA_NEAR = 0.1;
 const float CAMERA_FAR = 1024.0;
 const float WATER_FOG_NEAR = 0.1;
 const float WATER_FOG_FAR = 30.0;
-const float FOG_FAR = u_RenderDistance - CHUNK_SIZE;
-const float FOG_NEAR = u_RenderDistance - 3 * CHUNK_SIZE;
-const float ADJUSTED_FOG_NEAR = abs(FOG_FAR - FOG_NEAR) < CHUNK_SIZE * 3 ? FOG_FAR * 0.8 : FOG_NEAR;
+float FOG_FAR = u_RenderDistance - CHUNK_SIZE;
+float FOG_NEAR = u_RenderDistance - 3 * CHUNK_SIZE;
+float ADJUSTED_FOG_NEAR = abs(FOG_FAR - FOG_NEAR) < CHUNK_SIZE * 3 ? FOG_FAR * 0.8 : FOG_NEAR;
 
 float linearDepth(float depth, float near, float far) {
     float z = depth * 2.0 - 1.0;

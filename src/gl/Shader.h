@@ -3,8 +3,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "fwd.hpp"
 #include "GL/glew.h"
+#include "glm/fwd.hpp"
 
 class Shader {
 private:

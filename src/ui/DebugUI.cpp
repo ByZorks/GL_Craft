@@ -1,10 +1,9 @@
-#include "GL/glew.h"
 #include "DebugUI.h"
+#include "GL/glew.h"
 
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
 
-#include "../world/Chunk.h"
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
 

@@ -9,10 +9,7 @@ set(IMGUI_DIR ${LIBS_DIR}/imgui)
 include_directories(
         ${LIBS_DIR}/glew/include
         ${LIBS_DIR}/glfw/include
-        ${LIBS_DIR}/stb
-        ${LIBS_DIR}/glm
-        ${LIBS_DIR}/imgui
-        ${LIBS_DIR}/fastNoiseLite
+        ${LIBS_DIR}
 )
 
 if (UNIX)
