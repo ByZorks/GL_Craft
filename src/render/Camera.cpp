@@ -3,8 +3,8 @@
 #include <cmath>
 
 #include "../math/Plane.h"
-#include "ext/matrix_clip_space.hpp"
-#include "ext/matrix_transform.hpp"
+#include "glm/ext/matrix_clip_space.hpp"
+#include "glm/ext/matrix_transform.hpp"
 
 Camera::Camera(const unsigned int windowWidth,
                const unsigned int windowHeight) : m_lastX(static_cast<float>(windowWidth) / 2.0f),

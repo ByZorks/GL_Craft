@@ -5,13 +5,13 @@
 
 #include "Chunk.h"
 
-#include "FastNoiseLite.h"
 #include "MeshManager.h"
 #include "../gl/Shader.h"
 #include "../math/Frustum.h"
 #include "../math/Raycast.h"
 #include "../render/InstanceRenderer.h"
 #include "../utils/ThreadPool.h"
+#include "fastNoiseLite/FastNoiseLite.h"
 
 class Camera;
 

@@ -1,7 +1,7 @@
 #ifndef AABB_H
 #define AABB_H
 #include "Plane.h"
-#include "vec3.hpp"
+#include "glm/vec3.hpp"
 
 class AABB {
 private:

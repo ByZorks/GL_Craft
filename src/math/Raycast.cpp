@@ -4,7 +4,7 @@
 #include <cfloat>
 #include <cmath>
 
-#include "common.hpp"
+#include "glm/common.hpp"
 
 int Raycast::m_lastChunk0X = -1;
 int Raycast::m_lastChunk0Y = -1;

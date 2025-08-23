@@ -9,7 +9,7 @@
 #include <iostream>
 #include <ostream>
 
-#include "stb_image.h"
+#include "stb/stb_image.h"
 
 Texture::Texture(std::string filePath) : m_FilePath(std::move(filePath)), m_LocalBuffer(nullptr),
                                          m_Width(0), m_Height(0), m_BPP(0) {

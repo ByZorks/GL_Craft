@@ -1,9 +1,9 @@
 #ifndef CAMERA_H
 #define CAMERA_H
-#include "glm.hpp"
 #include "../math/Frustum.h"
 #include "../world/Chunk.h"
 #include "GLFW/glfw3.h"
+#include "glm/glm.hpp"
 
 class Camera {
 private:

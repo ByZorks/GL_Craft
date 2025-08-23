@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "vec3.hpp"
+#include "glm/vec3.hpp"
 
 Frustum::Frustum() = default;
 

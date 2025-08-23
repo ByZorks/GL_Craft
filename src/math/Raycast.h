@@ -3,10 +3,10 @@
 #include <memory>
 #include <unordered_map>
 
-#include "vec3.hpp"
 #include "../world/Block.h"
 #include "../world/Chunk.h"
 #include "../world/ChunkPosition.h"
+#include "glm/vec3.hpp"
 
 struct RaycastResult {
     std::shared_ptr<Chunk> chunk;
