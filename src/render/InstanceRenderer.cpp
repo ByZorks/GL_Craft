@@ -16,7 +16,7 @@ void InstanceRenderer::updateInstanceBuffer() {
 
     // Resize the instance buffer if necessary
     if (m_instanceCount > m_instanceBufferCapacity) {
-        m_instanceBufferCapacity = m_instanceCount * 2;
+        m_instanceBufferCapacity = m_instanceBufferCapacity * 2;
 
         m_instanceSSBO.deleteBuffer();
         m_instanceSSBO.init(m_instancePositions.data(), m_instanceBufferCapacity * sizeof(std::array<int, 3>), 3);

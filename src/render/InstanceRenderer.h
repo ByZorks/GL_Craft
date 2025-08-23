@@ -36,7 +36,7 @@ public:
         }
 
         // Instance buffer
-        constexpr size_t initialCapacity = 10000;
+        constexpr size_t initialCapacity = 5000;
         m_instancePositions.reserve(initialCapacity);
         m_instanceSSBO.init(nullptr, initialCapacity * sizeof(std::array<int, 3>), 3);
 
