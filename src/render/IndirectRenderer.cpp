@@ -256,6 +256,39 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
 
     }
 
+    const unsigned int newRequiredSlots = (vertexCount + m_vertexPerSlot - 1) / m_vertexPerSlot;
+    const unsigned int oldRequiredSlots = meshData.gpuSlots[startSlotIndex].numberOfSlotsUsed;
+
+    // Release unused slots
+    if (newRequiredSlots < oldRequiredSlots) {
+        for (unsigned int i = startSlotIndex + oldRequiredSlots - 1; i > startSlotIndex + newRequiredSlots - 1; --i) {
+            meshData.gpuSlots[i].isUsed = false;
+        }
+        meshData.gpuSlots[startSlotIndex].numberOfSlotsUsed = newRequiredSlots;
+
+    // Find new slots
+    } else if (newRequiredSlots > oldRequiredSlots) {
+        bool canExtend = true;
+        for (unsigned int i = oldRequiredSlots; i < newRequiredSlots; ++i) {
+            if (startSlotIndex + i >= meshData.gpuSlots.size() || meshData.gpuSlots[startSlotIndex + i].isUsed) {
+                canExtend = false;
+                break;
+            }
+        }
+
+        if (canExtend) {
+            for (unsigned int i = oldRequiredSlots; i < newRequiredSlots; ++i) {
+                meshData.gpuSlots[startSlotIndex + i].isUsed = true;
+            }
+            meshData.gpuSlots[startSlotIndex].numberOfSlotsUsed = newRequiredSlots;
+        } else {
+            remove(meshData, meshType, chunk);
+            add(meshData, meshType, chunk);
+            return;
+        }
+    }
+
+    // Update if the number of slots didn't change or if we could extend
     DrawArraysIndirectCommand cmd{};
     cmd.count = vertexCount;
     cmd.instanceCount = 1;
