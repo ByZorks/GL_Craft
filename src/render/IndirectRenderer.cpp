@@ -115,6 +115,7 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
         } else {
             foundSlots = 0;
             startSlotIndex = UINT_MAX;
+            if (meshData.gpuSlots[i].useNextSlot) i++; // Next slot is used, skip it
         }
     }
 
