@@ -19,7 +19,7 @@ void IndirectBuffer::init(const void *data, const unsigned int size) {
 void IndirectBuffer::updateData(const void *data, const unsigned int size, const unsigned int offset) {
     if (m_size < size + offset) {
         deleteBuffer();
-        init(data, size);
+        init(data, size + offset);
     } else {
         bind();
         GLCall(glBufferSubData(GL_DRAW_INDIRECT_BUFFER, offset, size, data));
@@ -30,6 +30,7 @@ void IndirectBuffer::deleteBuffer() {
     if (m_ID != 0) {
         GLCall(glDeleteBuffers(1, &m_ID));
         m_ID = 0;
+        m_size = 0;
     }
 }
 

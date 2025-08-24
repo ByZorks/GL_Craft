@@ -43,7 +43,7 @@ StorageBuffer & StorageBuffer::operator=(StorageBuffer &&other) noexcept {
 }
 
 
-void StorageBuffer::init(const void *data, const unsigned int size, const unsigned int bindingPoint) {
+void StorageBuffer::init(const void *data, const size_t size, const unsigned int bindingPoint) {
     m_bindingPoint = bindingPoint;
     m_size = size;
     GLCall(glGenBuffers(1, &m_ID));
@@ -52,15 +52,17 @@ void StorageBuffer::init(const void *data, const unsigned int size, const unsign
     GLCall(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID));
 }
 
-void StorageBuffer::updateData(const void *data, const unsigned int size, const unsigned int offset) {
+size_t StorageBuffer::updateData(const void *data, const size_t size, const unsigned int offset) {
     if (m_size < size + offset) {
         const unsigned int bindingPoint = m_bindingPoint; // Save the binding point before deleting the buffer
         deleteBuffer();
-        init(data, size, bindingPoint);
-    } else {
-        bind();
-        GLCall(glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, size, data));
+        init(data, size + offset, bindingPoint);
+        return m_size;
     }
+
+    bind();
+    GLCall(glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, size, data));
+    return 0;
 }
 
 void StorageBuffer::deleteBuffer() {

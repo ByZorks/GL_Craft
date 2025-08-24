@@ -51,7 +51,7 @@ const vec2 texOffsets[4] = vec2[4](
 
 const int indices[6] = {0, 2, 1, 0, 3, 2};
 
-const int MAX_VERTICES_PER_CHUNK =  32 * 32 * 32 * 6;
+const int SLOT_SIZE = 1000;
 
 BlockVertex unpackVertexData(uint packedData) {
     BlockVertex v;
@@ -80,9 +80,9 @@ BlockVertex unpackVertexData(uint packedData) {
 
 void main() {
     // Pull data from the buffer
-    const int index = gl_VertexID / 6;
+    const int quadIndex = gl_VertexID / 6;
     const int currentVertexID = gl_VertexID % 6;
-    const uint packedData = packedVertices[gl_DrawID * MAX_VERTICES_PER_CHUNK + index];
+    const uint packedData = packedVertices[gl_BaseInstance * SLOT_SIZE + quadIndex];
     const BlockVertex data = unpackVertexData(packedData);
 
     // Face index

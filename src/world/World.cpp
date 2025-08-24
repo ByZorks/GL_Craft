@@ -567,18 +567,11 @@ void World::sortChunks(const Frustum &frustum, const Camera &camera) {
         const bool isInFrutum = frustum.isAABBInFrustum(chunk->getBoundingBox());
 
         // Update indirect renderer when chunk exit frustum
-        if (!isInFrutum && chunk->wasInFrustum()) {
-            m_indirectRenderer.removeChunk(chunk);
-            chunk->setWasInFrustum(false);
-            continue;
-        }
+        if (!isInFrutum && chunk->wasInFrustum()) m_indirectRenderer.removeChunk(chunk);
 
         // Update indirect renderer when chunk enter frustum
         if (isInFrutum) {
-            if (!chunk->wasInFrustum()) {
-                m_indirectRenderer.addChunk(chunk);
-                chunk->setWasInFrustum(true);
-            }
+            if (!chunk->wasInFrustum()) m_indirectRenderer.addChunk(chunk);
             m_visibleChunksCount++;
 
             // Surface features

@@ -1,5 +1,6 @@
 #include "IndirectRenderer.h"
 
+#include <cmath>
 #include <iostream>
 
 #include "Renderer.h"
@@ -8,40 +9,43 @@
 IndirectRenderer::IndirectRenderer() {
     const auto renderDistanceInChunks = static_cast<size_t>(Renderer::s_renderDistance / Chunk::SIZE);
     const size_t chunksVisible = renderDistanceInChunks * renderDistanceInChunks * renderDistanceInChunks / 2; // Rough estimate
+    constexpr size_t avgVerticesPerChunk = 5000; // Rough estimate
+    const size_t slotsPerChunkEstimate = (avgVerticesPerChunk + m_vertexPerSlot - 1) / m_vertexPerSlot;
+    const size_t nbSlotsMax = chunksVisible * slotsPerChunkEstimate * 2; // x2 for safety margin
+
     const size_t IBOSize = sizeof(DrawArraysIndirectCommand) * chunksVisible;
-    const size_t SSBOSize = sizeof(BlockVertex) * m_maxVerticesPerMesh * chunksVisible;
+    const size_t SSBOSize = sizeof(BlockVertex) * m_vertexPerSlot * nbSlotsMax;
     const size_t offsetsSSBOSize = sizeof(std::array<int, 4>) * chunksVisible;
-    const std::vector<DrawArraysIndirectCommand> emptyCommands(chunksVisible, {0, 0, 0, 0});
 
     // Opaque
-    m_opaqueIBO.init(emptyCommands.data(), IBOSize);
-    m_opaqueSSBO.init(nullptr, SSBOSize, 1);
-    m_opaqueOffsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
-    m_opaqueGPUSlots.resize(chunksVisible);
+    m_opaqueData.IBO.init(nullptr, IBOSize);
+    m_opaqueData.verticesSSBO.init(nullptr, SSBOSize, 1);
+    m_opaqueData.offsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
+    m_opaqueData.gpuSlots.resize(nbSlotsMax);
 
     // Transparent
-    m_transparentIBO.init(emptyCommands.data(), IBOSize);
-    m_transparentSSBO.init(nullptr, SSBOSize, 1);
-    m_transparentOffsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
-    m_transparentGPUSlots.resize(chunksVisible);
+    m_transparentData.IBO.init(nullptr, IBOSize);
+    m_transparentData.verticesSSBO.init(nullptr, SSBOSize, 1);
+    m_transparentData.offsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
+    m_transparentData.gpuSlots.resize(nbSlotsMax);
 
     // Water
-    m_waterIBO.init(emptyCommands.data(), IBOSize);
-    m_waterSSBO.init(nullptr, SSBOSize, 1);
-    m_waterOffsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
-    m_waterGPUSlots.resize(chunksVisible);
+    m_waterData.IBO.init(nullptr, IBOSize);
+    m_waterData.verticesSSBO.init(nullptr, SSBOSize, 1);
+    m_waterData.offsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
+    m_waterData.gpuSlots.resize(nbSlotsMax);
 }
 
 void IndirectRenderer::addChunk(const std::shared_ptr<Chunk> &chunk) {
-    if (chunk->getGPUSlotOpaque() == UINT_MAX && chunk->hasOpaqueFaces()) addOpaqueChunk(chunk);
-    if (chunk->getGPUSlotTransparent() == UINT_MAX && chunk->hasTransparentFaces()) addTransparentChunk(chunk);
-    if (chunk->getGPUSlotWater() == UINT_MAX && chunk->hasWaterFaces()) addWaterChunk(chunk);
+    if (chunk->getGPUSlotOpaque() == UINT_MAX && chunk->hasOpaqueFaces()) add(m_opaqueData, MeshType::OPAQUE, chunk);
+    if (chunk->getGPUSlotTransparent() == UINT_MAX && chunk->hasTransparentFaces()) add(m_transparentData, MeshType::TRANSPARENT, chunk);
+    if (chunk->getGPUSlotWater() == UINT_MAX && chunk->hasWaterFaces()) add(m_waterData, MeshType::WATER, chunk);
 }
 
 void IndirectRenderer::removeChunk(const std::shared_ptr<Chunk> &chunk) {
-    if (chunk->getGPUSlotOpaque() != UINT_MAX && chunk->hasOpaqueFaces()) removeOpaqueChunk(chunk);
-    if (chunk->getGPUSlotTransparent() != UINT_MAX && chunk->hasTransparentFaces()) removeTransparentChunk(chunk);
-    if (chunk->getGPUSlotWater() != UINT_MAX && chunk->hasWaterFaces()) removeWaterChunk(chunk);
+    if (chunk->getGPUSlotOpaque() != UINT_MAX) remove(m_opaqueData, MeshType::OPAQUE, chunk);
+    if (chunk->getGPUSlotTransparent() != UINT_MAX) remove(m_transparentData, MeshType::TRANSPARENT, chunk);
+    if (chunk->getGPUSlotWater() != UINT_MAX) remove(m_waterData, MeshType::WATER, chunk);
 }
 
 void IndirectRenderer::updateChunk(const std::shared_ptr<Chunk> &chunk) {
@@ -52,287 +56,223 @@ void IndirectRenderer::updateChunk(const std::shared_ptr<Chunk> &chunk) {
     const unsigned int transparentSlot = chunk->getGPUSlotTransparent();
     const unsigned int waterSlot = chunk->getGPUSlotWater();
 
-    // Chunk can have new type of faces, so we may need to add it to a new slot
+    // // Chunk can have new type of faces, so we may need to add it to a new slot
     if (opaqueSlot != UINT_MAX && hasOpaque) {
-        updateOpaqueChunk(chunk);
+        update(m_opaqueData, MeshType::OPAQUE, chunk);
     } else if (opaqueSlot == UINT_MAX && hasOpaque) {
-        addOpaqueChunk(chunk);
+        add(m_opaqueData, MeshType::OPAQUE, chunk);
     }
 
     if (transparentSlot != UINT_MAX && hasTransparent) {
-        updateTransparentChunk(chunk);
+        update(m_transparentData, MeshType::TRANSPARENT, chunk);
     } else if (transparentSlot == UINT_MAX && hasTransparent) {
-        addTransparentChunk(chunk);
+        add(m_transparentData, MeshType::TRANSPARENT, chunk);
     }
 
     if (waterSlot != UINT_MAX && hasWater) {
-        updateWaterChunk(chunk);
+        update(m_waterData, MeshType::WATER, chunk);
     } else if (waterSlot == UINT_MAX && hasWater) {
-        addWaterChunk(chunk);
+        add(m_waterData, MeshType::WATER, chunk);
     }
 }
 
 void IndirectRenderer::drawOpaque() const {
-    Renderer::drawMultiWithVertexPulling(m_opaqueIBO, m_opaqueSSBO, m_opaqueOffsetsSSBO, m_opaqueHighestSlotUsed, nullptr);
+    Renderer::drawMultiWithVertexPulling(m_opaqueData.IBO, m_opaqueData.verticesSSBO, m_opaqueData.offsetsSSBO, m_opaqueData.count, nullptr);
 }
 
 void IndirectRenderer::drawTransparent() const {
-    Renderer::drawMultiWithVertexPulling(m_transparentIBO, m_transparentSSBO, m_transparentOffsetsSSBO, m_transparentHighestSlotUsed, nullptr);
+    Renderer::drawMultiWithVertexPulling(m_transparentData.IBO, m_transparentData.verticesSSBO, m_transparentData.offsetsSSBO, m_transparentData.count, nullptr);
 }
 
 void IndirectRenderer::drawWater() const {
-    Renderer::drawMultiWithVertexPulling(m_waterIBO, m_waterSSBO, m_waterOffsetsSSBO, m_waterHighestSlotUsed, nullptr);
+    Renderer::drawMultiWithVertexPulling(m_waterData.IBO, m_waterData.verticesSSBO, m_waterData.offsetsSSBO, m_waterData.count, nullptr);
 }
 
-void IndirectRenderer::addOpaqueChunk(const std::shared_ptr<Chunk> &chunk) {
-    // Find a free GPU slot
-    unsigned int slotIndex = UINT_MAX;
-    for (unsigned int i = 0; i < m_opaqueGPUSlots.size(); i++) {
-        if (!m_opaqueGPUSlots[i].isUsed) {
-            slotIndex = i;
+void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const std::shared_ptr<Chunk> &chunk) const {
+    unsigned int vertexCount = 0;
+    switch (meshType) {
+        case MeshType::OPAQUE:
+            vertexCount = chunk->getOpaqueVertexCount();
             break;
+        case MeshType::TRANSPARENT:
+            vertexCount = chunk->getTransparentVertexCount();
+            break;
+        case MeshType::WATER:
+            vertexCount = chunk->getWaterVertexCount();
+            break;
+    }
+    const unsigned int requiredSlots = (vertexCount + m_vertexPerSlot - 1) / m_vertexPerSlot;
+    unsigned int foundSlots = 0;
+    unsigned int startSlotIndex = UINT_MAX;
+
+    // Find requireSlots consecutives free GPU slots
+    for (unsigned int i = 0; i < meshData.gpuSlots.size(); i++) {
+        if (!meshData.gpuSlots[i].isUsed) {
+            if (foundSlots == 0) startSlotIndex = i; // Possible start
+            foundSlots++;
+            // If enough consecutive slots have been found, use them
+            if (requiredSlots == foundSlots) break;
+        } else {
+            foundSlots = 0;
+            startSlotIndex = UINT_MAX;
         }
     }
 
-    if (slotIndex == UINT_MAX) {
-        std::cerr << "No free GPU slot available!\n";
+    if (requiredSlots != foundSlots) {
+        std::cerr << "No contiguous free GPU slots available!\n";
         return;
     }
 
-    const unsigned int vertexCount = chunk->getOpaqueVertexCount();
-    auto &gpuSlot = m_opaqueGPUSlots[slotIndex];
-    gpuSlot.isUsed = true;
-    gpuSlot.vertexCount = vertexCount;
-    gpuSlot.vertexOffset = slotIndex * m_maxVerticesPerMesh;
-    chunk->setGPUSlotOpaque(slotIndex);
+    unsigned int drawIndex;
+    if (!meshData.freeDrawIndices.empty()) {
+        drawIndex = meshData.freeDrawIndices.front();
+        meshData.freeDrawIndices.pop();
+    } else {
+        drawIndex = meshData.count++;
+    }
 
-    DrawArraysIndirectCommand cmd{};
-    cmd.count = vertexCount;
-    cmd.instanceCount = 1;
-    cmd.first = 0;
-    cmd.baseInstance = 0;
-
-    m_opaqueIBO.updateData(&cmd, sizeof(cmd), slotIndex * sizeof(DrawArraysIndirectCommand));
-
-    const std::array offsets = { // 4 integers for x, y, z, and a padding value
-        chunk->getX(),
-        chunk->getY(),
-        chunk->getZ(),
-        0
-    };
-    m_opaqueOffsetsSSBO.updateData(offsets.data(), offsets.size() * sizeof(int), slotIndex * sizeof(std::array<int,4>));
-
-    const auto &vertices = chunk->getOpaqueVertices();
-    m_opaqueSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), gpuSlot.vertexOffset * sizeof(BlockVertex));
-
-    m_opaqueHighestSlotUsed = std::max(m_opaqueHighestSlotUsed, static_cast<size_t>(slotIndex) + 1);
-}
-
-void IndirectRenderer::addTransparentChunk(const std::shared_ptr<Chunk> &chunk) {
-    // Find a free GPU slot
-    unsigned int slotIndex = UINT_MAX;
-    for (unsigned int i = 0; i < m_transparentGPUSlots.size(); i++) {
-        if (!m_transparentGPUSlots[i].isUsed) {
-            slotIndex = i;
+    switch (meshType) {
+        case MeshType::OPAQUE:
+            chunk->setOpaqueDrawIndex(drawIndex);
+            chunk->setGPUSlotOpaque(startSlotIndex);
             break;
-        }
-    }
-
-    if (slotIndex == UINT_MAX) {
-        std::cerr << "No free GPU slot available!\n";
-        return;
-    }
-
-    const unsigned int vertexCount = chunk->getTransparentVertexCount();
-    auto &gpuSlot = m_transparentGPUSlots[slotIndex];
-    gpuSlot.isUsed = true;
-    gpuSlot.vertexCount = vertexCount;
-    gpuSlot.vertexOffset = slotIndex * m_maxVerticesPerMesh;
-    chunk->setGPUSlotTransparent(slotIndex);
-
-    DrawArraysIndirectCommand cmd{};
-    cmd.count = vertexCount;
-    cmd.instanceCount = 1;
-    cmd.first = 0;
-    cmd.baseInstance = 0;
-
-    m_transparentIBO.updateData(&cmd, sizeof(cmd), slotIndex * sizeof(DrawArraysIndirectCommand));
-
-    const std::array offsets = { // 4 integers for x, y, z, and a padding value
-        chunk->getX(),
-        chunk->getY(),
-        chunk->getZ(),
-        0
-    };
-    m_transparentOffsetsSSBO.updateData(offsets.data(), offsets.size() * sizeof(int), slotIndex * sizeof(std::array<int,4>));
-
-    const auto &vertices = chunk->getTransparentVertices();
-    m_transparentSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), gpuSlot.vertexOffset * sizeof(BlockVertex));
-
-    m_transparentHighestSlotUsed = std::max(m_transparentHighestSlotUsed, static_cast<size_t>(slotIndex) + 1);
-}
-
-void IndirectRenderer::addWaterChunk(const std::shared_ptr<Chunk> &chunk) {
-    // Find a free GPU slot
-    unsigned int slotIndex = UINT_MAX;
-    for (unsigned int i = 0; i < m_waterGPUSlots.size(); i++) {
-        if (!m_waterGPUSlots[i].isUsed) {
-            slotIndex = i;
+        case MeshType::TRANSPARENT:
+            chunk->setTransparentDrawIndex(drawIndex);
+            chunk->setGPUSlotTransparent(startSlotIndex);
             break;
-        }
+        case MeshType::WATER:
+            chunk->setWaterDrawIndex(drawIndex);
+            chunk->setGPUSlotWater(startSlotIndex);
+            break;
     }
+    chunk->setWasInFrustum(true);
 
-    if (slotIndex == UINT_MAX) {
-        std::cerr << "No free GPU slot available!\n";
-        return;
+    for (unsigned int i = 0; i < requiredSlots; ++i) {
+        const unsigned int currentSlot = startSlotIndex + i;
+        meshData.gpuSlots[currentSlot].isUsed = true;
+        meshData.gpuSlots[currentSlot].useNextSlot = i < requiredSlots - 1;
     }
-
-    const unsigned int vertexCount = chunk->getWaterVertexCount();
-    auto &gpuSlot = m_waterGPUSlots[slotIndex];
-    gpuSlot.isUsed = true;
-    gpuSlot.vertexCount = vertexCount;
-    gpuSlot.vertexOffset = slotIndex * m_maxVerticesPerMesh;
-    chunk->setGPUSlotWater(slotIndex);
 
     DrawArraysIndirectCommand cmd{};
     cmd.count = vertexCount;
     cmd.instanceCount = 1;
     cmd.first = 0;
-    cmd.baseInstance = 0;
+    cmd.baseInstance = startSlotIndex;
 
-    m_waterIBO.updateData(&cmd, sizeof(cmd), slotIndex * sizeof(DrawArraysIndirectCommand));
+    meshData.IBO.updateData(&cmd, sizeof(cmd), drawIndex * sizeof(DrawArraysIndirectCommand));
 
-    const std::array offsets = { // 4 integers for x, y, z, and a padding value
-        chunk->getX(),
-        chunk->getY(),
-        chunk->getZ(),
-        0
-    };
-    m_waterOffsetsSSBO.updateData(offsets.data(), offsets.size() * sizeof(int), slotIndex * sizeof(std::array<int,4>));
+    // 4 integers for x, y, z, and a padding value
+    const std::array offsets = {chunk->getX(), chunk->getY(), chunk->getZ(), 0};
+    meshData.offsetsSSBO.updateData(offsets.data(), offsets.size() * sizeof(int), drawIndex * sizeof(std::array<int,4>));
 
-    const auto &vertices = chunk->getWaterVertices();
-    m_waterSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), gpuSlot.vertexOffset * sizeof(BlockVertex));
+    const auto &vertices =
+        meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() :
+        meshType == MeshType::TRANSPARENT ? chunk->getTransparentVertices() :
+        chunk->getWaterVertices();
+    const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(BlockVertex);
+    if (const size_t newSize = meshData.verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), vertexBufferOffset);
+        newSize > 0) {
+        const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(BlockVertex));
+        meshData.gpuSlots.resize(newSlotCount);
+    }
 
-    m_waterHighestSlotUsed = std::max(m_waterHighestSlotUsed, static_cast<size_t>(slotIndex) + 1);
+    const size_t lastSlotUsed = startSlotIndex + requiredSlots - 1;
+    meshData.highestSlotUsed = std::max(meshData.highestSlotUsed, lastSlotUsed);
 }
 
-void IndirectRenderer::removeOpaqueChunk(const std::shared_ptr<Chunk> &chunk) {
-    const unsigned int slotIndex = chunk->getGPUSlotOpaque();
-    auto &gpuSlot = m_opaqueGPUSlots[slotIndex];
+void IndirectRenderer::remove(MeshData &meshData, const MeshType meshType, const std::shared_ptr<Chunk> &chunk) {
+    unsigned int slotIndex = 0;
+    unsigned int drawIndex = 0;
+    switch (meshType) {
+        case MeshType::OPAQUE:
+            slotIndex = chunk->getGPUSlotOpaque();
+            drawIndex = chunk->getOpaqueDrawIndex();
+            break;
+        case MeshType::TRANSPARENT:
+            slotIndex = chunk->getGPUSlotTransparent();
+            drawIndex = chunk->getTransparentDrawIndex();
+            break;
+        case MeshType::WATER:
+            slotIndex = chunk->getGPUSlotWater();
+            drawIndex = chunk->getWaterDrawIndex();
+            break;
+
+    }
 
     constexpr DrawArraysIndirectCommand emptyCmd{0, 0, 0, 0};
-    m_opaqueIBO.updateData(&emptyCmd, sizeof(emptyCmd), slotIndex * sizeof(DrawArraysIndirectCommand));
+    meshData.IBO.updateData(&emptyCmd, sizeof(emptyCmd), drawIndex * sizeof(DrawArraysIndirectCommand));
     // No need to update SSBO or OffsetsSSBO, as they won't be used because draw command is zeroed
 
-    gpuSlot.isUsed = false;
-    gpuSlot.vertexOffset = 0;
-    gpuSlot.vertexCount = 0;
-    chunk->setGPUSlotOpaque(UINT_MAX);
+    while (slotIndex < meshData.gpuSlots.size()) {
+        auto &[isUsed, useNextSlot] = meshData.gpuSlots[slotIndex];
+        isUsed = false;
 
-    if (m_opaqueHighestSlotUsed > 0) {
-        while (m_opaqueHighestSlotUsed > 0 && !m_opaqueGPUSlots[m_opaqueHighestSlotUsed - 1].isUsed) {
-            --m_opaqueHighestSlotUsed;
-        }
+        if (!useNextSlot) break;
+        useNextSlot = false;
+        ++slotIndex;
     }
+    meshData.freeDrawIndices.emplace(drawIndex);
+    switch (meshType) {
+        case MeshType::OPAQUE:
+            chunk->setGPUSlotOpaque(UINT_MAX);
+            chunk->setOpaqueDrawIndex(UINT_MAX);
+            break;
+        case MeshType::TRANSPARENT:
+            chunk->setGPUSlotTransparent(UINT_MAX);
+            chunk->setTransparentDrawIndex(UINT_MAX);
+            break;
+        case MeshType::WATER:
+            chunk->setGPUSlotWater(UINT_MAX);
+            chunk->setWaterDrawIndex(UINT_MAX);
+            break;
+    }
+    chunk->setWasInFrustum(false);
 
-}
-
-void IndirectRenderer::removeTransparentChunk(const std::shared_ptr<Chunk> &chunk) {
-    const unsigned int slotIndex = chunk->getGPUSlotTransparent();
-    auto &gpuSlot = m_transparentGPUSlots[slotIndex];
-
-    constexpr DrawArraysIndirectCommand emptyCmd{0, 0, 0, 0};
-    m_transparentIBO.updateData(&emptyCmd, sizeof(emptyCmd), slotIndex * sizeof(DrawArraysIndirectCommand));
-    // No need to update SSBO or OffsetsSSBO, as they won't be used because draw command is zeroed
-
-    gpuSlot.isUsed = false;
-    gpuSlot.vertexOffset = 0;
-    gpuSlot.vertexCount = 0;
-    chunk->setGPUSlotTransparent(UINT_MAX);
-
-    if (m_transparentHighestSlotUsed > 0) {
-        while (m_transparentHighestSlotUsed > 0 && !m_transparentGPUSlots[m_transparentHighestSlotUsed - 1].isUsed) {
-            --m_transparentHighestSlotUsed;
-        }
+    while (meshData.highestSlotUsed > 0 && !meshData.gpuSlots[meshData.highestSlotUsed - 1].isUsed) {
+        --meshData.highestSlotUsed;
     }
 }
 
-void IndirectRenderer::removeWaterChunk(const std::shared_ptr<Chunk> &chunk) {
-    const unsigned int slotIndex = chunk->getGPUSlotWater();
-    auto &gpuSlot = m_waterGPUSlots[slotIndex];
+void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const std::shared_ptr<Chunk> &chunk) const {
+    unsigned int startSlotIndex = 0;
+    unsigned int drawIndex = 0;
+    unsigned int vertexCount = 0;
+    switch (meshType) {
+        case MeshType::OPAQUE:
+            startSlotIndex = chunk->getGPUSlotOpaque();
+            drawIndex = chunk->getOpaqueDrawIndex();
+            vertexCount = chunk->getOpaqueVertexCount();
+            break;
+        case MeshType::TRANSPARENT:
+            startSlotIndex = chunk->getGPUSlotTransparent();
+            drawIndex = chunk->getTransparentDrawIndex();
+            vertexCount = chunk->getTransparentVertexCount();
+            break;
+        case MeshType::WATER:
+            startSlotIndex = chunk->getGPUSlotWater();
+            drawIndex = chunk->getWaterDrawIndex();
+            vertexCount = chunk->getWaterVertexCount();
+            break;
 
-    constexpr DrawArraysIndirectCommand emptyCmd{0, 0, 0, 0};
-    m_waterIBO.updateData(&emptyCmd, sizeof(emptyCmd), slotIndex * sizeof(DrawArraysIndirectCommand));
-    // No need to update SSBO or OffsetsSSBO, as they won't be used because draw command is zeroed
-
-    gpuSlot.isUsed = false;
-    gpuSlot.vertexOffset = 0;
-    gpuSlot.vertexCount = 0;
-    chunk->setGPUSlotWater(UINT_MAX);
-
-    if (m_waterHighestSlotUsed > 0) {
-        while (m_waterHighestSlotUsed > 0 && !m_waterGPUSlots[m_waterHighestSlotUsed - 1].isUsed) {
-            --m_waterHighestSlotUsed;
-        }
     }
-}
-
-void IndirectRenderer::updateOpaqueChunk(const std::shared_ptr<Chunk> &chunk) {
-    const unsigned int slotIndex = chunk->getGPUSlotOpaque();
-    auto &gpuSlot = m_opaqueGPUSlots[slotIndex];
-
-    const unsigned int vertexCount = chunk->getOpaqueVertexCount();
-    gpuSlot.vertexCount = vertexCount;
 
     DrawArraysIndirectCommand cmd{};
     cmd.count = vertexCount;
     cmd.instanceCount = 1;
     cmd.first = 0;
-    cmd.baseInstance = 0;
+    cmd.baseInstance = startSlotIndex;
 
-    m_opaqueIBO.updateData(&cmd, sizeof(cmd), slotIndex * sizeof(DrawArraysIndirectCommand));
+    meshData.IBO.updateData(&cmd, sizeof(cmd), drawIndex * sizeof(DrawArraysIndirectCommand));
 
-    const auto &vertices = chunk->getOpaqueVertices();
-    m_opaqueSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), gpuSlot.vertexOffset * sizeof(BlockVertex));
-    // Chunk doesn't change coordinates so no need to update offsets ssbo
-}
-
-void IndirectRenderer::updateTransparentChunk(const std::shared_ptr<Chunk> &chunk) {
-    const unsigned int slotIndex = chunk->getGPUSlotTransparent();
-    auto &gpuSlot = m_transparentGPUSlots[slotIndex];
-
-    const unsigned int vertexCount = chunk->getTransparentVertexCount();
-    gpuSlot.vertexCount = vertexCount;
-
-    DrawArraysIndirectCommand cmd{};
-    cmd.count = vertexCount;
-    cmd.instanceCount = 1;
-    cmd.first = 0;
-    cmd.baseInstance = 0;
-
-    m_transparentIBO.updateData(&cmd, sizeof(cmd), slotIndex * sizeof(DrawArraysIndirectCommand));
-
-    const auto &vertices = chunk->getTransparentVertices();
-    m_transparentSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), gpuSlot.vertexOffset * sizeof(BlockVertex));
-    // Chunk doesn't change coordinates so no need to update offsets ssbo
-}
-
-void IndirectRenderer::updateWaterChunk(const std::shared_ptr<Chunk> &chunk) {
-    const unsigned int slotIndex = chunk->getGPUSlotWater();
-    auto &gpuSlot = m_waterGPUSlots[slotIndex];
-
-    const unsigned int vertexCount = chunk->getWaterVertexCount();
-    gpuSlot.vertexCount = vertexCount;
-
-    DrawArraysIndirectCommand cmd{};
-    cmd.count = vertexCount;
-    cmd.instanceCount = 1;
-    cmd.first = 0;
-    cmd.baseInstance = 0;
-
-    m_waterIBO.updateData(&cmd, sizeof(cmd), slotIndex * sizeof(DrawArraysIndirectCommand));
-
-    const auto &vertices = chunk->getWaterVertices();
-    m_waterSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), gpuSlot.vertexOffset * sizeof(BlockVertex));
+    const auto &vertices =
+        meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() :
+        meshType == MeshType::TRANSPARENT ? chunk->getTransparentVertices() :
+        chunk->getWaterVertices();
+    const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(BlockVertex);
+    if (const size_t newSize = meshData.verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), vertexBufferOffset);
+        newSize > 0) {
+        const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(BlockVertex));
+        meshData.gpuSlots.resize(newSlotCount);
+    }
     // Chunk doesn't change coordinates so no need to update offsets ssbo
 }

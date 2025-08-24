@@ -1,6 +1,7 @@
 #ifndef GL_CRAFT_INDIRECTRENDERER_H
 #define GL_CRAFT_INDIRECTRENDERER_H
 #include <memory>
+#include <queue>
 #include <vector>
 
 #include "../gl/IndirectBuffer.h"
@@ -9,42 +10,40 @@
 
 class IndirectRenderer {
 private:
-    // Structs
+    // Structs and enums
     struct DrawArraysIndirectCommand {
-        unsigned int count;
-        unsigned int instanceCount;
-        unsigned int first;
-        unsigned int baseInstance;
+        unsigned int count = 0;
+        unsigned int instanceCount = 0;
+        unsigned int first = 0;
+        unsigned int baseInstance = 0;
     };
 
-    struct GPUSlot {
+    struct GPUSlot { // Size: 4 KiB = 1000 BlockVertex (1 unsigned int)
         bool isUsed = false;
-        unsigned int vertexCount = 0;
-        unsigned int vertexOffset = 0;
+        bool useNextSlot = false;
     };
 
-    // Opaque
-    IndirectBuffer m_opaqueIBO;
-    StorageBuffer m_opaqueSSBO;
-    StorageBuffer m_opaqueOffsetsSSBO;
-    size_t m_opaqueHighestSlotUsed = 0;
-    std::vector<GPUSlot> m_opaqueGPUSlots;
+    struct MeshData {
+        IndirectBuffer IBO;
+        StorageBuffer verticesSSBO;
+        StorageBuffer offsetsSSBO;
+        size_t highestSlotUsed = 0;
+        size_t count = 0;
+        std::vector<GPUSlot> gpuSlots;
+        std::queue<unsigned int> freeDrawIndices;
+    };
 
-    // Transparent
-    IndirectBuffer m_transparentIBO;
-    StorageBuffer m_transparentSSBO;
-    StorageBuffer m_transparentOffsetsSSBO;
-    size_t m_transparentHighestSlotUsed = 0;
-    std::vector<GPUSlot> m_transparentGPUSlots;
+    enum class MeshType {
+        OPAQUE,
+        TRANSPARENT,
+        WATER
+    };
 
-    // Water
-    IndirectBuffer m_waterIBO;
-    StorageBuffer m_waterSSBO;
-    StorageBuffer m_waterOffsetsSSBO;
-    size_t m_waterHighestSlotUsed = 0;
-    std::vector<GPUSlot> m_waterGPUSlots;
+    MeshData m_opaqueData;
+    MeshData m_transparentData;
+    MeshData m_waterData;
 
-    size_t m_maxVerticesPerMesh = Chunk::SIZE * Chunk::SIZE * Chunk::SIZE * 6; // Using vertex pulling, 1 vertex per block face
+    unsigned int m_vertexPerSlot = 1000;
 
 public:
     IndirectRenderer();
@@ -58,17 +57,9 @@ public:
     void drawWater() const;
 
 private:
-    void addOpaqueChunk(const std::shared_ptr<Chunk> &chunk);
-    void addTransparentChunk(const std::shared_ptr<Chunk> &chunk);
-    void addWaterChunk(const std::shared_ptr<Chunk> &chunk);
-
-    void removeOpaqueChunk(const std::shared_ptr<Chunk> &chunk);
-    void removeTransparentChunk(const std::shared_ptr<Chunk> &chunk);
-    void removeWaterChunk(const std::shared_ptr<Chunk> &chunk);
-
-    void updateOpaqueChunk(const std::shared_ptr<Chunk> &chunk);
-    void updateTransparentChunk(const std::shared_ptr<Chunk> &chunk);
-    void updateWaterChunk(const std::shared_ptr<Chunk> &chunk);
+    void add(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk) const;
+    static void remove(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk);
+    void update(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk) const;
 };
 
 #endif //GL_CRAFT_INDIRECTRENDERER_H

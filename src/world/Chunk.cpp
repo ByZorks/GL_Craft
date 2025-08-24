@@ -175,6 +175,30 @@ const std::unordered_set<SurfaceFeature> &Chunk::getSurfaceFeatures() const {
     return m_surfaceFeatures;
 }
 
+unsigned int Chunk::getOpaqueDrawIndex() const {
+    return m_opaqueDrawIndex;
+}
+
+void Chunk::setOpaqueDrawIndex(const unsigned int m_draw_index) {
+    m_opaqueDrawIndex = m_draw_index;
+}
+
+unsigned int Chunk::getTransparentDrawIndex() const {
+    return m_transparentDrawIndex;
+}
+
+void Chunk::setTransparentDrawIndex(const unsigned int m_transparent_draw_index) {
+    m_transparentDrawIndex = m_transparent_draw_index;
+}
+
+unsigned int Chunk::getWaterDrawIndex() const {
+    return m_waterDrawIndex;
+}
+
+void Chunk::setWaterDrawIndex(const unsigned int m_water_draw_index) {
+    m_waterDrawIndex = m_water_draw_index;
+}
+
 unsigned int Chunk::getGPUSlotOpaque() const {
     return m_gpuOpaqueSlot;
 }

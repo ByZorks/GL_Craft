@@ -88,11 +88,11 @@ void Renderer::drawWithVertexPullingInstanced(const VertexArray &vao, const Stor
     GLCall(glDrawArraysInstanced(GL_TRIANGLES, 0, vertexCount, instanceCount));
 }
 
-void Renderer::drawMultiWithVertexPulling(const IndirectBuffer &ibo, const StorageBuffer &ssbo,
-                                          const StorageBuffer &offsetsSsbo, const unsigned int drawCount, const void *offset) {
-    ibo.bind();
-    ssbo.bind();
-    offsetsSsbo.bind();
+void Renderer::drawMultiWithVertexPulling(const IndirectBuffer &cmds, const StorageBuffer &vertices,
+                                          const StorageBuffer &offsets, const unsigned int drawCount, const void *offset) {
+    cmds.bind();
+    vertices.bind();
+    offsets.bind();
     GLCall(glMultiDrawArraysIndirect(GL_TRIANGLES, offset, drawCount, 0));
 }
 
