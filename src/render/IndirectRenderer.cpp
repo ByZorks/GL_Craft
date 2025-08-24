@@ -24,16 +24,16 @@ IndirectRenderer::IndirectRenderer() {
     m_opaqueData.gpuSlots.resize(nbSlotsMax);
 
     // Transparent
-    m_transparentData.IBO.init(nullptr, IBOSize);
-    m_transparentData.verticesSSBO.init(nullptr, SSBOSize, 1);
-    m_transparentData.offsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
-    m_transparentData.gpuSlots.resize(nbSlotsMax);
+    m_transparentData.IBO.init(nullptr, IBOSize / 8);
+    m_transparentData.verticesSSBO.init(nullptr, SSBOSize / 8, 1);
+    m_transparentData.offsetsSSBO.init(nullptr, offsetsSSBOSize / 8, 2);
+    m_transparentData.gpuSlots.resize(nbSlotsMax / 8);
 
     // Water
-    m_waterData.IBO.init(nullptr, IBOSize);
-    m_waterData.verticesSSBO.init(nullptr, SSBOSize, 1);
-    m_waterData.offsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
-    m_waterData.gpuSlots.resize(nbSlotsMax);
+    m_waterData.IBO.init(nullptr, IBOSize / 5);
+    m_waterData.verticesSSBO.init(nullptr, SSBOSize / 5, 1);
+    m_waterData.offsetsSSBO.init(nullptr, offsetsSSBOSize / 5, 2);
+    m_waterData.gpuSlots.resize(nbSlotsMax / 5);
 }
 
 void IndirectRenderer::addChunk(const std::shared_ptr<Chunk> &chunk) {
