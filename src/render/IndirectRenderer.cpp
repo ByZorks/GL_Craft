@@ -115,7 +115,8 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
         } else {
             foundSlots = 0;
             startSlotIndex = UINT_MAX;
-            if (meshData.gpuSlots[i].useNextSlot) i++; // Next slot is used, skip it
+            if (const uint8_t &numberOfSlotsUsed = meshData.gpuSlots[i].numberOfSlotsUsed;
+                numberOfSlotsUsed > 0) i += numberOfSlotsUsed - 1; // Skip used slots
         }
     }
 
@@ -151,7 +152,7 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
     for (unsigned int i = 0; i < requiredSlots; ++i) {
         const unsigned int currentSlot = startSlotIndex + i;
         meshData.gpuSlots[currentSlot].isUsed = true;
-        meshData.gpuSlots[currentSlot].useNextSlot = i < requiredSlots - 1;
+        meshData.gpuSlots[currentSlot].numberOfSlotsUsed = i == 0 ? requiredSlots : 0;
     }
 
     DrawArraysIndirectCommand cmd{};
@@ -204,14 +205,12 @@ void IndirectRenderer::remove(MeshData &meshData, const MeshType meshType, const
     meshData.IBO.updateData(&emptyCmd, sizeof(emptyCmd), drawIndex * sizeof(DrawArraysIndirectCommand));
     // No need to update SSBO or OffsetsSSBO, as they won't be used because draw command is zeroed
 
-    while (slotIndex < meshData.gpuSlots.size()) {
-        auto &[isUsed, useNextSlot] = meshData.gpuSlots[slotIndex];
-        isUsed = false;
-
-        if (!useNextSlot) break;
-        useNextSlot = false;
-        ++slotIndex;
+    auto &numberOfUsedSlots = meshData.gpuSlots[slotIndex].numberOfSlotsUsed;
+    for (unsigned int i = 0; i < numberOfUsedSlots; ++i) {
+        meshData.gpuSlots[slotIndex + i].isUsed = false;
     }
+    numberOfUsedSlots = 0;
+
     meshData.freeDrawIndices.emplace(drawIndex);
     switch (meshType) {
         case MeshType::OPAQUE:
