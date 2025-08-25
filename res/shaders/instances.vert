@@ -70,10 +70,7 @@ void main() {
     const BlockVertex data = unpackVertexData(packedData);
 
     // Position and offset calculation
-    const int instancePosX = instancePos[gl_InstanceID * 3];
-    const int instancePosY = instancePos[gl_InstanceID * 3 + 1];
-    const int instancePosZ = instancePos[gl_InstanceID * 3 + 2];
-    const vec3 instancePos = vec3(instancePosX, instancePosY, instancePosZ);
+    const vec3 instancePos = vec3(instancePos[gl_InstanceID * 3], instancePos[gl_InstanceID * 3 + 1], instancePos[gl_InstanceID * 3 + 2]);
     const int quadVertexIndex = indices[currentVertexID];
     const vec3 offset = faceOffsets[data.face][quadVertexIndex];
     const vec3 worldPos = instancePos + offset;

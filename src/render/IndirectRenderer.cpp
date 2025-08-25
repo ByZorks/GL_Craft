@@ -15,7 +15,7 @@ IndirectRenderer::IndirectRenderer() {
 
     const size_t IBOSize = sizeof(DrawArraysIndirectCommand) * chunksVisible;
     const size_t SSBOSize = sizeof(BlockVertex) * m_vertexPerSlot * nbSlotsMax;
-    const size_t offsetsSSBOSize = sizeof(std::array<int, 4>) * chunksVisible;
+    const size_t offsetsSSBOSize = sizeof(std::array<int, 3>) * chunksVisible;
     std::cout << "[Indirect Renderer] IBOs total size: " << (IBOSize + IBOSize / 5 * 2) / 1024 << " KiB\n";
     std::cout << "[Indirect Renderer] Vertex SSBO size: " << SSBOSize / (1024 * 1024) << " MiB\n";
     std::cout << "[Indirect Renderer] Offsets SSBOs total size: " << (offsetsSSBOSize + offsetsSSBOSize / 5 * 2) / 1024 << " KiB\n";
@@ -173,8 +173,8 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
     meshData.IBO.updateData(&cmd, sizeof(cmd), drawIndex * sizeof(DrawArraysIndirectCommand));
 
     // 4 integers for x, y, z, and a padding value
-    const std::array offsets = {chunk->getX(), chunk->getY(), chunk->getZ(), 0};
-    meshData.offsetsSSBO.updateData(offsets.data(), offsets.size() * sizeof(int), drawIndex * sizeof(std::array<int,4>));
+    const std::array offsets = {chunk->getX(), chunk->getY(), chunk->getZ()};
+    meshData.offsetsSSBO.updateData(offsets.data(), offsets.size() * sizeof(int), drawIndex * sizeof(std::array<int,3>));
 
     const auto &vertices =
         meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() :

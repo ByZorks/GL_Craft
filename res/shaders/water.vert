@@ -16,7 +16,7 @@ layout(std430, binding = 1) readonly buffer blockVertexPullData {
 };
 
 layout(std430, binding = 2) readonly buffer blockOffsetPullData {
-    ivec3 positionOffset[];
+    int positionOffset[];
 };
 
 out vec2 v_texCoord;
@@ -91,7 +91,7 @@ void main() {
     // Position and offset calculation
     const int quadVertexIndex = indices[currentVertexID];
     const vec3 vertexOffset = faceOffsets[data.face][quadVertexIndex];
-    vec3 worldPos = vec3(data.position) + vertexOffset + positionOffset[gl_DrawID];
+    vec3 worldPos = vec3(data.position) + vertexOffset + vec3(positionOffset[gl_DrawID * 3], positionOffset[gl_DrawID * 3 + 1], positionOffset[gl_DrawID * 3 + 2]);
     // Top vertex
     if (vertexOffset.y > 0.5) {
         worldPos.y -= .2;
