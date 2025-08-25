@@ -37,7 +37,6 @@ protected:
     const int m_x, m_y, m_z;
     std::vector<BlockType> m_blockType;
     buffersData m_opaqueData;
-    buffersData m_transparentData;
     buffersData m_waterData;
     State m_state = State::UNINITIALIZED;
     const AABB m_box;
@@ -61,13 +60,11 @@ public:
 
     void updateVertexCount() {
         m_opaqueData.verticesCount = static_cast<unsigned int>(m_opaqueData.vertices.size() * 6); // Only 1 vertex is stored
-        m_transparentData.verticesCount = static_cast<unsigned int>(m_transparentData.vertices.size() * 6);
         m_waterData.verticesCount = static_cast<unsigned int>(m_waterData.vertices.size() * 6);
     }
 
     void resetMesh() {
         m_opaqueData.deleteMesh();
-        m_transparentData.deleteMesh();
         m_waterData.deleteMesh();
     }
 
@@ -77,14 +74,6 @@ public:
 
     void setHasOpaqueFaces(const bool hasFaces) {
         m_opaqueData.hasFaces = hasFaces;
-    }
-
-    [[nodiscard]] bool hasTransparentFaces() const {
-        return m_transparentData.hasFaces;
-    }
-
-    void setHasTransparentFaces(const bool hasFaces) {
-        m_transparentData.hasFaces = hasFaces;
     }
 
     [[nodiscard]] bool hasWaterFaces() const {
@@ -186,14 +175,6 @@ public:
         return m_opaqueData.vertices;
     }
 
-    [[nodiscard]] const std::vector<BlockVertex> & getTransparentVertices() const {
-        return m_transparentData.vertices;
-    }
-
-    [[nodiscard]] std::vector<BlockVertex> & getTransparentVertices() {
-        return m_transparentData.vertices;
-    }
-
     [[nodiscard]] const std::vector<BlockVertex> & getWaterVertices() const {
         return m_waterData.vertices;
     }
@@ -204,10 +185,6 @@ public:
 
     [[nodiscard]] unsigned int getOpaqueVertexCount() const {
         return m_opaqueData.verticesCount;
-    }
-
-    [[nodiscard]] unsigned int getTransparentVertexCount() const {
-        return m_transparentData.verticesCount;
     }
 
     [[nodiscard]] unsigned int getWaterVertexCount() const {

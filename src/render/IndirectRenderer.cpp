@@ -16,9 +16,9 @@ IndirectRenderer::IndirectRenderer() {
     const size_t IBOSize = sizeof(DrawArraysIndirectCommand) * chunksVisible;
     const size_t SSBOSize = sizeof(BlockVertex) * m_vertexPerSlot * nbSlotsMax;
     const size_t offsetsSSBOSize = sizeof(std::array<int, 3>) * chunksVisible;
-    std::cout << "[Indirect Renderer] IBOs total size: " << (IBOSize + IBOSize / 5 * 2) / 1024 << " KiB\n";
+    std::cout << "[Indirect Renderer] IBOs total size: " << (IBOSize + IBOSize / 5) / 1024 << " KiB\n";
     std::cout << "[Indirect Renderer] Vertex SSBO size: " << SSBOSize / (1024 * 1024) << " MiB\n";
-    std::cout << "[Indirect Renderer] Offsets SSBOs total size: " << (offsetsSSBOSize + offsetsSSBOSize / 5 * 2) / 1024 << " KiB\n";
+    std::cout << "[Indirect Renderer] Offsets SSBOs total size: " << (offsetsSSBOSize + offsetsSSBOSize / 5) / 1024 << " KiB\n";
 
     m_verticesSSBO.init(nullptr, SSBOSize, 1);
     m_gpuSlots.resize(nbSlotsMax);
@@ -27,10 +27,6 @@ IndirectRenderer::IndirectRenderer() {
     m_opaqueData.IBO.init(nullptr, IBOSize);
     m_opaqueData.offsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
 
-    // Transparent
-    m_transparentData.IBO.init(nullptr, IBOSize / 5);
-    m_transparentData.offsetsSSBO.init(nullptr, offsetsSSBOSize / 5, 2);
-
     // Water
     m_waterData.IBO.init(nullptr, IBOSize / 5);
     m_waterData.offsetsSSBO.init(nullptr, offsetsSSBOSize / 5, 2);
@@ -38,22 +34,18 @@ IndirectRenderer::IndirectRenderer() {
 
 void IndirectRenderer::addChunk(const std::shared_ptr<Chunk> &chunk) {
     if (chunk->getGPUSlotOpaque() == UINT_MAX && chunk->hasOpaqueFaces()) add(m_opaqueData, MeshType::OPAQUE, chunk);
-    if (chunk->getGPUSlotTransparent() == UINT_MAX && chunk->hasTransparentFaces()) add(m_transparentData, MeshType::TRANSPARENT, chunk);
     if (chunk->getGPUSlotWater() == UINT_MAX && chunk->hasWaterFaces()) add(m_waterData, MeshType::WATER, chunk);
 }
 
 void IndirectRenderer::removeChunk(const std::shared_ptr<Chunk> &chunk) {
     if (chunk->getGPUSlotOpaque() != UINT_MAX) remove(m_opaqueData, MeshType::OPAQUE, chunk);
-    if (chunk->getGPUSlotTransparent() != UINT_MAX) remove(m_transparentData, MeshType::TRANSPARENT, chunk);
     if (chunk->getGPUSlotWater() != UINT_MAX) remove(m_waterData, MeshType::WATER, chunk);
 }
 
 void IndirectRenderer::updateChunk(const std::shared_ptr<Chunk> &chunk) {
     const bool hasOpaque = chunk->hasOpaqueFaces();
-    const bool hasTransparent = chunk->hasTransparentFaces();
     const bool hasWater = chunk->hasWaterFaces();
     const unsigned int opaqueSlot = chunk->getGPUSlotOpaque();
-    const unsigned int transparentSlot = chunk->getGPUSlotTransparent();
     const unsigned int waterSlot = chunk->getGPUSlotWater();
 
     // Chunk can have new type of faces, so we may need to add it to a new slot
@@ -61,12 +53,6 @@ void IndirectRenderer::updateChunk(const std::shared_ptr<Chunk> &chunk) {
         update(m_opaqueData, MeshType::OPAQUE, chunk);
     } else if (opaqueSlot == UINT_MAX && hasOpaque) {
         add(m_opaqueData, MeshType::OPAQUE, chunk);
-    }
-
-    if (transparentSlot != UINT_MAX && hasTransparent) {
-        update(m_transparentData, MeshType::TRANSPARENT, chunk);
-    } else if (transparentSlot == UINT_MAX && hasTransparent) {
-        add(m_transparentData, MeshType::TRANSPARENT, chunk);
     }
 
     if (waterSlot != UINT_MAX && hasWater) {
@@ -80,10 +66,6 @@ void IndirectRenderer::drawOpaque() const {
     Renderer::drawMultiWithVertexPulling(m_opaqueData.IBO, m_verticesSSBO, m_opaqueData.offsetsSSBO, m_opaqueData.count, nullptr);
 }
 
-void IndirectRenderer::drawTransparent() const {
-    Renderer::drawMultiWithVertexPulling(m_transparentData.IBO, m_verticesSSBO, m_transparentData.offsetsSSBO, m_transparentData.count, nullptr);
-}
-
 void IndirectRenderer::drawWater() const {
     Renderer::drawMultiWithVertexPulling(m_waterData.IBO, m_verticesSSBO, m_waterData.offsetsSSBO, m_waterData.count, nullptr);
 }
@@ -93,9 +75,6 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
     switch (meshType) {
         case MeshType::OPAQUE:
             vertexCount = chunk->getOpaqueVertexCount();
-            break;
-        case MeshType::TRANSPARENT:
-            vertexCount = chunk->getTransparentVertexCount();
             break;
         case MeshType::WATER:
             vertexCount = chunk->getWaterVertexCount();
@@ -146,10 +125,6 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
             chunk->setOpaqueDrawIndex(drawIndex);
             chunk->setGPUSlotOpaque(startSlotIndex);
             break;
-        case MeshType::TRANSPARENT:
-            chunk->setTransparentDrawIndex(drawIndex);
-            chunk->setGPUSlotTransparent(startSlotIndex);
-            break;
         case MeshType::WATER:
             chunk->setWaterDrawIndex(drawIndex);
             chunk->setGPUSlotWater(startSlotIndex);
@@ -178,7 +153,6 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
 
     const auto &vertices =
         meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() :
-        meshType == MeshType::TRANSPARENT ? chunk->getTransparentVertices() :
         chunk->getWaterVertices();
     const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(BlockVertex);
     if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), vertexBufferOffset);
@@ -198,10 +172,6 @@ void IndirectRenderer::remove(MeshData &meshData, const MeshType meshType, const
         case MeshType::OPAQUE:
             slotIndex = chunk->getGPUSlotOpaque();
             drawIndex = chunk->getOpaqueDrawIndex();
-            break;
-        case MeshType::TRANSPARENT:
-            slotIndex = chunk->getGPUSlotTransparent();
-            drawIndex = chunk->getTransparentDrawIndex();
             break;
         case MeshType::WATER:
             slotIndex = chunk->getGPUSlotWater();
@@ -225,10 +195,6 @@ void IndirectRenderer::remove(MeshData &meshData, const MeshType meshType, const
             chunk->setGPUSlotOpaque(UINT_MAX);
             chunk->setOpaqueDrawIndex(UINT_MAX);
             break;
-        case MeshType::TRANSPARENT:
-            chunk->setGPUSlotTransparent(UINT_MAX);
-            chunk->setTransparentDrawIndex(UINT_MAX);
-            break;
         case MeshType::WATER:
             chunk->setGPUSlotWater(UINT_MAX);
             chunk->setWaterDrawIndex(UINT_MAX);
@@ -250,11 +216,6 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
             startSlotIndex = chunk->getGPUSlotOpaque();
             drawIndex = chunk->getOpaqueDrawIndex();
             vertexCount = chunk->getOpaqueVertexCount();
-            break;
-        case MeshType::TRANSPARENT:
-            startSlotIndex = chunk->getGPUSlotTransparent();
-            drawIndex = chunk->getTransparentDrawIndex();
-            vertexCount = chunk->getTransparentVertexCount();
             break;
         case MeshType::WATER:
             startSlotIndex = chunk->getGPUSlotWater();
@@ -307,7 +268,6 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
 
     const auto &vertices =
         meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() :
-        meshType == MeshType::TRANSPARENT ? chunk->getTransparentVertices() :
         chunk->getWaterVertices();
     const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(BlockVertex);
     if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), vertexBufferOffset);

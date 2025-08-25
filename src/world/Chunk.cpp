@@ -8,11 +8,9 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     constexpr int NUMBER_OF_FACES = 6;
     constexpr size_t max_faces = NUMBER_OF_FACES * SIZE * SIZE * SIZE;
     constexpr size_t avg_vertices_opaque = max_faces * static_cast<size_t>(0.01f);
-    constexpr size_t avg_faces_transparent = max_faces * static_cast<size_t>(0.001f);
     constexpr size_t avg_faces_water = max_faces * static_cast<size_t>(0.001f);
 
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
-    m_transparentData.vertices.reserve(avg_faces_transparent);
     m_waterData.vertices.reserve(avg_faces_water);
     m_blockType.reserve((SIZE + 2) * (SIZE + 2) * (SIZE + 2)); // +2 for boundary checks
     m_blockType.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
@@ -183,14 +181,6 @@ void Chunk::setOpaqueDrawIndex(const unsigned int m_draw_index) {
     m_opaqueDrawIndex = m_draw_index;
 }
 
-unsigned int Chunk::getTransparentDrawIndex() const {
-    return m_transparentDrawIndex;
-}
-
-void Chunk::setTransparentDrawIndex(const unsigned int m_transparent_draw_index) {
-    m_transparentDrawIndex = m_transparent_draw_index;
-}
-
 unsigned int Chunk::getWaterDrawIndex() const {
     return m_waterDrawIndex;
 }
@@ -205,14 +195,6 @@ unsigned int Chunk::getGPUSlotOpaque() const {
 
 void Chunk::setGPUSlotOpaque(const unsigned int m_gpu_opaque_slot) {
     m_gpuOpaqueSlot = m_gpu_opaque_slot;
-}
-
-unsigned int Chunk::getGPUSlotTransparent() const {
-    return m_gpuTransparentSlot;
-}
-
-void Chunk::setGPUSlotTransparent(const unsigned int m_gpu_transparent_slot) {
-    m_gpuTransparentSlot = m_gpu_transparent_slot;
 }
 
 unsigned int Chunk::getGPUSlotWater() const {
@@ -230,7 +212,6 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     const auto localYf = static_cast<unsigned int>(localY);
     const auto localZf = static_cast<unsigned int>(localZ);
     const bool isWater = blockType == BlockType::WATER;
-    const bool isTransparent = Block::isTransparent(blockType);
 
     std::array<bool, 26> adjacentFaces{};
     const bool isTopBlockTransparent = Block::isTransparent(getBlockType(localX, localY + 1, localZ));
@@ -271,10 +252,6 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
                 Block::addFaceVertices(Face::TOP_INVERSED, blockType, m_waterData.vertices, adjacentFaces, localXf, localYf, localZf);
             }
             m_waterData.hasFaces = true;
-        } else if (isTransparent) {
-            std::lock_guard lock(m_transparentData.m_verticesMutex);
-            Block::addFaceVertices(face, blockType, m_transparentData.vertices, adjacentFaces, localXf, localYf, localZf);
-            m_transparentData.hasFaces = true;
         } else {
             std::lock_guard lock(m_opaqueData.m_verticesMutex);
             Block::addFaceVertices(face, blockType, m_opaqueData.vertices, adjacentFaces, localXf, localYf, localZf);
@@ -290,7 +267,6 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     const auto localYf = static_cast<unsigned int>(localY);
     const auto localZf = static_cast<unsigned int>(localZ);
     const bool isWater = blockType == BlockType::WATER;
-    const bool isTransparent = Block::isTransparent(blockType);
 
     std::array<bool, 26> adjacentFaces{};
     const bool isTopBlockTransparent = Block::isTransparent(getBlockType(localX, localY + 1, localZ));
@@ -330,9 +306,6 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
                 Block::addFaceVertices(Face::TOP_INVERSED, blockType, result.waterVertices, adjacentFaces, localXf, localYf, localZf);
             }
             result.hasWaterFaces = true;
-        } else if (isTransparent) {
-            Block::addFaceVertices(face, blockType, result.transparentVertices, adjacentFaces, localXf, localYf, localZf);
-            result.hasTransparentFaces = true;
         } else {
             Block::addFaceVertices(face, blockType, result.opaqueVertices, adjacentFaces, localXf, localYf, localZf);
             result.hasOpaqueFaces = true;
@@ -395,7 +368,6 @@ bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ)
 
 bool Chunk::hasVisibleFaces() const {
     std::scoped_lock lock(m_opaqueData.m_verticesMutex,
-                      m_transparentData.m_verticesMutex,
                       m_waterData.m_verticesMutex);
-    return !m_opaqueData.vertices.empty() || !m_transparentData.vertices.empty() || !m_waterData.vertices.empty();
+    return !m_opaqueData.vertices.empty() || !m_waterData.vertices.empty();
 }

@@ -183,7 +183,7 @@ void Application::render() {
     Renderer::clear();
     DebugUI::newFrame();
 
-    // Instances, chunks, transparent, and water rendering
+    // Instances, chunks, and water rendering
     m_world->draw(*m_blockShader, *m_waterShader, *m_instancesShader, m_drawCmds);
 
     // Block highlighting

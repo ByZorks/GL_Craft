@@ -32,7 +32,6 @@ private:
 
     enum class MeshType {
         OPAQUE,
-        TRANSPARENT,
         WATER
     };
 
@@ -40,7 +39,6 @@ private:
     size_t m_highestSlotUsed = 0;
     std::vector<GPUSlot> m_gpuSlots;
     MeshData m_opaqueData;
-    MeshData m_transparentData;
     MeshData m_waterData;
 
     unsigned int m_vertexPerSlot = 1000;
@@ -53,7 +51,6 @@ public:
     void updateChunk(const std::shared_ptr<Chunk> &chunk);
 
     void drawOpaque() const;
-    void drawTransparent() const;
     void drawWater() const;
 
 private:

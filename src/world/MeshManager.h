@@ -10,10 +10,8 @@
 struct MeshingResult {
     ChunkPosition position;
     std::vector<BlockVertex> opaqueVertices;
-    std::vector<BlockVertex> transparentVertices;
     std::vector<BlockVertex> waterVertices;
     bool hasOpaqueFaces = false;
-    bool hasTransparentFaces = false;
     bool hasWaterFaces = false;
     bool needInstanceUpdate = false;
     bool needIndirectRendererUpdate = false;

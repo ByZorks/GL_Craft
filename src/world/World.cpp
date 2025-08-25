@@ -75,8 +75,6 @@ void World::draw(const Shader &blockShader, const Shader &waterShader, const Sha
     blockShader.use();
     m_indirectRenderer.drawOpaque();
     ++drawCmd;
-    m_indirectRenderer.drawTransparent();
-    ++drawCmd;
 
     waterShader.use();
     Renderer::disableDepthMask();
@@ -514,8 +512,8 @@ void World::processChunksQueues() {
     // Third pass: update meshes that needs it
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.completedMeshes.empty()) break;
-        auto [position, opaqueVertices, transparentVertices, waterVertices,
-            hasOpaqueFaces, hasTransparentFaces, hasWaterFaces,
+        auto [position, opaqueVertices, waterVertices,
+            hasOpaqueFaces, hasWaterFaces,
             needInstanceUpdate, needIndirectRendererUpdate] = m_chunksData.completedMeshes.pop();
 
         if (const auto it = m_chunksData.loadedMeshes.find(position);
@@ -524,10 +522,8 @@ void World::processChunksQueues() {
 
             if (needIndirectRendererUpdate) {
                 p_chunk->getOpaqueVertices().swap(opaqueVertices);
-                p_chunk->getTransparentVertices().swap(transparentVertices);
                 p_chunk->getWaterVertices().swap(waterVertices);
                 p_chunk->setHasOpaqueFaces(hasOpaqueFaces);
-                p_chunk->setHasTransparentFaces(hasTransparentFaces);
                 p_chunk->setHasWaterFaces(hasWaterFaces);
                 p_chunk->updateVertexCount();
 
