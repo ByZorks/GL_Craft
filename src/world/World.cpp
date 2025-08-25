@@ -7,6 +7,7 @@
 
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
+#include "../utils/ScopedTimer.h"
 #include "../utils/ThreadSafeQueue.h"
 #include "surfaceFeatures/flowers/Allium.h"
 #include "surfaceFeatures/flowers/Cornflower.h"
@@ -163,7 +164,7 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
 
     // TODO: Implement partial mesh update
     m_threadPool.enqueue_no_future([this, hit] {
-        const auto t1 = std::chrono::high_resolution_clock::now();
+        ScopedTimer timer("Delete block");
 
         const BlockType type = hit.blockType;
         const auto &blockLocalPosition = hit.blockLocalPosition;
@@ -191,10 +192,6 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
             result.needInstanceUpdate = isInstance;
 
             m_chunksData.completedMeshes.push(std::move(result));
-
-            const auto t2 = std::chrono::high_resolution_clock::now();
-            const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-            std::cout << "Block deleted in " << duration << " ms" << std::endl;
             return;
         }
 
@@ -246,10 +243,6 @@ void World::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         result.needInstanceUpdate = isInstance;
 
         m_chunksData.completedMeshes.push(std::move(result));
-
-        const auto t2 = std::chrono::high_resolution_clock::now();
-        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        std::cout << "Block deleted in " << duration << " ms" << std::endl;
     });
 }
 
@@ -258,7 +251,7 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
 
     // TODO: Implement partial mesh update
     m_threadPool.enqueue_no_future([this, hit, blockToPlace] {
-        const auto t1 = std::chrono::high_resolution_clock::now();
+        ScopedTimer timer("Place block");
 
         const std::shared_ptr<Chunk> chunk = hit.chunk;
 
@@ -340,9 +333,6 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
         if (!willBeAtLeftBorder && !willBeAtRightBorder &&
             !willBeAtBottomBorder && !willBeAtTopBorder &&
             !willBeAtFrontBorder && !willBeAtBackBorder) {
-            const auto t2 = std::chrono::high_resolution_clock::now();
-            const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-            std::cout << "Block placed in " << duration << " ms" << std::endl;
             return;
         }
 
@@ -382,10 +372,6 @@ void World::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blo
                 }
             }
         }
-
-        const auto t2 = std::chrono::high_resolution_clock::now();
-        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-        std::cout << "Block placed in " << duration << " ms" << std::endl;
     });
 }
 
