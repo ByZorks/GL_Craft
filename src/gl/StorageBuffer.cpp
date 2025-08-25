@@ -56,7 +56,7 @@ void StorageBuffer::init(const void *data, const size_t size, const unsigned int
 
 size_t StorageBuffer::updateData(const void *data, const size_t size, const unsigned int offset) {
     if (m_size < size + offset) {
-        resize(m_size * 2);
+        resize(static_cast<size_t>(static_cast<double>(m_size) * 1.25));
         return m_size;
     }
 
