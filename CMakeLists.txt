@@ -130,6 +130,8 @@ add_executable(GL_Craft
         src/render/IndirectRenderer.h
         src/gl/IndirectBuffer.cpp
         src/gl/IndirectBuffer.h
+        src/utils/ScopedTimer.cpp
+        src/utils/ScopedTimer.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})
