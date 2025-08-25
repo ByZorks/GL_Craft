@@ -1,5 +1,7 @@
 #include "StorageBuffer.h"
 
+#include <iostream>
+
 #include "OpenGLDebug.h"
 #include "GL/glew.h"
 
@@ -54,15 +56,35 @@ void StorageBuffer::init(const void *data, const size_t size, const unsigned int
 
 size_t StorageBuffer::updateData(const void *data, const size_t size, const unsigned int offset) {
     if (m_size < size + offset) {
-        const unsigned int bindingPoint = m_bindingPoint; // Save the binding point before deleting the buffer
-        deleteBuffer();
-        init(data, size + offset, bindingPoint);
+        resize(m_size * 2);
         return m_size;
     }
 
     bind();
     GLCall(glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, size, data));
     return 0;
+}
+
+void StorageBuffer::resize(const size_t newSize) {
+    // std::cout << "[StorageBuffer] Resizing from " << m_size << " to " << newSize << " bytes.\n";
+    const unsigned int oldID = m_ID;
+    unsigned int newID = 0;
+
+    // New buffer
+    GLCall(glGenBuffers(1, &newID));
+    GLCall(glBindBuffer(GL_SHADER_STORAGE_BUFFER, newID));
+    GLCall(glBufferStorage(GL_SHADER_STORAGE_BUFFER, newSize, nullptr, GL_DYNAMIC_STORAGE_BIT));
+
+    // Copy old data
+    GLCall(glBindBuffer(GL_COPY_READ_BUFFER, oldID));
+    GLCall(glBindBuffer(GL_COPY_WRITE_BUFFER, newID));
+    GLCall(glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_size));
+
+    // Update members
+    GLCall(glDeleteBuffers(1, &oldID));
+    m_ID = newID;
+    m_size = newSize;
+    GLCall(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID));
 }
 
 void StorageBuffer::deleteBuffer() {
@@ -80,4 +102,8 @@ void StorageBuffer::bind() const {
 
 void StorageBuffer::unbind() {
     GLCall(glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0));
+}
+
+size_t StorageBuffer::getSize() const {
+    return m_size;
 }

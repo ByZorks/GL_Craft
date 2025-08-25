@@ -25,11 +25,8 @@ private:
 
     struct MeshData {
         IndirectBuffer IBO;
-        StorageBuffer verticesSSBO;
         StorageBuffer offsetsSSBO;
-        size_t highestSlotUsed = 0;
         size_t count = 0;
-        std::vector<GPUSlot> gpuSlots;
         std::queue<unsigned int> freeDrawIndices;
     };
 
@@ -39,6 +36,9 @@ private:
         WATER
     };
 
+    StorageBuffer m_verticesSSBO;
+    size_t m_highestSlotUsed = 0;
+    std::vector<GPUSlot> m_gpuSlots;
     MeshData m_opaqueData;
     MeshData m_transparentData;
     MeshData m_waterData;
@@ -57,9 +57,9 @@ public:
     void drawWater() const;
 
 private:
-    void add(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk) const;
-    static void remove(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk);
-    void update(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk) const;
+    void add(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk);
+    void remove(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk);
+    void update(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk);
 };
 
 #endif //GL_CRAFT_INDIRECTRENDERER_H

@@ -12,6 +12,7 @@ public:
 
     void init(const void *data, unsigned int size);
     void updateData(const void *data, unsigned int size, unsigned int offset = 0);
+    void resize(unsigned int newSize);
     void deleteBuffer();
     void bind() const;
     static void unbind();

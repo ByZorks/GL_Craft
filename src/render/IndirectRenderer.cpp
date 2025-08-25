@@ -16,24 +16,24 @@ IndirectRenderer::IndirectRenderer() {
     const size_t IBOSize = sizeof(DrawArraysIndirectCommand) * chunksVisible;
     const size_t SSBOSize = sizeof(BlockVertex) * m_vertexPerSlot * nbSlotsMax;
     const size_t offsetsSSBOSize = sizeof(std::array<int, 4>) * chunksVisible;
+    std::cout << "[Indirect Renderer] IBOs total size: " << (IBOSize + IBOSize / 5 * 2) / 1024 << " KiB\n";
+    std::cout << "[Indirect Renderer] Vertex SSBO size: " << SSBOSize / (1024 * 1024) << " MiB\n";
+    std::cout << "[Indirect Renderer] Offsets SSBOs total size: " << (offsetsSSBOSize + offsetsSSBOSize / 5 * 2) / 1024 << " KiB\n";
+
+    m_verticesSSBO.init(nullptr, SSBOSize, 1);
+    m_gpuSlots.resize(nbSlotsMax);
 
     // Opaque
     m_opaqueData.IBO.init(nullptr, IBOSize);
-    m_opaqueData.verticesSSBO.init(nullptr, SSBOSize, 1);
     m_opaqueData.offsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
-    m_opaqueData.gpuSlots.resize(nbSlotsMax);
 
     // Transparent
     m_transparentData.IBO.init(nullptr, IBOSize / 5);
-    m_transparentData.verticesSSBO.init(nullptr, SSBOSize / 5, 1);
     m_transparentData.offsetsSSBO.init(nullptr, offsetsSSBOSize / 5, 2);
-    m_transparentData.gpuSlots.resize(nbSlotsMax / 5);
 
     // Water
     m_waterData.IBO.init(nullptr, IBOSize / 5);
-    m_waterData.verticesSSBO.init(nullptr, SSBOSize / 5, 1);
     m_waterData.offsetsSSBO.init(nullptr, offsetsSSBOSize / 5, 2);
-    m_waterData.gpuSlots.resize(nbSlotsMax / 5);
 }
 
 void IndirectRenderer::addChunk(const std::shared_ptr<Chunk> &chunk) {
@@ -56,7 +56,7 @@ void IndirectRenderer::updateChunk(const std::shared_ptr<Chunk> &chunk) {
     const unsigned int transparentSlot = chunk->getGPUSlotTransparent();
     const unsigned int waterSlot = chunk->getGPUSlotWater();
 
-    // // Chunk can have new type of faces, so we may need to add it to a new slot
+    // Chunk can have new type of faces, so we may need to add it to a new slot
     if (opaqueSlot != UINT_MAX && hasOpaque) {
         update(m_opaqueData, MeshType::OPAQUE, chunk);
     } else if (opaqueSlot == UINT_MAX && hasOpaque) {
@@ -77,18 +77,18 @@ void IndirectRenderer::updateChunk(const std::shared_ptr<Chunk> &chunk) {
 }
 
 void IndirectRenderer::drawOpaque() const {
-    Renderer::drawMultiWithVertexPulling(m_opaqueData.IBO, m_opaqueData.verticesSSBO, m_opaqueData.offsetsSSBO, m_opaqueData.count, nullptr);
+    Renderer::drawMultiWithVertexPulling(m_opaqueData.IBO, m_verticesSSBO, m_opaqueData.offsetsSSBO, m_opaqueData.count, nullptr);
 }
 
 void IndirectRenderer::drawTransparent() const {
-    Renderer::drawMultiWithVertexPulling(m_transparentData.IBO, m_transparentData.verticesSSBO, m_transparentData.offsetsSSBO, m_transparentData.count, nullptr);
+    Renderer::drawMultiWithVertexPulling(m_transparentData.IBO, m_verticesSSBO, m_transparentData.offsetsSSBO, m_transparentData.count, nullptr);
 }
 
 void IndirectRenderer::drawWater() const {
-    Renderer::drawMultiWithVertexPulling(m_waterData.IBO, m_waterData.verticesSSBO, m_waterData.offsetsSSBO, m_waterData.count, nullptr);
+    Renderer::drawMultiWithVertexPulling(m_waterData.IBO, m_verticesSSBO, m_waterData.offsetsSSBO, m_waterData.count, nullptr);
 }
 
-void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const std::shared_ptr<Chunk> &chunk) const {
+void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const std::shared_ptr<Chunk> &chunk) {
     unsigned int vertexCount = 0;
     switch (meshType) {
         case MeshType::OPAQUE:
@@ -105,9 +105,9 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
     unsigned int foundSlots = 0;
     unsigned int startSlotIndex = UINT_MAX;
 
-    // Find requireSlots consecutives free GPU slots
-    for (unsigned int i = 0; i < meshData.gpuSlots.size(); i++) {
-        if (!meshData.gpuSlots[i].isUsed) {
+    // Find "requireSlots" contiguous free GPU slots
+    for (unsigned int i = 0; i < m_gpuSlots.size(); i++) {
+        if (!m_gpuSlots[i].isUsed) {
             if (foundSlots == 0) startSlotIndex = i; // Possible start
             foundSlots++;
             // If enough consecutive slots have been found, use them
@@ -115,16 +115,24 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
         } else {
             foundSlots = 0;
             startSlotIndex = UINT_MAX;
-            if (const uint8_t &numberOfSlotsUsed = meshData.gpuSlots[i].numberOfSlotsUsed;
+            if (const uint8_t &numberOfSlotsUsed = m_gpuSlots[i].numberOfSlotsUsed;
                 numberOfSlotsUsed > 0) i += numberOfSlotsUsed - 1; // Skip used slots
         }
     }
 
     if (requiredSlots != foundSlots) {
-        std::cerr << "No contiguous free GPU slots available!\n";
-        return;
+        const size_t newSize = m_verticesSSBO.getSize() * 2;
+        m_verticesSSBO.resize(newSize);
+        const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(BlockVertex));
+        const size_t oldSlotCount = m_gpuSlots.size();
+        std::cout << "Resized vertex SSBO to " << newSize / (1024 * 1024) << " MiB\n";
+
+        // Assign new slots
+        m_gpuSlots.resize(newSlotCount);
+        startSlotIndex = oldSlotCount;
     }
 
+    // Get draw index
     unsigned int drawIndex;
     if (!meshData.freeDrawIndices.empty()) {
         drawIndex = meshData.freeDrawIndices.front();
@@ -149,10 +157,11 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
     }
     chunk->setWasInFrustum(true);
 
+    // Mark slots as used
     for (unsigned int i = 0; i < requiredSlots; ++i) {
         const unsigned int currentSlot = startSlotIndex + i;
-        meshData.gpuSlots[currentSlot].isUsed = true;
-        meshData.gpuSlots[currentSlot].numberOfSlotsUsed = i == 0 ? requiredSlots : 0;
+        m_gpuSlots[currentSlot].isUsed = true;
+        m_gpuSlots[currentSlot].numberOfSlotsUsed = i == 0 ? requiredSlots : 0;
     }
 
     DrawArraysIndirectCommand cmd{};
@@ -172,14 +181,14 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
         meshType == MeshType::TRANSPARENT ? chunk->getTransparentVertices() :
         chunk->getWaterVertices();
     const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(BlockVertex);
-    if (const size_t newSize = meshData.verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), vertexBufferOffset);
+    if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), vertexBufferOffset);
         newSize > 0) {
         const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(BlockVertex));
-        meshData.gpuSlots.resize(newSlotCount);
+        m_gpuSlots.resize(newSlotCount);
     }
 
     const size_t lastSlotUsed = startSlotIndex + requiredSlots - 1;
-    meshData.highestSlotUsed = std::max(meshData.highestSlotUsed, lastSlotUsed);
+    m_highestSlotUsed = std::max(m_highestSlotUsed, lastSlotUsed);
 }
 
 void IndirectRenderer::remove(MeshData &meshData, const MeshType meshType, const std::shared_ptr<Chunk> &chunk) {
@@ -198,16 +207,15 @@ void IndirectRenderer::remove(MeshData &meshData, const MeshType meshType, const
             slotIndex = chunk->getGPUSlotWater();
             drawIndex = chunk->getWaterDrawIndex();
             break;
-
     }
 
     constexpr DrawArraysIndirectCommand emptyCmd{0, 0, 0, 0};
     meshData.IBO.updateData(&emptyCmd, sizeof(emptyCmd), drawIndex * sizeof(DrawArraysIndirectCommand));
-    // No need to update SSBO or OffsetsSSBO, as they won't be used because draw command is zeroed
+    // No need to update vertices SSBO or offsets SSBO, as they won't be used because draw command is zeroed
 
-    auto &numberOfUsedSlots = meshData.gpuSlots[slotIndex].numberOfSlotsUsed;
+    auto &numberOfUsedSlots = m_gpuSlots[slotIndex].numberOfSlotsUsed;
     for (unsigned int i = 0; i < numberOfUsedSlots; ++i) {
-        meshData.gpuSlots[slotIndex + i].isUsed = false;
+        m_gpuSlots[slotIndex + i].isUsed = false;
     }
     numberOfUsedSlots = 0;
 
@@ -228,12 +236,12 @@ void IndirectRenderer::remove(MeshData &meshData, const MeshType meshType, const
     }
     chunk->setWasInFrustum(false);
 
-    while (meshData.highestSlotUsed > 0 && !meshData.gpuSlots[meshData.highestSlotUsed - 1].isUsed) {
-        --meshData.highestSlotUsed;
+    while (m_highestSlotUsed > 0 && !m_gpuSlots[m_highestSlotUsed - 1].isUsed) {
+        --m_highestSlotUsed;
     }
 }
 
-void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const std::shared_ptr<Chunk> &chunk) const {
+void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const std::shared_ptr<Chunk> &chunk) {
     unsigned int startSlotIndex = 0;
     unsigned int drawIndex = 0;
     unsigned int vertexCount = 0;
@@ -257,20 +265,20 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
     }
 
     const unsigned int newRequiredSlots = (vertexCount + m_vertexPerSlot - 1) / m_vertexPerSlot;
-    const unsigned int oldRequiredSlots = meshData.gpuSlots[startSlotIndex].numberOfSlotsUsed;
+    const unsigned int oldRequiredSlots = m_gpuSlots[startSlotIndex].numberOfSlotsUsed;
 
     // Release unused slots
     if (newRequiredSlots < oldRequiredSlots) {
         for (unsigned int i = startSlotIndex + oldRequiredSlots - 1; i > startSlotIndex + newRequiredSlots - 1; --i) {
-            meshData.gpuSlots[i].isUsed = false;
+            m_gpuSlots[i].isUsed = false;
         }
-        meshData.gpuSlots[startSlotIndex].numberOfSlotsUsed = newRequiredSlots;
+        m_gpuSlots[startSlotIndex].numberOfSlotsUsed = newRequiredSlots;
 
     // Find new slots
     } else if (newRequiredSlots > oldRequiredSlots) {
         bool canExtend = true;
         for (unsigned int i = oldRequiredSlots; i < newRequiredSlots; ++i) {
-            if (startSlotIndex + i >= meshData.gpuSlots.size() || meshData.gpuSlots[startSlotIndex + i].isUsed) {
+            if (startSlotIndex + i >= m_gpuSlots.size() || m_gpuSlots[startSlotIndex + i].isUsed) {
                 canExtend = false;
                 break;
             }
@@ -278,9 +286,9 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
 
         if (canExtend) {
             for (unsigned int i = oldRequiredSlots; i < newRequiredSlots; ++i) {
-                meshData.gpuSlots[startSlotIndex + i].isUsed = true;
+                m_gpuSlots[startSlotIndex + i].isUsed = true;
             }
-            meshData.gpuSlots[startSlotIndex].numberOfSlotsUsed = newRequiredSlots;
+            m_gpuSlots[startSlotIndex].numberOfSlotsUsed = newRequiredSlots;
         } else {
             remove(meshData, meshType, chunk);
             add(meshData, meshType, chunk);
@@ -302,10 +310,10 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
         meshType == MeshType::TRANSPARENT ? chunk->getTransparentVertices() :
         chunk->getWaterVertices();
     const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(BlockVertex);
-    if (const size_t newSize = meshData.verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), vertexBufferOffset);
+    if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), vertexBufferOffset);
         newSize > 0) {
         const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(BlockVertex));
-        meshData.gpuSlots.resize(newSlotCount);
+        m_gpuSlots.resize(newSlotCount);
     }
     // Chunk doesn't change coordinates so no need to update offsets ssbo
 }
