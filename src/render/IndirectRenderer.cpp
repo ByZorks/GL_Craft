@@ -63,10 +63,12 @@ void IndirectRenderer::updateChunk(const std::shared_ptr<Chunk> &chunk) {
 }
 
 void IndirectRenderer::drawOpaque() const {
+    if (m_opaqueData.count == 0) return;
     Renderer::drawMultiWithVertexPulling(m_opaqueData.IBO, m_verticesSSBO, m_opaqueData.offsetsSSBO, m_opaqueData.count, nullptr);
 }
 
 void IndirectRenderer::drawWater() const {
+    if (m_waterData.count == 0) return;
     Renderer::drawMultiWithVertexPulling(m_waterData.IBO, m_verticesSSBO, m_waterData.offsetsSSBO, m_waterData.count, nullptr);
 }
 
