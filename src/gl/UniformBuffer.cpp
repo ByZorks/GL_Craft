@@ -29,7 +29,3 @@ void UniformBuffer::deleteBuffer() {
         m_bindingPoint = 0;
     }
 }
-
-void UniformBuffer::bind() const {
-    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_ID));
-}

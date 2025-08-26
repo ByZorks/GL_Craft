@@ -85,6 +85,7 @@ void Application::initGL() {
 
 void Application::initResources() {
     m_atlas = std::make_unique<Texture>("../res/textures/atlas/atlas.png");
+    m_atlas->bind(m_atlasTextureSlot);
     m_MVPBuffer = std::make_unique<UniformBuffer>();
     m_MVPBuffer->init(nullptr, sizeof(glm::mat4), m_MVPUniformBufferBindingSlot);
 
@@ -179,7 +180,6 @@ void Application::update() {
 void Application::render() {
     // Clear the screen
     m_postProcessingMesh->getFBO().bind();
-    m_atlas->bind(m_atlasTextureSlot);
     Renderer::clear();
     DebugUI::newFrame();
 
@@ -197,7 +197,7 @@ void Application::render() {
         ++m_drawCmds;
     }
 
-    // Post-processing and crosshair to minimize openGl state changes
+    // Post-processing and ui
     Renderer::disableDepthTesting();
     FrameBuffer::unbind();
     m_postProcessingMesh->getFBO().getColorTexture().bind(m_postProcessingSceneTextureSlot);
@@ -205,7 +205,6 @@ void Application::render() {
     m_postProcessingShader->use();
     m_postProcessingMesh->draw();
 
-    m_atlas->bind(m_atlasTextureSlot);
     m_crosshairShader->use();
     m_crosshairMesh->draw();
     Renderer::enableDepthTesting();
