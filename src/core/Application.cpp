@@ -86,8 +86,12 @@ void Application::initGL() {
 void Application::initResources() {
     m_atlas = std::make_unique<Texture>("../res/textures/atlas/atlas.png");
     m_atlas->bind(m_atlasTextureSlot);
+
     m_MVPBuffer = std::make_unique<UniformBuffer>();
     m_MVPBuffer->init(nullptr, sizeof(glm::mat4), m_MVPUniformBufferBindingSlot);
+
+    m_timeBuffer = std::make_unique<UniformBuffer>();
+    m_timeBuffer->init(nullptr, sizeof(float), m_timeUniformBufferBindingSlot);
 
     int width, height;
     glfwGetWindowSize(m_window, &width, &height);
@@ -148,6 +152,9 @@ void Application::update() {
     m_world->updateChunks(m_camera, m_frustum);
 
     // Uniforms
+    const auto time = static_cast<float>(glfwGetTime());
+    m_timeBuffer->updateData(&time, sizeof(float));
+
     if (m_camera.hasCameraChangedBlock()) {
         m_postProcessingShader->use();
         m_postProcessingShader->setUniform1b("u_IsUnderWater", m_camera.isUnderWater(World::getHeight(
@@ -156,7 +163,6 @@ void Application::update() {
     }
 
     m_waterShader->use();
-    m_waterShader->setUniform1f("u_Time", static_cast<float>(glfwGetTime()));
     m_waterShader->setUniform3f("u_CameraPos",
                                 m_camera.getPos().x,
                                 m_camera.getPos().y,
@@ -238,6 +244,7 @@ void Application::cleanup() {
     m_postProcessingShader.reset();
     m_atlas.reset();
     m_MVPBuffer.reset();
+    m_timeBuffer.reset();
 
     glfwDestroyWindow(m_window);
     glfwTerminate();

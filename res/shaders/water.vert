@@ -7,10 +7,16 @@ struct BlockVertex {
     uvec4 AO;// Ambient Occlusion values for each vertex (0-3)
 };
 
+// UBOs
 layout(std140, binding = 0) uniform MVP {
     mat4 u_MVP; // Model-View-Projection matrix
 };
 
+layout(std140, binding = 1) uniform Time {
+    float u_Time;
+};
+
+// SSBOs
 layout(std430, binding = 1) readonly buffer blockVertexPullData {
     uint packedVertices[];
 };
@@ -25,7 +31,6 @@ out float v_AO;
 out float v_refractionFactor;
 
 uniform vec3 u_CameraPos;
-uniform float u_Time;
 
 const vec3 faceOffsets[6][4] = {
     // FRONT (+Z)

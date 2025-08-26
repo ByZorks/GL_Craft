@@ -29,6 +29,7 @@ private:
     std::unique_ptr<Shader> m_postProcessingShader;
     std::unique_ptr<Texture> m_atlas;
     std::unique_ptr<UniformBuffer> m_MVPBuffer;
+    std::unique_ptr<UniformBuffer> m_timeBuffer;
 
     Camera m_camera;
     DebugUI m_debugUI;
@@ -40,6 +41,7 @@ private:
     bool m_leftClicked = false, m_rightClicked = false, m_middleClicked = false;
     float m_aspectRatio = 16.0f / 9.0f;
     int m_MVPUniformBufferBindingSlot = 0;
+    int m_timeUniformBufferBindingSlot = 1;
     int m_atlasTextureSlot = 0;
     int m_postProcessingSceneTextureSlot = 1;
     int m_postProcessingDepthTextureSlot = 2;

@@ -7,10 +7,16 @@ struct BlockVertex {
     uvec4 AO;// Ambient Occlusion values for each vertex (0-3)
 };
 
+// UBOs
 layout(std140, binding = 0) uniform MVP {
     mat4 u_MVP; // Model-View-Projection matrix
 };
 
+layout(std140, binding = 1) uniform Time {
+    float u_Time;
+};
+
+// SSBOs
 layout(std430, binding = 1) readonly buffer blockVertexPullData {
     uint packedVertices[];
 };
@@ -72,8 +78,14 @@ void main() {
     // Position and offset calculation
     const vec3 instancePos = vec3(instancePos[gl_InstanceID * 3], instancePos[gl_InstanceID * 3 + 1], instancePos[gl_InstanceID * 3 + 2]);
     const int quadVertexIndex = indices[currentVertexID];
-    const vec3 offset = faceOffsets[data.face][quadVertexIndex];
-    const vec3 worldPos = instancePos + offset;
+    const vec3 vertexOffset = faceOffsets[data.face][quadVertexIndex];
+    vec3 worldPos = instancePos + vertexOffset;
+    // Top vertex
+    if (vertexOffset.y > 0.5) {
+        worldPos.x += sin(u_Time * 2.5 + worldPos.x * 1.5 + worldPos.z * 1.0) * 0.05;
+        worldPos.z += sin(u_Time * 2.5 + worldPos.x * 1.0 + worldPos.z * 1.5) * 0.05;
+    }
+
     gl_Position = u_MVP * vec4(worldPos, 1.0);
 
     // Texture coordinates
