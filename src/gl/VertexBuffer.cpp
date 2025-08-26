@@ -34,14 +34,12 @@ VertexBuffer & VertexBuffer::operator=(VertexBuffer &&other) noexcept {
 }
 
 void VertexBuffer::init(const void *data, const unsigned int size) {
-    GLCall(glGenBuffers(1, &m_ID));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_ID));
-    GLCall(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
+    GLCall(glCreateBuffers(1, &m_ID));
+    GLCall(glNamedBufferData(m_ID, size * sizeof(unsigned int), data, GL_STATIC_DRAW));
 }
 
 void VertexBuffer::updateData(const void *data, const unsigned int size, const unsigned int offset) const {
-    bind();
-    GLCall(glBufferSubData(GL_ARRAY_BUFFER, offset, size, data));
+    GLCall(glNamedBufferSubData(m_ID, offset, size, data));
 }
 
 void VertexBuffer::deleteBuffer() {
@@ -51,10 +49,6 @@ void VertexBuffer::deleteBuffer() {
     }
 }
 
-void VertexBuffer::bind() const {
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_ID));
-}
-
-void VertexBuffer::unbind() {
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+unsigned int VertexBuffer::getID() const {
+    return m_ID;
 }

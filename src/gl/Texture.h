@@ -15,7 +15,6 @@ public:
     ~Texture();
 
     void bind(unsigned int slot = 0) const;
-    static void unbind();
 
     [[nodiscard]] unsigned int getID() const;
     void setID(unsigned int m_id);

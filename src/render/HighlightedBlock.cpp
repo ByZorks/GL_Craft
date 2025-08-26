@@ -7,7 +7,7 @@ HighlightedBlock::HighlightedBlock() {
 }
 
 void HighlightedBlock::draw() const {
-    Renderer::drawLines(m_VAO, m_IBO);
+    Renderer::drawLines(m_VAO, m_IBO.getCount());
 }
 
 void HighlightedBlock::createGLBuffers() {
@@ -19,5 +19,5 @@ void HighlightedBlock::createGLBuffers() {
     meshLayout.PushInt<unsigned char>(3, true); // r, g, b
 
     m_VAO.init();
-    m_VAO.addBuffer(m_VBO, meshLayout);
+    m_VAO.addBuffer(m_VBO, m_IBO, meshLayout);
 }

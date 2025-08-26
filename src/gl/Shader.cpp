@@ -106,9 +106,15 @@ void Shader::compileAndLink() {
     const unsigned int fs = compile(GL_FRAGMENT_SHADER, fragmentShader);
 
     if (vs == 0 || fs == 0) {
-        if (program != 0) GLCall(glDeleteProgram(program));
-        if (vs != 0) GLCall(glDeleteShader(vs));
-        if (fs != 0) GLCall(glDeleteShader(fs));
+        if (program != 0) {
+            GLCall(glDeleteProgram(program))
+        };
+        if (vs != 0) {
+            GLCall(glDeleteShader(vs));
+        }
+        if (fs != 0) {
+            GLCall(glDeleteShader(fs));
+        }
         return;
     }
 

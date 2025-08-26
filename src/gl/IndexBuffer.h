@@ -19,10 +19,10 @@ public:
     void init(const unsigned int *data, unsigned int count);
     void updateData(const unsigned int *data) const;
     void deleteBuffer();
-    void bind() const;
-    static void unbind();
 
     [[nodiscard]] unsigned int getCount() const;
+
+    [[nodiscard]] unsigned int getID() const;
 };
 
 #endif //INDEXBUFFER_H

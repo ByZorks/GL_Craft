@@ -13,17 +13,13 @@ UniformBuffer::~UniformBuffer() {
 
 void UniformBuffer::init(const void *data, const unsigned int size, const unsigned int bindingPoint) {
     m_bindingPoint = bindingPoint;
-    GLCall(glGenBuffers(1, &m_ID));
-    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_ID));
-    GLCall(glBufferData(GL_UNIFORM_BUFFER, size, data, GL_STATIC_DRAW));
-    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
+    GLCall(glCreateBuffers(1 , &m_ID));
+    GLCall(glNamedBufferData(m_ID, size, data, GL_DYNAMIC_DRAW));
     GLCall(glBindBufferRange(GL_UNIFORM_BUFFER, m_bindingPoint, m_ID, 0, size));
 }
 
 void UniformBuffer::updateData(const void *data, const unsigned int size, const unsigned int offset) const {
-    bind();
-    GLCall(glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data));
-    unbind();
+    GLCall(glNamedBufferSubData(m_ID, offset, size, data));
 }
 
 void UniformBuffer::deleteBuffer() {
@@ -36,8 +32,4 @@ void UniformBuffer::deleteBuffer() {
 
 void UniformBuffer::bind() const {
     GLCall(glBindBuffer(GL_UNIFORM_BUFFER, m_ID));
-}
-
-void UniformBuffer::unbind() {
-    GLCall(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 }

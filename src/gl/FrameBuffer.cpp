@@ -7,13 +7,11 @@
 
 FrameBuffer::FrameBuffer(const int width, const int height) : m_Width(width), m_Height(height),
                                                               m_colorTexture(width, height), m_depthTexture(width, height, true) {
-    GLCall(glGenFramebuffers(1, &m_ID));
-    GLCall(glBindFramebuffer(GL_FRAMEBUFFER, m_ID));
+    GLCall(glCreateFramebuffers(1, &m_ID));
+    GLCall(glNamedFramebufferTexture(m_ID, GL_COLOR_ATTACHMENT0, m_colorTexture.getID(), 0));
+    GLCall(glNamedFramebufferTexture(m_ID, GL_DEPTH_ATTACHMENT, m_depthTexture.getID(), 0));
 
-    GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTexture.getID(), 0));
-    GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.getID(), 0));
-
-    if (const auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER); status != GL_FRAMEBUFFER_COMPLETE) {
+    if (const auto status = glCheckNamedFramebufferStatus(m_ID, GL_FRAMEBUFFER); status != GL_FRAMEBUFFER_COMPLETE) {
         std::cerr << "[OpengGL] Framebuffer error: " << status << std::endl;
     }
 }

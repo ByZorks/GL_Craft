@@ -11,17 +11,15 @@ IndirectBuffer::~IndirectBuffer() {
 
 void IndirectBuffer::init(const void *data, const unsigned int size) {
     m_size = size;
-    GLCall(glGenBuffers(1, &m_ID));
-    bind();
-    GLCall(glBufferData(GL_DRAW_INDIRECT_BUFFER, size, data, GL_DYNAMIC_DRAW));
+    GLCall(glCreateBuffers(1, &m_ID));
+    GLCall(glNamedBufferData(m_ID, size, data, GL_DYNAMIC_DRAW));
 }
 
 void IndirectBuffer::updateData(const void *data, const unsigned int size, const unsigned int offset) {
     if (m_size < size + offset) {
         resize(m_size * 2);
     } else {
-        bind();
-        GLCall(glBufferSubData(GL_DRAW_INDIRECT_BUFFER, offset, size, data));
+        GLCall(glNamedBufferSubData(m_ID, offset, size, data));
     }
 }
 
@@ -31,20 +29,16 @@ void IndirectBuffer::resize(const unsigned int newSize) {
     unsigned int newID = 0;
 
     // New buffer
-    GLCall(glGenBuffers(1, &newID));
-    GLCall(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, newID));
-    GLCall(glBufferData(GL_DRAW_INDIRECT_BUFFER, newSize, nullptr, GL_DYNAMIC_DRAW));
+    GLCall(glCreateBuffers(1, &newID));
+    GLCall(glNamedBufferData(newID, newSize, nullptr, GL_DYNAMIC_DRAW));
 
     // Copy old data
-    GLCall(glBindBuffer(GL_COPY_READ_BUFFER, oldID));
-    GLCall(glBindBuffer(GL_COPY_WRITE_BUFFER, newID));
-    GLCall(glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_size));
+    GLCall(glCopyNamedBufferSubData(oldID, newID, 0, 0, m_size));
 
     // Update members
     GLCall(glDeleteBuffers(1, &oldID));
     m_ID = newID;
     m_size = newSize;
-    GLCall(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_ID));
 }
 
 void IndirectBuffer::deleteBuffer() {
@@ -57,8 +51,4 @@ void IndirectBuffer::deleteBuffer() {
 
 void IndirectBuffer::bind() const {
     GLCall(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_ID));
-}
-
-void IndirectBuffer::unbind() {
-    GLCall(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0));
 }

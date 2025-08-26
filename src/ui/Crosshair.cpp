@@ -7,7 +7,7 @@ Crosshair::Crosshair() {
 }
 
 void Crosshair::draw() const {
-    Renderer::drawElements(m_VAO, m_IBO);
+    Renderer::drawElements(m_VAO, m_IBO.getCount());
 }
 
 void Crosshair::createGLBuffers() {
@@ -19,5 +19,5 @@ void Crosshair::createGLBuffers() {
     layout.PushInt<unsigned char>(2, true); // u, v
 
     m_VAO.init();
-    m_VAO.addBuffer(m_VBO, layout);
+    m_VAO.addBuffer(m_VBO, m_IBO, layout);
 }

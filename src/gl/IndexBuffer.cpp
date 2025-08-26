@@ -1,5 +1,7 @@
 #include "IndexBuffer.h"
 
+#include <algorithm>
+
 #include "OpenGLDebug.h"
 #include "glad/gl.h"
 
@@ -40,14 +42,12 @@ IndexBuffer & IndexBuffer::operator=(IndexBuffer &&other) noexcept {
 
 void IndexBuffer::init(const unsigned int *data, const unsigned int count) {
     m_Count = count;
-    GLCall(glGenBuffers(1, &m_ID));
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ID));
-    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned int), data, GL_STATIC_DRAW));
+    GLCall(glCreateBuffers(1, &m_ID));
+    GLCall(glNamedBufferData(m_ID, count * sizeof(unsigned int), data, GL_STATIC_DRAW));
 }
 
 void IndexBuffer::updateData(const unsigned int *data) const {
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ID));
-    GLCall(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, m_Count * sizeof(unsigned int), data));
+    GLCall(glNamedBufferSubData(m_ID, 0, m_Count * sizeof(unsigned int), data));
 }
 
 void IndexBuffer::deleteBuffer() {
@@ -58,14 +58,10 @@ void IndexBuffer::deleteBuffer() {
     }
 }
 
-void IndexBuffer::bind() const {
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ID));
-}
-
-void IndexBuffer::unbind() {
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
-}
-
 unsigned int IndexBuffer::getCount() const {
     return m_Count;
+}
+
+unsigned int IndexBuffer::getID() const {
+    return m_ID;
 }

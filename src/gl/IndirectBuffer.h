@@ -15,7 +15,6 @@ public:
     void resize(unsigned int newSize);
     void deleteBuffer();
     void bind() const;
-    static void unbind();
 };
 
 #endif //GL_CRAFT_INDIRECTBUFFER_H

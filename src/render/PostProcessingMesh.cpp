@@ -11,7 +11,7 @@ PostProcessingMesh::PostProcessingMesh(const int width, const int height) : m_wi
     layout.Push<unsigned char>(2); // u, v
 
     m_VAO.init();
-    m_VAO.addBuffer(m_VBO, layout);
+    m_VAO.addBuffer(m_VBO, m_IBO, layout);
 }
 
 void PostProcessingMesh::resize(const int width, const int height) {
@@ -21,7 +21,7 @@ void PostProcessingMesh::resize(const int width, const int height) {
 }
 
 void PostProcessingMesh::draw() const {
-    Renderer::drawElements(m_VAO, m_IBO);
+    Renderer::drawElements(m_VAO, m_IBO.getCount());
 }
 
 const FrameBuffer & PostProcessingMesh::getFBO() const {

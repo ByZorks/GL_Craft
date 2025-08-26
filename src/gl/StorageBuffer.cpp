@@ -48,9 +48,8 @@ StorageBuffer & StorageBuffer::operator=(StorageBuffer &&other) noexcept {
 void StorageBuffer::init(const void *data, const size_t size, const unsigned int bindingPoint) {
     m_bindingPoint = bindingPoint;
     m_size = size;
-    GLCall(glGenBuffers(1, &m_ID));
-    GLCall(glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ID));
-    GLCall(glBufferStorage(GL_SHADER_STORAGE_BUFFER, m_size, data, GL_DYNAMIC_STORAGE_BIT));
+    GLCall(glCreateBuffers(1, &m_ID));
+    GLCall(glNamedBufferStorage(m_ID, size, data, GL_DYNAMIC_STORAGE_BIT));
     GLCall(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID));
 }
 
@@ -60,8 +59,7 @@ size_t StorageBuffer::updateData(const void *data, const size_t size, const unsi
         return m_size;
     }
 
-    bind();
-    GLCall(glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, size, data));
+    GLCall(glNamedBufferSubData(m_ID, offset, size, data));
     return 0;
 }
 
@@ -71,14 +69,11 @@ void StorageBuffer::resize(const size_t newSize) {
     unsigned int newID = 0;
 
     // New buffer
-    GLCall(glGenBuffers(1, &newID));
-    GLCall(glBindBuffer(GL_SHADER_STORAGE_BUFFER, newID));
-    GLCall(glBufferStorage(GL_SHADER_STORAGE_BUFFER, newSize, nullptr, GL_DYNAMIC_STORAGE_BIT));
+    GLCall(glCreateBuffers(1, &newID));
+    GLCall(glNamedBufferStorage(newID, newSize, nullptr, GL_DYNAMIC_STORAGE_BIT));
 
     // Copy old data
-    GLCall(glBindBuffer(GL_COPY_READ_BUFFER, oldID));
-    GLCall(glBindBuffer(GL_COPY_WRITE_BUFFER, newID));
-    GLCall(glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, m_size));
+    GLCall(glCopyNamedBufferSubData(oldID, newID, 0, 0, m_size));
 
     // Update members
     GLCall(glDeleteBuffers(1, &oldID));
@@ -98,10 +93,6 @@ void StorageBuffer::deleteBuffer() {
 
 void StorageBuffer::bind() const {
     GLCall(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID));
-}
-
-void StorageBuffer::unbind() {
-    GLCall(glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0));
 }
 
 size_t StorageBuffer::getSize() const {

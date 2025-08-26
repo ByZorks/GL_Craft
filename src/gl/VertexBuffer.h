@@ -18,8 +18,8 @@ public:
     void init(const void *data, unsigned int size);
     void updateData(const void *data, unsigned int size, unsigned int offset = 0) const;
     void deleteBuffer();
-    void bind() const;
-    static void unbind();
+
+    [[nodiscard]] unsigned int getID() const;
 };
 
 #endif //VERTEXBUFFER_H

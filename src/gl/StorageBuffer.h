@@ -22,7 +22,6 @@ public:
     void resize(size_t newSize);
     void deleteBuffer();
     void bind() const;
-    static void unbind();
 
     [[nodiscard]] size_t getSize() const;
 };

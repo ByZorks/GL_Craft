@@ -14,7 +14,6 @@ public:
     void updateData(const void *data, unsigned int size, unsigned int offset = 0) const;
     void deleteBuffer();
     void bind() const;
-    static void unbind();
 };
 
 #endif //GL_CRAFT_UNIFORMBUFFER_H
