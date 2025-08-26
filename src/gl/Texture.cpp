@@ -3,7 +3,7 @@
 #include <utility>
 
 #include "OpenGLDebug.h"
-#include "GL/glew.h"
+#include "glad/gl.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <iostream>

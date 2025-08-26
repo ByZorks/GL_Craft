@@ -9,6 +9,7 @@
 #include "../ui/Crosshair.h"
 #include "../ui/DebugUI.h"
 #include "../world/World.h"
+#include "glad/gl.h"
 #include "GLFW/glfw3.h"
 
 class Application {

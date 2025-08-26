@@ -3,52 +3,45 @@ project(GL_Craft)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
+
 set(LIBS_DIR "${CMAKE_SOURCE_DIR}/libs")
 set(IMGUI_DIR ${LIBS_DIR}/imgui)
-
-include_directories(
-        ${LIBS_DIR}/glew/include
-        ${LIBS_DIR}/glfw/include
-        ${LIBS_DIR}
-)
 
 if (UNIX)
     cmake_policy(SET CMP0072 NEW)
     find_package(OpenGL REQUIRED)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GLFW REQUIRED glfw3)
-    pkg_check_modules(GLEW REQUIRED glew)
 
-    include_directories(${GLFW_INCLUDE_DIRS})
-    include_directories(${GLEW_INCLUDE_DIRS})
-    link_directories(${GLFW_LIBRARY_DIRS} ${GLEW_LIBRARY_DIRS})
+    include_directories(
+            ${GLFW_INCLUDE_DIRS}
+            ${LIBS_DIR}/glad/include
+            ${LIBS_DIR}
+    )
+    link_directories(${GLFW_LIBRARY_DIRS})
 
     set(EXTRA_LIBS
             ${GLFW_LIBRARIES}
-            ${GLEW_LIBRARIES}
             OpenGL::GL
     )
 
 elseif (WIN32)
     include_directories(
-            ${LIBS_DIR}/glew/include
+            ${LIBS_DIR}/glad/include
             ${LIBS_DIR}/glfw/include
-    )
-    link_directories(
-            ${LIBS_DIR}/glew/lib/Release/x64
-            ${LIBS_DIR}/glfw/lib-mingw-w64
+            ${LIBS_DIR}
     )
 
-    add_definitions(-DGLEW_STATIC)
+    link_directories(${LIBS_DIR}/glfw/lib-mingw-w64)
 
     set(EXTRA_LIBS
             glfw3
-            glew32s
             opengl32
     )
 endif ()
 
 add_executable(GL_Craft
+        ${LIBS_DIR}/glad/src/gl.c
         src/core/Application.cpp
         src/core/Application.h
         src/core/Main.cpp

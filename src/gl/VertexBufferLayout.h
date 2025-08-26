@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "GL/glew.h"
+#include "glad/gl.h"
 
 struct VertexBufferElement {
     unsigned int type;

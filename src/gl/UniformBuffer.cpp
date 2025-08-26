@@ -1,7 +1,7 @@
 #include "UniformBuffer.h"
 
 #include "OpenGLDebug.h"
-#include "GL/glew.h"
+#include "glad/gl.h"
 
 UniformBuffer::UniformBuffer() = default;
 

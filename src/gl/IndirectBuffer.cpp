@@ -1,9 +1,7 @@
 #include "IndirectBuffer.h"
 
-#include <iostream>
-
 #include "OpenGLDebug.h"
-#include "GL/glew.h"
+#include "glad/gl.h"
 
 IndirectBuffer::IndirectBuffer() = default;
 

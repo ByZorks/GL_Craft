@@ -76,8 +76,8 @@ void Application::initGLFW(const int width, const int height, const char *title)
 }
 
 void Application::initGL() {
-    if (glewInit() != GLEW_OK) {
-        throw std::runtime_error("Failed to initialize GLEW");
+    if (gladLoadGL(glfwGetProcAddress) == 0) {
+        throw std::runtime_error("Failed to initialize OpenGL context");
     }
 
     std::cout << glGetString(GL_VERSION) << std::endl;

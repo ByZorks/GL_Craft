@@ -1,7 +1,8 @@
 #include "OpenGLDebug.h"
 
 #include <iostream>
-#include <GL/glew.h>
+
+#include "glad/gl.h"
 
 void GLClearError() {
     while (glGetError() != GL_NO_ERROR);

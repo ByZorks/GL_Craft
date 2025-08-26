@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "GL/glew.h"
+#include "glad/gl.h"
 #include "glm/fwd.hpp"
 
 class Shader {

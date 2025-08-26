@@ -1,9 +1,8 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 #include <array>
+#include <cstdint>
 #include <vector>
-
-#include "GL/glew.h"
 
 enum class Face : uint8_t {
     FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM,

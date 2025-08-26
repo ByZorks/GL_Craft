@@ -1,7 +1,7 @@
 #include "VertexBuffer.h"
 
 #include "OpenGLDebug.h"
-#include "GL/glew.h"
+#include "glad/gl.h"
 
 VertexBuffer::VertexBuffer() = default;
 
@@ -33,10 +33,10 @@ VertexBuffer & VertexBuffer::operator=(VertexBuffer &&other) noexcept {
     return *this;
 }
 
-void VertexBuffer::init(const void *data, const unsigned int size, BufferUsage usage) {
+void VertexBuffer::init(const void *data, const unsigned int size) {
     GLCall(glGenBuffers(1, &m_ID));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_ID));
-    GLCall(glBufferData(GL_ARRAY_BUFFER, size, data, static_cast<GLenum>(usage)));
+    GLCall(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
 }
 
 void VertexBuffer::updateData(const void *data, const unsigned int size, const unsigned int offset) const {

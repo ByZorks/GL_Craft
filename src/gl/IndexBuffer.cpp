@@ -1,7 +1,7 @@
 #include "IndexBuffer.h"
 
 #include "OpenGLDebug.h"
-#include "GL/glew.h"
+#include "glad/gl.h"
 
 IndexBuffer::IndexBuffer() = default;
 

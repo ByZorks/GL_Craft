@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "OpenGLDebug.h"
-#include "GL/glew.h"
+#include "glad/gl.h"
 
 FrameBuffer::FrameBuffer(const int width, const int height) : m_Width(width), m_Height(height),
                                                               m_colorTexture(width, height), m_depthTexture(width, height, true) {
