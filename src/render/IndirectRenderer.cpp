@@ -20,16 +20,16 @@ IndirectRenderer::IndirectRenderer() {
     std::cout << "[Indirect Renderer] Vertex SSBO size: " << SSBOSize / (1024 * 1024) << " MiB\n";
     std::cout << "[Indirect Renderer] Offsets SSBOs total size: " << (offsetsSSBOSize + offsetsSSBOSize / 5) / 1024 << " KiB\n";
 
-    m_verticesSSBO.init(nullptr, SSBOSize, 1);
+    m_verticesSSBO.init(nullptr, SSBOSize, 0);
     m_gpuSlots.resize(nbSlotsMax);
 
     // Opaque
     m_opaqueData.IBO.init(nullptr, IBOSize);
-    m_opaqueData.offsetsSSBO.init(nullptr, offsetsSSBOSize, 2);
+    m_opaqueData.offsetsSSBO.init(nullptr, offsetsSSBOSize, 1);
 
     // Water
     m_waterData.IBO.init(nullptr, IBOSize / 5);
-    m_waterData.offsetsSSBO.init(nullptr, offsetsSSBOSize / 5, 2);
+    m_waterData.offsetsSSBO.init(nullptr, offsetsSSBOSize / 5, 1);
 }
 
 void IndirectRenderer::addChunk(const std::shared_ptr<Chunk> &chunk) {

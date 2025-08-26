@@ -17,11 +17,11 @@ layout(std140, binding = 1) uniform Time {
 };
 
 // SSBOs
-layout(std430, binding = 1) readonly buffer blockVertexPullData {
+layout(std430, binding = 0) readonly buffer blockVertexPullData {
     uint packedVertices[];
 };
 
-layout (std430, binding = 3) readonly buffer instanceData {
+layout (std430, binding = 1) readonly buffer instanceData {
     int instancePos[]; // Instance position in world space
 };
 

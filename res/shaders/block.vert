@@ -7,15 +7,17 @@ struct BlockVertex {
     uvec4 AO;// Ambient Occlusion values for each vertex (0-3)
 };
 
+// UBOs
 layout(std140, binding = 0) uniform MVP {
     mat4 u_MVP;// Model-View-Projection matrix
 };
 
-layout(std430, binding = 1) readonly buffer blockVertexPullData {
+// SSBOs
+layout(std430, binding = 0) readonly buffer blockVertexPullData {
     uint packedVertices[];
 };
 
-layout(std430, binding = 2) readonly buffer blockOffsetPullData {
+layout(std430, binding = 1) readonly buffer blockOffsetPullData {
     int positionOffset[];
 };
 

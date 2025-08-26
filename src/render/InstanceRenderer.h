@@ -28,7 +28,7 @@ public:
 
         if (!m_vertices.empty()) {
             m_VAO.init();
-            m_verticesSSBO.init(m_vertices.data(), static_cast<unsigned int>(m_vertices.size() * sizeof(BlockVertex)), 1);
+            m_verticesSSBO.init(m_vertices.data(), static_cast<unsigned int>(m_vertices.size() * sizeof(BlockVertex)), 0);
         } else {
             throw std::runtime_error("InstanceRenderer: Mesh has no vertices");
         }
@@ -36,7 +36,7 @@ public:
         // Instance buffer
         constexpr size_t initialCapacity = 5000;
         m_instancePositions.reserve(initialCapacity);
-        m_instanceSSBO.init(nullptr, initialCapacity * sizeof(std::array<int, 3>), 3);
+        m_instanceSSBO.init(nullptr, initialCapacity * sizeof(std::array<int, 3>), 1);
     }
     void addInstance(const std::array<int, 3> &position);
     void updateInstanceBuffer();
