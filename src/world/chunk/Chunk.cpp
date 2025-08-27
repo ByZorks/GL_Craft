@@ -31,9 +31,8 @@ void Chunk::generateVoxel() {
             if (columnHeight < m_y - static_cast<int>(SIZE)) continue;
 
             // Surface features noise
-            constexpr int waterLevel = 63;
             if (localX > 0 && localX < SIZE && localZ > 0 && localZ < SIZE && // I think it can cause issues but I didn't find any in my testing
-                columnHeight >= waterLevel && m_y <= columnHeight + 1 &&
+                columnHeight >= TerrainGenerator::getSeaLevel() && m_y <= columnHeight + 1 &&
                 columnHeight >= m_y - static_cast<int>(SIZE) &&
                 columnHeight < m_y + static_cast<int>(SIZE) &&
                 !TerrainGenerator::isCave(worldX, columnHeight, worldZ, columnHeight)) {
@@ -47,7 +46,7 @@ void Chunk::generateVoxel() {
             }
 
             // Pre-compute the max height for the current column
-            const int maxHeightInChunk = std::max(columnHeight, waterLevel);
+            const int maxHeightInChunk = std::max(columnHeight, TerrainGenerator::getSeaLevel());
             const int endY = std::min(static_cast<int>(SIZE) + 2, std::max(0, maxHeightInChunk - m_y + 2));
 
             for (int localY = 0; localY < endY; localY++) {

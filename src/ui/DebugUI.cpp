@@ -5,6 +5,7 @@
 
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
+#include "../world/TerrainGenerator.h"
 
 DebugUI::DebugUI() : m_uiMode(false), m_tabKeyPressed(false) {}
 
@@ -51,6 +52,10 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
     ImGui::Text("Camera:");
     const glm::vec3 cameraPosition = camera.getPos();
     ImGui::Text("Position: (%.2f, %.2f, %.2f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+    const float terrainNoise = TerrainGenerator::getTerrainNoiseAt(static_cast<int>(cameraPosition.x), static_cast<int>(cameraPosition.z));
+    const float continentalness = TerrainGenerator::getContinentalnessAt(static_cast<int>(cameraPosition.x), static_cast<int>(cameraPosition.z));
+    const float erosion = TerrainGenerator::getErosionAt(static_cast<int>(cameraPosition.x), static_cast<int>(cameraPosition.z));
+    ImGui::Text("T: %.1f, C: %.1f, E: %.1f", terrainNoise, continentalness, erosion);
     ImGui::Separator();
     ImGui::Text("Player:");
     ImGui::Text("Selected Block Type: %s", Block::getBlockName(selectedBlockType));

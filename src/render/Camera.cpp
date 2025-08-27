@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "../math/Plane.h"
+#include "../world/TerrainGenerator.h"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
 
@@ -10,7 +11,7 @@ Camera::Camera(const unsigned int windowWidth,
                const unsigned int windowHeight) : m_lastX(static_cast<float>(windowWidth) / 2.0f),
                                                   m_lastY(static_cast<float>(windowHeight) / 2.0f),
                                                   m_yaw(-90.0f), m_pitch(0.0f), m_lastYaw(0.f), m_lastPitch(.0f), m_lastSticterYaw(0.0f), m_lastStricterPitch(0.0f),
-                                                  m_firstMouse(true), m_cameraPos(glm::vec3(0.0f, 110, .0f)),
+                                                  m_firstMouse(true), m_cameraPos(glm::vec3(0.0f, 200, .0f)),
                                                   m_cameraFront(glm::vec3(0.0f, 0.0f, 0.0f)),
                                                   m_cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
                                                   m_FOVDegrees(70.f),
@@ -39,7 +40,7 @@ void Camera::updateLastState() {
 }
 
 void Camera::processInput(GLFWwindow *window, const double deltaTime) {
-    const float cameraSpeed = 15.0f * static_cast<float>(deltaTime);
+    const float cameraSpeed = 150.0f * static_cast<float>(deltaTime);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         m_cameraPos += cameraSpeed * m_cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -143,8 +144,7 @@ bool Camera::hasCameraUpdated() const {
 }
 
 bool Camera::isUnderWater(const int columnHeight) const {
-    constexpr int waterLevel = 63;
-    return m_cameraPos.y > static_cast<float>(columnHeight) && m_cameraPos.y <= waterLevel;
+    return m_cameraPos.y > static_cast<float>(columnHeight) && m_cameraPos.y <= static_cast<float>(TerrainGenerator::getSeaLevel());
 
 }
 
