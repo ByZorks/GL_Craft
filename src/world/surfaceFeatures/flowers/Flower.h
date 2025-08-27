@@ -1,6 +1,6 @@
 #ifndef FLOWER_H
 #define FLOWER_H
-#include "../../Mesh.h"
+#include "../../chunk/Mesh.h"
 
 class Flower : public Mesh {
 public:

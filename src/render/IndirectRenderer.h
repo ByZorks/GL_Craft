@@ -6,7 +6,7 @@
 
 #include "../gl/IndirectBuffer.h"
 #include "../gl/StorageBuffer.h"
-#include "../world/Chunk.h"
+#include "../world/chunk/Chunk.h"
 
 class IndirectRenderer {
 private:

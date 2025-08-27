@@ -2,7 +2,8 @@
 
 #include <iostream>
 
-#include "World.h"
+#include "../TerrainGenerator.h"
+#include "../WorldManager.h"
 
 Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     constexpr int NUMBER_OF_FACES = 6;
@@ -24,7 +25,7 @@ void Chunk::generateVoxel() {
 
         for (int localZ = 0; localZ < SIZE + 2; localZ++) {
             const int worldZ = m_z + localZ;
-            const int columnHeight = World::getHeight(worldX, worldZ);
+            const int columnHeight = TerrainGenerator::getHeight(worldX, worldZ);
 
             // Early exit for aerial chunks, cast is mandatory
             if (columnHeight < m_y - static_cast<int>(SIZE)) continue;
@@ -35,8 +36,8 @@ void Chunk::generateVoxel() {
                 columnHeight >= waterLevel && m_y <= columnHeight + 1 &&
                 columnHeight >= m_y - static_cast<int>(SIZE) &&
                 columnHeight < m_y + static_cast<int>(SIZE) &&
-                !World::isCave(worldX, columnHeight, worldZ, columnHeight)) {
-                const float surfaceFeatureNoise = (World::getSurfaceFeaturesNoise().GetNoise(
+                !TerrainGenerator::isCave(worldX, columnHeight, worldZ, columnHeight)) {
+                const float surfaceFeatureNoise = (TerrainGenerator::getSurfaceFeaturesNoise().GetNoise(
                                                        static_cast<float>(worldX),
                                                        static_cast<float>(worldZ)) + 1.0f) * 0.5f;
                 if (surfaceFeatureNoise >= 0.69f) {
@@ -53,7 +54,7 @@ void Chunk::generateVoxel() {
                 const int worldY = m_y + localY;
 
                 // Terrain
-                if (World::isCave(worldX, worldY, worldZ, columnHeight)) continue;
+                if (TerrainGenerator::isCave(worldX, worldY, worldZ, columnHeight)) continue;
                 const BlockType blockType = Block::getBlockType(worldY, columnHeight);
                 m_blockType[index(localX, localY, localZ)] = blockType;
 
@@ -113,7 +114,7 @@ void Chunk::generateNewMesh(MeshingResult &result) const {
     }
 }
 
-void Chunk::transferPendingBlocksToWorld(World &world) {
+void Chunk::transferPendingBlocksToWorld(WorldManager &world) {
     if (m_pendingBlocksForNeighbors.empty()) return;
     world.addPendingBlocks(m_pendingBlocksForNeighbors);
     m_pendingBlocksForNeighbors.clear();

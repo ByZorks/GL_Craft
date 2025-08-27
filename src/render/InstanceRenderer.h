@@ -6,7 +6,7 @@
 #include "../gl/StorageBuffer.h"
 #include "../gl/VertexArray.h"
 #include "../world/Block.h"
-#include "../world/MeshManager.h"
+#include "../world/chunk/MeshManager.h"
 
 class InstanceRenderer {
 private:

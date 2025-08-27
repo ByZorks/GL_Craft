@@ -3,7 +3,7 @@
 #include <array>
 #include <stdexcept>
 
-#include "Chunk.h"
+#include "chunk/Chunk.h"
 
 Block::Block(const float x, const float y, const float z) : m_x(x), m_y(y), m_z(z) {
 }

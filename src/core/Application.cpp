@@ -145,7 +145,7 @@ void Application::update() {
     m_MVPBuffer->updateData(m_camera.getMVPData(), sizeof(glm::mat4));
 
     // Chunks generation
-    m_world->updateChunks(m_camera, m_frustum);
+    m_world->update(m_camera, m_frustum);
 
     // Uniforms
     const auto time = static_cast<float>(glfwGetTime());
@@ -153,7 +153,7 @@ void Application::update() {
 
     if (m_camera.hasCameraChangedBlock()) {
         m_postProcessingShader->use();
-        m_postProcessingShader->setUniform1b("u_IsUnderWater", m_camera.isUnderWater(World::getHeight(
+        m_postProcessingShader->setUniform1b("u_IsUnderWater", m_camera.isUnderWater(TerrainGenerator::getHeight(
                                                static_cast<int>(m_camera.getPos().x),
                                                static_cast<int>(m_camera.getPos().z))));
     }
@@ -165,14 +165,14 @@ void Application::update() {
                                 m_camera.getPos().z);
 
     // Raycasting
-    if (m_raycastResult = Raycast::castRay(m_camera.getPos(), m_camera.getFront(), m_world->getLoadedChunks());
+    if (m_raycastResult = Raycast::castRay(m_camera.getPos(), m_camera.getFront(), m_world->getWorldManagerConst().getLoadedChunks());
         m_raycastResult.hitBlock) {
         if (!m_camera.isInputEnabled()) return;
 
         if (m_leftClicked) {
-            m_world->deleteBlockAndUpdateNeighbors(m_raycastResult);
+            m_world->getWorldManager().deleteBlockAndUpdateNeighbors(m_raycastResult);
         } else if (m_rightClicked) {
-            m_world->placeBlockAndUpdateNeighbors(m_raycastResult, m_player.getSelectedBlockType());
+            m_world->getWorldManager().placeBlockAndUpdateNeighbors(m_raycastResult, m_player.getSelectedBlockType());
         } else if (m_middleClicked) {
             m_player.setSelectedBlockType(m_raycastResult.blockType);
         }
@@ -212,8 +212,8 @@ void Application::render() {
     Renderer::enableDepthTesting();
 
     // ImGui
-    DebugUI::render(m_world->getVisibleChunksCount(), m_world->getLoadedChunks().size(), m_drawCmds, m_camera, m_player.getSelectedBlockType(), [this] {
-        m_world->updateRenderDistance(*m_postProcessingShader, m_camera, m_frustum);
+    DebugUI::render(m_world->getWorldRendererConst().getVisibleChunksCount(), m_world->getWorldManagerConst().getLoadedChunks().size(), m_drawCmds, m_camera, m_player.getSelectedBlockType(), [this] {
+        m_world->getWorldManager().updateRenderDistance(*m_postProcessingShader, m_camera, m_world->getWorldRenderer().getIndirectRenderer());
     });
     DebugUI::draw();
 }

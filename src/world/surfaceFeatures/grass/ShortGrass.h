@@ -1,6 +1,6 @@
 #ifndef SHORTGRASS_H
 #define SHORTGRASS_H
-#include "../../Mesh.h"
+#include "../../chunk/Mesh.h"
 
 class ShortGrass final : public Mesh {
 public:

@@ -6,9 +6,9 @@
 #include "ChunkPosition.h"
 #include "Mesh.h"
 #include "PendingBlock.h"
-#include "surfaceFeatures/SurfaceFeature.h"
+#include "../surfaceFeatures/SurfaceFeature.h"
 
-class World;
+class WorldManager;
 
 class Chunk final : public Mesh {
 private:
@@ -28,7 +28,7 @@ public:
     void generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResult &result);
     void generateMesh() override;
     void generateNewMesh(MeshingResult &result) const;
-    void transferPendingBlocksToWorld(World &world);
+    void transferPendingBlocksToWorld(WorldManager &world);
     void deleteBlock(int localX, int localY, int localZ, BlockType type, MeshingResult &result);
     void addBlock(int localX, int localY, int localZ, BlockType type, MeshingResult &result);
 

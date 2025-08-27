@@ -5,7 +5,7 @@
 
 #include "ChunkPosition.h"
 #include "PendingBlock.h"
-#include "../utils/ThreadSafeQueue.h"
+#include "../../utils/ThreadSafeQueue.h"
 
 struct MeshingResult {
     ChunkPosition position;

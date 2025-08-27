@@ -1,0 +1,27 @@
+#ifndef GL_CRAFT_WORLDRENDERER_H
+#define GL_CRAFT_WORLDRENDERER_H
+#include "../gl/Shader.h"
+#include "../render/Camera.h"
+#include "../render/IndirectRenderer.h"
+#include "../render/InstanceRenderer.h"
+
+class WorldRenderer {
+    IndirectRenderer m_indirectRenderer;
+    std::unordered_map<SurfaceFeatureType, InstanceRenderer> m_instanceRenderers;
+    unsigned int m_visibleChunksCount = 0;
+
+public:
+    WorldRenderer();
+
+    void updateVisibleChunks(const Camera& camera, const Frustum& frustum, const WorldManager& manager);
+    void draw(const Shader &blockShader, const Shader &waterShader, const Shader &instancesShader, unsigned int &drawCmd);
+
+    [[nodiscard]] IndirectRenderer & getIndirectRenderer();
+    [[nodiscard]] unsigned int getVisibleChunksCount() const;
+
+private:
+    void drawInstances(const Shader& instancesShader, unsigned int& drawCmd);
+    void sortChunks(const Frustum &frustum, const Camera &camera, const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> &loadedChunks, bool needInstanceUpdate);
+};
+
+#endif //GL_CRAFT_WORLDRENDERER_H

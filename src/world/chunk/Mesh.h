@@ -3,9 +3,9 @@
 
 #include <mutex>
 
-#include "Block.h"
-#include "../gl/VertexArray.h"
-#include "../math/AABB.h"
+#include "../Block.h"
+#include "../../gl/VertexArray.h"
+#include "../../math/AABB.h"
 
 struct MeshingResult;
 

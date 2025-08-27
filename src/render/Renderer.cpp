@@ -1,7 +1,7 @@
 #include "Renderer.h"
 
 #include "../gl/OpenGLDebug.h"
-#include "../world/Chunk.h"
+#include "../world/chunk/Chunk.h"
 
 float Renderer::m_deltaTime = 0.0f;
 float Renderer::m_lastFrame = 0.0f;

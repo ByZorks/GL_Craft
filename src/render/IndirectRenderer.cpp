@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "Renderer.h"
-#include "../world/Mesh.h"
+#include "../world/chunk/Mesh.h"
 
 IndirectRenderer::IndirectRenderer() {
     const auto renderDistanceInChunks = static_cast<size_t>(Renderer::s_renderDistance / Chunk::SIZE);

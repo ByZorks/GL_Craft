@@ -64,8 +64,8 @@ add_executable(GL_Craft
         src/render/Camera.h
         src/world/Block.cpp
         src/world/Block.h
-        src/world/Chunk.cpp
-        src/world/Chunk.h
+        src/world/chunk/Chunk.cpp
+        src/world/chunk/Chunk.h
         src/world/World.cpp
         src/world/World.h
         src/math/Frustum.cpp
@@ -85,8 +85,8 @@ add_executable(GL_Craft
         src/utils/ThreadSafeQueue.h
         src/utils/ThreadPool.h
         src/utils/ThreadPool.cpp
-        src/world/Mesh.h
-        src/world/Mesh.cpp
+        src/world/chunk/Mesh.h
+        src/world/chunk/Mesh.cpp
         src/world/surfaceFeatures/grass/ShortGrass.cpp
         src/world/surfaceFeatures/grass/ShortGrass.h
         src/world/surfaceFeatures/flowers/Flower.h
@@ -95,7 +95,7 @@ add_executable(GL_Craft
         src/world/surfaceFeatures/flowers/Poppy.h
         src/render/InstanceRenderer.cpp
         src/render/InstanceRenderer.h
-        src/world/MeshManager.h
+        src/world/chunk/MeshManager.h
         src/world/surfaceFeatures/flowers/Cornflower.cpp
         src/world/surfaceFeatures/flowers/Cornflower.h
         src/world/surfaceFeatures/flowers/Allium.cpp
@@ -105,8 +105,8 @@ add_executable(GL_Craft
         src/render/PostProcessingMesh.cpp
         src/render/PostProcessingMesh.h
         src/world/surfaceFeatures/SurfaceFeature.h
-        src/world/ChunkPosition.h
-        src/world/PendingBlock.h
+        src/world/chunk/ChunkPosition.h
+        src/world/chunk/PendingBlock.h
         src/math/Raycast.cpp
         src/math/Raycast.h
         src/render/HighlightedBlock.cpp
@@ -125,6 +125,12 @@ add_executable(GL_Craft
         src/gl/IndirectBuffer.h
         src/utils/ScopedTimer.cpp
         src/utils/ScopedTimer.h
+        src/world/WorldManager.cpp
+        src/world/WorldManager.h
+        src/world/TerrainGenerator.cpp
+        src/world/TerrainGenerator.h
+        src/world/WorldRenderer.cpp
+        src/world/WorldRenderer.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})

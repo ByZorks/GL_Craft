@@ -4,8 +4,8 @@
 #include <unordered_map>
 
 #include "../world/Block.h"
-#include "../world/Chunk.h"
-#include "../world/ChunkPosition.h"
+#include "../world/chunk/Chunk.h"
+#include "../world/chunk/ChunkPosition.h"
 #include "glm/vec3.hpp"
 
 struct RaycastResult {
