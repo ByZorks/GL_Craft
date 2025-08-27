@@ -137,10 +137,6 @@ void Application::processInput(const double deltaTime) {
 }
 
 void Application::update() {
-    if (!m_world) {
-        throw std::runtime_error("World not initialized");
-    }
-
     m_drawCmds = 0;
 
     // Update camera position and view matrix
