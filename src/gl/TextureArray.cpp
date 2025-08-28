@@ -30,6 +30,14 @@ TextureArray::TextureArray(const int width, const int height, const int layers, 
     GLCall(glTextureParameteri(m_ID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     GLCall(glTextureParameteri(m_ID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
+    // Anisotropic filtering if supported
+    float maxAnisotropicFiltering = 0.0f;
+    GLCall(glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropicFiltering));
+    if (maxAnisotropicFiltering > 0.0f) {
+        constexpr float anisotropicFiltering = 16.0f;
+        GLCall(glTextureParameterf(m_ID, GL_TEXTURE_MAX_ANISOTROPY, std::min(maxAnisotropicFiltering, anisotropicFiltering)));
+    }
+
     for (unsigned int i = 0; i < m_layers; i++) {
         unsigned char* buffer = stbi_load(files[i].c_str(), &m_width, &m_height, nullptr, 4);
         if (!buffer) {
