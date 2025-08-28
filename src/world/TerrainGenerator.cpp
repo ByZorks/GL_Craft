@@ -21,26 +21,39 @@ int TerrainGenerator::getHeight(const int worldX, const int worldZ) {
 bool TerrainGenerator::isCave(const int worldX, const int worldY, const int worldZ, const int columnHeight) {
     if (worldY <= 1 || worldY > HEIGHT_MULTIPLIER || (worldY >= columnHeight && columnHeight < SEA_LEVEL)) return false;
 
-    // 3D noise generation for cave system
-    const float largeCave = getLargeCaveNoise().GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ));
-    const float tunnelCave = getTunnelCaveNoise().GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ));
+    const float largeCave = getLargeCaveNoise().GetNoise(
+        static_cast<float>(worldX),
+        static_cast<float>(worldY),
+        static_cast<float>(worldZ));
 
-    constexpr float tunnelThreshold = 0.83f;
     constexpr float cheeseThreshold = 0.37f;
+    const bool isCheeseCave = largeCave > cheeseThreshold;
 
-    const bool tunnel = std::abs(tunnelCave) > tunnelThreshold;
-    const bool cheeseCave = largeCave > cheeseThreshold;
+    // Tunnel caves only if not already a cheese cave
+    if (!isCheeseCave) {
+        bool isTunnel = false;
+        constexpr float tunnelThreshold = 0.83f;
 
-    const bool isCave = cheeseCave || tunnel;
+        const float tunnelCave = getTunnelCaveNoise().GetNoise(
+            static_cast<float>(worldX),
+            static_cast<float>(worldY),
+            static_cast<float>(worldZ));
 
-    if (isCave && worldY > columnHeight - 5) {
-        // Reduce caves opening at surface level
-        const float surfaceFactor = 1.f - static_cast<float>(worldY) / static_cast<float>(columnHeight + 1);
-        const float caveChance = (largeCave + tunnel) / 2.f * surfaceFactor;
-        if (caveChance < 0.0085f) return false;
+        isTunnel = std::abs(tunnelCave) > tunnelThreshold;
+        if (!isTunnel) return false;
     }
 
-    return isCave;
+    // Reduce cave chance near the surface
+    if (worldY > columnHeight - 5) {
+        const float surfaceFactor = 1.f - static_cast<float>(worldY) / (static_cast<float>(columnHeight) + 1.f);
+        const float caveChance = isCheeseCave
+                                     ? largeCave / 2.f * surfaceFactor
+                                     : (largeCave + 1.f) / 2.f * surfaceFactor;
+        return caveChance >= 0.0085f;
+    }
+
+
+    return true;
 }
 
 FastNoiseLite TerrainGenerator::makeTerrainNoise() {
