@@ -12,6 +12,7 @@ uniform sampler2DArray u_TextureArray;
 void main() {
     vec4 texColor = texture(u_TextureArray, vec3(v_texCoord, v_texLayer));
     if (texColor.a < 0.1) discard;
+    texColor.rgb /= texColor.a; // Un-premultiply alpha
 
     // Debug
 //    int aoLevel = int(floor(v_AO * 3.0 + 0.5));

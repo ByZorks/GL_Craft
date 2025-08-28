@@ -1,5 +1,6 @@
 #include "TextureArray.h"
 
+#include <cmath>
 #include <utility>
 #include <filesystem>
 #include <iostream>
@@ -21,21 +22,34 @@ TextureArray::TextureArray(const int width, const int height, const int layers, 
     }
 
     GLCall(glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_ID));
-    GLCall(glTextureStorage3D(m_ID, 1, GL_RGBA8, m_width, m_height, m_layers));
+    const int mipLevels = 1 + static_cast<int>(std::floor(std::log2(std::max(m_width, m_height))));
+    GLCall(glTextureStorage3D(m_ID, mipLevels, GL_RGBA8, m_width, m_height, m_layers));
 
-    GLCall(glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GLCall(glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR));
     GLCall(glTextureParameteri(m_ID, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
     GLCall(glTextureParameteri(m_ID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     GLCall(glTextureParameteri(m_ID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
     for (unsigned int i = 0; i < m_layers; i++) {
-        const unsigned char* buffer = stbi_load(files[i].c_str(), &m_width, &m_height, nullptr, 4);
+        unsigned char* buffer = stbi_load(files[i].c_str(), &m_width, &m_height, nullptr, 4);
         if (!buffer) {
             std::cerr << "Failed to load texture: " << files[i] << std::endl;
             continue;
         }
+
+        // Premultiply alpha
+        for (int p = 0; p < m_width * m_height; p++) {
+            unsigned char* px = buffer + p * 4;
+            const float a = static_cast<float>(px[3]) / 255.0f;
+            px[0] = static_cast<unsigned char>(static_cast<float>(px[0]) * a);
+            px[1] = static_cast<unsigned char>(static_cast<float>(px[1]) * a);
+            px[2] = static_cast<unsigned char>(static_cast<float>(px[2]) * a);
+        }
+
         GLCall(glTextureSubImage3D(m_ID, 0, 0, 0, i, m_width, m_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer));
     }
+
+    GLCall(glGenerateTextureMipmap(m_ID));
 }
 
 TextureArray::~TextureArray() {
