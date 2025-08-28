@@ -84,8 +84,8 @@ void Application::initGL() {
 }
 
 void Application::initResources() {
-    m_atlas = std::make_unique<Texture>("../res/textures/atlas/atlas.png");
-    m_atlas->bind(m_atlasTextureSlot);
+    m_textures = std::make_unique<TextureArray>(16, 16, 24, "../res/textures/");
+    m_textures->bind(m_atlasTextureSlot);
 
     m_MVPBuffer = std::make_unique<UniformBuffer>();
     m_MVPBuffer->init(nullptr, sizeof(glm::mat4), m_MVPUniformBufferBindingSlot);
@@ -101,21 +101,21 @@ void Application::initResources() {
 
     m_blockShader = std::make_unique<Shader>("../res/shaders/block.vert", "../res/shaders/block.frag");
     m_blockShader->use();
-    m_blockShader->setUniform1i("u_Texture", m_atlasTextureSlot);
+    m_blockShader->setUniform1i("u_TextureArray", m_atlasTextureSlot);
 
     m_instancesShader = std::make_unique<Shader>("../res/shaders/instances.vert", "../res/shaders/instances.frag");
     m_instancesShader->use();
-    m_instancesShader->setUniform1i("u_Texture", m_atlasTextureSlot);
+    m_instancesShader->setUniform1i("u_TextureArray", m_atlasTextureSlot);
 
     m_waterShader = std::make_unique<Shader>("../res/shaders/water.vert", "../res/shaders/water.frag");
     m_waterShader->use();
-    m_waterShader->setUniform1i("u_Texture", m_atlasTextureSlot);
+    m_waterShader->setUniform1i("u_TextureArray", m_atlasTextureSlot);
 
     m_highlightedBlockShader = std::make_unique<Shader>("../res/shaders/highlightBlock.vert", "../res/shaders/highlightBlock.frag");
 
     m_crosshairShader = std::make_unique<Shader>("../res/shaders/crosshair.vert", "../res/shaders/crosshair.frag");
     m_crosshairShader->use();
-    m_crosshairShader->setUniform1i("u_Texture", m_atlasTextureSlot);
+    m_crosshairShader->setUniform1i("u_TextureArray", m_atlasTextureSlot);
     m_crosshairShader->setUniform1f("u_AspectRatio", m_aspectRatio);
 
     m_postProcessingShader = std::make_unique<Shader>("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
@@ -238,7 +238,7 @@ void Application::cleanup() {
     m_highlightedBlockShader.reset();
     m_crosshairShader.reset();
     m_postProcessingShader.reset();
-    m_atlas.reset();
+    m_textures.reset();
     m_MVPBuffer.reset();
     m_timeBuffer.reset();
 
