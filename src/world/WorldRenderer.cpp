@@ -97,7 +97,7 @@ void WorldRenderer::sortChunks(const Frustum &frustum, const Camera &camera, con
             m_visibleChunksCount++;
 
             // Surface features
-            if (needInstanceUpdate && camera.distanceToCamera(*chunk) < 320.0f) { // They are no longer visible at this distance event if we draw them
+            if (needInstanceUpdate && camera.distanceToCamera(*chunk) < 512.0f) { // They are no longer visible at this distance event if we draw them
                 for (const auto &feature: chunk->getSurfaceFeatures()) {
                     switch (feature.type) {
                         case SurfaceFeatureType::SHORT_GRASS:
