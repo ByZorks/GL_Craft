@@ -61,7 +61,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                             const unsigned int startY, const unsigned int startZ) {
 
     const unsigned int position[3] = {startX, startY, startZ};
-    const unsigned int texIndex = getTextureIndex(type, face);
+    const uint8_t texLayer = getTextureLayer(type, face);
 
     switch (face) {
         case Face::FRONT: {
@@ -84,7 +84,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                     adjacentsFaces[AOIndex(0, -1, 1)],
                     adjacentsFaces[AOIndex(-1, -1, 1)])
             };
-            vertices.emplace_back(packVertexData(position, texIndex, faceIndex, ao));
+            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::BACK: {
@@ -107,7 +107,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(0, -1, -1)],
                           adjacentsFaces[AOIndex(1, -1, -1)])
             };
-            vertices.emplace_back(packVertexData(position, texIndex, faceIndex, ao));
+            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::LEFT: {
@@ -130,7 +130,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(-1, -1, 0)],
                           adjacentsFaces[AOIndex(-1, -1, -1)])
             };
-            vertices.emplace_back(packVertexData(position, texIndex, faceIndex, ao));
+            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::RIGHT: {
@@ -153,7 +153,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(1, -1, 0)],
                           adjacentsFaces[AOIndex(1, -1, 1)])
             };
-            vertices.emplace_back(packVertexData(position, texIndex, faceIndex, ao));
+            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::TOP:
@@ -178,7 +178,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(0, 1, 1)],
                           adjacentsFaces[AOIndex(-1, 1, 1)]),
             };
-            vertices.emplace_back(packVertexData(position, texIndex, faceIndex, ao));
+            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::BOTTOM: {
@@ -201,7 +201,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(0, -1, 1)],
                           adjacentsFaces[AOIndex(-1, -1, 1)]),
             };
-            vertices.emplace_back(packVertexData(position, texIndex, faceIndex, ao));
+            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         default:
@@ -212,18 +212,18 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
 void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std::vector<BlockVertex> &vertices,
                                       const unsigned int startX, const unsigned int startY, const unsigned int startZ) {
     const unsigned int position[3] = {startX, startY, startZ};
-    const unsigned int texIndex = getTextureIndex(type, face);
+    const uint8_t texLayer = getTextureLayer(type, face);
     constexpr unsigned int ao[4] = {3, 3, 3, 3}; // AO is not used for billboards
 
     switch (face) {
         case Face::FRONT: {
             constexpr unsigned int faceIndex = 0;
-            vertices.emplace_back(packVertexData(position, texIndex, faceIndex, ao));
+            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::BACK: {
             constexpr unsigned int faceIndex = 1;
-            vertices.emplace_back(packVertexData(position, texIndex, faceIndex, ao));
+            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         default:
@@ -250,7 +250,7 @@ bool Block::isInstance(const BlockType type) {
            type == BlockType::FLOWER_CORNFLOWER || type == BlockType::FLOWER_ALLIUM;
 }
 
-BlockVertex Block::packVertexData(const unsigned int position[3], const unsigned int texIndex, const unsigned int faceIndex,
+BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t texLayer, const unsigned int faceIndex,
     const unsigned int ao[4]) {
     BlockVertex vertex{};
 
@@ -264,8 +264,8 @@ BlockVertex Block::packVertexData(const unsigned int position[3], const unsigned
     vertex.packedData |= (position[1] & POS_MASK) << 5;
     vertex.packedData |= (position[2] & POS_MASK) << 10;
 
-    // TexIndex (5 bits)
-    vertex.packedData |= (texIndex & TEX_MASK) << 15;
+    // TexLayer(5 bits)
+    vertex.packedData |= (texLayer & TEX_MASK) << 15;
 
     // FaceIndex (3 bits)
     vertex.packedData |= (faceIndex & FACE_MASK) << 20;
@@ -279,22 +279,10 @@ BlockVertex Block::packVertexData(const unsigned int position[3], const unsigned
     return vertex;
 }
 
-uint8_t Block::getTextureU(BlockType type, const Face face) {
+uint8_t Block::getTextureLayer(BlockType type, const Face face) {
     const uint8_t typeIndex = static_cast<int>(type);
     const uint8_t faceIndex = face == Face::TOP ? 1 : face == Face::BOTTOM ? 2 : 0;
-    return s_textureColumn[typeIndex][faceIndex];
-}
-
-uint8_t Block::getTextureV(BlockType type, const Face face) {
-    const uint8_t typeIndex = static_cast<int>(type);
-    const uint8_t faceIndex = face == Face::TOP ? 1 : face == Face::BOTTOM ? 2 : 0;
-    return s_textureRow[typeIndex][faceIndex];
-}
-
-unsigned int Block::getTextureIndex(const BlockType type, const Face face) {
-    const uint8_t u = getTextureU(type, face);
-    const uint8_t v = getTextureV(type, face);
-    return v * 5 + u; // 5 columns
+    return s_textureLayer[typeIndex][faceIndex];
 }
 
 int Block::AOIndex(const int x, const int y, const int z) {

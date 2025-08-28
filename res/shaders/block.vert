@@ -2,7 +2,7 @@
 
 struct BlockVertex {
     uvec3 position;// Vertex position in world space
-    uvec2 texIndex;// Texture column and row for atlas mapping (normalized)
+    uint texLayer; // Texture layer for array texture
     uint face;// Face index (0-5 for 6 faces)
     uvec4 AO;// Ambient Occlusion values for each vertex (0-3)
 };
@@ -22,6 +22,7 @@ layout(std430, binding = 1) readonly buffer blockOffsetPullData {
 };
 
 out vec2 v_texCoord;
+flat out uint v_texLayer;
 flat out uint v_face;
 out float v_AO;
 
@@ -59,10 +60,8 @@ BlockVertex unpackVertexData(uint packedData) {
     v.position.y = (packedData >> 5)  & 0x1Fu;
     v.position.z = (packedData >> 10) & 0x1Fu;
 
-    // TexIndex (5 bits)
-    const uint texIndex = (packedData >> 15) & 0x1Fu;
-    v.texIndex.x = texIndex % 5u; // Column in the texture atlas
-    v.texIndex.y = texIndex / 5u; // Row in the texture atlas
+    // TexLayer (5 bits)
+    v.texLayer= (packedData >> 15) & 0x1Fu;
 
     // FaceIndex (3 bits)
     v.face = (packedData >> 20) & 0x7u;
@@ -92,9 +91,9 @@ void main() {
     const vec3 worldPos = vec3(data.position) + vertexOffset + vec3(positionOffset[gl_DrawID * 3], positionOffset[gl_DrawID * 3 + 1], positionOffset[gl_DrawID * 3 + 2]);
     gl_Position = u_MVP * vec4(worldPos, 1.0);
 
-    // Texture coordinates
-    const float tileSize = 1.f / 5.f;
-    v_texCoord = (vec2(data.texIndex) + texOffsets[quadVertexIndex]) * tileSize;
+    // Texture layer and coordinates
+    v_texCoord = texOffsets[quadVertexIndex];
+    v_texLayer = data.texLayer;
 
     // Ambient Occlusion
     const float AO_f = float(data.AO[quadVertexIndex]) / 3.0;// Normalize AO to 0-1 range

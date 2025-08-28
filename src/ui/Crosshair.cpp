@@ -16,8 +16,7 @@ void Crosshair::createGLBuffers() {
 
     VertexBufferLayout layout;
     layout.Push<float>(2); // x, y
-    layout.PushInt<unsigned char>(2, true); // u, v
-
+    layout.PushInt<unsigned char>(1); // layer
     m_VAO.init();
     m_VAO.addBuffer(m_VBO, m_IBO, layout);
 }

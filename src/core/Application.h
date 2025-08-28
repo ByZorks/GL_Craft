@@ -2,6 +2,7 @@
 #define GL_CRAFT_APPLICATION_H
 #include "../entity/Player.h"
 #include "../gl/Shader.h"
+#include "../gl/TextureArray.h"
 #include "../gl/UniformBuffer.h"
 #include "../render/Camera.h"
 #include "../render/HighlightedBlock.h"
@@ -27,7 +28,7 @@ private:
     std::unique_ptr<Shader> m_highlightedBlockShader;
     std::unique_ptr<Shader> m_crosshairShader;
     std::unique_ptr<Shader> m_postProcessingShader;
-    std::unique_ptr<Texture> m_atlas;
+    std::unique_ptr<TextureArray> m_textures;
     std::unique_ptr<UniformBuffer> m_MVPBuffer;
     std::unique_ptr<UniformBuffer> m_timeBuffer;
 
