@@ -17,11 +17,12 @@ public:
     static int getHeight(int worldX, int worldZ);
     static bool isCave(int worldX, int worldY, int worldZ, int columnHeight);
 
-    static FastNoiseLite & getSurfaceFeaturesNoise();
     static int getSeaLevel();
     static float getTerrainNoiseAt(int worldX, int worldZ);
     static float getContinentalnessAt(int worldX, int worldZ);
     static float getErosionAt(int worldX, int worldZ);
+    static float getSurfaceFeaturesNoiseAt(int worldX, int worldZ);
+
 private:
     static int getBaseLevel(int worldX, int worldZ);
     static float getContinetalnessLevel(float continentalness);
@@ -37,6 +38,7 @@ private:
     static FastNoiseLite & getTerrainNoise();
     static FastNoiseLite & getContinentalnessNoise();
     static FastNoiseLite & getErosionNoise();
+    static FastNoiseLite & getSurfaceFeaturesNoise();
     static FastNoiseLite & getLargeCaveNoise();
     static FastNoiseLite & getTunnelCaveNoise();
 };

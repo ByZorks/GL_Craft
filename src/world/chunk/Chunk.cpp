@@ -36,10 +36,8 @@ void Chunk::generateVoxel() {
                 columnHeight >= m_y - static_cast<int>(SIZE) &&
                 columnHeight < m_y + static_cast<int>(SIZE) &&
                 !TerrainGenerator::isCave(worldX, columnHeight, worldZ, columnHeight)) {
-                const float surfaceFeatureNoise = (TerrainGenerator::getSurfaceFeaturesNoise().GetNoise(
-                                                       static_cast<float>(worldX),
-                                                       static_cast<float>(worldZ)) + 1.0f) * 0.5f;
-                if (surfaceFeatureNoise >= 0.69f) {
+                if (const float surfaceFeatureNoise = (TerrainGenerator::getSurfaceFeaturesNoiseAt(worldX, worldZ) + 1.0f) * 0.5f;
+                    surfaceFeatureNoise >= 0.69f) {
                     const BlockType blockType = Block::getBlockType(columnHeight, columnHeight);
                     m_surfaceFeatures.emplace(worldX, columnHeight, worldZ, getSurfaceFeatureType(surfaceFeatureNoise, blockType));
                 }

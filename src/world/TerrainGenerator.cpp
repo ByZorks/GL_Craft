@@ -173,6 +173,12 @@ float TerrainGenerator::getErosionAt(const int worldX, const int worldZ) {
         static_cast<float>(worldZ));
 }
 
+float TerrainGenerator::getSurfaceFeaturesNoiseAt(const int worldX, const int worldZ) {
+    return getSurfaceFeaturesNoise().GetNoise(
+        static_cast<float>(worldX),
+        static_cast<float>(worldZ));
+}
+
 int TerrainGenerator::getBaseLevel(const int worldX, const int worldZ) {
     const float continentalness = getContinentalnessNoise().GetNoise(
         static_cast<float>(worldX),
