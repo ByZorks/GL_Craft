@@ -8,8 +8,8 @@
 Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
     constexpr int NUMBER_OF_FACES = 6;
     constexpr size_t max_faces = NUMBER_OF_FACES * SIZE * SIZE * SIZE;
-    constexpr size_t avg_vertices_opaque = max_faces * static_cast<size_t>(0.01f);
-    constexpr size_t avg_faces_water = max_faces * static_cast<size_t>(0.001f);
+    constexpr size_t avg_vertices_opaque = max_faces * static_cast<size_t>(0.02f);
+    constexpr size_t avg_faces_water = SIZE * SIZE;
 
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
     m_waterData.vertices.reserve(avg_faces_water);
@@ -95,6 +95,9 @@ void Chunk::generateMesh() {
     }
 
     updateVertexCount();
+
+    if (!hasOpaqueFaces()) m_opaqueData.shrinkBuffers();
+    if (!hasWaterFaces()) m_waterData.shrinkBuffers();
 
     m_state = State::READY_TO_DRAW;
 }
