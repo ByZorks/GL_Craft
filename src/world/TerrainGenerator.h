@@ -31,12 +31,14 @@ private:
     static FastNoiseLite makeContinentalnessNoise();
     static FastNoiseLite makeErosionNoise();
     static FastNoiseLite makeSurfaceFeaturesNoise();
-    static FastNoiseLite makeCaveNoise();
+    static FastNoiseLite makeLargeCaveNoise();
+    static FastNoiseLite makeTunnelCaveNoise();
 
     static FastNoiseLite & getTerrainNoise();
     static FastNoiseLite & getContinentalnessNoise();
     static FastNoiseLite & getErosionNoise();
-    static FastNoiseLite & getCaveNoise();
+    static FastNoiseLite & getLargeCaveNoise();
+    static FastNoiseLite & getTunnelCaveNoise();
 };
 
 #endif //GL_CRAFT_TERRAINGENERATOR_H

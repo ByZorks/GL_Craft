@@ -13,45 +13,34 @@ int TerrainGenerator::getHeight(const int worldX, const int worldZ) {
                                    ) + 1.0f) / 2.0f;
 
     const float terrainShape = std::pow(normalizedNoise, 4.f);
-    float columnHeight = std::floor(static_cast<float>(baseHeight) + terrainShape * HEIGHT_MULTIPLIER);
-
-    // 3D noise generation for cave system
-    // TODO: Update cave system
-    // const float normalized3DNoise = (getCaveNoise().GetNoise(
-    //                                      static_cast<float>(worldX),
-    //                                      columnHeight,
-    //                                      static_cast<float>(worldZ)
-    //                                  ) + 1.0f) / 2.0f;
-    // constexpr float baseCaveThreshold = 0.87f;
-    // const float surfaceModifier = 1.0f - std::clamp((columnHeight - static_cast<float>(baseHeight)) / (MAX_HEIGHT * 0.7f), 0.0f, 1.0f);
-    // const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f;
-    //
-    // // Adjust column height based on cave noise
-    // if (std::abs(normalized3DNoise - caveThreshold) < 0.3f) {
-    //     columnHeight -= (normalized3DNoise - (caveThreshold - 0.3f)) * 10.0f;
-    // }
+    const float columnHeight = std::floor(static_cast<float>(baseHeight) + terrainShape * HEIGHT_MULTIPLIER);
 
     return static_cast<int>(columnHeight);
 }
 
 bool TerrainGenerator::isCave(const int worldX, const int worldY, const int worldZ, const int columnHeight) {
-    return false;
-
-    // TODO: Update cave system
-    const int baseHeight = getBaseLevel(worldX, worldZ);
-
     if (worldY <= 1 || worldY > HEIGHT_MULTIPLIER || (worldY >= columnHeight && columnHeight < SEA_LEVEL)) return false;
 
     // 3D noise generation for cave system
-    const float normalized3DNoise = (getCaveNoise().GetNoise(static_cast<float>(worldX), static_cast<float>(worldY),
-                                                             static_cast<float>(worldZ)) + 1.0f) / 2.0f;
-    // Normalize to [0, 1]
-    constexpr float baseCaveThreshold = 0.87f;
-    const float surfaceModifier = 1.0f - std::clamp(static_cast<float>(worldY - baseHeight) / (HEIGHT_MULTIPLIER * 0.7f), 0.0f,
-                                                    1.0f);
-    const float caveThreshold = baseCaveThreshold + surfaceModifier * 0.3f; // Increase threshold near surface
+    const float largeCave = getLargeCaveNoise().GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ));
+    const float tunnelCave = getTunnelCaveNoise().GetNoise(static_cast<float>(worldX), static_cast<float>(worldY), static_cast<float>(worldZ));
 
-    return std::abs(normalized3DNoise - caveThreshold) < 0.3f;
+    constexpr float tunnelThreshold = 0.83f;
+    constexpr float cheeseThreshold = 0.37f;
+
+    const bool tunnel = std::abs(tunnelCave) > tunnelThreshold;
+    const bool cheeseCave = largeCave > cheeseThreshold;
+
+    const bool isCave = cheeseCave || tunnel;
+
+    if (isCave && worldY > columnHeight - 5) {
+        // Reduce caves opening at surface level
+        const float surfaceFactor = 1.f - static_cast<float>(worldY) / static_cast<float>(columnHeight + 1);
+        const float caveChance = (largeCave + tunnel) / 2.f * surfaceFactor;
+        if (caveChance < 0.0085f) return false;
+    }
+
+    return isCave;
 }
 
 FastNoiseLite TerrainGenerator::makeTerrainNoise() {
@@ -101,15 +90,21 @@ FastNoiseLite TerrainGenerator::makeSurfaceFeaturesNoise() {
     return noise;
 }
 
-FastNoiseLite TerrainGenerator::makeCaveNoise() {
+FastNoiseLite TerrainGenerator::makeLargeCaveNoise() {
     FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    noise.SetFrequency(.018f);
+    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    noise.SetFrequency(.015f);
+    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+    noise.SetFractalOctaves(2);
+    return noise;
+}
+
+FastNoiseLite TerrainGenerator::makeTunnelCaveNoise() {
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    noise.SetFrequency(.02f);
     noise.SetFractalType(FastNoiseLite::FractalType_Ridged);
-    noise.SetFractalOctaves(6);
-    noise.SetFractalLacunarity(1.29f);
-    noise.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
-    noise.SetDomainWarpAmp(20.f);
+    noise.SetFractalOctaves(3);
     return noise;
 }
 
@@ -128,6 +123,15 @@ FastNoiseLite & TerrainGenerator::getErosionNoise() {
     return instance;
 }
 
+FastNoiseLite & TerrainGenerator::getLargeCaveNoise() {
+    thread_local FastNoiseLite instance = makeLargeCaveNoise();
+    return instance;
+}
+
+FastNoiseLite & TerrainGenerator::getTunnelCaveNoise() {
+    thread_local FastNoiseLite instance = makeTunnelCaveNoise();
+    return instance;
+}
 
 FastNoiseLite & TerrainGenerator::getSurfaceFeaturesNoise() {
     thread_local FastNoiseLite instance = makeSurfaceFeaturesNoise();
@@ -238,11 +242,5 @@ float TerrainGenerator::getErosionLevel(const float erosion) {
         }
     }
 
-    return 100; // Fallback (should not happen)
-}
-
-
-FastNoiseLite & TerrainGenerator::getCaveNoise() {
-    thread_local FastNoiseLite instance = makeCaveNoise();
-    return instance;
+    return 180; // Fallback (should not happen)
 }
