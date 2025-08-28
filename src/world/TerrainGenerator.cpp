@@ -48,7 +48,7 @@ FastNoiseLite TerrainGenerator::makeTerrainNoise() {
     noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
     noise.SetFrequency(.0055f);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetFractalOctaves(9);
+    noise.SetFractalOctaves(6);
     noise.SetFractalLacunarity(2.2f);
     return noise;
 }
