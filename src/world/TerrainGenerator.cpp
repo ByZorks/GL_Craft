@@ -12,7 +12,7 @@ int TerrainGenerator::getHeight(const int worldX, const int worldZ) {
                                        static_cast<float>(worldZ)
                                    ) + 1.0f) / 2.0f;
 
-    const float terrainShape = std::pow(normalizedNoise, 4.f);
+    const float terrainShape = normalizedNoise * normalizedNoise * normalizedNoise * normalizedNoise;
     const float columnHeight = std::floor(static_cast<float>(baseHeight) + terrainShape * HEIGHT_MULTIPLIER);
 
     return static_cast<int>(columnHeight);
