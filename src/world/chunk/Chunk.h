@@ -1,5 +1,6 @@
 #ifndef CHUNK_H
 #define CHUNK_H
+#include <climits>
 #include <unordered_map>
 #include <unordered_set>
 
