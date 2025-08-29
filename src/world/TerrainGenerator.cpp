@@ -26,7 +26,7 @@ bool TerrainGenerator::isCave(const int worldX, const int worldY, const int worl
         static_cast<float>(worldY),
         static_cast<float>(worldZ));
 
-    constexpr float cheeseThreshold = 0.37f;
+    constexpr float cheeseThreshold = 0.6f;
     const bool isCheeseCave = largeCave > cheeseThreshold;
 
     // Tunnel caves only if not already a cheese cave
@@ -105,8 +105,8 @@ FastNoiseLite TerrainGenerator::makeSurfaceFeaturesNoise() {
 
 FastNoiseLite TerrainGenerator::makeLargeCaveNoise() {
     FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    noise.SetFrequency(.015f);
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    noise.SetFrequency(.01f);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetFractalOctaves(2);
     return noise;
