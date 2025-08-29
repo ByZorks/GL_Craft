@@ -188,7 +188,7 @@ int TerrainGenerator::getBaseLevel(const int worldX, const int worldZ) {
         static_cast<float>(worldX),
         static_cast<float>(worldZ));
 
-    const float continentalnessLevel = getContinetalnessLevel(continentalness);
+    const float continentalnessLevel = getContinentalnessLevel(continentalness);
     const float erosionLevel = getErosionLevel(erosion);
 
     constexpr float continentalnessWeight = 0.8f;
@@ -199,13 +199,13 @@ int TerrainGenerator::getBaseLevel(const int worldX, const int worldZ) {
         erosionLevel * erosionWeight
     );
 
-    return baseLevel; // fallback (should not happen)
+    return baseLevel;
 }
 
-float TerrainGenerator::getContinetalnessLevel(const float continentalness) {
+float TerrainGenerator::getContinentalnessLevel(const float continentalness) {
     static constexpr Step steps[] = {
         { -1.0f, 10}, // Deep ocean
-        { -0.8f, 10}, //
+        { -0.8f, 10},
         { -0.45f, 10},
         {-0.2f, 30}, // Shallow ocean
         {-0.15f, 30},
@@ -216,8 +216,8 @@ float TerrainGenerator::getContinetalnessLevel(const float continentalness) {
         {0.4f, 130},
         {0.5f, 130},
         {0.8f, 150}, // Mountains
-        {0.85f, 150}, // Mountains
-        {0.9f, 165},
+        {0.85f, 150},
+        {0.9f, 180},
         {1.0f, 200} // High mountains
     };
 

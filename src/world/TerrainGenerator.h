@@ -25,7 +25,7 @@ public:
 
 private:
     static int getBaseLevel(int worldX, int worldZ);
-    static float getContinetalnessLevel(float continentalness);
+    static float getContinentalnessLevel(float continentalness);
     static float getErosionLevel(float erosion);
 
     static FastNoiseLite makeTerrainNoise();
