@@ -13,7 +13,6 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE) {
 
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
     m_waterData.vertices.reserve(avg_faces_water);
-    m_blockType.reserve((SIZE + 2) * (SIZE + 2) * (SIZE + 2)); // +2 for boundary checks
     m_blockType.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
     m_pendingBlocksForNeighbors.reserve(SIZE);
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
@@ -52,8 +51,8 @@ void Chunk::generateVoxel() {
 
                 // Terrain
                 if (TerrainGenerator::isCave(worldX, worldY, worldZ, columnHeight)) continue;
-                const BlockType blockType = Block::getBlockType(worldY, columnHeight);
-                m_blockType[index(localX, localY, localZ)] = blockType;
+                m_blockType[index(localX, localY, localZ)] = Block::getBlockType(worldY, columnHeight);
+                m_visibleBlocks++;
 
                 // Surface features
                 if (worldY != columnHeight + 1) continue;
@@ -71,6 +70,12 @@ void Chunk::generateVoxel() {
             }
         }
     }
+
+    if (isEmpty()) {
+        m_opaqueData.shrinkVertices();
+        m_waterData.shrinkVertices();
+    }
+
     m_state = State::VOXEL_GENERATED;
 }
 
@@ -87,17 +92,18 @@ void Chunk::generateMesh() {
     for (int localX = 0; localX < SIZE; localX++) {
         for (int localZ = 0; localZ < SIZE; localZ++) {
             for (int localY = 0; localY < SIZE; localY++) {
-                if (!isBlockPresent(localX, localY, localZ)) continue;
+                const BlockType blockType = getBlockType(localX, localY, localZ);
+                if (blockType == BlockType::AIR) continue;
 
-                addBlockFaces(localX, localY, localZ, getBlockType(localX, localY, localZ));
+                addBlockFaces(localX, localY, localZ, blockType);
             }
         }
     }
 
     updateVertexCount();
 
-    if (!hasOpaqueFaces()) m_opaqueData.shrinkBuffers();
-    if (!hasWaterFaces()) m_waterData.shrinkBuffers();
+    if (!hasOpaqueFaces()) m_opaqueData.shrinkVertices();
+    if (!hasWaterFaces()) m_waterData.shrinkVertices();
 
     m_state = State::READY_TO_DRAW;
 }
@@ -122,6 +128,7 @@ void Chunk::transferPendingBlocksToWorld(WorldManager &world) {
 
 void Chunk::deleteBlock(const int localX, const int localY, const int localZ, const BlockType type, MeshingResult &result) {
     // Voxel
+    m_visibleBlocks--;
     if (Block::isInstance(type)) {
         m_blockType[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
         m_surfaceFeatures.erase(SurfaceFeature(m_x + localX + 1, m_y + localY, m_z + localZ + 1));
@@ -136,6 +143,7 @@ void Chunk::deleteBlock(const int localX, const int localY, const int localZ, co
 
 void Chunk::addBlock(const int localX, const int localY, const int localZ, const BlockType type, MeshingResult &result) {
     // Voxel
+    m_visibleBlocks++;
     if (Block::isInstance(type)) {
         m_blockType[index(localX + 1, localY + 1, localZ + 1)] = type;
         m_surfaceFeatures.emplace(m_x + localX + 1, m_y + localY, m_z + localZ + 1, getSurfaceFeatureTypeFromBlockType(type));

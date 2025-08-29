@@ -340,6 +340,8 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 
         m_threadPool.enqueue_no_future([this, p_chunk] {
             p_chunk->generateVoxel();
+            if (p_chunk->isEmpty()) return; // Will be deleted when out of range, don't delete now to avoid it being reloaded immediately
+
             p_chunk->generateMesh();
             m_needInstanceUpdate.store(true);
             p_chunk->transferPendingBlocksToWorld(*this);

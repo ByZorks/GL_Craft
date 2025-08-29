@@ -21,7 +21,7 @@ struct buffersData {
     unsigned int verticesCount = 0; // vertices.size() * 6; Used to draw the mesh, so we must only update it once the GL buffers are ready
     bool hasFaces = false;
 
-    void shrinkBuffers() {
+    void shrinkVertices() {
         vertices.shrink_to_fit();
     }
 
@@ -41,6 +41,7 @@ protected:
     State m_state = State::UNINITIALIZED;
     const AABB m_box;
     bool m_wasInFrustum = false;
+    unsigned int m_visibleBlocks = 0;
 
 public:
     Mesh(const int x, const int y, const int z, const unsigned int size) : m_size(size), m_x(x), m_y(y), m_z(z),
@@ -50,7 +51,6 @@ public:
                                                              static_cast<float>(y) + static_cast<float>(size) - 1.0f,
                                                              static_cast<float>(z) + static_cast<float>(size) - 1.0f
                                                   )) {
-        m_blockType.reserve(m_size * m_size * m_size);
         m_blockType.resize(m_size * m_size * m_size, BlockType::AIR);
     }
     virtual ~Mesh() = default;
@@ -66,6 +66,10 @@ public:
     void resetMesh() {
         m_opaqueData.deleteMesh();
         m_waterData.deleteMesh();
+    }
+
+    bool isEmpty() const {
+        return m_visibleBlocks == 0;
     }
 
     [[nodiscard]] bool hasOpaqueFaces() const {
