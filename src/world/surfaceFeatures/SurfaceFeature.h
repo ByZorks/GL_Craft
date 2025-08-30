@@ -16,6 +16,7 @@ enum class SurfaceFeatureType : uint8_t {
     POPPY,
     CORNFLOWER,
     ALLIUM,
+    BUSH,
 };
 
 class SurfaceFeature {
@@ -30,10 +31,11 @@ public:
     friend bool operator==(const SurfaceFeature &lhs, const SurfaceFeature &rhs);
     friend bool operator!=(const SurfaceFeature &lhs, const SurfaceFeature &rhs);
 
-    static SurfaceFeatureType getSurfaceFeatureType(float noiseValue, const BlockType &blockType);
+    static SurfaceFeatureType getSurfaceFeatureType(float noiseValue, const BlockType &blockType, Biome biome);
     static BlockType getBlockTypeOfSurfaceFeature(SurfaceFeatureType type);
     static SurfaceFeatureType getSurfaceFeatureTypeFromBlockType(const BlockType &blockType);
     static void addTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
+    static void addBush(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
 
     [[nodiscard]] bool isMultiBlockFeature() const;
     [[nodiscard]] int getX() const;

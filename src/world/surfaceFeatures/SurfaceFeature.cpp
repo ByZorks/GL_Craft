@@ -28,9 +28,16 @@ std::size_t hash_value(const SurfaceFeature &obj) {
 }
 
 
-SurfaceFeatureType SurfaceFeature::getSurfaceFeatureType(const float noiseValue, const BlockType &blockType) {
+SurfaceFeatureType SurfaceFeature::getSurfaceFeatureType(const float noiseValue, const BlockType &blockType, const Biome biome) {
+    if (biome == Biome::JUNGLE) {
+        // if (noiseValue >= 0.75f) return SurfaceFeatureType::TREE;
+        if (noiseValue >= 0.70f && noiseValue < 0.71f) return SurfaceFeatureType::BUSH;
+        if (noiseValue >= 0.69f) return SurfaceFeatureType::SHORT_GRASS;
+        return SurfaceFeatureType::NONE;
+    }
     if (blockType == BlockType::GRASS || blockType == BlockType::SNOW_GRASS) {
         if (noiseValue >= 0.88f) return SurfaceFeatureType::TREE;
+        if (noiseValue >= 0.7111f && noiseValue < 0.7112f) return SurfaceFeatureType::BUSH;
         if (noiseValue >= 0.70f) return SurfaceFeatureType::SHORT_GRASS;
         if (noiseValue >= 0.696f) return SurfaceFeatureType::POPPY;
         if (noiseValue >= 0.693f) return SurfaceFeatureType::CORNFLOWER;
@@ -85,6 +92,21 @@ void SurfaceFeature::addTree(std::mt19937 &rng, const ChunkPosition &position, c
         default:
             addOakTree(rng, position, localX, localY, localZ, biome, outBlocks, outPendings);
             break;
+    }
+}
+
+void SurfaceFeature::addBush(std::mt19937 &rng, const ChunkPosition &position, const int localX, const int localY, const int localZ,
+    const Biome biome, std::vector<BlockType> &outBlocks,
+    std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings) {
+    const BlockType leavesType = TerrainGenerator::isSnowBiome(biome) ? BlockType::SNOW_OAK_LEAVES : BlockType::OAK_LEAVES;
+
+    for (int y = 0; y < 2; ++y) {
+        for (int x = -1; x <= 1; ++x) {
+            for (int z = -1; z <= 1; ++z) {
+                if (rng() & 1) continue; // Skip some blocks to make it look more natural
+                addFeatureBlocks(position, localX + x, localY + y, localZ + z, leavesType, outBlocks, outPendings);
+            }
+        }
     }
 }
 

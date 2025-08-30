@@ -42,7 +42,7 @@ void Chunk::generateVoxel() {
                 if (const float surfaceFeatureNoise = (TerrainGenerator::getSurfaceFeaturesNoiseAt(worldX, worldZ) + 1.0f) * 0.5f;
                     surfaceFeatureNoise >= 0.69f) {
                     const BlockType blockType = TerrainGenerator::getBlockType(columnHeight, columnHeight, biome);
-                    m_surfaceFeatures.emplace(worldX, columnHeight, worldZ, SurfaceFeature::getSurfaceFeatureType(surfaceFeatureNoise, blockType));
+                    m_surfaceFeatures.emplace(worldX, columnHeight, worldZ, SurfaceFeature::getSurfaceFeatureType(surfaceFeatureNoise, blockType, biome));
                 }
             }
 
@@ -65,6 +65,10 @@ void Chunk::generateVoxel() {
                     switch (it->getType()) {
                         case SurfaceFeatureType::TREE: {
                             SurfaceFeature::addTree(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blockType, m_pendingBlocksForNeighbors);
+                            break;
+                        }
+                        case SurfaceFeatureType::BUSH: {
+                            SurfaceFeature::addBush(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blockType, m_pendingBlocksForNeighbors);
                             break;
                         }
                         default: {
