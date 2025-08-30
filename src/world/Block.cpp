@@ -3,39 +3,7 @@
 #include <array>
 #include <stdexcept>
 
-#include "TerrainGenerator.h"
 #include "chunk/Chunk.h"
-
-Block::Block(const float x, const float y, const float z) : m_x(x), m_y(y), m_z(z) {
-}
-
-BlockType Block::getBlockType(const int y, const int columnHeight) {
-    const int waterLevel = TerrainGenerator::getSeaLevel();
-
-    if (y < 1) return BlockType::AIR;
-    if (y == 1) return BlockType::BEDROCK;
-
-    if (y <= columnHeight) {
-        // Surface block
-        if (y == columnHeight && columnHeight >= waterLevel && y < 150) return BlockType::GRASS;
-        if (y == columnHeight && columnHeight >= waterLevel && y < 200) return BlockType::SNOW_GRASS;
-        if (y == columnHeight && columnHeight >= waterLevel) return BlockType::SNOW;
-        if (y == columnHeight) return BlockType::DIRT; // Disallow cave entrances underwater
-
-        // Subsurface blocks
-        if (y < columnHeight - 4) return BlockType::STONE;
-
-        // Near-surface blocks
-        if (y < columnHeight && y < 200) return BlockType::DIRT;
-        if (y < columnHeight) return BlockType::SNOW;
-    }
-
-    if (y > columnHeight && y <= waterLevel) {
-        return BlockType::WATER;
-    }
-
-    return BlockType::AIR;
-}
 
 const char *Block::getBlockName(const BlockType blockType) {
     switch (blockType) {
@@ -45,14 +13,18 @@ const char *Block::getBlockName(const BlockType blockType) {
         case BlockType::GRASS: return "GRASS";
         case BlockType::STONE: return "STONE";
         case BlockType::WATER: return "WATER";
-        case BlockType::LOG: return "LOG";
-        case BlockType::LEAVES: return "LEAVES";
+        case BlockType::OAK_LOG: return "LOG";
+        case BlockType::OAK_LEAVES: return "LEAVES";
         case BlockType::SHORT_GRASS: return "SHORT_GRASS";
         case BlockType::FLOWER_POPPY: return "FLOWER_POPPY";
         case BlockType::FLOWER_CORNFLOWER: return "FLOWER_CORNFLOWER";
         case BlockType::FLOWER_ALLIUM: return "FLOWER_ALLIUM";
         case BlockType::SNOW: return "SNOW";
         case BlockType::SNOW_GRASS: return "SNOW_GRASS";
+        case BlockType::SAND: return "SAND";
+        case BlockType::GRAVEL: return "GRAVEL";
+        case BlockType::SNOW_OAK_LEAVES: return "SNOW_OAK_LEAVES";
+        case BlockType::CACTUS: return "CACTUS";
         default: return "UNKNOWN";
     }
 }
@@ -243,7 +215,7 @@ uint8_t Block::computeVertexAO(const bool side1, const bool side2, const bool co
 }
 
 bool Block::isTransparent(const BlockType type) {
-    return type == BlockType::WATER || type == BlockType::AIR || type == BlockType::LEAVES || isInstance(type);
+    return type == BlockType::WATER || type == BlockType::AIR || type == BlockType::OAK_LEAVES || type == BlockType::SNOW_OAK_LEAVES || isInstance(type);
 }
 
 bool Block::isInstance(const BlockType type) {

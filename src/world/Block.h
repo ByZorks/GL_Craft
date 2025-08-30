@@ -10,8 +10,8 @@ enum class Face : uint8_t {
 };
 
 enum class BlockType : uint8_t {
-    AIR, BEDROCK, DIRT, GRASS, STONE, WATER, LOG, LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER, FLOWER_ALLIUM,
-    SNOW, SNOW_GRASS
+    AIR, BEDROCK, DIRT, GRASS, STONE, WATER, OAK_LOG, OAK_LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER, FLOWER_ALLIUM,
+    SNOW, SNOW_GRASS, SAND, GRAVEL, SNOW_OAK_LEAVES, CACTUS,
 };
 
 struct BlockVertex {
@@ -26,8 +26,7 @@ struct HighlightedVertex {
 
 class Block {
 private:
-    float m_x, m_y, m_z;
-    static constexpr uint8_t s_textureLayer[14][3] = {
+    static constexpr uint8_t s_textureLayer[18][3] = {
         // [side, top, bottom]
         {0, 0, 0},    // AIR
         {0, 0, 0},    // BEDROCK
@@ -35,20 +34,21 @@ private:
         {2, 3, 1},    // GRASS
         {4, 4, 4},    // STONE
         {5, 5, 5},    // WATER
-        {13, 14, 14}, // LOG
-        {15, 15, 15}, // LEAVES
+        {13, 14, 14}, // OAK_LOG
+        {15, 15, 15}, // OAK_LEAVES
         {16, 16, 16}, // SHORT_GRASS
         {17, 17, 17}, // POPPY
         {18, 18, 18}, // CORNFLOWER
         {19, 19, 19}, // ALLIUM
         {20, 20, 20}, // SNOW
-        {21, 22, 1}   // SNOW_GRASS
+        {21, 22, 1},  // SNOW_GRASS
+        {24, 24, 24}, // SAND
+        {25, 25, 25}, // GRAVEL
+        {26, 26, 26}, // SNOW_OAK_LEAVES
+        {27, 28, 28}, // CACTUS
     };
 
 public:
-    Block(float x, float y, float z);
-
-    static BlockType getBlockType(int y, int columnHeight);
     static const char *getBlockName(BlockType blockType);
     static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, const std::array<bool, 26> &adjacentsFaces, unsigned int startX, unsigned int startY, unsigned int startZ);
     static void addFaceVerticesAsBilboard(Face face, BlockType type, std::vector<BlockVertex> &vertices, unsigned int startX, unsigned int startY, unsigned int startZ);

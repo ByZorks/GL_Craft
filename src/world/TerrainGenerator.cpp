@@ -3,14 +3,11 @@
 #include <algorithm>
 #include <iterator>
 
-int TerrainGenerator::getHeight(const int worldX, const int worldZ) {
-    const int baseHeight = getBaseLevel(worldX, worldZ);
+int TerrainGenerator::getHeight(const NoiseValues &noises) {
+    const int baseHeight = getBaseLevel(noises);
 
     // 2D noise generation for terrain height
-    const float normalizedNoise = (getTerrainNoise().GetNoise(
-                                       static_cast<float>(worldX),
-                                       static_cast<float>(worldZ)
-                                   ) + 1.0f) / 2.0f;
+    const float normalizedNoise = (noises.terrain + 1.0f) / 2.0f;
 
     const float terrainShape = normalizedNoise * normalizedNoise * normalizedNoise * normalizedNoise;
     const float columnHeight = std::floor(static_cast<float>(baseHeight) + terrainShape * HEIGHT_MULTIPLIER);
@@ -52,13 +49,79 @@ bool TerrainGenerator::isCave(const int worldX, const int worldY, const int worl
         return caveChance >= 0.0085f;
     }
 
-
     return true;
+}
+
+Biome TerrainGenerator::getBiome(const NoiseValues &noises) {
+    if (noises.continentalness < -0.45f && noises.erosion > 0.2f) return Biome::DEEP_OCEAN;
+    if (noises.continentalness < 0.0f && noises.erosion > 0.0f) return Biome::OCEAN;
+    if (noises.continentalness > 0.4f && noises.continentalness < 0.85f && noises.erosion < 0.1f) return Biome::MOUTAINS;
+    if (noises.continentalness > 0.85f) return Biome::SNOWY_MOUTAINS;
+
+    if (noises.temperature > 0.6f) return Biome::DESERT;
+    if (noises.temperature > 0.1f && noises.humidity > 0.5f) return Biome::JUNGLE;
+    if (noises.temperature > 0.1f && noises.humidity > 0.1f) return Biome::PLAINS;
+    if (noises.temperature > -0.2f && noises.humidity > 0.1f) return Biome::FOREST;
+    if (noises.temperature > -0.2f && noises.humidity > -0.3f) return Biome::PLAINS;
+    if (noises.temperature > -0.5f && noises.humidity > -0.3f) return Biome::TAIGA;
+    if (noises.temperature <= -0.5f) return Biome::SNOWY_PLAINS;
+    return Biome::PLAINS;
+}
+
+const char * TerrainGenerator::getBiomeName(const Biome biome) {
+    switch (biome) {
+        case Biome::DEEP_OCEAN: return "Deep Ocean";
+        case Biome::OCEAN: return "Ocean";
+        case Biome::PLAINS: return "Plains";
+        case Biome::SNOWY_PLAINS: return "Snowy Plains";
+        case Biome::DESERT: return "Desert";
+        case Biome::FOREST: return "Forest";
+        case Biome::TAIGA: return "Taiga";
+        case Biome::JUNGLE: return "Jungle";
+        case Biome::MOUTAINS: return "Moutains";
+        case Biome::SNOWY_MOUTAINS: return "Snowy Moutains";
+        default: return "Unknown";
+    }
+}
+
+
+BlockType TerrainGenerator::getBlockType(const int y, const int columnHeight, const Biome biome) {
+    const int waterLevel = getSeaLevel();
+
+    if (y < 1) return BlockType::AIR;
+    if (y == 1) return BlockType::BEDROCK;
+
+    if (y <= columnHeight) {
+        // Surface block
+        if (y == columnHeight && columnHeight >= waterLevel) return getSurfaceBlockType(biome);
+        if (y == columnHeight) return BlockType::DIRT; // Disallow cave entrances underwater bc water doesn't flow into caves yet
+
+        // Subsurface blocks
+        if (y < columnHeight - 4) return BlockType::STONE;
+
+        // Near-surface blocks
+        if (y < columnHeight && y < 200) return getNearSurfaceBlockType(biome);
+    }
+
+    if (y > columnHeight && y <= waterLevel) {
+        return BlockType::WATER;
+    }
+
+    return BlockType::AIR;
+}
+
+bool TerrainGenerator::isSnowBiome(const Biome biome) {
+    return biome == Biome::SNOWY_MOUTAINS || biome == Biome::SNOWY_PLAINS || biome == Biome::TAIGA;
+}
+
+int TerrainGenerator::getSeed() {
+    return SEED;
 }
 
 FastNoiseLite TerrainGenerator::makeTerrainNoise() {
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    noise.SetSeed(SEED);
     noise.SetFrequency(.0055f);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetFractalOctaves(6);
@@ -69,6 +132,7 @@ FastNoiseLite TerrainGenerator::makeTerrainNoise() {
 FastNoiseLite TerrainGenerator::makeContinentalnessNoise() {
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    noise.SetSeed(SEED);
     noise.SetFrequency(.001f);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetFractalOctaves(4);
@@ -83,6 +147,7 @@ FastNoiseLite TerrainGenerator::makeContinentalnessNoise() {
 FastNoiseLite TerrainGenerator::makeErosionNoise() {
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    noise.SetSeed(SEED);
     noise.SetFrequency(.0009f);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetFractalOctaves(4);
@@ -93,10 +158,31 @@ FastNoiseLite TerrainGenerator::makeErosionNoise() {
     noise.SetDomainWarpAmp(10.f);
     return noise;
 }
+FastNoiseLite TerrainGenerator::makeTemperatureNoise() {
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
+    noise.SetSeed(SEED);
+    noise.SetFrequency(.0005f);
+    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+    noise.SetFractalOctaves(2);
+    return noise;
+}
+
+FastNoiseLite TerrainGenerator::makeHumidityNoise() {
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
+    noise.SetSeed(SEED);
+    noise.SetFrequency(.001f);
+    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+    noise.SetFractalOctaves(2);
+    return noise;
+}
+
 
 FastNoiseLite TerrainGenerator::makeSurfaceFeaturesNoise() {
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    noise.SetSeed(SEED);
     noise.SetFrequency(.5f);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetFractalOctaves(6);
@@ -106,6 +192,7 @@ FastNoiseLite TerrainGenerator::makeSurfaceFeaturesNoise() {
 FastNoiseLite TerrainGenerator::makeLargeCaveNoise() {
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    noise.SetSeed(SEED);
     noise.SetFrequency(.01f);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetFractalOctaves(2);
@@ -115,6 +202,7 @@ FastNoiseLite TerrainGenerator::makeLargeCaveNoise() {
 FastNoiseLite TerrainGenerator::makeTunnelCaveNoise() {
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    noise.SetSeed(SEED);
     noise.SetFrequency(.02f);
     noise.SetFractalType(FastNoiseLite::FractalType_Ridged);
     noise.SetFractalOctaves(3);
@@ -135,6 +223,17 @@ FastNoiseLite & TerrainGenerator::getErosionNoise() {
     thread_local FastNoiseLite instance = makeErosionNoise();
     return instance;
 }
+
+FastNoiseLite & TerrainGenerator::getTemperatureNoise() {
+    thread_local FastNoiseLite instance = makeTemperatureNoise();
+    return instance;
+}
+
+FastNoiseLite & TerrainGenerator::getHumidityNoise() {
+    thread_local FastNoiseLite instance = makeHumidityNoise();
+    return instance;
+}
+
 
 FastNoiseLite & TerrainGenerator::getLargeCaveNoise() {
     thread_local FastNoiseLite instance = makeLargeCaveNoise();
@@ -173,23 +272,27 @@ float TerrainGenerator::getErosionAt(const int worldX, const int worldZ) {
         static_cast<float>(worldZ));
 }
 
+float TerrainGenerator::getTemperatureAt(const int worldX, const int worldZ) {
+    return getTemperatureNoise().GetNoise(
+        static_cast<float>(worldX),
+        static_cast<float>(worldZ));
+}
+
+float TerrainGenerator::getHumidityAt(const int worldX, const int worldZ) {
+    return getHumidityNoise().GetNoise(
+        static_cast<float>(worldX),
+        static_cast<float>(worldZ));
+}
+
 float TerrainGenerator::getSurfaceFeaturesNoiseAt(const int worldX, const int worldZ) {
     return getSurfaceFeaturesNoise().GetNoise(
         static_cast<float>(worldX),
         static_cast<float>(worldZ));
 }
 
-int TerrainGenerator::getBaseLevel(const int worldX, const int worldZ) {
-    const float continentalness = getContinentalnessNoise().GetNoise(
-        static_cast<float>(worldX),
-        static_cast<float>(worldZ));
-
-    const float erosion = getErosionNoise().GetNoise(
-        static_cast<float>(worldX),
-        static_cast<float>(worldZ));
-
-    const float continentalnessLevel = getContinentalnessLevel(continentalness);
-    const float erosionLevel = getErosionLevel(erosion);
+int TerrainGenerator::getBaseLevel(const NoiseValues &noises) {
+    const float continentalnessLevel = getContinentalnessLevel(noises.continentalness);
+    const float erosionLevel = getErosionLevel(noises.erosion);
 
     constexpr float continentalnessWeight = 0.8f;
     constexpr float erosionWeight = 0.2f;
@@ -262,4 +365,34 @@ float TerrainGenerator::getErosionLevel(const float erosion) {
     }
 
     return 180; // Fallback (should not happen)
+}
+
+BlockType TerrainGenerator::getSurfaceBlockType(const Biome biome) {
+    switch (biome) {
+        case Biome::DEEP_OCEAN:
+            return BlockType::GRAVEL;
+        case Biome::DESERT:
+            return BlockType::SAND;
+        case Biome::TAIGA: case Biome::SNOWY_PLAINS:
+            return BlockType::SNOW_GRASS;
+        case Biome::MOUTAINS:
+            return BlockType::STONE;
+        case Biome::SNOWY_MOUTAINS:
+            return BlockType::SNOW;
+        default:
+            return BlockType::GRASS;
+    }
+}
+
+BlockType TerrainGenerator::getNearSurfaceBlockType(const Biome biome) {
+    switch (biome) {
+        case Biome::DESERT:
+            return BlockType::SAND;
+        case Biome::MOUTAINS:
+            return BlockType::STONE;
+        case Biome::SNOWY_MOUTAINS:
+            return BlockType::SNOW;
+        default:
+            return BlockType::DIRT;
+    }
 }

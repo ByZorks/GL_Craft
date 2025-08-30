@@ -84,7 +84,7 @@ void Application::initGL() {
 }
 
 void Application::initResources() {
-    m_textures = std::make_unique<TextureArray>(16, 16, 24, "../res/textures/");
+    m_textures = std::make_unique<TextureArray>(16, 16, 29, "../res/textures/");
     m_textures->bind(m_atlasTextureSlot);
 
     m_MVPBuffer = std::make_unique<UniformBuffer>();
@@ -153,9 +153,9 @@ void Application::update() {
 
     if (m_camera.hasCameraChangedBlock()) {
         m_postProcessingShader->use();
-        m_postProcessingShader->setUniform1b("u_IsUnderWater", m_camera.isUnderWater(TerrainGenerator::getHeight(
-                                               static_cast<int>(m_camera.getPos().x),
-                                               static_cast<int>(m_camera.getPos().z))));
+        TerrainGenerator::NoiseValues noises;
+        noises.computeHeightNoises(static_cast<int>(m_camera.getPos().x), static_cast<int>(m_camera.getPos().z));
+        m_postProcessingShader->setUniform1b("u_IsUnderWater", m_camera.isUnderWater(TerrainGenerator::getHeight(noises)));
     }
 
     m_waterShader->use();
