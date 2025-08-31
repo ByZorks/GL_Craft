@@ -107,7 +107,8 @@ public:
 
         if (currentBlockType == BlockType::OAK_LEAVES ||
             currentBlockType == BlockType::SNOW_OAK_LEAVES ||
-            currentBlockType == BlockType::JUNGLE_LEAVES
+            currentBlockType == BlockType::JUNGLE_LEAVES ||
+            currentBlockType == BlockType::SPRUCE_LEAVES
             && neighborTransparent) return true; // Leaves block, always draw face
         if (currentBlockType == BlockType::WATER && face == Face::TOP && neighborType != BlockType::WATER) return true; // Always draw water top face if neighbor is not water
         if (currentBlockType == neighborType) return false; // Same block type, no need to draw face

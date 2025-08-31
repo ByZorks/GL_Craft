@@ -62,9 +62,10 @@ Biome TerrainGenerator::getBiome(const NoiseValues &noises) {
     if (noises.temperature > 0.1f && noises.humidity > 0.5f) return Biome::JUNGLE;
     if (noises.temperature > 0.1f && noises.humidity > 0.1f) return Biome::PLAINS;
     if (noises.temperature > -0.2f && noises.humidity > 0.1f) return Biome::FOREST;
-    if (noises.temperature > -0.2f && noises.humidity > -0.3f) return Biome::PLAINS;
-    if (noises.temperature > -0.5f && noises.humidity > -0.3f) return Biome::TAIGA;
-    if (noises.temperature <= -0.5f) return Biome::SNOWY_PLAINS;
+    if (noises.temperature > -0.2f && noises.humidity > -0.1f) return Biome::PLAINS;
+    if (noises.temperature > -0.3f && noises.humidity > -0.3f) return Biome::TAIGA;
+    if (noises.temperature > -0.6f && noises.humidity > -0.3f) return Biome::SNOWY_TAIGA;
+    if (noises.temperature <= -0.7f) return Biome::SNOWY_PLAINS;
     return Biome::PLAINS;
 }
 
@@ -77,6 +78,7 @@ const char * TerrainGenerator::getBiomeName(const Biome biome) {
         case Biome::DESERT: return "Desert";
         case Biome::FOREST: return "Forest";
         case Biome::TAIGA: return "Taiga";
+        case Biome::SNOWY_TAIGA: return "Snowy Taiga";
         case Biome::JUNGLE: return "Jungle";
         case Biome::MOUTAINS: return "Moutains";
         case Biome::SNOWY_MOUTAINS: return "Snowy Moutains";
@@ -111,7 +113,7 @@ BlockType TerrainGenerator::getBlockType(const int y, const int columnHeight, co
 }
 
 bool TerrainGenerator::isSnowBiome(const Biome biome) {
-    return biome == Biome::SNOWY_MOUTAINS || biome == Biome::SNOWY_PLAINS || biome == Biome::TAIGA;
+    return biome == Biome::SNOWY_MOUTAINS || biome == Biome::SNOWY_PLAINS || biome == Biome::SNOWY_TAIGA;
 }
 
 int TerrainGenerator::getSeed() {
@@ -373,7 +375,7 @@ BlockType TerrainGenerator::getSurfaceBlockType(const Biome biome) {
             return BlockType::GRAVEL;
         case Biome::DESERT:
             return BlockType::SAND;
-        case Biome::TAIGA: case Biome::SNOWY_PLAINS:
+        case Biome::SNOWY_TAIGA: case Biome::SNOWY_PLAINS:
             return BlockType::SNOW_GRASS;
         case Biome::MOUTAINS:
             return BlockType::STONE;

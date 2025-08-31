@@ -40,6 +40,10 @@ SurfaceFeatureType SurfaceFeature::getSurfaceFeatureType(const float noiseValue,
         if (noiseValue >= 0.9999f) return SurfaceFeatureType::POND;
     }
 
+    if (biome == Biome::TAIGA || biome == Biome::SNOWY_TAIGA) {
+        if (noiseValue >= 0.85f) return SurfaceFeatureType::TREE;
+    }
+
     if (noiseValue >= 0.8099f && noiseValue < 0.81f) return SurfaceFeatureType::POND;
 
     if (blockType == BlockType::GRASS || blockType == BlockType::SNOW_GRASS) {
@@ -104,6 +108,9 @@ void SurfaceFeature::addTree(std::mt19937 &rng, const ChunkPosition &position, c
                 : addSmallTree(rng, position, localX, localY, localZ, biome, outBlocks, outPendings);
             break;
         }
+        case Biome::TAIGA: case Biome::SNOWY_TAIGA:
+            addSpruceTree(rng, position, localX, localY, localZ, biome, outBlocks, outPendings);
+            break;
         default:
             addSmallTree(rng, position, localX, localY, localZ, biome, outBlocks, outPendings);
             break;
@@ -252,6 +259,36 @@ void SurfaceFeature::addMegaJungleTree(std::mt19937 &rng, const ChunkPosition &p
                         if (rng() & 1) continue; // Skip some corners on the bottom layer
                     }
                     addFeatureBlocks(position, localX + x, y, localZ + z, BlockType::JUNGLE_LEAVES, outBlocks, outPendings);
+                }
+            }
+        }
+    }
+}
+
+void SurfaceFeature::addSpruceTree(std::mt19937 &rng, const ChunkPosition &position, const int localX, const int localY, const int localZ, const Biome biome,
+    std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings) {
+    const int height = 7 + static_cast<int>(rng() % 4); // Height between 7 and 10 blocks
+
+    // Trunk: 1xheightx1
+    for (int y = 0; y < height; ++y) {
+        addFeatureBlocks(position, localX, localY + y, localZ, BlockType::SPRUCE_LOG, outBlocks, outPendings);
+    }
+
+    // Leaves: 7xheight/2x7
+    const int leavesStartY = localY + height / 2;
+    for (int y = leavesStartY; y < localY + height; y++) {
+        const int layer = y - leavesStartY;
+        const int radius = 3 - layer / 2; // Decreasing radius
+        const int outerLimit = radius * radius;
+        const int innerLimit = radius > 1 ? (radius - 1) * (radius - 1) : 0;
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                if (const int dist2 = x * x + z * z;
+                    dist2 <= outerLimit) { // Circle
+                    // Skip some blocks on the outer ring to make shape less perfect
+                    std::bernoulli_distribution distrib(0.2);
+                    if (dist2 > innerLimit && distrib(rng)) continue;
+                    addFeatureBlocks(position, localX + x, y, localZ + z, BlockType::SPRUCE_LEAVES, outBlocks, outPendings);
                 }
             }
         }

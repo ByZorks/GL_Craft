@@ -219,7 +219,8 @@ uint8_t Block::computeVertexAO(const bool side1, const bool side2, const bool co
 
 bool Block::isTransparent(const BlockType type) {
     return type == BlockType::WATER || type == BlockType::AIR ||
-        type == BlockType::OAK_LEAVES || type == BlockType::SNOW_OAK_LEAVES || type == BlockType::JUNGLE_LEAVES || isInstance(type);
+           type == BlockType::OAK_LEAVES || type == BlockType::SNOW_OAK_LEAVES || type == BlockType::JUNGLE_LEAVES ||
+           type == BlockType::SPRUCE_LEAVES || isInstance(type);
 }
 
 bool Block::isInstance(const BlockType type) {
