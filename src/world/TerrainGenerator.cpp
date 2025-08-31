@@ -1,7 +1,10 @@
 #include "TerrainGenerator.h"
 
 #include <algorithm>
+#include <iostream>
 #include <iterator>
+
+#include "chunk/Chunk.h"
 
 int TerrainGenerator::getHeight(const NoiseValues &noises) {
     const int baseHeight = getBaseLevel(noises);
@@ -15,13 +18,15 @@ int TerrainGenerator::getHeight(const NoiseValues &noises) {
     return static_cast<int>(columnHeight);
 }
 
-bool TerrainGenerator::isCave(const int worldX, const int worldY, const int worldZ, const int columnHeight) {
+bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, const int worldY, const int worldZ, const int columnHeight, const std::span<const float> &largeCavesNoises, const std::span<const float> &tunnelCavesNoises) {
     if (worldY <= 1 || worldY > HEIGHT_MULTIPLIER || (worldY >= columnHeight && columnHeight < SEA_LEVEL)) return false;
 
-    const float largeCave = getLargeCaveNoise().GetNoise(
-        static_cast<float>(worldX),
-        static_cast<float>(worldY),
-        static_cast<float>(worldZ));
+    // Up sample the 3D noise values
+    constexpr int step16 = 16;
+    constexpr int gridSizeX16 = (Chunk::SIZE + 2 + step16 - 1) / step16 + 1;
+    constexpr int gridSizeY16 = gridSizeX16;
+    constexpr int gridSizeZ16 = gridSizeX16;
+    const float largeCave = trilinearInterpolation(largeCavesNoises, position, gridSizeX16, gridSizeY16, gridSizeZ16, worldX, worldY, worldZ, step16);
 
     constexpr float cheeseThreshold = 0.6f;
     const bool isCheeseCave = largeCave > cheeseThreshold;
@@ -31,10 +36,11 @@ bool TerrainGenerator::isCave(const int worldX, const int worldY, const int worl
         bool isTunnel = false;
         constexpr float tunnelThreshold = 0.83f;
 
-        const float tunnelCave = getTunnelCaveNoise().GetNoise(
-            static_cast<float>(worldX),
-            static_cast<float>(worldY),
-            static_cast<float>(worldZ));
+        constexpr int step4 = 4;
+        constexpr int gridSizeX4 = (Chunk::SIZE + 2 + step4 - 1) / step4 + 1;
+        constexpr int gridSizeY4 = gridSizeX4;
+        constexpr int gridSizeZ4 = gridSizeX4;
+        const float tunnelCave = trilinearInterpolation(tunnelCavesNoises, position, gridSizeX4, gridSizeY4, gridSizeZ4, worldX, worldY, worldZ, step4);
 
         isTunnel = std::abs(tunnelCave) > tunnelThreshold;
         if (!isTunnel) return false;
@@ -247,6 +253,53 @@ FastNoiseLite & TerrainGenerator::getTunnelCaveNoise() {
     return instance;
 }
 
+float TerrainGenerator::trilinearInterpolation(const std::span<const float> &noises, const ChunkPosition &position,
+                                               const int gridSizeX, const int gridSizeY, const int gridSizeZ,
+                                               const int worldX, const int worldY, const int worldZ, const int step) {
+    const int localX = worldX - position.x;
+    const int localY = worldY - position.y;
+    const int localZ = worldZ - position.z;
+
+    const int cellX = std::clamp(localX / step, 0, gridSizeX - 2);
+    const int cellY = std::clamp(localY / step, 0, gridSizeY - 2);
+    const int cellZ = std::clamp(localZ / step, 0, gridSizeZ - 2);
+
+    const float fracX = std::clamp((localX - cellX * step) / static_cast<float>(step), 0.f, 1.f);
+    const float fracY = std::clamp((localY - cellY * step) / static_cast<float>(step), 0.f, 1.f);
+    const float fracZ = std::clamp((localZ - cellZ * step) / static_cast<float>(step), 0.f, 1.f);
+
+    auto idx = [&](const int i, const int j, const int k) {
+        return i + gridSizeX * (j + gridSizeY * k);
+    };
+
+    if (cellX + 1 >= gridSizeX || cellY + 1 >= gridSizeY || cellZ + 1 >= noises.size() / (gridSizeX * gridSizeY)) {
+        return noises[idx(cellX, cellY, cellZ)]; // Out of bounds, return the nearest corner value
+    }
+
+    // Cube corners
+    const float V000 = noises[idx(cellX, cellY, cellZ)];
+    const float V100 = noises[idx(cellX + 1, cellY, cellZ)];
+    const float V010 = noises[idx(cellX, cellY + 1, cellZ)];
+    const float V110 = noises[idx(cellX + 1, cellY + 1, cellZ)];
+    const float V001 = noises[idx(cellX, cellY, cellZ + 1)];
+    const float V101 = noises[idx(cellX + 1, cellY, cellZ + 1)];
+    const float V011 = noises[idx(cellX, cellY + 1, cellZ + 1)];
+    const float V111 = noises[idx(cellX + 1, cellY + 1, cellZ + 1)];
+
+    // Interpolate along x
+    const float c00 = std::lerp(V000, V100, fracX);
+    const float c10 = std::lerp(V010, V110, fracX);
+    const float c01 = std::lerp(V001, V101, fracX);
+    const float c11 = std::lerp(V011, V111, fracX);
+
+    // Interpolate along y
+    const float c0 = std::lerp(c00, c10, fracY);
+    const float c1 = std::lerp(c01, c11, fracY);
+
+    // Interpolate along z
+    return std::lerp(c0, c1, fracZ);
+}
+
 FastNoiseLite & TerrainGenerator::getSurfaceFeaturesNoise() {
     thread_local FastNoiseLite instance = makeSurfaceFeaturesNoise();
     return instance;
@@ -289,6 +342,20 @@ float TerrainGenerator::getHumidityAt(const int worldX, const int worldZ) {
 float TerrainGenerator::getSurfaceFeaturesNoiseAt(const int worldX, const int worldZ) {
     return getSurfaceFeaturesNoise().GetNoise(
         static_cast<float>(worldX),
+        static_cast<float>(worldZ));
+}
+
+float TerrainGenerator::getLargeCaveNoiseAt(const int worldX, const int worldY, const int worldZ) {
+    return getLargeCaveNoise().GetNoise(
+        static_cast<float>(worldX),
+        static_cast<float>(worldY),
+        static_cast<float>(worldZ));
+}
+
+float TerrainGenerator::getTunnelCaveNoiseAt(const int worldX, const int worldY, const int worldZ) {
+    return getTunnelCaveNoise().GetNoise(
+        static_cast<float>(worldX),
+        static_cast<float>(worldY),
         static_cast<float>(worldZ));
 }
 

@@ -1,8 +1,10 @@
 #ifndef GL_CRAFT_TERRAINGENERATOR_H
 #define GL_CRAFT_TERRAINGENERATOR_H
 #include <cstdint>
+#include <span>
 
 #include "Block.h"
+#include "chunk/ChunkPosition.h"
 #include "fastNoiseLite/FastNoiseLite.h"
 
 enum class Biome : uint8_t {
@@ -60,7 +62,7 @@ public:
     };
 
     static int getHeight(const NoiseValues &noises);
-    static bool isCave(int worldX, int worldY, int worldZ, int columnHeight);
+    static bool isCave(const ChunkPosition &position, int worldX, int worldY, int worldZ, int columnHeight, const std::span<const float> &largeCavesNoises, const std::span<const float> &tunnelCavesNoises);
     static Biome getBiome(const NoiseValues &noises);
     static const char *getBiomeName(Biome biome);
     static BlockType getBlockType(int y, int columnHeight, Biome biome);
@@ -75,6 +77,8 @@ public:
     static float getTemperatureAt(int worldX, int worldZ);
     static float getHumidityAt(int worldX, int worldZ);
     static float getSurfaceFeaturesNoiseAt(int worldX, int worldZ);
+    static float getLargeCaveNoiseAt(int worldX, int worldY, int worldZ);
+    static float getTunnelCaveNoiseAt(int worldX, int worldY, int worldZ);
 
 private:
     static int getBaseLevel(const NoiseValues &noises);
@@ -100,6 +104,8 @@ private:
     static FastNoiseLite & getSurfaceFeaturesNoise();
     static FastNoiseLite & getLargeCaveNoise();
     static FastNoiseLite & getTunnelCaveNoise();
+
+    static float trilinearInterpolation(const std::span<const float> &noises, const ChunkPosition &position, int gridSizeX, int gridSizeY, int gridSizeZ, int worldX, int worldY, int worldZ, int step);
 };
 
 #endif //GL_CRAFT_TERRAINGENERATOR_H

@@ -19,6 +19,52 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE), m_rng
 }
 
 void Chunk::generateVoxel() {
+    // Pre calculate noises values at 4x down sampling
+    constexpr int step4 = 4;
+    constexpr int gridSizeX4 = (SIZE + 2 + step4 - 1) / step4 + 1;
+    constexpr int gridSizeY4 = gridSizeX4;
+    constexpr int gridSizeZ4 = gridSizeX4;
+    std::array<float, gridSizeX4 * gridSizeY4 * gridSizeZ4> tunnelCavesNoises{};
+    {
+        for (int gx = 0; gx < gridSizeX4; ++gx) {
+            const int wx = m_x + gx * step4;
+
+            for (int gy = 0; gy < gridSizeY4; ++gy) {
+                const int wy = m_y + gy * step4;
+
+                for (int gz = 0; gz < gridSizeZ4; ++gz) {
+                    const int wz = m_z + gz * step4;
+
+                    const int index = gx + gridSizeX4 * (gy + gridSizeY4 * gz);
+                    tunnelCavesNoises[index] = TerrainGenerator::getTunnelCaveNoiseAt(wx, wy, wz);
+                }
+            }
+        }
+    }
+
+    // Pre calculate noises values at 16x down sampling
+    constexpr int step16 = 16;
+    constexpr int gridSizeX16 = (SIZE + 2 + step16 - 1) / step16 + 1;
+    constexpr int gridSizeY16 = gridSizeX16;
+    constexpr int gridSizeZ16 = gridSizeX16;
+    std::array<float, gridSizeX16 * gridSizeY16 * gridSizeZ16> largeCavesNoises{};
+    {
+        for (int gx = 0; gx < gridSizeX16; ++gx) {
+            const int wx = m_x + gx * step16;
+
+            for (int gy = 0; gy < gridSizeY16; ++gy) {
+                const int wy = m_y + gy * step16;
+
+                for (int gz = 0; gz < gridSizeZ16; ++gz) {
+                    const int wz = m_z + gz * step16;
+
+                    const int index = gx + gridSizeX16 * (gy + gridSizeY16 * gz);
+                    largeCavesNoises[index] = TerrainGenerator::getLargeCaveNoiseAt(wx, wy, wz);
+                }
+            }
+        }
+    }
+
     for (int localX = 0; localX < SIZE + 2; localX++) {
         const int worldX = m_x + localX;
 
@@ -34,13 +80,14 @@ void Chunk::generateVoxel() {
 
             noises.computeRemainingNoises(worldX, worldZ);
             const Biome biome = TerrainGenerator::getBiome(noises);
+            const auto position = ChunkPosition(m_x, m_y, m_z);
 
             // Surface features noise
             if (localX > 0 && localX < SIZE && localZ > 0 && localZ < SIZE && // I think it can cause issues but I didn't find any in my testing
                 columnHeight >= TerrainGenerator::getSeaLevel() && m_y <= columnHeight + 1 &&
                 columnHeight >= m_y - static_cast<int>(SIZE) &&
                 columnHeight < m_y + static_cast<int>(SIZE) &&
-                !TerrainGenerator::isCave(worldX, columnHeight, worldZ, columnHeight)) {
+                !TerrainGenerator::isCave(position, worldX, columnHeight, worldZ, columnHeight, largeCavesNoises, tunnelCavesNoises)) {
                 if (const float surfaceFeatureNoise = (TerrainGenerator::getSurfaceFeaturesNoiseAt(worldX, worldZ) + 1.0f) * 0.5f;
                     surfaceFeatureNoise >= 0.69f) {
                     const BlockType blockType = TerrainGenerator::getBlockType(columnHeight, columnHeight, biome);
@@ -56,7 +103,7 @@ void Chunk::generateVoxel() {
                 const int worldY = m_y + localY;
 
                 // Terrain
-                if (TerrainGenerator::isCave(worldX, worldY, worldZ, columnHeight)) continue;
+                if (TerrainGenerator::isCave(position, worldX, worldY, worldZ, columnHeight, largeCavesNoises, tunnelCavesNoises)) continue;
                 m_blocks[index(localX, localY, localZ)] = TerrainGenerator::getBlockType(worldY, columnHeight, biome);
                 m_visibleBlocks++;
 
