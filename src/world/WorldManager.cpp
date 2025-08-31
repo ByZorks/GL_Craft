@@ -365,7 +365,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
         for (const auto &key: m_tempKeysToProcess) {
             if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
                 const std::shared_ptr<Chunk> p_chunk = it->second;
-                if (p_chunk->getState() < State::READY_TO_DRAW) continue;
+                if (p_chunk->getState() < State::VOXEL_GENERATED) continue;
 
                 std::vector<PendingBlock> blocks;
                 {
