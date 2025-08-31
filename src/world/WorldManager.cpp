@@ -320,7 +320,7 @@ bool WorldManager::getNeedInstanceUpdate() const {
 
 void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
     const int maxChunksPerFrame = static_cast<int>(
-        0.01f * Renderer::s_renderDistance + 0.2f * static_cast<float>(m_threadPool.getNumberOfThreads()));
+        0.05f * Renderer::s_renderDistance + 0.2f * static_cast<float>(m_threadPool.getNumberOfThreads()));
 
     // Destroy chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {

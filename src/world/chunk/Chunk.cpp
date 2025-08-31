@@ -102,13 +102,34 @@ void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResu
 }
 
 void Chunk::generateMesh() {
+    constexpr std::array FaceOffset = {
+            std::make_tuple(0, 1, 0),  // Up
+            std::make_tuple(0, -1, 0), // Down
+            std::make_tuple(-1, 0, 0), // Left
+            std::make_tuple(1, 0, 0),  // Right
+            std::make_tuple(0, 0, 1),  // Front
+            std::make_tuple(0, 0, -1)  // Back
+    };
+
     for (int localX = 0; localX < SIZE; localX++) {
         for (int localY = 0; localY < SIZE; localY++) {
             for (int localZ = 0; localZ < SIZE; localZ++) {
                 const BlockType blockType = getBlockType(localX, localY, localZ);
                 if (blockType == BlockType::AIR) continue;
 
-                addBlockFaces(localX, localY, localZ, blockType);
+                // Check if block will have visible faces by checking its 6 neighbors
+                uint8_t visibleFaces = 0;
+                for (int dir = 0; dir < 6; dir++) {
+                    if (const auto [dx, dy, dz] = FaceOffset[dir];
+                        Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz))) {
+                        visibleFaces |= 1 << dir;
+                        break;
+                    }
+                }
+
+                if (visibleFaces != 0) {
+                    addBlockFaces(localX, localY, localZ, blockType);
+                }
             }
         }
     }
@@ -122,12 +143,34 @@ void Chunk::generateMesh() {
 }
 
 void Chunk::generateNewMesh(MeshingResult &result) const {
-    for (int localX = 0; localX < SIZE; localX++) {
-        for (int localZ = 0; localZ < SIZE; localZ++) {
-            for (int localY = 0; localY < SIZE; localY++) {
-                if (!isBlockPresent(localX, localY, localZ)) continue;
+    constexpr std::array FaceOffset = {
+        std::make_tuple(0, 1, 0),  // Up
+        std::make_tuple(0, -1, 0), // Down
+        std::make_tuple(-1, 0, 0), // Left
+        std::make_tuple(1, 0, 0),  // Right
+        std::make_tuple(0, 0, 1),  // Front
+        std::make_tuple(0, 0, -1)  // Back
+    };
 
-                addBlockFaces(localX, localY, localZ, getBlockType(localX, localY, localZ), result);
+    for (int localX = 0; localX < SIZE; localX++) {
+        for (int localY = 0; localY < SIZE; localY++) {
+            for (int localZ = 0; localZ < SIZE; localZ++) {
+                const BlockType blockType = getBlockType(localX, localY, localZ);
+                if (blockType == BlockType::AIR) continue;
+
+                // Check if block will have visible faces by checking its 6 neighbors
+                uint8_t visibleFaces = 0;
+                for (int dir = 0; dir < 6; dir++) {
+                    if (const auto [dx, dy, dz] = FaceOffset[dir];
+                        Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz))) {
+                        visibleFaces |= 1 << dir;
+                        break;
+                    }
+                }
+
+                if (visibleFaces != 0) {
+                    addBlockFaces(localX, localY, localZ, blockType, result);
+                }
             }
         }
     }
