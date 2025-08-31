@@ -44,6 +44,14 @@ SurfaceFeatureType SurfaceFeature::getSurfaceFeatureType(const float noiseValue,
         if (noiseValue >= 0.85f) return SurfaceFeatureType::TREE;
     }
 
+    if (biome == Biome::FOREST) {
+        if (noiseValue >= 0.82f) return SurfaceFeatureType::TREE;
+    }
+
+    if (biome == Biome::PLAINS) {
+        if (noiseValue >= 0.93f) return SurfaceFeatureType::TREE;
+    }
+
     if (noiseValue >= 0.8099f && noiseValue < 0.81f) return SurfaceFeatureType::POND;
 
     if (blockType == BlockType::GRASS || blockType == BlockType::SNOW_GRASS) {
