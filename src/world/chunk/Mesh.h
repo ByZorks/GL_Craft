@@ -16,7 +16,6 @@ enum class State : uint8_t {
 };
 
 struct buffersData {
-    mutable std::mutex m_verticesMutex;
     std::vector<BlockVertex> vertices;
     unsigned int verticesCount = 0; // vertices.size() * 6; Used to draw the mesh, so we must only update it once the GL buffers are ready
     bool hasFaces = false;
@@ -26,7 +25,6 @@ struct buffersData {
     }
 
     void deleteMesh() {
-        std::lock_guard lock(m_verticesMutex);
         vertices.clear();
     }
 };
@@ -171,8 +169,7 @@ public:
     }
 
     [[nodiscard]] std::vector<BlockVertex> getOpaqueVerticesCopy() const {
-        std::lock_guard lock(m_opaqueData.m_verticesMutex);
-        return m_opaqueData.vertices; // Only used for instance rendering, so a copy is fine
+        return m_opaqueData.vertices; // Only used for initializing instance rendering, so a copy is fine
     }
 
     [[nodiscard]] const std::vector<BlockVertex> & getOpaqueVertices() const {

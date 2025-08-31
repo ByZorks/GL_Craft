@@ -25,12 +25,14 @@ void Chunk::generateVoxel() {
         for (int localZ = 0; localZ < SIZE + 2; localZ++) {
             const int worldZ = m_z + localZ;
 
-            TerrainGenerator::NoiseValues noises(worldX, worldZ);
+            TerrainGenerator::NoiseValues noises;
+            noises.computeHeightNoises(worldX, worldZ);
             const int columnHeight = TerrainGenerator::getHeight(noises);
 
             // Early exit for aerial chunks, cast is mandatory
             if (columnHeight < m_y - static_cast<int>(SIZE)) continue;
 
+            noises.computeRemainingNoises(worldX, worldZ);
             const Biome biome = TerrainGenerator::getBiome(noises);
 
             // Surface features noise
@@ -101,8 +103,8 @@ void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResu
 
 void Chunk::generateMesh() {
     for (int localX = 0; localX < SIZE; localX++) {
-        for (int localZ = 0; localZ < SIZE; localZ++) {
-            for (int localY = 0; localY < SIZE; localY++) {
+        for (int localY = 0; localY < SIZE; localY++) {
+            for (int localZ = 0; localZ < SIZE; localZ++) {
                 const BlockType blockType = getBlockType(localX, localY, localZ);
                 if (blockType == BlockType::AIR) continue;
 
@@ -230,8 +232,6 @@ void Chunk::setGPUSlotWater(const unsigned int m_gpu_water_slot) {
 }
 
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const BlockType blockType) {
-    if (blockType == BlockType::AIR || Block::isInstance(blockType)) return;
-
     const auto localXf = static_cast<unsigned int>(localX);
     const auto localYf = static_cast<unsigned int>(localY);
     const auto localZf = static_cast<unsigned int>(localZ);
@@ -270,14 +270,12 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         if (!shouldDrawFace(localX, localY, localZ, blockType, face)) continue;
 
         if (isWater) {
-            std::lock_guard lock(m_waterData.m_verticesMutex);
             Block::addFaceVertices(face, blockType, m_waterData.vertices, adjacentFaces, localXf, localYf, localZf);
             if (face == Face::TOP) {
                 Block::addFaceVertices(Face::TOP_INVERSED, blockType, m_waterData.vertices, adjacentFaces, localXf, localYf, localZf);
             }
             m_waterData.hasFaces = true;
         } else {
-            std::lock_guard lock(m_opaqueData.m_verticesMutex);
             Block::addFaceVertices(face, blockType, m_opaqueData.vertices, adjacentFaces, localXf, localYf, localZf);
             m_opaqueData.hasFaces = true;
         }
@@ -342,7 +340,5 @@ bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ)
 }
 
 bool Chunk::hasVisibleFaces() const {
-    std::scoped_lock lock(m_opaqueData.m_verticesMutex,
-                      m_waterData.m_verticesMutex);
     return !m_opaqueData.vertices.empty() || !m_waterData.vertices.empty();
 }

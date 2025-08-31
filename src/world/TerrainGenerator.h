@@ -42,6 +42,15 @@ public:
               surfaceFeatures(getSurfaceFeaturesNoiseAt(worldX, worldZ)) {
         }
 
+        void computeRemainingNoises(const int worldX, const int worldZ) {
+            terrain != 0.0f ? terrain : terrain = getTerrainNoiseAt(worldX, worldZ);
+            continentalness != 0.0f ? continentalness : continentalness = getContinentalnessAt(worldX, worldZ);
+            erosion != 0.0f ? erosion : erosion = getErosionAt(worldX, worldZ);
+            temperature != 0.0f ? temperature : temperature = getTemperatureAt(worldX, worldZ);
+            humidity != 0.0f ? humidity : humidity = getHumidityAt(worldX, worldZ);
+            surfaceFeatures != 0.0f ? surfaceFeatures : surfaceFeatures = getSurfaceFeaturesNoiseAt(worldX, worldZ);
+        }
+
         void computeHeightNoises(const int worldX, const int worldZ) {
             terrain = getTerrainNoiseAt(worldX, worldZ);
             continentalness = getContinentalnessAt(worldX, worldZ);
