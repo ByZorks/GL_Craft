@@ -47,8 +47,9 @@ private:
     friend std::size_t hash_value(const SurfaceFeature &obj);
     static void addFeatureBlocks(const ChunkPosition &position, int localX, int localY, int localZ, BlockType blockType, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
 
-    static void addOakTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
+    static void addSmallTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
     static void addCactus(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
+    static void addMegaJungleTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
 
 };
 

@@ -379,6 +379,8 @@ BlockType TerrainGenerator::getSurfaceBlockType(const Biome biome) {
             return BlockType::STONE;
         case Biome::SNOWY_MOUTAINS:
             return BlockType::SNOW;
+        case Biome::JUNGLE:
+            return BlockType::JUNGLE_GRASS;
         default:
             return BlockType::GRASS;
     }

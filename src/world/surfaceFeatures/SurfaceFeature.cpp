@@ -30,7 +30,7 @@ std::size_t hash_value(const SurfaceFeature &obj) {
 
 SurfaceFeatureType SurfaceFeature::getSurfaceFeatureType(const float noiseValue, const BlockType &blockType, const Biome biome) {
     if (biome == Biome::JUNGLE) {
-        // if (noiseValue >= 0.75f) return SurfaceFeatureType::TREE;
+        if (noiseValue >= 0.75f && noiseValue < 0.77f) return SurfaceFeatureType::TREE;
         if (noiseValue >= 0.70f && noiseValue < 0.71f) return SurfaceFeatureType::BUSH;
         if (noiseValue >= 0.69f) return SurfaceFeatureType::SHORT_GRASS;
         return SurfaceFeatureType::NONE;
@@ -89,8 +89,15 @@ void SurfaceFeature::addTree(std::mt19937 &rng, const ChunkPosition &position, c
         case Biome::DESERT:
             addCactus(rng, position, localX, localY, localZ, outBlocks, outPendings);
             break;
+        case Biome::JUNGLE: {
+            std::bernoulli_distribution distribution(0.40);
+            distribution(rng)
+                ? addMegaJungleTree(rng, position, localX, localY, localZ, outBlocks, outPendings)
+                : addSmallTree(rng, position, localX, localY, localZ, biome, outBlocks, outPendings);
+            break;
+        }
         default:
-            addOakTree(rng, position, localX, localY, localZ, biome, outBlocks, outPendings);
+            addSmallTree(rng, position, localX, localY, localZ, biome, outBlocks, outPendings);
             break;
     }
 }
@@ -98,7 +105,12 @@ void SurfaceFeature::addTree(std::mt19937 &rng, const ChunkPosition &position, c
 void SurfaceFeature::addBush(std::mt19937 &rng, const ChunkPosition &position, const int localX, const int localY, const int localZ,
     const Biome biome, std::vector<BlockType> &outBlocks,
     std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings) {
-    const BlockType leavesType = TerrainGenerator::isSnowBiome(biome) ? BlockType::SNOW_OAK_LEAVES : BlockType::OAK_LEAVES;
+    const BlockType leavesType =
+            TerrainGenerator::isSnowBiome(biome)
+                ? BlockType::SNOW_OAK_LEAVES
+                : biome == Biome::JUNGLE
+                      ? BlockType::JUNGLE_LEAVES
+                      : BlockType::OAK_LEAVES;
 
     for (int y = 0; y < 2; ++y) {
         for (int x = -1; x <= 1; ++x) {
@@ -134,13 +146,23 @@ void SurfaceFeature::addFeatureBlocks(const ChunkPosition &position, const int l
     }
 }
 
-void SurfaceFeature::addOakTree(std::mt19937 &rng, const ChunkPosition &position, const int localX, const int localY, const int localZ, const Biome biome,
+void SurfaceFeature::addSmallTree(std::mt19937 &rng, const ChunkPosition &position, const int localX, const int localY, const int localZ, const Biome biome,
     std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings) {
-    const BlockType leavesType = TerrainGenerator::isSnowBiome(biome) ? BlockType::SNOW_OAK_LEAVES : BlockType::OAK_LEAVES;
+    const BlockType leavesType =
+            TerrainGenerator::isSnowBiome(biome)
+                ? BlockType::SNOW_OAK_LEAVES
+                : biome == Biome::JUNGLE
+                      ? BlockType::JUNGLE_LEAVES
+                      : BlockType::OAK_LEAVES;
+
+    const BlockType logType =
+            biome == Biome::JUNGLE
+                ? BlockType::JUNGLE_LOG
+                : BlockType::OAK_LOG;
 
     // Trunk: 1x5x1 = 5 blocks (y=0 to y=4)
     for (int y = 0; y < 5; ++y) {
-        addFeatureBlocks(position, localX, localY + y, localZ, BlockType::OAK_LOG, outBlocks, outPendings);
+        addFeatureBlocks(position, localX, localY + y, localZ, logType, outBlocks, outPendings);
     }
 
     // Leaves: 5x2x5 = 50 blocks (y=3 to y=4)
@@ -176,6 +198,36 @@ void SurfaceFeature::addCactus(std::mt19937 &rng, const ChunkPosition &position,
 
     for (int y = 0; y < height; ++y) {
         addFeatureBlocks(position, localX, localY + y, localZ, BlockType::CACTUS, outBlocks, outPendings);
+    }
+}
+
+void SurfaceFeature::addMegaJungleTree(std::mt19937 &rng, const ChunkPosition &position, const int localX, const int localY, const int localZ,
+    std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings) {
+    const int height = 15 + static_cast<int>(rng() % 11); // Height between 15 and 25 blocks
+    // Trunk: 2xheightx2
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < 2; x++) {
+            for (int z = 0; z < 2; z++) {
+                addFeatureBlocks(position, localX + x, localY + y, localZ + z, BlockType::JUNGLE_LOG, outBlocks, outPendings);
+            }
+        }
+    }
+
+    // Leaves
+    const int leavesStartY = localY + height - 4;
+    for (int y = leavesStartY; y < leavesStartY + 4; y++) {
+        const int layer = y - leavesStartY;
+        const int radius = 5 - layer; // Decreasing radius
+        for (int x = -radius; x <= radius + 1; x++) {
+            for (int z = -radius; z <= radius + 1; z++) {
+                if (x * x + z * z <= radius * radius) { // Circle
+                    if (layer == 0 && std::abs(x) == radius && std::abs(z) == radius) {
+                        if (rng() & 1) continue; // Skip some corners on the bottom layer
+                    }
+                    addFeatureBlocks(position, localX + x, y, localZ + z, BlockType::JUNGLE_LEAVES, outBlocks, outPendings);
+                }
+            }
+        }
     }
 }
 

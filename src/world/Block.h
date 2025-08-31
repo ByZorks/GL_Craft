@@ -11,7 +11,7 @@ enum class Face : uint8_t {
 
 enum class BlockType : uint8_t {
     AIR, BEDROCK, DIRT, GRASS, STONE, WATER, OAK_LOG, OAK_LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER, FLOWER_ALLIUM,
-    SNOW, SNOW_GRASS, SAND, GRAVEL, SNOW_OAK_LEAVES, CACTUS,
+    SNOW, SNOW_GRASS, SAND, GRAVEL, SNOW_OAK_LEAVES, CACTUS, JUNGLE_LOG, JUNGLE_LEAVES, JUNGLE_GRASS
 };
 
 struct BlockVertex {
@@ -26,7 +26,7 @@ struct HighlightedVertex {
 
 class Block {
 private:
-    static constexpr uint8_t s_textureLayer[18][3] = {
+    static constexpr uint8_t s_textureLayer[22][3] = {
         // [side, top, bottom]
         {0, 0, 0},    // AIR
         {0, 0, 0},    // BEDROCK
@@ -46,6 +46,9 @@ private:
         {25, 25, 25}, // GRAVEL
         {26, 26, 26}, // SNOW_OAK_LEAVES
         {27, 28, 28}, // CACTUS
+        {29, 30, 30}, // JUNGLE_LOG
+        {31, 31, 31}, // JUNGLE_LEAVES
+        {32, 33, 1}, // JUNGLE_GRASS
     };
 
 public:

@@ -25,6 +25,9 @@ const char *Block::getBlockName(const BlockType blockType) {
         case BlockType::GRAVEL: return "GRAVEL";
         case BlockType::SNOW_OAK_LEAVES: return "SNOW_OAK_LEAVES";
         case BlockType::CACTUS: return "CACTUS";
+        case BlockType::JUNGLE_LOG: return "JUNGLE_LOG";
+        case BlockType::JUNGLE_LEAVES: return "JUNGLE_LEAVES";
+        case BlockType::JUNGLE_GRASS: return "JUNGLE_GRASS";
         default: return "UNKNOWN";
     }
 }
@@ -215,7 +218,8 @@ uint8_t Block::computeVertexAO(const bool side1, const bool side2, const bool co
 }
 
 bool Block::isTransparent(const BlockType type) {
-    return type == BlockType::WATER || type == BlockType::AIR || type == BlockType::OAK_LEAVES || type == BlockType::SNOW_OAK_LEAVES || isInstance(type);
+    return type == BlockType::WATER || type == BlockType::AIR ||
+        type == BlockType::OAK_LEAVES || type == BlockType::SNOW_OAK_LEAVES || type == BlockType::JUNGLE_LEAVES || isInstance(type);
 }
 
 bool Block::isInstance(const BlockType type) {
@@ -228,7 +232,7 @@ BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t 
     BlockVertex vertex{};
 
     constexpr unsigned int POS_MASK = 0x1F; // 5 bits, 0-31 range
-    constexpr unsigned int TEX_MASK = 0x1F; // 5 bits, 0-31 range
+    constexpr unsigned int TEX_MASK = 0x3F; // 6 bits, 0-63 range
     constexpr unsigned int FACE_MASK = 0x7; // 3 bits, 0-7 range
     constexpr unsigned int AO_MASK = 0x3; // 2 bits, 0-3 range
 
@@ -237,17 +241,17 @@ BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t 
     vertex.packedData |= (position[1] & POS_MASK) << 5;
     vertex.packedData |= (position[2] & POS_MASK) << 10;
 
-    // TexLayer(5 bits)
+    // TexLayer(6 bits)
     vertex.packedData |= (texLayer & TEX_MASK) << 15;
 
     // FaceIndex (3 bits)
-    vertex.packedData |= (faceIndex & FACE_MASK) << 20;
+    vertex.packedData |= (faceIndex & FACE_MASK) << 21;
 
     // AO (8 bits)
-    vertex.packedData |= (ao[0] & AO_MASK) << 23;
-    vertex.packedData |= (ao[1] & AO_MASK) << 25;
-    vertex.packedData |= (ao[2] & AO_MASK) << 27;
-    vertex.packedData |= (ao[3] & AO_MASK) << 29;
+    vertex.packedData |= (ao[0] & AO_MASK) << 24;
+    vertex.packedData |= (ao[1] & AO_MASK) << 26;
+    vertex.packedData |= (ao[2] & AO_MASK) << 28;
+    vertex.packedData |= (ao[3] & AO_MASK) << 30;
 
     return vertex;
 }
