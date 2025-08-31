@@ -13,7 +13,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE), m_rng
 
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
     m_waterData.vertices.reserve(avg_faces_water);
-    m_blockType.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
+    m_blocks.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
     m_pendingBlocksForNeighbors.reserve(SIZE);
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
 }
@@ -57,7 +57,7 @@ void Chunk::generateVoxel() {
 
                 // Terrain
                 if (TerrainGenerator::isCave(worldX, worldY, worldZ, columnHeight)) continue;
-                m_blockType[index(localX, localY, localZ)] = TerrainGenerator::getBlockType(worldY, columnHeight, biome);
+                m_blocks[index(localX, localY, localZ)] = TerrainGenerator::getBlockType(worldY, columnHeight, biome);
                 m_visibleBlocks++;
 
                 // Surface features
@@ -66,15 +66,15 @@ void Chunk::generateVoxel() {
                     it != m_surfaceFeatures.end()) {
                     switch (it->getType()) {
                         case SurfaceFeatureType::TREE: {
-                            SurfaceFeature::addTree(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blockType, m_pendingBlocksForNeighbors);
+                            SurfaceFeature::addTree(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blocks, m_pendingBlocksForNeighbors);
                             break;
                         }
                         case SurfaceFeatureType::BUSH: {
-                            SurfaceFeature::addBush(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blockType, m_pendingBlocksForNeighbors);
+                            SurfaceFeature::addBush(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blocks, m_pendingBlocksForNeighbors);
                             break;
                         }
                         case SurfaceFeatureType::POND: {
-                            SurfaceFeature::addPond(m_rng, {m_x, m_y, m_z}, localX, localY - 1, localZ, biome, m_blockType, m_pendingBlocksForNeighbors);
+                            SurfaceFeature::addPond(m_rng, {m_x, m_y, m_z}, localX, localY - 1, localZ, biome, m_blocks, m_pendingBlocksForNeighbors);
                         }
                         default: {
                         }
@@ -94,7 +94,7 @@ void Chunk::generateVoxel() {
 
 void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResult &result) {
     for (const auto &[localX, localY, localZ, blockType]: blocks) {
-        m_blockType[index(localX, localY, localZ)] = blockType;
+        m_blocks[index(localX, localY, localZ)] = blockType;
     }
     blocks.clear();
 
@@ -186,12 +186,12 @@ void Chunk::deleteBlock(const int localX, const int localY, const int localZ, co
     // Voxel
     m_visibleBlocks--;
     if (Block::isInstance(type)) {
-        m_blockType[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
+        m_blocks[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
         m_surfaceFeatures.erase(SurfaceFeature(m_x + localX + 1, m_y + localY, m_z + localZ + 1));
         return;
     }
 
-    m_blockType[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
+    m_blocks[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
 
     // Mesh data
     generateNewMesh(result);
@@ -201,11 +201,11 @@ void Chunk::addBlock(const int localX, const int localY, const int localZ, const
     // Voxel
     m_visibleBlocks++;
     if (Block::isInstance(type)) {
-        m_blockType[index(localX + 1, localY + 1, localZ + 1)] = type;
+        m_blocks[index(localX + 1, localY + 1, localZ + 1)] = type;
         m_surfaceFeatures.emplace(m_x + localX + 1, m_y + localY, m_z + localZ + 1, SurfaceFeature::getSurfaceFeatureTypeFromBlockType(type));
         return;
     }
-    m_blockType[index(localX + 1, localY + 1, localZ + 1)] = type;
+    m_blocks[index(localX + 1, localY + 1, localZ + 1)] = type;
 
     // Mesh data
     generateNewMesh(result);
@@ -217,7 +217,7 @@ int Chunk::index(const int x, const int y, const int z) const {
 }
 
 BlockType Chunk::getBlockType(const int localX, const int localY, const int localZ) const {
-    return m_blockType[index(localX + 1, localY + 1, localZ + 1)];
+    return m_blocks[index(localX + 1, localY + 1, localZ + 1)];
 }
 
 BlockType Chunk::getBlockTypeOrSurfaceFeature(const int localX, const int localY, const int localZ) const {
@@ -379,7 +379,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {
-    return m_blockType[index(localX + 1, localY + 1, localZ + 1)] != BlockType::AIR;
+    return m_blocks[index(localX + 1, localY + 1, localZ + 1)] != BlockType::AIR;
 }
 
 bool Chunk::hasVisibleFaces() const {

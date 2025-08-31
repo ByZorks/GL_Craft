@@ -33,7 +33,7 @@ class Mesh {
 protected:
     const unsigned int m_size;
     const int m_x, m_y, m_z;
-    std::vector<BlockType> m_blockType;
+    std::vector<BlockType> m_blocks;
     buffersData m_opaqueData;
     buffersData m_waterData;
     State m_state = State::UNINITIALIZED;
@@ -49,7 +49,7 @@ public:
                                                              static_cast<float>(y) + static_cast<float>(size) - 1.0f,
                                                              static_cast<float>(z) + static_cast<float>(size) - 1.0f
                                                   )) {
-        m_blockType.resize(m_size * m_size * m_size, BlockType::AIR);
+        m_blocks.resize(m_size * m_size * m_size, BlockType::AIR);
     }
     virtual ~Mesh() = default;
 
@@ -121,14 +121,14 @@ public:
         if (localX < 0 || localY < 0 || localZ < 0 || localX >= m_size || localY >= m_size || localZ >= m_size) {
             return false;
         }
-        return m_blockType[index(localX, localY, localZ)] != BlockType::AIR;
+        return m_blocks[index(localX, localY, localZ)] != BlockType::AIR;
     }
 
     [[nodiscard]] virtual BlockType getBlockType(const int localX, const int localY, const int localZ) const {
         if (localX < 0 || localY < 0 || localZ < 0 || localX >= m_size || localY >= m_size || localZ >= m_size) {
             return BlockType::AIR;
         }
-        return m_blockType[index(localX, localY, localZ)];
+        return m_blocks[index(localX, localY, localZ)];
     }
 
     [[nodiscard]] virtual int index(const int x, const int y, const int z) const {

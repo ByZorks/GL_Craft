@@ -4,7 +4,7 @@ Cornflower::Cornflower(const int x, const int y, const int z) : Flower(x, y, z) 
 }
 
 void Cornflower::generateVoxel() {
-    m_blockType[0] = BlockType::FLOWER_CORNFLOWER;
+    m_blocks[0] = BlockType::FLOWER_CORNFLOWER;
 
     m_state = State::VOXEL_GENERATED;
 }
