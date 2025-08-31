@@ -35,6 +35,13 @@ SurfaceFeatureType SurfaceFeature::getSurfaceFeatureType(const float noiseValue,
         if (noiseValue >= 0.69f) return SurfaceFeatureType::SHORT_GRASS;
         return SurfaceFeatureType::NONE;
     }
+
+    if (biome == Biome::DESERT) {
+        if (noiseValue >= 0.9999f) return SurfaceFeatureType::POND;
+    }
+
+    if (noiseValue >= 0.8099f && noiseValue < 0.81f) return SurfaceFeatureType::POND;
+
     if (blockType == BlockType::GRASS || blockType == BlockType::SNOW_GRASS) {
         if (noiseValue >= 0.88f) return SurfaceFeatureType::TREE;
         if (noiseValue >= 0.7111f && noiseValue < 0.7112f) return SurfaceFeatureType::BUSH;
@@ -45,6 +52,7 @@ SurfaceFeatureType SurfaceFeature::getSurfaceFeatureType(const float noiseValue,
     } else if (blockType == BlockType::SAND) {
         if (noiseValue >= 0.88f) return SurfaceFeatureType::TREE;
     }
+
 
     return SurfaceFeatureType::NONE;
 }
@@ -117,6 +125,25 @@ void SurfaceFeature::addBush(std::mt19937 &rng, const ChunkPosition &position, c
             for (int z = -1; z <= 1; ++z) {
                 if (rng() & 1) continue; // Skip some blocks to make it look more natural
                 addFeatureBlocks(position, localX + x, localY + y, localZ + z, leavesType, outBlocks, outPendings);
+            }
+        }
+    }
+}
+
+void SurfaceFeature::addPond(std::mt19937 &rng, const ChunkPosition &position, const int localX, const int localY, const int localZ,
+    const Biome biome, std::vector<BlockType> &outBlocks,
+    std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings) {
+    const int radiusX = 2 + static_cast<int>(rng() % 3); // Pond radius between 2 and 4 blocks
+    const int radiusZ = 2 + static_cast<int>(rng() % 3); // Pond radius between 2 and 4 blocks
+    const int depth = 1 + static_cast<int>(rng() % 2); // Pond depth between 1 and 2 blocks
+    const BlockType bottomType = TerrainGenerator::getNearSurfaceBlockType(biome);
+
+    for (int y = -depth; y < 0; ++y) {
+        for (int x = -radiusX; x <= radiusX; ++x) {
+            for (int z = -radiusZ; z <= radiusZ; ++z) {
+                if (x * x + z * z <= radiusX * radiusZ) {
+                    addFeatureBlocks(position, localX + x, localY + y, localZ + z, y == depth - 1 ? bottomType : BlockType::WATER, outBlocks, outPendings);
+                }
             }
         }
     }

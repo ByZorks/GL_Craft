@@ -17,6 +17,7 @@ enum class SurfaceFeatureType : uint8_t {
     CORNFLOWER,
     ALLIUM,
     BUSH,
+    POND
 };
 
 class SurfaceFeature {
@@ -36,6 +37,7 @@ public:
     static SurfaceFeatureType getSurfaceFeatureTypeFromBlockType(const BlockType &blockType);
     static void addTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
     static void addBush(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
+    static void addPond(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
 
     [[nodiscard]] bool isMultiBlockFeature() const;
     [[nodiscard]] int getX() const;
@@ -50,7 +52,6 @@ private:
     static void addSmallTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
     static void addCactus(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
     static void addMegaJungleTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
-
 };
 
 template <>

@@ -55,6 +55,7 @@ public:
     static Biome getBiome(const NoiseValues &noises);
     static const char *getBiomeName(Biome biome);
     static BlockType getBlockType(int y, int columnHeight, Biome biome);
+    static BlockType getNearSurfaceBlockType(Biome biome);
 
     static bool isSnowBiome(Biome biome);
     static int getSeed();
@@ -72,7 +73,6 @@ private:
     static float getErosionLevel(float erosion);
 
     static BlockType getSurfaceBlockType(Biome biome);
-    static BlockType getNearSurfaceBlockType(Biome biome);
 
     static FastNoiseLite makeTerrainNoise();
     static FastNoiseLite makeContinentalnessNoise();

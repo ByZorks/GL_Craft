@@ -71,6 +71,9 @@ void Chunk::generateVoxel() {
                             SurfaceFeature::addBush(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blockType, m_pendingBlocksForNeighbors);
                             break;
                         }
+                        case SurfaceFeatureType::POND: {
+                            SurfaceFeature::addPond(m_rng, {m_x, m_y, m_z}, localX, localY - 1, localZ, biome, m_blockType, m_pendingBlocksForNeighbors);
+                        }
                         default: {
                         }
                     }
