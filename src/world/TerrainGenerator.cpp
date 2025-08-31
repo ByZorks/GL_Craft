@@ -64,7 +64,7 @@ Biome TerrainGenerator::getBiome(const NoiseValues &noises) {
     if (noises.temperature > -0.2f && noises.humidity > 0.1f) return Biome::FOREST;
     if (noises.temperature > -0.2f && noises.humidity > -0.1f) return Biome::PLAINS;
     if (noises.temperature > -0.3f && noises.humidity > -0.3f) return Biome::TAIGA;
-    if (noises.temperature > -0.6f && noises.humidity > -0.3f) return Biome::SNOWY_TAIGA;
+    if (noises.temperature > -0.7f && noises.humidity > -0.3f) return Biome::SNOWY_TAIGA;
     if (noises.temperature <= -0.7f) return Biome::SNOWY_PLAINS;
     return Biome::PLAINS;
 }
@@ -164,7 +164,7 @@ FastNoiseLite TerrainGenerator::makeTemperatureNoise() {
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
     noise.SetSeed(SEED);
-    noise.SetFrequency(.0005f);
+    noise.SetFrequency(.0001f);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetFractalOctaves(2);
     return noise;
@@ -174,7 +174,7 @@ FastNoiseLite TerrainGenerator::makeHumidityNoise() {
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
     noise.SetSeed(SEED);
-    noise.SetFrequency(.001f);
+    noise.SetFrequency(.0005f);
     noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     noise.SetFractalOctaves(2);
     return noise;
