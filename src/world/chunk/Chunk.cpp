@@ -42,23 +42,23 @@ void Chunk::generateVoxel() {
         }
     }
 
-    // Pre calculate noises values at 16x down sampling
-    constexpr int step16 = 16;
-    constexpr int gridSizeX16 = (SIZE + 2 + step16 - 1) / step16 + 1;
-    constexpr int gridSizeY16 = gridSizeX16;
-    constexpr int gridSizeZ16 = gridSizeX16;
-    std::array<float, gridSizeX16 * gridSizeY16 * gridSizeZ16> largeCavesNoises{};
+    // Pre calculate noises values at 12x down sampling
+    constexpr int step8 = 8;
+    constexpr int gridSizeX8 = (SIZE + 2 + step8 - 1) / step8 + 1;
+    constexpr int gridSizeY8 = gridSizeX8;
+    constexpr int gridSizeZ8 = gridSizeX8;
+    std::array<float, gridSizeX8 * gridSizeY8 * gridSizeZ8> largeCavesNoises{};
     {
-        for (int gx = 0; gx < gridSizeX16; ++gx) {
-            const int wx = m_x + gx * step16;
+        for (int gx = 0; gx < gridSizeX8; ++gx) {
+            const int wx = m_x + gx * step8;
 
-            for (int gy = 0; gy < gridSizeY16; ++gy) {
-                const int wy = m_y + gy * step16;
+            for (int gy = 0; gy < gridSizeY8; ++gy) {
+                const int wy = m_y + gy * step8;
 
-                for (int gz = 0; gz < gridSizeZ16; ++gz) {
-                    const int wz = m_z + gz * step16;
+                for (int gz = 0; gz < gridSizeZ8; ++gz) {
+                    const int wz = m_z + gz * step8;
 
-                    const int index = gx + gridSizeX16 * (gy + gridSizeY16 * gz);
+                    const int index = gx + gridSizeX8 * (gy + gridSizeY8 * gz);
                     largeCavesNoises[index] = TerrainGenerator::getLargeCaveNoiseAt(wx, wy, wz);
                 }
             }

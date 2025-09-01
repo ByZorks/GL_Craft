@@ -22,11 +22,11 @@ bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, c
     if (worldY <= 1 || worldY > HEIGHT_MULTIPLIER || (worldY >= columnHeight && columnHeight < SEA_LEVEL)) return false;
 
     // Up sample the 3D noise values
-    constexpr int step16 = 16;
-    constexpr int gridSizeX16 = (Chunk::SIZE + 2 + step16 - 1) / step16 + 1;
-    constexpr int gridSizeY16 = gridSizeX16;
-    constexpr int gridSizeZ16 = gridSizeX16;
-    const float largeCave = trilinearInterpolation(largeCavesNoises, position, gridSizeX16, gridSizeY16, gridSizeZ16, worldX, worldY, worldZ, step16);
+    constexpr int step8 = 8;
+    constexpr int gridSizeX8 = (Chunk::SIZE + 2 + step8 - 1) / step8 + 1;
+    constexpr int gridSizeY8 = gridSizeX8;
+    constexpr int gridSizeZ8 = gridSizeX8;
+    const float largeCave = trilinearInterpolation(largeCavesNoises, position, gridSizeX8, gridSizeY8, gridSizeZ8, worldX, worldY, worldZ, step8);
 
     constexpr float cheeseThreshold = 0.6f;
     const bool isCheeseCave = largeCave > cheeseThreshold;
