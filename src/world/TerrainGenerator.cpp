@@ -61,8 +61,8 @@ bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, c
 Biome TerrainGenerator::getBiome(const NoiseValues &noises) {
     if (noises.continentalness < -0.45f && noises.erosion > 0.2f) return Biome::DEEP_OCEAN;
     if (noises.continentalness < 0.0f && noises.erosion > 0.0f) return Biome::OCEAN;
-    if (noises.continentalness > 0.4f && noises.continentalness < 0.85f && noises.erosion < 0.1f) return Biome::MOUTAINS;
-    if (noises.continentalness > 0.85f) return Biome::SNOWY_MOUTAINS;
+    if (noises.continentalness > 0.4f && noises.continentalness < 0.85f && noises.erosion < 0.1f) return Biome::MOUNTAINS;
+    if (noises.continentalness > 0.85f) return Biome::SNOWY_MOUNTAINS;
 
     if (noises.temperature > 0.6f) return Biome::DESERT;
     if (noises.temperature > 0.1f && noises.humidity > 0.5f) return Biome::JUNGLE;
@@ -86,8 +86,8 @@ const char * TerrainGenerator::getBiomeName(const Biome biome) {
         case Biome::TAIGA: return "Taiga";
         case Biome::SNOWY_TAIGA: return "Snowy Taiga";
         case Biome::JUNGLE: return "Jungle";
-        case Biome::MOUTAINS: return "Moutains";
-        case Biome::SNOWY_MOUTAINS: return "Snowy Moutains";
+        case Biome::MOUNTAINS: return "Mountains";
+        case Biome::SNOWY_MOUNTAINS: return "Snowy Mountains";
         default: return "Unknown";
     }
 }
@@ -119,7 +119,7 @@ BlockType TerrainGenerator::getBlockType(const int y, const int columnHeight, co
 }
 
 bool TerrainGenerator::isSnowBiome(const Biome biome) {
-    return biome == Biome::SNOWY_MOUTAINS || biome == Biome::SNOWY_PLAINS || biome == Biome::SNOWY_TAIGA;
+    return biome == Biome::SNOWY_MOUNTAINS || biome == Biome::SNOWY_PLAINS || biome == Biome::SNOWY_TAIGA;
 }
 
 int TerrainGenerator::getSeed() {
@@ -440,9 +440,9 @@ BlockType TerrainGenerator::getSurfaceBlockType(const Biome biome) {
             return BlockType::SAND;
         case Biome::SNOWY_TAIGA: case Biome::SNOWY_PLAINS:
             return BlockType::SNOW_GRASS;
-        case Biome::MOUTAINS:
+        case Biome::MOUNTAINS:
             return BlockType::STONE;
-        case Biome::SNOWY_MOUTAINS:
+        case Biome::SNOWY_MOUNTAINS:
             return BlockType::SNOW;
         case Biome::JUNGLE:
             return BlockType::JUNGLE_GRASS;
@@ -455,9 +455,9 @@ BlockType TerrainGenerator::getNearSurfaceBlockType(const Biome biome) {
     switch (biome) {
         case Biome::DESERT:
             return BlockType::SAND;
-        case Biome::MOUTAINS:
+        case Biome::MOUNTAINS:
             return BlockType::STONE;
-        case Biome::SNOWY_MOUTAINS:
+        case Biome::SNOWY_MOUNTAINS:
             return BlockType::SNOW;
         default:
             return BlockType::DIRT;
