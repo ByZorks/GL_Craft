@@ -55,8 +55,8 @@ private:
 
 public:
     static const char *getBlockName(BlockType blockType);
-    static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &vertices, const std::array<bool, 26> &adjacentsFaces, unsigned int startX, unsigned int startY, unsigned int startZ);
-    static void addFaceVerticesAsBilboard(Face face, BlockType type, std::vector<BlockVertex> &vertices, unsigned int startX, unsigned int startY, unsigned int startZ);
+    static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &outVertices, const std::array<bool, 26> &adjacentsFaces, unsigned int startX, unsigned int startY, unsigned int startZ);
+    static void addFaceVerticesAsBilboard(Face face, BlockType type, std::vector<BlockVertex> &outVertices, unsigned int startX, unsigned int startY, unsigned int startZ);
     static uint8_t computeVertexAO(bool side1, bool side2, bool corner);
 
     static bool isTransparent(BlockType type);

@@ -34,7 +34,7 @@ const char *Block::getBlockName(const BlockType blockType) {
     }
 }
 
-void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &vertices,
+void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,
                             const std::array<bool, 26> &adjacentsFaces, const unsigned int startX,
                             const unsigned int startY, const unsigned int startZ) {
 
@@ -62,7 +62,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                     adjacentsFaces[AOIndex(0, -1, 1)],
                     adjacentsFaces[AOIndex(-1, -1, 1)])
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::BACK: {
@@ -85,7 +85,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(0, -1, -1)],
                           adjacentsFaces[AOIndex(1, -1, -1)])
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::LEFT: {
@@ -108,7 +108,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(-1, -1, 0)],
                           adjacentsFaces[AOIndex(-1, -1, -1)])
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::RIGHT: {
@@ -131,7 +131,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(1, -1, 0)],
                           adjacentsFaces[AOIndex(1, -1, 1)])
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::TOP:
@@ -156,7 +156,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(0, 1, 1)],
                           adjacentsFaces[AOIndex(-1, 1, 1)]),
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::BOTTOM: {
@@ -179,7 +179,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                     adjacentsFaces[AOIndex(0, -1, -1)],
                     adjacentsFaces[AOIndex(-1, -1, -1)]),
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         default:
@@ -187,7 +187,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
     }
 }
 
-void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std::vector<BlockVertex> &vertices,
+void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,
                                       const unsigned int startX, const unsigned int startY, const unsigned int startZ) {
     const unsigned int position[3] = {startX, startY, startZ};
     const uint8_t texLayer = getTextureLayer(type, face);
@@ -196,12 +196,12 @@ void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std
     switch (face) {
         case Face::FRONT: {
             constexpr unsigned int faceIndex = 0;
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::BACK: {
             constexpr unsigned int faceIndex = 1;
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         default:
