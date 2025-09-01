@@ -283,6 +283,7 @@ void SurfaceFeature::addSpruceTree(std::mt19937 &rng, const ChunkPosition &posit
     }
 
     // Leaves: 7xheight/2x7
+    std::bernoulli_distribution distrib(0.2);
     const int leavesStartY = localY + height / 2;
     for (int y = leavesStartY; y < localY + height; y++) {
         const int layer = y - leavesStartY;
@@ -294,7 +295,6 @@ void SurfaceFeature::addSpruceTree(std::mt19937 &rng, const ChunkPosition &posit
                 if (const int dist2 = x * x + z * z;
                     dist2 <= outerLimit) { // Circle
                     // Skip some blocks on the outer ring to make shape less perfect
-                    std::bernoulli_distribution distrib(0.2);
                     if (dist2 > innerLimit && distrib(rng)) continue;
                     addFeatureBlocks(position, localX + x, y, localZ + z, BlockType::SPRUCE_LEAVES, outBlocks, outPendings);
                 }
