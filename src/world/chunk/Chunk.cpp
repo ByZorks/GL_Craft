@@ -25,19 +25,17 @@ void Chunk::generateVoxel() {
     constexpr int gridSizeY4 = gridSizeX4;
     constexpr int gridSizeZ4 = gridSizeX4;
     std::array<float, gridSizeX4 * gridSizeY4 * gridSizeZ4> tunnelCavesNoises{};
-    {
-        for (int gx = 0; gx < gridSizeX4; ++gx) {
-            const int wx = m_x + gx * step4;
+    for (int gx = 0; gx < gridSizeX4; ++gx) {
+        const int wx = m_x + gx * step4;
 
-            for (int gy = 0; gy < gridSizeY4; ++gy) {
-                const int wy = m_y + gy * step4;
+        for (int gy = 0; gy < gridSizeY4; ++gy) {
+            const int wy = m_y + gy * step4;
 
-                for (int gz = 0; gz < gridSizeZ4; ++gz) {
-                    const int wz = m_z + gz * step4;
+            for (int gz = 0; gz < gridSizeZ4; ++gz) {
+                const int wz = m_z + gz * step4;
 
-                    const int index = gx + gridSizeX4 * (gy + gridSizeY4 * gz);
-                    tunnelCavesNoises[index] = TerrainGenerator::getTunnelCaveNoiseAt(wx, wy, wz);
-                }
+                const int index = gx + gridSizeX4 * (gy + gridSizeY4 * gz);
+                tunnelCavesNoises[index] = TerrainGenerator::getTunnelCaveNoiseAt(wx, wy, wz);
             }
         }
     }
@@ -48,19 +46,17 @@ void Chunk::generateVoxel() {
     constexpr int gridSizeY8 = gridSizeX8;
     constexpr int gridSizeZ8 = gridSizeX8;
     std::array<float, gridSizeX8 * gridSizeY8 * gridSizeZ8> largeCavesNoises{};
-    {
-        for (int gx = 0; gx < gridSizeX8; ++gx) {
-            const int wx = m_x + gx * step8;
+    for (int gx = 0; gx < gridSizeX8; ++gx) {
+        const int wx = m_x + gx * step8;
 
-            for (int gy = 0; gy < gridSizeY8; ++gy) {
-                const int wy = m_y + gy * step8;
+        for (int gy = 0; gy < gridSizeY8; ++gy) {
+            const int wy = m_y + gy * step8;
 
-                for (int gz = 0; gz < gridSizeZ8; ++gz) {
-                    const int wz = m_z + gz * step8;
+            for (int gz = 0; gz < gridSizeZ8; ++gz) {
+                const int wz = m_z + gz * step8;
 
-                    const int index = gx + gridSizeX8 * (gy + gridSizeY8 * gz);
-                    largeCavesNoises[index] = TerrainGenerator::getLargeCaveNoiseAt(wx, wy, wz);
-                }
+                const int index = gx + gridSizeX8 * (gy + gridSizeY8 * gz);
+                largeCavesNoises[index] = TerrainGenerator::getLargeCaveNoiseAt(wx, wy, wz);
             }
         }
     }
