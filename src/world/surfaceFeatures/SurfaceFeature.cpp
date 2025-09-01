@@ -248,8 +248,8 @@ void SurfaceFeature::addMegaJungleTree(std::mt19937 &rng, const ChunkPosition &p
     const int height = 15 + static_cast<int>(rng() % 11); // Height between 15 and 25 blocks
     // Trunk: 2xheightx2
     for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < 2; x++) {
-            for (int z = 0; z < 2; z++) {
+        for (int x = -1; x <= 0; ++x) {
+            for (int z = -1; z <= 0; ++z) {
                 addFeatureBlocks(position, localX + x, localY + y, localZ + z, BlockType::JUNGLE_LOG, outBlocks, outPendings);
             }
         }
