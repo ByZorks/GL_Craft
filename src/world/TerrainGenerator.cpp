@@ -264,17 +264,13 @@ float TerrainGenerator::trilinearInterpolation(const std::span<const float> &noi
     const int cellY = std::clamp(localY / step, 0, gridSizeY - 2);
     const int cellZ = std::clamp(localZ / step, 0, gridSizeZ - 2);
 
-    const float fracX = std::clamp((localX - cellX * step) / static_cast<float>(step), 0.f, 1.f);
-    const float fracY = std::clamp((localY - cellY * step) / static_cast<float>(step), 0.f, 1.f);
-    const float fracZ = std::clamp((localZ - cellZ * step) / static_cast<float>(step), 0.f, 1.f);
+    const float fracX = std::clamp(static_cast<float>(localX - cellX * step) / static_cast<float>(step), 0.f, 1.f);
+    const float fracY = std::clamp(static_cast<float>(localY - cellY * step) / static_cast<float>(step), 0.f, 1.f);
+    const float fracZ = std::clamp(static_cast<float>(localZ - cellZ * step) / static_cast<float>(step), 0.f, 1.f);
 
-    auto idx = [&](const int i, const int j, const int k) {
+    const auto idx = [&](const int i, const int j, const int k) {
         return i + gridSizeX * (j + gridSizeY * k);
     };
-
-    if (cellX + 1 >= gridSizeX || cellY + 1 >= gridSizeY || cellZ + 1 >= noises.size() / (gridSizeX * gridSizeY)) {
-        return noises[idx(cellX, cellY, cellZ)]; // Out of bounds, return the nearest corner value
-    }
 
     // Cube corners
     const float V000 = noises[idx(cellX, cellY, cellZ)];
