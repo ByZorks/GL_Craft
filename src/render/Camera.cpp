@@ -40,7 +40,7 @@ void Camera::updateLastState() {
 }
 
 void Camera::processInput(GLFWwindow *window, const double deltaTime) {
-    const float cameraSpeed = 150.0f * static_cast<float>(deltaTime);
+    const float cameraSpeed = 100.0f * static_cast<float>(deltaTime);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         m_cameraPos += cameraSpeed * m_cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)

@@ -28,6 +28,8 @@ const char *Block::getBlockName(const BlockType blockType) {
         case BlockType::JUNGLE_LOG: return "JUNGLE_LOG";
         case BlockType::JUNGLE_LEAVES: return "JUNGLE_LEAVES";
         case BlockType::JUNGLE_GRASS: return "JUNGLE_GRASS";
+        case BlockType::SPRUCE_LEAVES: return "SPRUCE_LEAVES";
+        case BlockType::SPRUCE_LOG: return "SPRUCE_LOG";
         default: return "UNKNOWN";
     }
 }
