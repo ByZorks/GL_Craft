@@ -14,12 +14,16 @@
 TextureArray::TextureArray(const int width, const int height, const int layers, std::string dirPath) : m_width(width), m_height(height), m_layers(layers), m_dirPath(std::move(dirPath)) {
     stbi_set_flip_vertically_on_load(true);
 
-    const std::vector<std::string> files = getFilesInDirectory(m_dirPath);
+    std::vector<std::string> files = getFilesInDirectory(m_dirPath);
     if (files.size() != static_cast<size_t>(m_layers)) {
         std::cerr << "Number of files in directory (" << files.size() <<
                 ") does not match the specified number of layers (" << m_layers << ")" << std::endl;
         return;
     }
+
+    std::sort(files.begin(), files.end(), [](const std::string &a, const std::string &b) {
+        return a < b;
+    });
 
     GLCall(glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_ID));
     const int mipLevels = 1 + static_cast<int>(std::floor(std::log2(std::max(m_width, m_height))));
