@@ -1,9 +1,10 @@
 #include "TextureArray.h"
 
+#include <algorithm>
 #include <cmath>
-#include <utility>
 #include <filesystem>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 #include "OpenGLDebug.h"
@@ -15,7 +16,7 @@ TextureArray::TextureArray(const int width, const int height, std::string dirPat
     stbi_set_flip_vertically_on_load(true);
 
     std::vector<std::string> files = getFilesInDirectory(m_dirPath);
-    std::sort(files.begin(), files.end(), [](const std::string &a, const std::string &b) {
+    std::ranges::sort(files, [](const std::string &a, const std::string &b) {
         return a < b;
     });
     const unsigned int layersCount = files.size();
