@@ -15,7 +15,7 @@
 
 class Application {
 private:
-    GLFWwindow* m_window{};
+    std::shared_ptr<GLFWwindow> m_window;
 
     std::unique_ptr<World> m_world;
     std::unique_ptr<PostProcessingMesh> m_postProcessingMesh;
@@ -43,13 +43,12 @@ private:
     float m_aspectRatio = 16.0f / 9.0f;
     int m_MVPUniformBufferBindingSlot = 0;
     int m_timeUniformBufferBindingSlot = 1;
-    int m_atlasTextureSlot = 0;
+    int m_textureSlot = 0;
     int m_postProcessingSceneTextureSlot = 1;
     int m_postProcessingDepthTextureSlot = 2;
 
 public:
     Application(int width, int height, const char *title);
-    ~Application();
 
     void init();
     void run();
@@ -62,7 +61,6 @@ private:
     void update();
     void render();
     void stateUpdate();
-    void cleanup();
 
     void onMouseMove(double xPos, double yPos);
     void onFrameBufferResize(int width, int height);

@@ -11,7 +11,7 @@ TerrainGenerator::NoiseValues DebugUI::m_noises;
 
 DebugUI::DebugUI() : m_uiMode(false), m_tabKeyPressed(false) {}
 
-DebugUI::DebugUI(GLFWwindow *window): m_uiMode(false), m_tabKeyPressed(false) {
+DebugUI::DebugUI(const std::shared_ptr<GLFWwindow> &window): m_uiMode(false), m_tabKeyPressed(false) {
     init(window);
 }
 
@@ -21,11 +21,11 @@ DebugUI::~DebugUI() {
     ImGui::DestroyContext();
 }
 
-void DebugUI::init(GLFWwindow *window) {
+void DebugUI::init(const std::shared_ptr<GLFWwindow> &window) {
     ImGuiContext *ctx = ImGui::CreateContext();
     ImGui::SetCurrentContext(ctx);
 
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(window.get(), true);
     ImGui_ImplOpenGL3_Init("#version 460 core");
     ImGui::StyleColorsDark();
 }
@@ -76,18 +76,18 @@ void DebugUI::draw() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void DebugUI::processInput(GLFWwindow *window, Camera &camera) {
-    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS && !m_tabKeyPressed) {
+void DebugUI::processInput(const std::shared_ptr<GLFWwindow> &window, Camera &camera) {
+    if (glfwGetKey(window.get(), GLFW_KEY_TAB) == GLFW_PRESS && !m_tabKeyPressed) {
         m_uiMode = !m_uiMode;
-        glfwSetInputMode(window, GLFW_CURSOR, m_uiMode ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(window.get(), GLFW_CURSOR, m_uiMode ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
         camera.setInput(!m_uiMode);
 
         if (!m_uiMode) {
-            camera.resetMousePosition(window);
+            camera.resetMousePosition(window.get());
         }
         m_tabKeyPressed = true;
     }
-    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE) {
+    if (glfwGetKey(window.get(), GLFW_KEY_TAB) == GLFW_RELEASE) {
         m_tabKeyPressed = false;
     }
 }

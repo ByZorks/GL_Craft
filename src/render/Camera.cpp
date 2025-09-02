@@ -39,15 +39,15 @@ void Camera::updateLastState() {
     if (std::abs(m_lastStricterPitch - m_pitch) > 5.f) m_lastStricterPitch = m_pitch;
 }
 
-void Camera::processInput(GLFWwindow *window, const double deltaTime) {
+void Camera::processInput(const std::shared_ptr<GLFWwindow> &window, const double deltaTime) {
     const float cameraSpeed = 150.0f * static_cast<float>(deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    if (glfwGetKey(window.get(), GLFW_KEY_W) == GLFW_PRESS)
         m_cameraPos += cameraSpeed * m_cameraFront;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    if (glfwGetKey(window.get(), GLFW_KEY_S) == GLFW_PRESS)
         m_cameraPos -= cameraSpeed * m_cameraFront;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    if (glfwGetKey(window.get(), GLFW_KEY_A) == GLFW_PRESS)
         m_cameraPos -= glm::normalize(glm::cross(m_cameraFront, m_cameraUp)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    if (glfwGetKey(window.get(), GLFW_KEY_D) == GLFW_PRESS)
         m_cameraPos += glm::normalize(glm::cross(m_cameraFront, m_cameraUp)) * cameraSpeed;
 }
 

@@ -1,5 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
+#include <memory>
+
 #include "../math/Frustum.h"
 #include "../world/chunk/Chunk.h"
 #include "GLFW/glfw3.h"
@@ -21,7 +23,7 @@ public:
     Camera(unsigned int windowWidth, unsigned int windowHeight);
 
     void updateLastState();
-    void processInput(GLFWwindow *window, double deltaTime);
+    void processInput(const std::shared_ptr<GLFWwindow> &window, double deltaTime);
     void handleMouse(double xpos, double ypos);
     void resetMousePosition(GLFWwindow *window);
 

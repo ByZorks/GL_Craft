@@ -9,22 +9,18 @@ Application::Application(const int width, const int height, const char *title) :
     initGLFW(width, height, title);
 }
 
-Application::~Application() {
-    cleanup();
-}
-
 void Application::init() {
     initGL();
     initResources();
 
-    glfwMaximizeWindow(m_window); // Needs to be called after glfw and meshes initialization
+    glfwMaximizeWindow(m_window.get());
 }
 
 void Application::run() {
     Renderer::init();
     double lastTime = glfwGetTime();
 
-    while (!glfwWindowShouldClose(m_window)) {
+    while (!glfwWindowShouldClose(m_window.get())) {
         const double currentTime = glfwGetTime();
         const double deltaTime = currentTime - lastTime;
         lastTime = currentTime;
@@ -34,7 +30,7 @@ void Application::run() {
         render();
         stateUpdate();
 
-        glfwSwapBuffers(m_window);
+        glfwSwapBuffers(m_window.get());
         glfwPollEvents();
     }
 }
@@ -48,29 +44,35 @@ void Application::initGLFW(const int width, const int height, const char *title)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
-    if (!m_window) {
+    GLFWwindow *rawWindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
+    if (!rawWindow) {
         glfwTerminate();
         throw std::runtime_error("Failed to create GLFW window");
     }
 
-    glfwMakeContextCurrent(m_window);
+    m_window = std::shared_ptr<GLFWwindow>(rawWindow, [](GLFWwindow *w) {
+        glfwDestroyWindow(w);
+        glfwTerminate();
+    });
 
-    glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow *window, const int w, const int h) {
+    glfwMakeContextCurrent(m_window.get());
+
+    glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow *window, const int w, const int h) {
         auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
         app->onFrameBufferResize(w, h);
     });
-    glfwSetCursorPosCallback(m_window, [](GLFWwindow *window, const double xpos, const double ypos) {
+    glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow *window, const double xpos, const double ypos) {
         auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
         app->onMouseMove(xpos, ypos);
     });
-    glfwSetMouseButtonCallback(m_window, [](GLFWwindow *window, const int button, const int action, const int mods) {
-        auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
-        app->onMouseEvent(button, action);
-    });
+    glfwSetMouseButtonCallback(m_window.get(),
+                               [](GLFWwindow *window, const int button, const int action, const int mods) {
+                                   auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
+                                   app->onMouseEvent(button, action);
+                               });
 
-    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetWindowUserPointer(m_window, this);
+    glfwSetInputMode(m_window.get(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetWindowUserPointer(m_window.get(), this);
 
     glfwSwapInterval(0); // Disable VSync
 }
@@ -85,7 +87,7 @@ void Application::initGL() {
 
 void Application::initResources() {
     m_textures = std::make_unique<TextureArray>(16, 16, "../res/textures/");
-    m_textures->bind(m_atlasTextureSlot);
+    m_textures->bind(m_textureSlot);
 
     m_MVPBuffer = std::make_unique<UniformBuffer>();
     m_MVPBuffer->init(nullptr, sizeof(glm::mat4), m_MVPUniformBufferBindingSlot);
@@ -94,28 +96,28 @@ void Application::initResources() {
     m_timeBuffer->init(nullptr, sizeof(float), m_timeUniformBufferBindingSlot);
 
     int width, height;
-    glfwGetWindowSize(m_window, &width, &height);
+    glfwGetWindowSize(m_window.get(), &width, &height);
     m_postProcessingMesh = std::make_unique<PostProcessingMesh>(width, height);
     m_crosshairMesh = std::make_unique<Crosshair>();
     m_highlightedBlockMesh = std::make_unique<HighlightedBlock>();
 
     m_blockShader = std::make_unique<Shader>("../res/shaders/block.vert", "../res/shaders/block.frag");
     m_blockShader->use();
-    m_blockShader->setUniform1i("u_TextureArray", m_atlasTextureSlot);
+    m_blockShader->setUniform1i("u_TextureArray", m_textureSlot);
 
     m_instancesShader = std::make_unique<Shader>("../res/shaders/instances.vert", "../res/shaders/instances.frag");
     m_instancesShader->use();
-    m_instancesShader->setUniform1i("u_TextureArray", m_atlasTextureSlot);
+    m_instancesShader->setUniform1i("u_TextureArray", m_textureSlot);
 
     m_waterShader = std::make_unique<Shader>("../res/shaders/water.vert", "../res/shaders/water.frag");
     m_waterShader->use();
-    m_waterShader->setUniform1i("u_TextureArray", m_atlasTextureSlot);
+    m_waterShader->setUniform1i("u_TextureArray", m_textureSlot);
 
     m_highlightedBlockShader = std::make_unique<Shader>("../res/shaders/highlightBlock.vert", "../res/shaders/highlightBlock.frag");
 
     m_crosshairShader = std::make_unique<Shader>("../res/shaders/crosshair.vert", "../res/shaders/crosshair.frag");
     m_crosshairShader->use();
-    m_crosshairShader->setUniform1i("u_TextureArray", m_atlasTextureSlot);
+    m_crosshairShader->setUniform1i("u_TextureArray", m_textureSlot);
     m_crosshairShader->setUniform1f("u_AspectRatio", m_aspectRatio);
 
     m_postProcessingShader = std::make_unique<Shader>("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
@@ -129,7 +131,7 @@ void Application::initResources() {
 }
 
 void Application::processInput(const double deltaTime) {
-    if (glfwGetKey(m_window, GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(m_window, true);
+    if (glfwGetKey(m_window.get(), GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(m_window.get(), true);
 
     m_debugUI.processInput(m_window, m_camera); // Tab key for ImGui
 
@@ -223,27 +225,6 @@ void Application::stateUpdate() {
     m_leftClicked = false;
     m_rightClicked = false;
     m_middleClicked = false;
-}
-
-void Application::cleanup() {
-    m_raycastResult = RaycastResult{};
-    Raycast::clearCache();
-    m_world.reset();
-    m_postProcessingMesh.reset();
-    m_highlightedBlockMesh.reset();
-    m_crosshairMesh.reset();
-    m_blockShader.reset();
-    m_instancesShader.reset();
-    m_waterShader.reset();
-    m_highlightedBlockShader.reset();
-    m_crosshairShader.reset();
-    m_postProcessingShader.reset();
-    m_textures.reset();
-    m_MVPBuffer.reset();
-    m_timeBuffer.reset();
-
-    glfwDestroyWindow(m_window);
-    glfwTerminate();
 }
 
 void Application::onMouseMove(const double xPos, const double yPos) {
