@@ -50,7 +50,6 @@ private:
 public:
     Application(int width, int height, const char *title);
 
-    void init();
     void run();
 
 private:

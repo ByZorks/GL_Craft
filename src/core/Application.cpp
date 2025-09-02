@@ -7,9 +7,6 @@
 
 Application::Application(const int width, const int height, const char *title) : m_camera(width, height) {
     initGLFW(width, height, title);
-}
-
-void Application::init() {
     initGL();
     initResources();
 
