@@ -84,7 +84,7 @@ void Application::initGL() {
 }
 
 void Application::initResources() {
-    m_textures = std::make_unique<TextureArray>(16, 16, 37, "../res/textures/");
+    m_textures = std::make_unique<TextureArray>(16, 16, "../res/textures/");
     m_textures->bind(m_atlasTextureSlot);
 
     m_MVPBuffer = std::make_unique<UniformBuffer>();

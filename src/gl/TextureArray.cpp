@@ -11,23 +11,18 @@
 #include "stb/stb_image.h"
 
 
-TextureArray::TextureArray(const int width, const int height, const int layers, std::string dirPath) : m_width(width), m_height(height), m_layers(layers), m_dirPath(std::move(dirPath)) {
+TextureArray::TextureArray(const int width, const int height, std::string dirPath) : m_width(width), m_height(height), m_dirPath(std::move(dirPath)) {
     stbi_set_flip_vertically_on_load(true);
 
     std::vector<std::string> files = getFilesInDirectory(m_dirPath);
-    if (files.size() != static_cast<size_t>(m_layers)) {
-        std::cerr << "Number of files in directory (" << files.size() <<
-                ") does not match the specified number of layers (" << m_layers << ")" << std::endl;
-        return;
-    }
-
     std::sort(files.begin(), files.end(), [](const std::string &a, const std::string &b) {
         return a < b;
     });
+    const unsigned int layersCount = files.size();
 
     GLCall(glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_ID));
     const int mipLevels = 1 + static_cast<int>(std::floor(std::log2(std::max(m_width, m_height))));
-    GLCall(glTextureStorage3D(m_ID, mipLevels, GL_RGBA8, m_width, m_height, m_layers));
+    GLCall(glTextureStorage3D(m_ID, mipLevels, GL_RGBA8, m_width, m_height, layersCount));
 
     GLCall(glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR));
     GLCall(glTextureParameteri(m_ID, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
@@ -42,7 +37,7 @@ TextureArray::TextureArray(const int width, const int height, const int layers, 
         GLCall(glTextureParameterf(m_ID, GL_TEXTURE_MAX_ANISOTROPY, std::min(maxAnisotropicFiltering, anisotropicFiltering)));
     }
 
-    for (unsigned int i = 0; i < m_layers; i++) {
+    for (unsigned int i = 0; i < layersCount; i++) {
         unsigned char* buffer = stbi_load(files[i].c_str(), &m_width, &m_height, nullptr, 4);
         if (!buffer) {
             std::cerr << "Failed to load texture: " << files[i] << std::endl;
