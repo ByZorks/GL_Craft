@@ -58,21 +58,45 @@ bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, c
     return true;
 }
 
-Biome TerrainGenerator::getBiome(const NoiseValues &noises) {
-    if (noises.continentalness < -0.45f && noises.erosion > 0.2f) return Biome::DEEP_OCEAN;
-    if (noises.continentalness < 0.0f && noises.erosion > 0.0f) return Biome::OCEAN;
-    if (noises.continentalness > 0.4f && noises.continentalness < 0.85f && noises.erosion < 0.1f) return Biome::MOUNTAINS;
-    if (noises.continentalness > 0.85f) return Biome::SNOWY_MOUNTAINS;
+Biome TerrainGenerator::getBiome(const NoiseValues &noises, const int worldX, const int worldZ) {
+    const float edgeNoise = getSurfaceFeaturesNoiseAt(worldX, worldZ) * 0.02f;
 
-    if (noises.temperature > 0.6f) return Biome::DESERT;
-    if (noises.temperature > 0.1f && noises.humidity > 0.5f) return Biome::JUNGLE;
-    if (noises.temperature > 0.1f && noises.humidity > 0.1f) return Biome::PLAINS;
-    if (noises.temperature > -0.2f && noises.humidity > 0.1f) return Biome::FOREST;
-    if (noises.temperature > -0.2f && noises.humidity > -0.1f) return Biome::PLAINS;
-    if (noises.temperature > -0.3f && noises.humidity > -0.3f) return Biome::TAIGA;
-    if (noises.temperature > -0.7f && noises.humidity > -0.3f) return Biome::SNOWY_TAIGA;
-    if (noises.temperature <= -0.7f) return Biome::SNOWY_PLAINS;
-    return Biome::PLAINS;
+    const float continentalness = noises.continentalness + edgeNoise * 0.5f;
+    const float erosion = noises.erosion + edgeNoise * 0.4f;
+    const float temperature = noises.temperature + edgeNoise * 0.25f;
+    const float humidity = noises.humidity + edgeNoise * 0.25f;
+
+    // Oceans
+    if (continentalness < 0.0f) {
+        return continentalness < -0.45f && erosion > 0.2f
+                   ? Biome::DEEP_OCEAN
+                   : erosion > 0.0f
+                         ? Biome::OCEAN
+                         : Biome::PLAINS;
+    }
+
+    // Mountains
+    if (continentalness > 0.85f) return Biome::SNOWY_MOUNTAINS;
+    if (continentalness > 0.4f && erosion < 0.1f) return Biome::MOUNTAINS;
+
+    // Biomes based on temperature and humidity
+    if (temperature > 0.6f) return Biome::DESERT;
+    if (temperature > 0.1f)
+        return humidity > 0.5f
+                   ? Biome::JUNGLE
+                   : humidity > 0.1f
+                         ? Biome::PLAINS
+                         : Biome::PLAINS;
+    if (temperature > -0.2f)
+        return humidity > 0.1f
+                   ? Biome::FOREST
+                   : humidity > -0.1f
+                         ? Biome::PLAINS
+                         : Biome::PLAINS;
+    if (temperature > -0.3f && humidity > -0.3f) return Biome::TAIGA;
+    if (temperature > -0.7f && humidity > -0.3f) return Biome::SNOWY_TAIGA;
+
+    return temperature <= -0.7f ? Biome::SNOWY_PLAINS : Biome::PLAINS;
 }
 
 const char * TerrainGenerator::getBiomeName(const Biome biome) {

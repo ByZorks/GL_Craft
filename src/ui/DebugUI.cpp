@@ -61,7 +61,7 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
     if (camera.hasCameraChangedBlock()) m_noises = TerrainGenerator::NoiseValues(static_cast<int>(cameraPosition.x), static_cast<int>(cameraPosition.z));
     ImGui::Text("C: %.3f, E: %.3f", m_noises.continentalness, m_noises.erosion);
     ImGui::Text("T: %.3f, H: %.3f", m_noises.temperature, m_noises.humidity);
-    const Biome biome = TerrainGenerator::getBiome(m_noises);
+    const Biome biome = TerrainGenerator::getBiome(m_noises, static_cast<int>(cameraPosition.x), static_cast<int>(cameraPosition.z));
     ImGui::Text("Biome: %s", TerrainGenerator::getBiomeName(biome));
 
     ImGui::Separator();

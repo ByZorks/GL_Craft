@@ -75,7 +75,7 @@ void Chunk::generateVoxel() {
             if (columnHeight < m_y - static_cast<int>(SIZE)) continue;
 
             noises.computeRemainingNoises(worldX, worldZ);
-            const Biome biome = TerrainGenerator::getBiome(noises);
+            const Biome biome = TerrainGenerator::getBiome(noises, worldX, worldZ);
             const auto position = ChunkPosition(m_x, m_y, m_z);
 
             // Surface features noise

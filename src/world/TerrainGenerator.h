@@ -63,7 +63,7 @@ public:
 
     static int getHeight(const NoiseValues &noises);
     static bool isCave(const ChunkPosition &position, int worldX, int worldY, int worldZ, int columnHeight, const std::span<const float> &largeCavesNoises, const std::span<const float> &tunnelCavesNoises);
-    static Biome getBiome(const NoiseValues &noises);
+    static Biome getBiome(const NoiseValues &noises, int worldX, int worldZ);
     static const char *getBiomeName(Biome biome);
     static BlockType getBlockType(int y, int columnHeight, Biome biome);
     static BlockType getNearSurfaceBlockType(Biome biome);
