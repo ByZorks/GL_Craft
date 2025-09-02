@@ -5,11 +5,11 @@
 
 class TextureArray {
     unsigned int m_ID = 0;
-    int m_width, m_height, m_layers;
+    int m_width, m_height;
     std::string m_dirPath;
 
 public:
-    TextureArray(int width, int height, int layers, std::string  dirPath);
+    TextureArray(int width, int height, std::string dirPath);
     ~TextureArray();
 
     void bind(unsigned int slot) const;

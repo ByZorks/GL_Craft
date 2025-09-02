@@ -4,7 +4,7 @@ Poppy::Poppy(const int x, const int y, const int z) : Flower(x, y, z) {
 }
 
 void Poppy::generateVoxel() {
-    m_blockType[0] = BlockType::FLOWER_POPPY;
+    m_blocks[0] = BlockType::FLOWER_POPPY;
 
     m_state = State::VOXEL_GENERATED;
 }

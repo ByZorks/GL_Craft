@@ -16,17 +16,15 @@ enum class State : uint8_t {
 };
 
 struct buffersData {
-    mutable std::mutex m_verticesMutex;
     std::vector<BlockVertex> vertices;
     unsigned int verticesCount = 0; // vertices.size() * 6; Used to draw the mesh, so we must only update it once the GL buffers are ready
     bool hasFaces = false;
 
-    void shrinkBuffers() {
+    void shrinkVertices() {
         vertices.shrink_to_fit();
     }
 
     void deleteMesh() {
-        std::lock_guard lock(m_verticesMutex);
         vertices.clear();
     }
 };
@@ -35,12 +33,13 @@ class Mesh {
 protected:
     const unsigned int m_size;
     const int m_x, m_y, m_z;
-    std::vector<BlockType> m_blockType;
+    std::vector<BlockType> m_blocks;
     buffersData m_opaqueData;
     buffersData m_waterData;
     State m_state = State::UNINITIALIZED;
     const AABB m_box;
     bool m_wasInFrustum = false;
+    unsigned int m_visibleBlocks = 0;
 
 public:
     Mesh(const int x, const int y, const int z, const unsigned int size) : m_size(size), m_x(x), m_y(y), m_z(z),
@@ -50,8 +49,7 @@ public:
                                                              static_cast<float>(y) + static_cast<float>(size) - 1.0f,
                                                              static_cast<float>(z) + static_cast<float>(size) - 1.0f
                                                   )) {
-        m_blockType.reserve(m_size * m_size * m_size);
-        m_blockType.resize(m_size * m_size * m_size, BlockType::AIR);
+        m_blocks.resize(m_size * m_size * m_size, BlockType::AIR);
     }
     virtual ~Mesh() = default;
 
@@ -66,6 +64,10 @@ public:
     void resetMesh() {
         m_opaqueData.deleteMesh();
         m_waterData.deleteMesh();
+    }
+
+    bool isEmpty() const {
+        return m_visibleBlocks == 0;
     }
 
     [[nodiscard]] bool hasOpaqueFaces() const {
@@ -101,7 +103,11 @@ public:
         const BlockType neighborType = getBlockType(x, y, z);
         const bool neighborTransparent = Block::isTransparent(neighborType);
 
-        if (currentBlockType == BlockType::LEAVES && neighborTransparent) return true; // Leaves block, always draw face
+        if (currentBlockType == BlockType::OAK_LEAVES ||
+            currentBlockType == BlockType::SNOW_OAK_LEAVES ||
+            currentBlockType == BlockType::JUNGLE_LEAVES ||
+            currentBlockType == BlockType::SPRUCE_LEAVES
+            && neighborTransparent) return true; // Leaves block, always draw face
         if (currentBlockType == BlockType::WATER && face == Face::TOP && neighborType != BlockType::WATER) return true; // Always draw water top face if neighbor is not water
         if (currentBlockType == neighborType) return false; // Same block type, no need to draw face
 
@@ -115,14 +121,14 @@ public:
         if (localX < 0 || localY < 0 || localZ < 0 || localX >= m_size || localY >= m_size || localZ >= m_size) {
             return false;
         }
-        return m_blockType[index(localX, localY, localZ)] != BlockType::AIR;
+        return m_blocks[index(localX, localY, localZ)] != BlockType::AIR;
     }
 
     [[nodiscard]] virtual BlockType getBlockType(const int localX, const int localY, const int localZ) const {
         if (localX < 0 || localY < 0 || localZ < 0 || localX >= m_size || localY >= m_size || localZ >= m_size) {
             return BlockType::AIR;
         }
-        return m_blockType[index(localX, localY, localZ)];
+        return m_blocks[index(localX, localY, localZ)];
     }
 
     [[nodiscard]] virtual int index(const int x, const int y, const int z) const {
@@ -163,8 +169,7 @@ public:
     }
 
     [[nodiscard]] std::vector<BlockVertex> getOpaqueVerticesCopy() const {
-        std::lock_guard lock(m_opaqueData.m_verticesMutex);
-        return m_opaqueData.vertices; // Only used for instance rendering, so a copy is fine
+        return m_opaqueData.vertices; // Only used for initializing instance rendering, so a copy is fine
     }
 
     [[nodiscard]] const std::vector<BlockVertex> & getOpaqueVertices() const {

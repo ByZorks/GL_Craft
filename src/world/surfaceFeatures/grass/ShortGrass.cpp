@@ -5,7 +5,7 @@ ShortGrass::ShortGrass(const int x, const int y, const int z) : Mesh(x, y, z, SI
 }
 
 void ShortGrass::generateVoxel() {
-    m_blockType[0] = BlockType::SHORT_GRASS;
+    m_blocks[0] = BlockType::SHORT_GRASS;
 
     m_state = State::VOXEL_GENERATED;
 }

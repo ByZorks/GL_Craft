@@ -97,20 +97,20 @@ void WorldRenderer::sortChunks(const Frustum &frustum, const Camera &camera, con
             m_visibleChunksCount++;
 
             // Surface features
-            if (needInstanceUpdate && camera.distanceToCamera(*chunk) < 320.0f) { // They are no longer visible at this distance event if we draw them
+            if (needInstanceUpdate && camera.distanceToCamera(*chunk) < 512.0f) { // They are no longer visible at this distance event if we draw them
                 for (const auto &feature: chunk->getSurfaceFeatures()) {
-                    switch (feature.type) {
+                    switch (feature.getType()) {
                         case SurfaceFeatureType::SHORT_GRASS:
-                            m_instanceRenderers.at(SurfaceFeatureType::SHORT_GRASS).addInstance({feature.x - 1, feature.y, feature.z - 1});
+                            m_instanceRenderers.at(SurfaceFeatureType::SHORT_GRASS).addInstance({feature.getX() - 1, feature.getY(), feature.getZ() - 1});
                             break;
                         case SurfaceFeatureType::POPPY:
-                            m_instanceRenderers.at(SurfaceFeatureType::POPPY).addInstance({feature.x - 1, feature.y, feature.z - 1});
+                            m_instanceRenderers.at(SurfaceFeatureType::POPPY).addInstance({feature.getX() - 1, feature.getY(), feature.getZ() - 1});
                             break;
                         case SurfaceFeatureType::CORNFLOWER:
-                            m_instanceRenderers.at(SurfaceFeatureType::CORNFLOWER).addInstance({feature.x - 1, feature.y, feature.z - 1});
+                            m_instanceRenderers.at(SurfaceFeatureType::CORNFLOWER).addInstance({feature.getX() - 1, feature.getY(), feature.getZ() - 1});
                             break;
                         case SurfaceFeatureType::ALLIUM:
-                            m_instanceRenderers.at(SurfaceFeatureType::ALLIUM).addInstance({feature.x - 1, feature.y, feature.z - 1});
+                            m_instanceRenderers.at(SurfaceFeatureType::ALLIUM).addInstance({feature.getX() - 1, feature.getY(), feature.getZ() - 1});
                             break;
                         default:
                             break;

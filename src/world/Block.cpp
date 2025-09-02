@@ -5,37 +5,6 @@
 
 #include "chunk/Chunk.h"
 
-Block::Block(const float x, const float y, const float z) : m_x(x), m_y(y), m_z(z) {
-}
-
-BlockType Block::getBlockType(const int y, const int columnHeight) {
-    constexpr int waterLevel = 63;
-
-    if (y < 1) return BlockType::AIR;
-    if (y == 1) return BlockType::BEDROCK;
-
-    if (y <= columnHeight) {
-        // Surface block
-        if (y == columnHeight && columnHeight >= waterLevel && y < 150) return BlockType::GRASS;
-        if (y == columnHeight && columnHeight >= waterLevel && y < 200) return BlockType::SNOW_GRASS;
-        if (y == columnHeight && columnHeight >= waterLevel) return BlockType::SNOW;
-        if (y == columnHeight) return BlockType::DIRT; // Disallow cave entrances underwater
-
-        // Subsurface blocks
-        if (y < columnHeight - 4) return BlockType::STONE;
-
-        // Near-surface blocks
-        if (y < columnHeight && y < 200) return BlockType::DIRT;
-        if (y < columnHeight) return BlockType::SNOW;
-    }
-
-    if (y > columnHeight && y <= waterLevel) {
-        return BlockType::WATER;
-    }
-
-    return BlockType::AIR;
-}
-
 const char *Block::getBlockName(const BlockType blockType) {
     switch (blockType) {
         case BlockType::AIR: return "AIR";
@@ -44,19 +13,28 @@ const char *Block::getBlockName(const BlockType blockType) {
         case BlockType::GRASS: return "GRASS";
         case BlockType::STONE: return "STONE";
         case BlockType::WATER: return "WATER";
-        case BlockType::LOG: return "LOG";
-        case BlockType::LEAVES: return "LEAVES";
+        case BlockType::OAK_LOG: return "LOG";
+        case BlockType::OAK_LEAVES: return "LEAVES";
         case BlockType::SHORT_GRASS: return "SHORT_GRASS";
         case BlockType::FLOWER_POPPY: return "FLOWER_POPPY";
         case BlockType::FLOWER_CORNFLOWER: return "FLOWER_CORNFLOWER";
         case BlockType::FLOWER_ALLIUM: return "FLOWER_ALLIUM";
         case BlockType::SNOW: return "SNOW";
         case BlockType::SNOW_GRASS: return "SNOW_GRASS";
+        case BlockType::SAND: return "SAND";
+        case BlockType::GRAVEL: return "GRAVEL";
+        case BlockType::SNOW_OAK_LEAVES: return "SNOW_OAK_LEAVES";
+        case BlockType::CACTUS: return "CACTUS";
+        case BlockType::JUNGLE_LOG: return "JUNGLE_LOG";
+        case BlockType::JUNGLE_LEAVES: return "JUNGLE_LEAVES";
+        case BlockType::JUNGLE_GRASS: return "JUNGLE_GRASS";
+        case BlockType::SPRUCE_LEAVES: return "SPRUCE_LEAVES";
+        case BlockType::SPRUCE_LOG: return "SPRUCE_LOG";
         default: return "UNKNOWN";
     }
 }
 
-void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &vertices,
+void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,
                             const std::array<bool, 26> &adjacentsFaces, const unsigned int startX,
                             const unsigned int startY, const unsigned int startZ) {
 
@@ -84,7 +62,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                     adjacentsFaces[AOIndex(0, -1, 1)],
                     adjacentsFaces[AOIndex(-1, -1, 1)])
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::BACK: {
@@ -107,7 +85,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(0, -1, -1)],
                           adjacentsFaces[AOIndex(1, -1, -1)])
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::LEFT: {
@@ -130,7 +108,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(-1, -1, 0)],
                           adjacentsFaces[AOIndex(-1, -1, -1)])
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::RIGHT: {
@@ -153,7 +131,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(1, -1, 0)],
                           adjacentsFaces[AOIndex(1, -1, 1)])
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::TOP:
@@ -178,30 +156,30 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                           adjacentsFaces[AOIndex(0, 1, 1)],
                           adjacentsFaces[AOIndex(-1, 1, 1)]),
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::BOTTOM: {
             constexpr unsigned int faceIndex = 5;
             const unsigned int ao[4] = {
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(-1, -1, 0)],
-                          adjacentsFaces[AOIndex(0, -1, -1)],
-                          adjacentsFaces[AOIndex(-1, -1, -1)]),
+                    adjacentsFaces[AOIndex(-1, -1, 0)],
+                    adjacentsFaces[AOIndex(0, -1, 1)],
+                    adjacentsFaces[AOIndex(-1, -1, 1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(1, -1, 0)],
-                          adjacentsFaces[AOIndex(0, -1, -1)],
-                          adjacentsFaces[AOIndex(1, -1, -1)]),
+                    adjacentsFaces[AOIndex(1, -1, 0)],
+                    adjacentsFaces[AOIndex(0, -1, 1)],
+                    adjacentsFaces[AOIndex(1, -1, 1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(1, -1, 0)],
-                          adjacentsFaces[AOIndex(0, -1, 1)],
-                          adjacentsFaces[AOIndex(1, -1, 1)]),
+                    adjacentsFaces[AOIndex(1, -1, 0)],
+                    adjacentsFaces[AOIndex(0, -1, -1)],
+                    adjacentsFaces[AOIndex(1, -1, -1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(-1, -1, 0)],
-                          adjacentsFaces[AOIndex(0, -1, 1)],
-                          adjacentsFaces[AOIndex(-1, -1, 1)]),
+                    adjacentsFaces[AOIndex(-1, -1, 0)],
+                    adjacentsFaces[AOIndex(0, -1, -1)],
+                    adjacentsFaces[AOIndex(-1, -1, -1)]),
             };
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         default:
@@ -209,7 +187,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
     }
 }
 
-void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std::vector<BlockVertex> &vertices,
+void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,
                                       const unsigned int startX, const unsigned int startY, const unsigned int startZ) {
     const unsigned int position[3] = {startX, startY, startZ};
     const uint8_t texLayer = getTextureLayer(type, face);
@@ -218,12 +196,12 @@ void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std
     switch (face) {
         case Face::FRONT: {
             constexpr unsigned int faceIndex = 0;
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         case Face::BACK: {
             constexpr unsigned int faceIndex = 1;
-            vertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
         default:
@@ -242,7 +220,9 @@ uint8_t Block::computeVertexAO(const bool side1, const bool side2, const bool co
 }
 
 bool Block::isTransparent(const BlockType type) {
-    return type == BlockType::WATER || type == BlockType::AIR || type == BlockType::LEAVES || isInstance(type);
+    return type == BlockType::WATER || type == BlockType::AIR ||
+           type == BlockType::OAK_LEAVES || type == BlockType::SNOW_OAK_LEAVES || type == BlockType::JUNGLE_LEAVES ||
+           type == BlockType::SPRUCE_LEAVES || isInstance(type);
 }
 
 bool Block::isInstance(const BlockType type) {
@@ -255,7 +235,7 @@ BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t 
     BlockVertex vertex{};
 
     constexpr unsigned int POS_MASK = 0x1F; // 5 bits, 0-31 range
-    constexpr unsigned int TEX_MASK = 0x1F; // 5 bits, 0-31 range
+    constexpr unsigned int TEX_MASK = 0x3F; // 6 bits, 0-63 range
     constexpr unsigned int FACE_MASK = 0x7; // 3 bits, 0-7 range
     constexpr unsigned int AO_MASK = 0x3; // 2 bits, 0-3 range
 
@@ -264,17 +244,17 @@ BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t 
     vertex.packedData |= (position[1] & POS_MASK) << 5;
     vertex.packedData |= (position[2] & POS_MASK) << 10;
 
-    // TexLayer(5 bits)
+    // TexLayer(6 bits)
     vertex.packedData |= (texLayer & TEX_MASK) << 15;
 
     // FaceIndex (3 bits)
-    vertex.packedData |= (faceIndex & FACE_MASK) << 20;
+    vertex.packedData |= (faceIndex & FACE_MASK) << 21;
 
     // AO (8 bits)
-    vertex.packedData |= (ao[0] & AO_MASK) << 23;
-    vertex.packedData |= (ao[1] & AO_MASK) << 25;
-    vertex.packedData |= (ao[2] & AO_MASK) << 27;
-    vertex.packedData |= (ao[3] & AO_MASK) << 29;
+    vertex.packedData |= (ao[0] & AO_MASK) << 24;
+    vertex.packedData |= (ao[1] & AO_MASK) << 26;
+    vertex.packedData |= (ao[2] & AO_MASK) << 28;
+    vertex.packedData |= (ao[3] & AO_MASK) << 30;
 
     return vertex;
 }

@@ -1,12 +1,14 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 #include <climits>
+#include <random>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "ChunkPosition.h"
 #include "Mesh.h"
 #include "PendingBlock.h"
+#include "../TerrainGenerator.h"
 #include "../surfaceFeatures/SurfaceFeature.h"
 
 class WorldManager;
@@ -19,6 +21,7 @@ private:
     unsigned int m_waterDrawIndex = UINT_MAX;
     unsigned int m_gpuOpaqueSlot = UINT_MAX;
     unsigned int m_gpuWaterSlot = UINT_MAX;
+    std::mt19937 m_rng;
 
 public:
     static constexpr unsigned int SIZE = 32;
@@ -49,8 +52,6 @@ public:
 private:
     void addBlockFaces(int localX, int localY, int localZ, BlockType blockType);
     void addBlockFaces(int localX, int localY, int localZ, BlockType blockType, MeshingResult &result) const;
-    void addTree(int localX, int localY, int localZ);
-    void addFeatureBlocks(int localX, int localY, int localZ, BlockType blockType);
 
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const override;
     [[nodiscard]] bool hasVisibleFaces() const;

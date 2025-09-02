@@ -4,7 +4,7 @@ Allium::Allium(const int x, const int y, const int z) : Flower(x, y, z) {
 }
 
 void Allium::generateVoxel() {
-    m_blockType[0] = BlockType::FLOWER_ALLIUM;
+    m_blocks[0] = BlockType::FLOWER_ALLIUM;
 
     m_state = State::VOXEL_GENERATED;
 }

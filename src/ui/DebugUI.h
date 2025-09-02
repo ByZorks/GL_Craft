@@ -4,6 +4,7 @@
 
 #include "../world/Block.h"
 #define GLFW_INCLUDE_NONE
+#include "../world/TerrainGenerator.h"
 #include "GLFW/glfw3.h"
 
 class Camera;
@@ -12,6 +13,7 @@ class DebugUI {
 private:
     bool m_uiMode;
     bool m_tabKeyPressed;
+    static TerrainGenerator::NoiseValues m_noises;
 
 public:
     DebugUI();

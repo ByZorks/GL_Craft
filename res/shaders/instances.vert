@@ -52,17 +52,17 @@ BlockVertex unpackVertexData(uint packedData) {
     v.position.y = (packedData >> 5)  & 0x1Fu;
     v.position.z = (packedData >> 10) & 0x1Fu;
 
-    // TexLayer (5 bits)
-    v.texLayer= (packedData >> 15) & 0x1Fu;
+    // TexLayer (6 bits)
+    v.texLayer= (packedData >> 15) & 0x3Fu;
 
     // FaceIndex (3 bits)
-    v.face = (packedData >> 20) & 0x7u;
+    v.face = (packedData >> 21) & 0x7u;
 
     // AO (8 bits)
-    v.AO.x = (packedData >> 23) & 0x3u;
-    v.AO.y = (packedData >> 25) & 0x3u;
-    v.AO.z = (packedData >> 27) & 0x3u;
-    v.AO.w = (packedData >> 29) & 0x3u;
+    v.AO.x = (packedData >> 24) & 0x3u;
+    v.AO.y = (packedData >> 26) & 0x3u;
+    v.AO.z = (packedData >> 28) & 0x3u;
+    v.AO.w = (packedData >> 30) & 0x3u;
 
     return v;
 }

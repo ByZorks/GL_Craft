@@ -133,6 +133,7 @@ add_executable(GL_Craft
         src/world/WorldRenderer.h
         src/gl/TextureArray.cpp
         src/gl/TextureArray.h
+        src/world/surfaceFeatures/SurfaceFeature.cpp
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})

@@ -1,5 +1,13 @@
 #ifndef GL_CRAFT_SURFACEFEATURE_H
 #define GL_CRAFT_SURFACEFEATURE_H
+#include <cstdint>
+#include <random>
+#include <unordered_map>
+
+#include "../Block.h"
+#include "../TerrainGenerator.h"
+#include "../chunk/ChunkPosition.h"
+#include "../chunk/PendingBlock.h"
 
 enum class SurfaceFeatureType : uint8_t {
     NONE,
@@ -8,83 +16,49 @@ enum class SurfaceFeatureType : uint8_t {
     POPPY,
     CORNFLOWER,
     ALLIUM,
+    BUSH,
+    POND
 };
 
-struct SurfaceFeature {
-    int x, y, z; // Position in world coordinates
-    SurfaceFeatureType type;
+class SurfaceFeature {
+private:
+    const int m_x, m_y, m_z; // Position in world coordinates
+    const SurfaceFeatureType m_type;
 
-    SurfaceFeature(const int x, const int y, const int z, const SurfaceFeatureType type)
-        : x(x), y(y), z(z), type(type) {}
+public:
+    SurfaceFeature(int x, int y, int z, SurfaceFeatureType type);
+    SurfaceFeature(int x, int y, int z);
 
-    SurfaceFeature(const int x, const int y, const int z)
-        : x(x), y(y), z(z), type(SurfaceFeatureType::NONE) {}
+    friend bool operator==(const SurfaceFeature &lhs, const SurfaceFeature &rhs);
+    friend bool operator!=(const SurfaceFeature &lhs, const SurfaceFeature &rhs);
 
-    friend bool operator==(const SurfaceFeature &lhs, const SurfaceFeature &rhs) {
-        return std::tie(lhs.x, lhs.y, lhs.z) == std::tie(rhs.x, rhs.y, rhs.z);
-    }
+    static SurfaceFeatureType getSurfaceFeatureType(float noiseValue, const BlockType &blockType, Biome biome);
+    static BlockType getBlockTypeOfSurfaceFeature(SurfaceFeatureType type);
+    static SurfaceFeatureType getSurfaceFeatureTypeFromBlockType(const BlockType &blockType);
+    static void addTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
+    static void addBush(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
+    static void addPond(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
 
-    friend bool operator!=(const SurfaceFeature &lhs, const SurfaceFeature &rhs) {
-        return !(lhs == rhs);
-    }
+    [[nodiscard]] bool isMultiBlockFeature() const;
+    [[nodiscard]] int getX() const;
+    [[nodiscard]] int getY() const;
+    [[nodiscard]] int getZ() const;
+    [[nodiscard]] SurfaceFeatureType getType() const;
+
+private:
+    friend std::size_t hash_value(const SurfaceFeature &obj);
+    static void addFeatureBlocks(const ChunkPosition &position, int localX, int localY, int localZ, BlockType blockType, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
+
+    static void addSmallTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
+    static void addCactus(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
+    static void addMegaJungleTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
+    static void addSpruceTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ, Biome biome, std::vector<BlockType> &outBlocks, std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &outPendings);
 };
 
-static SurfaceFeatureType getSurfaceFeatureType(const float noiseValue, const BlockType &blockType) {
-    if (blockType == BlockType::GRASS || blockType == BlockType::SNOW_GRASS) {
-        if (noiseValue >= 0.88f) return SurfaceFeatureType::TREE;
-        if (noiseValue >= 0.70f) return SurfaceFeatureType::SHORT_GRASS;
-        if (noiseValue >= 0.696f) return SurfaceFeatureType::POPPY;
-        if (noiseValue >= 0.693f) return SurfaceFeatureType::CORNFLOWER;
-        if (noiseValue >= 0.690f) return SurfaceFeatureType::ALLIUM;
-    } else {
-        // Nothing for now
-    }
-
-    return SurfaceFeatureType::NONE;
-}
-
-static BlockType getBlockTypeOfSurfaceFeature(const SurfaceFeatureType type) {
-    switch (type) {
-        case SurfaceFeatureType::NONE:
-            return BlockType::AIR;
-        case SurfaceFeatureType::TREE:
-            return BlockType::LOG; // Assuming trees are made of logs
-        case SurfaceFeatureType::SHORT_GRASS:
-            return BlockType::SHORT_GRASS;
-        case SurfaceFeatureType::POPPY:
-            return BlockType::FLOWER_POPPY;
-        case SurfaceFeatureType::CORNFLOWER:
-            return BlockType::FLOWER_CORNFLOWER;
-        case SurfaceFeatureType::ALLIUM:
-            return BlockType::FLOWER_ALLIUM;
-        default:
-            return BlockType::AIR;
-    }
-}
-
-static SurfaceFeatureType getSurfaceFeatureTypeFromBlockType(const BlockType &blockType) {
-    switch (blockType) {
-        case BlockType::SHORT_GRASS:
-            return SurfaceFeatureType::SHORT_GRASS;
-        case BlockType::FLOWER_POPPY:
-            return SurfaceFeatureType::POPPY;
-        case BlockType::FLOWER_CORNFLOWER:
-            return SurfaceFeatureType::CORNFLOWER;
-        case BlockType::FLOWER_ALLIUM:
-            return SurfaceFeatureType::ALLIUM;
-        default:
-            return SurfaceFeatureType::NONE;
-    }
-}
-
-template<>
+template <>
 struct std::hash<SurfaceFeature> {
     std::size_t operator()(const SurfaceFeature& obj) const noexcept {
-        std::size_t seed = 0x73017B6B;
-        seed ^= (seed << 6) + (seed >> 2) + 0x35E95AB9 + static_cast<std::size_t>(obj.x);
-        seed ^= (seed << 6) + (seed >> 2) + 0x786F6256 + static_cast<std::size_t>(obj.y);
-        seed ^= (seed << 6) + (seed >> 2) + 0x794EA429 + static_cast<std::size_t>(obj.z);
-        return seed;
+        return hash_value(obj);
     }
 };
 

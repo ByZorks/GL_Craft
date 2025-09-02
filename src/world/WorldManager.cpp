@@ -320,7 +320,7 @@ bool WorldManager::getNeedInstanceUpdate() const {
 
 void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
     const int maxChunksPerFrame = static_cast<int>(
-        0.1 * Renderer::s_renderDistance + 0.2 * static_cast<float>(m_threadPool.getNumberOfThreads()));
+        0.05f * Renderer::s_renderDistance + 0.2f * static_cast<float>(m_threadPool.getNumberOfThreads()));
 
     // Destroy chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {
@@ -340,6 +340,8 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 
         m_threadPool.enqueue_no_future([this, p_chunk] {
             p_chunk->generateVoxel();
+            if (p_chunk->isEmpty()) return; // Will be deleted when out of range, don't delete now to avoid it being reloaded immediately
+
             p_chunk->generateMesh();
             m_needInstanceUpdate.store(true);
             p_chunk->transferPendingBlocksToWorld(*this);
@@ -363,7 +365,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
         for (const auto &key: m_tempKeysToProcess) {
             if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
                 const std::shared_ptr<Chunk> p_chunk = it->second;
-                if (p_chunk->getState() < State::READY_TO_DRAW) continue;
+                if (p_chunk->getState() < State::VOXEL_GENERATED) continue;
 
                 std::vector<PendingBlock> blocks;
                 {

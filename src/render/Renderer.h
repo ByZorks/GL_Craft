@@ -6,16 +6,11 @@
 #include "../gl/VertexArray.h"
 
 class Renderer {
-private:
-    static float m_deltaTime;
-    static float m_lastFrame;
-
 public:
     static float s_renderDistance;
 
     static void init();
     static void clear();
-    static float calculateDeltaTime(float currentFrame);
     static void disableWireFrameMode();
     static void enableWireFrameMode();
     static void disableDepthTesting();
@@ -24,11 +19,11 @@ public:
     static void enableDepthMask();
     static void disableBackFaceCulling();
     static void enableBackFaceCulling();
-    static void drawLines(const VertexArray& vao, unsigned int IBOCount);
+    static void drawLines(const VertexArray &vao, unsigned int IBOCount);
     static void drawWithVertexPulling(const VertexArray& vao, const StorageBuffer &ssbo, unsigned int vertexCount);
-    static void drawWithVertexPullingInstanced(const VertexArray& vao, const StorageBuffer &ssbo, const StorageBuffer &instanceSsbo, unsigned int vertexCount, unsigned int instanceCount);
+    static void drawWithVertexPullingInstanced(const VertexArray &vao, const StorageBuffer &ssbo, const StorageBuffer &instanceSsbo, unsigned int vertexCount, unsigned int instanceCount);
     static void drawMultiWithVertexPulling(const IndirectBuffer &cmds, const StorageBuffer &vertices, const StorageBuffer &offsets, unsigned int drawCount, const void *offset);
-    static void drawElements(const VertexArray& vao, unsigned int IBOCount);
+    static void drawElements(const VertexArray &vao, unsigned int IBOCount);
     static void drawElementsInstanced(const VertexArray& vao, unsigned int IBOCount, unsigned int instanceCount);
 
 };
