@@ -275,8 +275,7 @@ void Application::glDebugOutput(const GLenum source, const GLenum type, const un
     std::cout << "---------------" << std::endl;
     std::cout << "Debug message (" << id << "): " <<  message << std::endl;
 
-    switch (source)
-    {
+    switch (source) {
         case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
         case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
         case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
@@ -286,8 +285,7 @@ void Application::glDebugOutput(const GLenum source, const GLenum type, const un
         default: ;
     } std::cout << std::endl;
 
-    switch (type)
-    {
+    switch (type) {
         case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
         case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
         case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break;
@@ -300,8 +298,7 @@ void Application::glDebugOutput(const GLenum source, const GLenum type, const un
         default: ;
     } std::cout << std::endl;
 
-    switch (severity)
-    {
+    switch (severity) {
         case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
         case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
         case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
