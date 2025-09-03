@@ -9,7 +9,7 @@
 IndirectRenderer::IndirectRenderer() {
     const auto renderDistanceInChunks = static_cast<size_t>(Renderer::s_renderDistance / Chunk::SIZE);
     const size_t chunksVisible = renderDistanceInChunks * renderDistanceInChunks * renderDistanceInChunks / 2; // Rough estimate
-    constexpr size_t avgVerticesPerChunk = 5000; // Rough estimate
+    constexpr size_t avgVerticesPerChunk = 7000; // Rough estimate
     const size_t slotsPerChunkEstimate = (avgVerticesPerChunk + m_vertexPerSlot - 1) / m_vertexPerSlot;
     const size_t nbSlotsMax = chunksVisible * slotsPerChunkEstimate * 2; // x2 for safety margin
 

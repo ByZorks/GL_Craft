@@ -15,7 +15,7 @@ WorldManager::WorldManager() : m_threadPool(std::max(1u, std::thread::hardware_c
     const int r = static_cast<int>(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE));
     const int r2 = r * r;
 
-    m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)));
+    m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)) + 1);
     for (int x = -r; x <= r; ++x) {
         for (int z = -r; z <= r; ++z) {
             if (const int d2 = x * x + z * z; d2 <= r2) {
@@ -64,7 +64,7 @@ void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Came
     const int r = static_cast<int>(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE));
     const int r2 = r * r;
 
-    m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)));
+    m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)) + 1);
     for (int x = -r; x <= r; ++x) {
         for (int z = -r; z <= r; ++z) {
             if (const int d2 = x * x + z * z; d2 <= r2) {
@@ -419,7 +419,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 }
 
 void WorldManager::generateChunksPositions(const int cameraWorldX, const int cameraWorldY, const int cameraWorldZ) {
-    for (auto [x,z, maxY]: m_renderDistanceOffsets) {
+    for (auto &[x,z, maxY]: m_renderDistanceOffsets) {
         const int chunkX = cameraWorldX + static_cast<int>(x * Chunk::SIZE);
         const int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::SIZE);
 
