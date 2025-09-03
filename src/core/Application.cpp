@@ -40,7 +40,7 @@ void Application::initGLFW(const int width, const int height, const char *title)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    #ifdef DEBUG_BUILD
+    #if defined(DEBUG_BUILD) || defined(RELWITHDEBINFO_BUILD)
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
     #endif
 
@@ -82,7 +82,7 @@ void Application::initGL() {
         throw std::runtime_error("Failed to initialize OpenGL context");
     }
 
-    #ifdef DEBUG_BUILD
+    #if defined(DEBUG_BUILD) || defined(RELWITHDEBINFO_BUILD)
     int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
     if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
         glEnable(GL_DEBUG_OUTPUT);

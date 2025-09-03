@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.31)
 project(GL_Craft)
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
 
 set(LIBS_DIR "${CMAKE_SOURCE_DIR}/libs")
 set(IMGUI_DIR ${LIBS_DIR}/imgui)
@@ -139,4 +138,5 @@ target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})
 target_compile_definitions(GL_Craft PUBLIC
         $<$<CONFIG:Debug>:DEBUG_BUILD>
         $<$<CONFIG:Release>:RELEASE_BUILD>
+        $<$<CONFIG:RelWithDebInfo>:RELWITHDEBINFO_BUILD>
 )
