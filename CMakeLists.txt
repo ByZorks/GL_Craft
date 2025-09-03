@@ -48,8 +48,6 @@ add_executable(GL_Craft
         src/gl/Shader.cpp
         src/gl/Shader.cpp
         src/gl/Shader.h
-        src/gl/OpenGLDebug.h
-        src/gl/OpenGLDebug.cpp
         src/gl/VertexBuffer.h
         src/gl/VertexBuffer.cpp
         src/gl/VertexArray.h
@@ -137,3 +135,8 @@ add_executable(GL_Craft
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})
+
+target_compile_definitions(GL_Craft PUBLIC
+        $<$<CONFIG:Debug>:DEBUG_BUILD>
+        $<$<CONFIG:Release>:RELEASE_BUILD>
+)

@@ -1,13 +1,12 @@
 #include "VertexBuffer.h"
 
-#include "OpenGLDebug.h"
 #include "glad/gl.h"
 
 VertexBuffer::VertexBuffer() = default;
 
 VertexBuffer::~VertexBuffer() {
     if (m_ID != 0) {
-        GLCall(glDeleteBuffers(1, &m_ID));
+        glDeleteBuffers(1, &m_ID);
     }
 }
 
@@ -34,17 +33,17 @@ VertexBuffer & VertexBuffer::operator=(VertexBuffer &&other) noexcept {
 }
 
 void VertexBuffer::init(const void *data, const unsigned int size) {
-    GLCall(glCreateBuffers(1, &m_ID));
-    GLCall(glNamedBufferData(m_ID, size * sizeof(unsigned int), data, GL_STATIC_DRAW));
+    glCreateBuffers(1, &m_ID);
+    glNamedBufferData(m_ID, static_cast<GLsizeiptr>(size * sizeof(unsigned int)), data, GL_STATIC_DRAW);
 }
 
 void VertexBuffer::updateData(const void *data, const unsigned int size, const unsigned int offset) const {
-    GLCall(glNamedBufferSubData(m_ID, offset, size, data));
+    glNamedBufferSubData(m_ID, offset, size, data);
 }
 
 void VertexBuffer::deleteBuffer() {
     if (m_ID != 0) {
-        GLCall(glDeleteBuffers(1, &m_ID));
+        glDeleteBuffers(1, &m_ID);
         m_ID = 0;
     }
 }

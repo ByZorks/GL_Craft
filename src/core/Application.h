@@ -64,6 +64,9 @@ private:
     void onMouseMove(double xPos, double yPos);
     void onFrameBufferResize(int width, int height);
     void onMouseEvent(int button, int action);
+
+    static void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity,
+                                       GLsizei length, const char *message, const void *userParam);
 };
 
 #endif //GL_CRAFT_APPLICATION_H

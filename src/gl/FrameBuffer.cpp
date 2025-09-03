@@ -2,14 +2,13 @@
 
 #include <iostream>
 
-#include "OpenGLDebug.h"
 #include "glad/gl.h"
 
 FrameBuffer::FrameBuffer(const int width, const int height) : m_Width(width), m_Height(height),
                                                               m_colorTexture(width, height), m_depthTexture(width, height, true) {
-    GLCall(glCreateFramebuffers(1, &m_ID));
-    GLCall(glNamedFramebufferTexture(m_ID, GL_COLOR_ATTACHMENT0, m_colorTexture.getID(), 0));
-    GLCall(glNamedFramebufferTexture(m_ID, GL_DEPTH_ATTACHMENT, m_depthTexture.getID(), 0));
+    glCreateFramebuffers(1, &m_ID);
+    glNamedFramebufferTexture(m_ID, GL_COLOR_ATTACHMENT0, m_colorTexture.getID(), 0);
+    glNamedFramebufferTexture(m_ID, GL_DEPTH_ATTACHMENT, m_depthTexture.getID(), 0);
 
     if (const auto status = glCheckNamedFramebufferStatus(m_ID, GL_FRAMEBUFFER); status != GL_FRAMEBUFFER_COMPLETE) {
         std::cerr << "[OpengGL] Framebuffer error: " << status << std::endl;
@@ -18,7 +17,7 @@ FrameBuffer::FrameBuffer(const int width, const int height) : m_Width(width), m_
 
 FrameBuffer::~FrameBuffer() {
     if (m_ID != 0) {
-        GLCall(glDeleteFramebuffers(1, &m_ID));
+        glDeleteFramebuffers(1, &m_ID);
     }
 }
 
@@ -33,7 +32,7 @@ FrameBuffer::FrameBuffer(FrameBuffer &&other) noexcept
 FrameBuffer &FrameBuffer::operator=(FrameBuffer &&other) noexcept {
     if (this != &other) {
         if (m_ID != 0) {
-            GLCall(glDeleteFramebuffers(1, &m_ID));
+            glDeleteFramebuffers(1, &m_ID);
         }
 
         m_ID = other.m_ID;
@@ -50,11 +49,11 @@ FrameBuffer &FrameBuffer::operator=(FrameBuffer &&other) noexcept {
 }
 
 void FrameBuffer::bind() const {
-    GLCall(glBindFramebuffer(GL_FRAMEBUFFER, m_ID));
+    glBindFramebuffer(GL_FRAMEBUFFER, m_ID);
 }
 
 void FrameBuffer::unbind() {
-    GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 const Texture & FrameBuffer::getColorTexture() const {

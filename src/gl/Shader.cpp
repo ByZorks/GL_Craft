@@ -6,7 +6,6 @@
 #include <sstream>
 #include <utility>
 
-#include "OpenGLDebug.h"
 #include "glm/glm.hpp"
 
 Shader::Shader(std::string vertexPath, std::string fragmentPath) : m_vertexFilePath(std::move(vertexPath)),
@@ -16,20 +15,20 @@ Shader::Shader(std::string vertexPath, std::string fragmentPath) : m_vertexFileP
 
 Shader::~Shader() {
     if (m_ID != 0) {
-        GLCall(glDeleteProgram(m_ID));
+        glDeleteProgram(m_ID);
     }
 }
 
 void Shader::use() const {
     if (m_isInitialized) {
-        GLCall(glUseProgram(m_ID));
+        glUseProgram(m_ID);
     }
 }
 
 int Shader::getUniformLocation(const std::string &name) {
     if (m_uniformLocationCache.contains(name)) return m_uniformLocationCache[name];
 
-    GLCall(const int location = glGetUniformLocation(m_ID, name.c_str()));
+    const int location = glGetUniformLocation(m_ID, name.c_str());
     if (location == -1) {
         std::cerr << "Warning: uniform '" << name << "' doesn't exist or is not used in the shader." << std::endl;
     }
@@ -39,23 +38,23 @@ int Shader::getUniformLocation(const std::string &name) {
 }
 
 void Shader::setUniform1i(const std::string &name, const int value) {
-    GLCall(glUniform1i(getUniformLocation(name), value));
+    glUniform1i(getUniformLocation(name), value);
 }
 
 void Shader::setUniform1f(const std::string &name, const float value) {
-    GLCall(glUniform1f(getUniformLocation(name), value));
+    glUniform1f(getUniformLocation(name), value);
 }
 
 void Shader::setUniform1b(const std::string &name, const bool value) {
-    GLCall(glUniform1i(getUniformLocation(name), value));
+    glUniform1i(getUniformLocation(name), value);
 }
 
 void Shader::setUniform3f(const std::string &name, const float v0, const float v1, const float v2) {
-    GLCall(glUniform3f(getUniformLocation(name), v0, v1, v2));
+    glUniform3f(getUniformLocation(name), v0, v1, v2);
 }
 
 void Shader::setUniformMat4f(const std::string &name, const glm::mat4 &matrix) {
-    GLCall(glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &matrix[0][0]));
+    glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &matrix[0][0]);
 }
 
 std::string Shader::readFile(const std::string &filePath) {
@@ -73,20 +72,20 @@ std::string Shader::readFile(const std::string &filePath) {
 unsigned int Shader::compile(const GLenum shaderType, const std::string &shader) {
     const unsigned int id = glCreateShader(shaderType);
     const char *src = shader.c_str();
-    GLCall(glShaderSource(id, 1, &src, nullptr));
-    GLCall(glCompileShader(id));
+    glShaderSource(id, 1, &src, nullptr);
+    glCompileShader(id);
 
     int result;
-    GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
+    glGetShaderiv(id, GL_COMPILE_STATUS, &result);
     if (result == GL_FALSE) {
         int length;
-        GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         const auto message = static_cast<char *>(alloca(length * sizeof(char)));
-        GLCall(glGetShaderInfoLog(id, length, &length, message));
+        glGetShaderInfoLog(id, length, &length, message);
         std::cout << "Failed to compile " << (shaderType == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader!" <<
                 std::endl;
         std::cout << message << std::endl;
-        GLCall(glDeleteShader(id));
+        glDeleteShader(id);
         return 0;
     }
 
@@ -107,36 +106,36 @@ void Shader::compileAndLink() {
 
     if (vs == 0 || fs == 0) {
         if (program != 0) {
-            GLCall(glDeleteProgram(program))
-        };
+            glDeleteProgram(program);
+        }
         if (vs != 0) {
-            GLCall(glDeleteShader(vs));
+            glDeleteShader(vs);
         }
         if (fs != 0) {
-            GLCall(glDeleteShader(fs));
+            glDeleteShader(fs);
         }
         return;
     }
 
-    GLCall(glAttachShader(program, vs));
-    GLCall(glAttachShader(program, fs));
-    GLCall(glLinkProgram(program));
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+    glLinkProgram(program);
 
     int success;
-    GLCall(glGetProgramiv(program, GL_LINK_STATUS, &success));
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success) {
         char infoLog[512];
-        GLCall(glGetProgramInfoLog(program, 512, nullptr, infoLog));
+        glGetProgramInfoLog(program, 512, nullptr, infoLog);
         std::cerr << "Shader error: " << infoLog << std::endl;
-        GLCall(glDeleteProgram(program));
-        GLCall(glDeleteShader(vs));
-        GLCall(glDeleteShader(fs));
+        glDeleteProgram(program);
+        glDeleteShader(vs);
+        glDeleteShader(fs);
         return;
     }
 
-    GLCall(glValidateProgram(program));
-    GLCall(glDeleteShader(vs));
-    GLCall(glDeleteShader(fs));
+    glValidateProgram(program);
+    glDeleteShader(vs);
+    glDeleteShader(fs);
 
     m_ID = program;
     m_isInitialized = true;

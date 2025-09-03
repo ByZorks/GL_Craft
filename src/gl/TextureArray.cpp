@@ -7,7 +7,6 @@
 #include <utility>
 #include <vector>
 
-#include "OpenGLDebug.h"
 #include "glad/gl.h"
 #include "stb/stb_image.h"
 
@@ -21,21 +20,21 @@ TextureArray::TextureArray(const int width, const int height, std::string dirPat
     });
     const unsigned int layersCount = files.size();
 
-    GLCall(glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_ID));
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_ID);
     const int mipLevels = 1 + static_cast<int>(std::floor(std::log2(std::max(m_width, m_height))));
-    GLCall(glTextureStorage3D(m_ID, mipLevels, GL_RGBA8, m_width, m_height, layersCount));
+    glTextureStorage3D(m_ID, mipLevels, GL_RGBA8, m_width, m_height, static_cast<GLsizei>(layersCount));
 
-    GLCall(glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR));
-    GLCall(glTextureParameteri(m_ID, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    GLCall(glTextureParameteri(m_ID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-    GLCall(glTextureParameteri(m_ID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+    glTextureParameteri(m_ID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(m_ID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_ID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // Anisotropic filtering if supported
     float maxAnisotropicFiltering = 0.0f;
-    GLCall(glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropicFiltering));
+    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropicFiltering);
     if (maxAnisotropicFiltering > 0.0f) {
         constexpr float anisotropicFiltering = 16.0f;
-        GLCall(glTextureParameterf(m_ID, GL_TEXTURE_MAX_ANISOTROPY, std::min(maxAnisotropicFiltering, anisotropicFiltering)));
+        glTextureParameterf(m_ID, GL_TEXTURE_MAX_ANISOTROPY, std::min(maxAnisotropicFiltering, anisotropicFiltering));
     }
 
     for (unsigned int i = 0; i < layersCount; i++) {
@@ -54,20 +53,22 @@ TextureArray::TextureArray(const int width, const int height, std::string dirPat
             px[2] = static_cast<unsigned char>(static_cast<float>(px[2]) * a);
         }
 
-        GLCall(glTextureSubImage3D(m_ID, 0, 0, 0, i, m_width, m_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer));
+        glTextureSubImage3D(m_ID, 0, 0, 0, static_cast<GLint>(i), m_width, m_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+
+        stbi_image_free(buffer);
     }
 
-    GLCall(glGenerateTextureMipmap(m_ID));
+    glGenerateTextureMipmap(m_ID);
 }
 
 TextureArray::~TextureArray() {
     if (m_ID != 0) {
-        GLCall(glDeleteTextures(1, &m_ID));
+        glDeleteTextures(1, &m_ID);
     }
 }
 
 void TextureArray::bind(const unsigned int slot) const {
-    GLCall(glBindTextureUnit(slot, m_ID));
+    glBindTextureUnit(slot, m_ID);
 }
 
 std::vector<std::string> TextureArray::getFilesInDirectory(const std::string &dirPath) {

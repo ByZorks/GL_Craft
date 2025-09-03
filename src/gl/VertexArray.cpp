@@ -1,12 +1,10 @@
 #include "VertexArray.h"
 
-#include "OpenGLDebug.h"
-
 VertexArray::VertexArray() = default;
 
 VertexArray::~VertexArray() {
     if (m_ID != 0) {
-        GLCall(glDeleteVertexArrays(1, &m_ID));
+        glDeleteVertexArrays(1, &m_ID);
     }
 }
 
@@ -39,7 +37,7 @@ VertexArray & VertexArray::operator=(VertexArray &&other) noexcept {
 
 void VertexArray::init() {
     if (m_ID == 0) {
-        GLCall(glCreateVertexArrays(1, &m_ID));
+        glCreateVertexArrays(1, &m_ID);
     }
 }
 
@@ -49,20 +47,20 @@ void VertexArray::addBuffer(const VertexBuffer &vb, const IndexBuffer &ibo, cons
 
     const unsigned int bindingIndex = m_nextBindingIndex;
     m_nextBindingIndex++;
-    GLCall(glVertexArrayVertexBuffer(m_ID, bindingIndex, vb.getID(), 0, layout.m_stride()));
-    GLCall(glVertexArrayElementBuffer(m_ID, ibo.getID()));
+    glVertexArrayVertexBuffer(m_ID, bindingIndex, vb.getID(), 0, static_cast<GLsizei>(layout.m_stride()));
+    glVertexArrayElementBuffer(m_ID, ibo.getID());
 
     for (unsigned int i = 0; i < elements.size(); i++) {
         const auto&[type, count, normalized, isInteger] = elements[i];
 
-        GLCall(glEnableVertexArrayAttrib(m_ID, m_nextAttributeIndex + i));
+        glEnableVertexArrayAttrib(m_ID, m_nextAttributeIndex + i);
         if (isInteger) {
-            GLCall(glVertexArrayAttribIFormat(m_ID, m_nextAttributeIndex + i, count, type, offset));
+            glVertexArrayAttribIFormat(m_ID, m_nextAttributeIndex + i, static_cast<GLint>(count), type, offset);
         } else {
-            GLCall(glVertexArrayAttribFormat(m_ID, m_nextAttributeIndex + i, count, type, normalized, offset));
+            glVertexArrayAttribFormat(m_ID, m_nextAttributeIndex + i, static_cast<GLint>(count), type, normalized, offset);
         }
 
-        GLCall(glVertexArrayAttribBinding(m_ID, m_nextAttributeIndex + i, bindingIndex));
+        glVertexArrayAttribBinding(m_ID, m_nextAttributeIndex + i, bindingIndex);
         offset += count * VertexBufferElement::GetSizeOfType(type);
     }
     m_nextAttributeIndex += elements.size();
@@ -71,21 +69,21 @@ void VertexArray::addBuffer(const VertexBuffer &vb, const IndexBuffer &ibo, cons
 void VertexArray::addInstancedBuffer(const VertexBuffer &vb, const unsigned int attributeIndex, const unsigned int componentCount) {
     const unsigned int bindingIndex = m_nextBindingIndex;
     m_nextBindingIndex++;
-    GLCall(glVertexArrayVertexBuffer(m_ID, bindingIndex, vb.getID(), 0, componentCount * sizeof(int)));
-    GLCall(glEnableVertexArrayAttrib(m_ID, attributeIndex));
-    GLCall(glVertexArrayAttribIFormat(m_ID, attributeIndex, componentCount, GL_INT, 0));
-    GLCall(glVertexArrayAttribBinding(m_ID, attributeIndex, bindingIndex));
-    GLCall(glVertexArrayBindingDivisor(m_ID, attributeIndex, 1));
+    glVertexArrayVertexBuffer(m_ID, bindingIndex, vb.getID(), 0, static_cast<GLsizei>(componentCount * sizeof(int)));
+    glEnableVertexArrayAttrib(m_ID, attributeIndex);
+    glVertexArrayAttribIFormat(m_ID, attributeIndex, static_cast<GLint>(componentCount), GL_INT, 0);
+    glVertexArrayAttribBinding(m_ID, attributeIndex, bindingIndex);
+    glVertexArrayBindingDivisor(m_ID, attributeIndex, 1);
 }
 
 void VertexArray::deleteBuffer() {
     if (m_ID != 0) {
-        GLCall(glDeleteVertexArrays(1, &m_ID));
+        glDeleteVertexArrays(1, &m_ID);
         m_ID = 0;
         m_nextAttributeIndex = 0;
     }
 }
 
 void VertexArray::bind() const {
-    GLCall(glBindVertexArray(m_ID));
+    glBindVertexArray(m_ID);
 }

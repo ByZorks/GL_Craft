@@ -2,14 +2,13 @@
 
 #include <iostream>
 
-#include "OpenGLDebug.h"
 #include "glad/gl.h"
 
 StorageBuffer::StorageBuffer() = default;
 
 StorageBuffer::~StorageBuffer() {
     if (m_ID != 0) {
-        GLCall(glDeleteBuffers(1, &m_ID));
+        glDeleteBuffers(1, &m_ID);
     }
 }
 
@@ -48,9 +47,9 @@ StorageBuffer & StorageBuffer::operator=(StorageBuffer &&other) noexcept {
 void StorageBuffer::init(const void *data, const size_t size, const unsigned int bindingPoint) {
     m_bindingPoint = bindingPoint;
     m_size = size;
-    GLCall(glCreateBuffers(1, &m_ID));
-    GLCall(glNamedBufferStorage(m_ID, size, data, GL_DYNAMIC_STORAGE_BIT));
-    GLCall(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID));
+    glCreateBuffers(1, &m_ID);
+    glNamedBufferStorage(m_ID, static_cast<GLsizeiptr>(size), data, GL_DYNAMIC_STORAGE_BIT);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID);
 }
 
 size_t StorageBuffer::updateData(const void *data, const size_t size, const unsigned int offset) {
@@ -59,7 +58,7 @@ size_t StorageBuffer::updateData(const void *data, const size_t size, const unsi
         return m_size;
     }
 
-    GLCall(glNamedBufferSubData(m_ID, offset, size, data));
+    glNamedBufferSubData(m_ID, offset, static_cast<GLsizeiptr>(size), data);
     return 0;
 }
 
@@ -69,22 +68,22 @@ void StorageBuffer::resize(const size_t newSize) {
     unsigned int newID = 0;
 
     // New buffer
-    GLCall(glCreateBuffers(1, &newID));
-    GLCall(glNamedBufferStorage(newID, newSize, nullptr, GL_DYNAMIC_STORAGE_BIT));
+    glCreateBuffers(1, &newID);
+    glNamedBufferStorage(newID, static_cast<GLsizeiptr>(newSize), nullptr, GL_DYNAMIC_STORAGE_BIT);
 
     // Copy old data
-    GLCall(glCopyNamedBufferSubData(oldID, newID, 0, 0, m_size));
+    glCopyNamedBufferSubData(oldID, newID, 0, 0, static_cast<GLsizeiptr>(m_size));
 
     // Update members
-    GLCall(glDeleteBuffers(1, &oldID));
+    glDeleteBuffers(1, &oldID);
     m_ID = newID;
     m_size = newSize;
-    GLCall(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID));
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID);
 }
 
 void StorageBuffer::deleteBuffer() {
     if (m_ID != 0) {
-        GLCall(glDeleteBuffers(1, &m_ID));
+        glDeleteBuffers(1, &m_ID);
         m_ID = 0;
         m_bindingPoint = 999;
         m_size = 0;
@@ -92,7 +91,7 @@ void StorageBuffer::deleteBuffer() {
 }
 
 void StorageBuffer::bind() const {
-    GLCall(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID));
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID);
 }
 
 size_t StorageBuffer::getSize() const {

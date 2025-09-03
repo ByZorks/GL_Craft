@@ -1,6 +1,5 @@
 #include "IndirectBuffer.h"
 
-#include "OpenGLDebug.h"
 #include "glad/gl.h"
 
 IndirectBuffer::IndirectBuffer() = default;
@@ -11,15 +10,15 @@ IndirectBuffer::~IndirectBuffer() {
 
 void IndirectBuffer::init(const void *data, const unsigned int size) {
     m_size = size;
-    GLCall(glCreateBuffers(1, &m_ID));
-    GLCall(glNamedBufferData(m_ID, size, data, GL_DYNAMIC_DRAW));
+    glCreateBuffers(1, &m_ID);
+    glNamedBufferData(m_ID, size, data, GL_DYNAMIC_DRAW);
 }
 
 void IndirectBuffer::updateData(const void *data, const unsigned int size, const unsigned int offset) {
     if (m_size < size + offset) {
         resize(m_size * 2);
     } else {
-        GLCall(glNamedBufferSubData(m_ID, offset, size, data));
+        glNamedBufferSubData(m_ID, offset, size, data);
     }
 }
 
@@ -29,26 +28,26 @@ void IndirectBuffer::resize(const unsigned int newSize) {
     unsigned int newID = 0;
 
     // New buffer
-    GLCall(glCreateBuffers(1, &newID));
-    GLCall(glNamedBufferData(newID, newSize, nullptr, GL_DYNAMIC_DRAW));
+    glCreateBuffers(1, &newID);
+    glNamedBufferData(newID, newSize, nullptr, GL_DYNAMIC_DRAW);
 
     // Copy old data
-    GLCall(glCopyNamedBufferSubData(oldID, newID, 0, 0, m_size));
+    glCopyNamedBufferSubData(oldID, newID, 0, 0, m_size);
 
     // Update members
-    GLCall(glDeleteBuffers(1, &oldID));
+    glDeleteBuffers(1, &oldID);
     m_ID = newID;
     m_size = newSize;
 }
 
 void IndirectBuffer::deleteBuffer() {
     if (m_ID != 0) {
-        GLCall(glDeleteBuffers(1, &m_ID));
+        glDeleteBuffers(1, &m_ID);
         m_ID = 0;
         m_size = 0;
     }
 }
 
 void IndirectBuffer::bind() const {
-    GLCall(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_ID));
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_ID);
 }

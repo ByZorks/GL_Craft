@@ -2,14 +2,13 @@
 
 #include <algorithm>
 
-#include "OpenGLDebug.h"
 #include "glad/gl.h"
 
 IndexBuffer::IndexBuffer() = default;
 
 IndexBuffer::~IndexBuffer() {
     if (m_ID != 0) {
-        GLCall(glDeleteBuffers(1, &m_ID));
+        glDeleteBuffers(1, &m_ID);
     }
 }
 
@@ -42,17 +41,17 @@ IndexBuffer & IndexBuffer::operator=(IndexBuffer &&other) noexcept {
 
 void IndexBuffer::init(const unsigned int *data, const unsigned int count) {
     m_Count = count;
-    GLCall(glCreateBuffers(1, &m_ID));
-    GLCall(glNamedBufferData(m_ID, count * sizeof(unsigned int), data, GL_STATIC_DRAW));
+    glCreateBuffers(1, &m_ID);
+    glNamedBufferData(m_ID, static_cast<GLsizeiptr>(count * sizeof(unsigned int)), data, GL_STATIC_DRAW);
 }
 
 void IndexBuffer::updateData(const unsigned int *data) const {
-    GLCall(glNamedBufferSubData(m_ID, 0, m_Count * sizeof(unsigned int), data));
+    glNamedBufferSubData(m_ID, 0, static_cast<GLsizeiptr>(m_Count * sizeof(unsigned int)), data);
 }
 
 void IndexBuffer::deleteBuffer() {
     if (m_ID != 0) {
-        GLCall(glDeleteBuffers(1, &m_ID));
+        glDeleteBuffers(1, &m_ID);
         m_ID = 0;
         m_Count = 0;
     }
