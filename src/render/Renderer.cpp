@@ -2,7 +2,11 @@
 
 #include "../world/chunk/Chunk.h"
 
+#ifndef DEBUG_BUILD
 float Renderer::s_renderDistance = 16.0f * static_cast<float>(Chunk::SIZE); // Render distance in blocks
+#else
+float Renderer::s_renderDistance = 8.0f * static_cast<float>(Chunk::SIZE); // Render distance in blocks
+#endif
 
 void Renderer::init() {
     glEnable(GL_DEPTH_TEST);
