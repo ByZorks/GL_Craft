@@ -1,8 +1,6 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include <mutex>
-
 #include "../Block.h"
 #include "../../gl/VertexArray.h"
 #include "../../math/AABB.h"
@@ -15,27 +13,27 @@ enum class State : uint8_t {
     READY_TO_DRAW,
 };
 
-struct buffersData {
-    std::vector<BlockVertex> vertices;
-    unsigned int verticesCount = 0; // vertices.size() * 6; Used to draw the mesh, so we must only update it once the GL buffers are ready
-    bool hasFaces = false;
-
-    void shrinkVertices() {
-        vertices.shrink_to_fit();
-    }
-
-    void deleteMesh() {
-        vertices.clear();
-    }
-};
-
 class Mesh {
 protected:
+    struct BufferData {
+        std::vector<BlockVertex> vertices;
+        unsigned int verticesCount = 0; // vertices.size() * 6; Used to draw the mesh, so we must only update it once the GL buffers are ready
+        bool hasFaces = false;
+
+        void shrinkVertices() {
+            vertices.shrink_to_fit();
+        }
+
+        void deleteMesh() {
+            vertices.clear();
+        }
+    };
+
     const unsigned int m_size;
     const int m_x, m_y, m_z;
     std::vector<BlockType> m_blocks;
-    buffersData m_opaqueData;
-    buffersData m_waterData;
+    BufferData m_opaqueData;
+    BufferData m_waterData;
     State m_state = State::UNINITIALIZED;
     const AABB m_box;
     bool m_wasInFrustum = false;

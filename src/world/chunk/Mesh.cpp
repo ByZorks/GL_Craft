@@ -18,15 +18,13 @@ void Mesh::generateVoxel() {}
 void Mesh::generateMesh() {}
 
 void Mesh::updateVertexCount() {
-    m_opaqueData.verticesCount = static_cast<unsigned int>(m_opaqueData.vertices.size() * 6);
-    // Only 1 vertex is stored
+    m_opaqueData.verticesCount = static_cast<unsigned int>(m_opaqueData.vertices.size() * 6); // Only 1 vertex is stored
     m_waterData.verticesCount = static_cast<unsigned int>(m_waterData.vertices.size() * 6);
 }
 
 void Mesh::resetMesh() {
     m_opaqueData.deleteMesh();
     m_waterData.deleteMesh();
-
 }
 
 bool Mesh::isEmpty() const {
@@ -37,7 +35,7 @@ bool Mesh::hasOpaqueFaces() const {
     return m_opaqueData.hasFaces;
 }
 
-void Mesh::setHasOpaqueFaces(bool hasFaces) {
+void Mesh::setHasOpaqueFaces(const bool hasFaces) {
     m_opaqueData.hasFaces = hasFaces;
 }
 
@@ -45,7 +43,7 @@ bool Mesh::hasWaterFaces() const {
     return m_waterData.hasFaces;
 }
 
-void Mesh::setHasWaterFaces(bool hasFaces) {
+void Mesh::setHasWaterFaces(const bool hasFaces) {
     m_waterData.hasFaces = hasFaces;
 }
 
