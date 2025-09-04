@@ -42,175 +42,46 @@ protected:
     unsigned int m_visibleBlocks = 0;
 
 public:
-    Mesh(const int x, const int y, const int z, const unsigned int size) : m_size(size), m_x(x), m_y(y), m_z(z),
-                                                                           m_box(AABB(static_cast<float>(x),
-                                                                               static_cast<float>(y),
-                                                                               static_cast<float>(z),
-                                                                               static_cast<float>(x) + static_cast<
-                                                                                   float>(size) - 1.0f,
-                                                                               static_cast<float>(y) + static_cast<
-                                                                                   float>(size) - 1.0f,
-                                                                               static_cast<float>(z) + static_cast<
-                                                                                   float>(size) - 1.0f
-                                                                           )) {
-        m_blocks.resize(m_size * m_size * m_size, BlockType::AIR);
-    }
+    Mesh(int x, int y, int z, unsigned int size);
 
     virtual ~Mesh() = default;
 
     virtual void generateVoxel();
-
     virtual void generateMesh();
 
-    void updateVertexCount() {
-        m_opaqueData.verticesCount = static_cast<unsigned int>(m_opaqueData.vertices.size() * 6);
-        // Only 1 vertex is stored
-        m_waterData.verticesCount = static_cast<unsigned int>(m_waterData.vertices.size() * 6);
-    }
+    void updateVertexCount();
+    void resetMesh();
 
-    void resetMesh() {
-        m_opaqueData.deleteMesh();
-        m_waterData.deleteMesh();
-    }
+    bool isEmpty() const;
 
-    bool isEmpty() const {
-        return m_visibleBlocks == 0;
-    }
+    [[nodiscard]] bool hasOpaqueFaces() const;
+    void setHasOpaqueFaces(bool hasFaces);
 
-    [[nodiscard]] bool hasOpaqueFaces() const {
-        return m_opaqueData.hasFaces;
-    }
+    [[nodiscard]] bool hasWaterFaces() const;
+    void setHasWaterFaces(bool hasFaces);
 
-    void setHasOpaqueFaces(const bool hasFaces) {
-        m_opaqueData.hasFaces = hasFaces;
-    }
+    [[nodiscard]] bool shouldDrawFace(int x, int y, int z, BlockType currentBlockType, Face face) const;
+    [[nodiscard]] virtual bool isBlockPresent(int localX, int localY, int localZ) const;
+    [[nodiscard]] virtual BlockType getBlockType(int localX, int localY, int localZ) const;
+    [[nodiscard]] virtual int index(int x, int y, int z) const;
 
-    [[nodiscard]] bool hasWaterFaces() const {
-        return m_waterData.hasFaces;
-    }
+    [[nodiscard]] int getX() const;
+    [[nodiscard]] int getY() const;
+    [[nodiscard]] int getZ() const;
 
-    void setHasWaterFaces(const bool hasFaces) {
-        m_waterData.hasFaces = hasFaces;
-    }
+    [[nodiscard]] State getState() const;
+    void setState(State m_state);
+    [[nodiscard]] const AABB &getBoundingBox() const;
+    void setWasInFrustum(bool isInFrustum);
+    [[nodiscard]] bool wasInFrustum() const;
 
-    [[nodiscard]] virtual bool shouldDrawFace(int x, int y, int z,
-                                              const BlockType currentBlockType, const Face face) const {
-        switch (face) {
-            case Face::TOP: y++;
-                break;
-            case Face::BOTTOM: y--;
-                break;
-            case Face::FRONT: z++;
-                break;
-            case Face::BACK: z--;
-                break;
-            case Face::RIGHT: x++;
-                break;
-            case Face::LEFT: x--;
-                break;
-            default: ;
-        }
-
-        if (!isBlockPresent(x, y, z)) return true; // Air block
-
-        const BlockType neighborType = getBlockType(x, y, z);
-        const bool neighborTransparent = Block::isTransparent(neighborType);
-
-        if (currentBlockType == BlockType::OAK_LEAVES ||
-            currentBlockType == BlockType::SNOW_OAK_LEAVES ||
-            currentBlockType == BlockType::JUNGLE_LEAVES ||
-            currentBlockType == BlockType::SPRUCE_LEAVES
-            && neighborTransparent)
-            return true; // Leaves block, always draw face
-        // Always draw water top face if neighbor is not water
-        if (currentBlockType == BlockType::WATER && face == Face::TOP && neighborType != BlockType::WATER) return true;
-        if (currentBlockType == neighborType) return false; // Same block type, no need to draw face
-
-        const bool currentTransparent = Block::isTransparent(currentBlockType);
-        // Current block is transparent, neighbor is not, do not draw face
-        if (currentTransparent && !neighborTransparent) return false;
-
-        return currentTransparent != neighborTransparent; // Different transparency state, draw face
-    }
-
-    [[nodiscard]] virtual bool isBlockPresent(const int localX, const int localY, const int localZ) const {
-        if (localX < 0 || localY < 0 || localZ < 0 || localX >= m_size || localY >= m_size || localZ >= m_size) {
-            return false;
-        }
-        return m_blocks[index(localX, localY, localZ)] != BlockType::AIR;
-    }
-
-    [[nodiscard]] virtual BlockType getBlockType(const int localX, const int localY, const int localZ) const {
-        if (localX < 0 || localY < 0 || localZ < 0 || localX >= m_size || localY >= m_size || localZ >= m_size) {
-            return BlockType::AIR;
-        }
-        return m_blocks[index(localX, localY, localZ)];
-    }
-
-    [[nodiscard]] virtual int index(const int x, const int y, const int z) const {
-        const int stride = static_cast<int>(m_size);
-        return x * stride * stride + y * stride + z;
-    }
-
-    [[nodiscard]] int getX() const {
-        return m_x;
-    }
-
-    [[nodiscard]] int getY() const {
-        return m_y;
-    }
-
-    [[nodiscard]] int getZ() const {
-        return m_z;
-    }
-
-    [[nodiscard]] State getState() const {
-        return m_state;
-    }
-
-    void setState(const State m_state) {
-        this->m_state = m_state;
-    }
-
-    [[nodiscard]] const AABB &getBoundingBox() const {
-        return m_box;
-    }
-
-    void setWasInFrustum(const bool isInFrustum) {
-        m_wasInFrustum = isInFrustum;
-    }
-
-    [[nodiscard]] bool wasInFrustum() const {
-        return m_wasInFrustum;
-    }
-
-    [[nodiscard]] std::vector<BlockVertex> getOpaqueVerticesCopy() const {
-        return m_opaqueData.vertices; // Only used for initializing instance rendering, so a copy is fine
-    }
-
-    [[nodiscard]] const std::vector<BlockVertex> &getOpaqueVertices() const {
-        return m_opaqueData.vertices;
-    }
-
-    [[nodiscard]] std::vector<BlockVertex> &getOpaqueVertices() {
-        return m_opaqueData.vertices;
-    }
-
-    [[nodiscard]] const std::vector<BlockVertex> &getWaterVertices() const {
-        return m_waterData.vertices;
-    }
-
-    [[nodiscard]] std::vector<BlockVertex> &getWaterVertices() {
-        return m_waterData.vertices;
-    }
-
-    [[nodiscard]] unsigned int getOpaqueVertexCount() const {
-        return m_opaqueData.verticesCount;
-    }
-
-    [[nodiscard]] unsigned int getWaterVertexCount() const {
-        return m_waterData.verticesCount;
-    }
+    [[nodiscard]] std::vector<BlockVertex> getOpaqueVerticesCopy() const;
+    [[nodiscard]] const std::vector<BlockVertex> &getOpaqueVertices() const;
+    [[nodiscard]] std::vector<BlockVertex> &getOpaqueVertices();
+    [[nodiscard]] const std::vector<BlockVertex> &getWaterVertices() const;
+    [[nodiscard]] std::vector<BlockVertex> &getWaterVertices();
+    [[nodiscard]] unsigned int getOpaqueVertexCount() const;
+    [[nodiscard]] unsigned int getWaterVertexCount() const;
 };
 
 
