@@ -207,10 +207,10 @@ void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std
 }
 
 uint8_t Block::computeVertexAO(const bool side1, const bool side2, const bool corner) {
-    constexpr uint8_t AO_MIN = 0;
     constexpr uint8_t AO_MAX = 3;
 
     if (side1 && side2) {
+        constexpr uint8_t AO_MIN = 0;
         return AO_MIN;
     }
     return AO_MAX - (side1 + side2 + corner);
@@ -227,7 +227,7 @@ bool Block::isInstance(const BlockType type) {
            type == BlockType::FLOWER_CORNFLOWER || type == BlockType::FLOWER_ALLIUM;
 }
 
-BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t texLayer, const unsigned int faceIndex,
+Block::BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t texLayer, const unsigned int faceIndex,
                                   const unsigned int ao[4]) {
     BlockVertex vertex{};
 

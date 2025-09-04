@@ -38,7 +38,7 @@ void DebugUI::newFrame() {
 }
 
 void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCmds,
-                     const Camera &camera, const BlockType &selectedBlockType,
+                     const Camera &camera, const Block::BlockType &selectedBlockType,
                      const std::function<void()> &renderDistanceCallback) {
     ImGui::Begin("Debug");
     ImGui::Text("Performance:");

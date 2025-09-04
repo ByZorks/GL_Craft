@@ -11,7 +11,7 @@ Mesh::Mesh(const int x, const int y, const int z, const unsigned int size): m_si
                                                                                 static_cast<float>(z) + static_cast<
                                                                                     float>(size) - 1.0f
                                                                             )) {
-    m_blocks.resize(m_size * m_size * m_size, BlockType::AIR);
+    m_blocks.resize(m_size * m_size * m_size, Block::BlockType::AIR);
 }
 
 void Mesh::generateVoxel() {}
@@ -47,36 +47,36 @@ void Mesh::setHasWaterFaces(const bool hasFaces) {
     m_waterData.hasFaces = hasFaces;
 }
 
-bool Mesh::shouldDrawFace(int x, int y, int z, const BlockType currentBlockType, const Face face) const {
+bool Mesh::shouldDrawFace(int x, int y, int z, const Block::BlockType currentBlockType, const Block::Face face) const {
     switch (face) {
-        case Face::TOP: y++;
+        case Block::Face::TOP: y++;
             break;
-        case Face::BOTTOM: y--;
+        case Block::Face::BOTTOM: y--;
             break;
-        case Face::FRONT: z++;
+        case Block::Face::FRONT: z++;
             break;
-        case Face::BACK: z--;
+        case Block::Face::BACK: z--;
             break;
-        case Face::RIGHT: x++;
+        case Block::Face::RIGHT: x++;
             break;
-        case Face::LEFT: x--;
+        case Block::Face::LEFT: x--;
             break;
         default: ;
     }
 
     if (!isBlockPresent(x, y, z)) return true; // Air block
 
-    const BlockType neighborType = getBlockType(x, y, z);
+    const Block::BlockType neighborType = getBlockType(x, y, z);
     const bool neighborTransparent = Block::isTransparent(neighborType);
 
-    if (currentBlockType == BlockType::OAK_LEAVES ||
-        currentBlockType == BlockType::SNOW_OAK_LEAVES ||
-        currentBlockType == BlockType::JUNGLE_LEAVES ||
-        currentBlockType == BlockType::SPRUCE_LEAVES
+    if (currentBlockType == Block::BlockType::OAK_LEAVES ||
+        currentBlockType == Block::BlockType::SNOW_OAK_LEAVES ||
+        currentBlockType == Block::BlockType::JUNGLE_LEAVES ||
+        currentBlockType == Block::BlockType::SPRUCE_LEAVES
         && neighborTransparent)
         return true; // Leaves block, always draw face
     // Always draw water top face if neighbor is not water
-    if (currentBlockType == BlockType::WATER && face == Face::TOP && neighborType != BlockType::WATER) return true;
+    if (currentBlockType == Block::BlockType::WATER && face == Block::Face::TOP && neighborType != Block::BlockType::WATER) return true;
     if (currentBlockType == neighborType) return false; // Same block type, no need to draw face
 
     const bool currentTransparent = Block::isTransparent(currentBlockType);
@@ -90,12 +90,12 @@ bool Mesh::isBlockPresent(const int localX, const int localY, const int localZ) 
     if (localX < 0 || localY < 0 || localZ < 0 || localX >= m_size || localY >= m_size || localZ >= m_size) {
         return false;
     }
-    return m_blocks[index(localX, localY, localZ)] != BlockType::AIR;
+    return m_blocks[index(localX, localY, localZ)] != Block::BlockType::AIR;
 }
 
-BlockType Mesh::getBlockType(const int localX, const int localY, const int localZ) const {
+Block::BlockType Mesh::getBlockType(const int localX, const int localY, const int localZ) const {
     if (localX < 0 || localY < 0 || localZ < 0 || localX >= m_size || localY >= m_size || localZ >= m_size) {
-        return BlockType::AIR;
+        return Block::BlockType::AIR;
     }
     return m_blocks[index(localX, localY, localZ)];
 }
@@ -117,7 +117,7 @@ int Mesh::getZ() const {
     return m_z;
 }
 
-State Mesh::getState() const {
+Mesh::State Mesh::getState() const {
     return m_state;
 }
 
@@ -137,23 +137,23 @@ bool Mesh::wasInFrustum() const {
     return m_wasInFrustum;
 }
 
-std::vector<BlockVertex> Mesh::getOpaqueVerticesCopy() const {
+std::vector<Block::BlockVertex> Mesh::getOpaqueVerticesCopy() const {
     return m_opaqueData.vertices; // Only used for initializing instance rendering, so a copy is fine
 }
 
-const std::vector<BlockVertex> & Mesh::getOpaqueVertices() const {
+const std::vector<Block::BlockVertex> & Mesh::getOpaqueVertices() const {
     return m_opaqueData.vertices;
 }
 
-std::vector<BlockVertex> & Mesh::getOpaqueVertices() {
+std::vector<Block::BlockVertex> & Mesh::getOpaqueVertices() {
     return m_opaqueData.vertices;
 }
 
-const std::vector<BlockVertex> & Mesh::getWaterVertices() const {
+const std::vector<Block::BlockVertex> & Mesh::getWaterVertices() const {
     return m_waterData.vertices;
 }
 
-std::vector<BlockVertex> & Mesh::getWaterVertices() {
+std::vector<Block::BlockVertex> & Mesh::getWaterVertices() {
     return m_waterData.vertices;
 }
 

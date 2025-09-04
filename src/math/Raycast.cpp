@@ -41,7 +41,7 @@ RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDi
 
     // Walk until collision or maximum distance
     constexpr float MAX_DISTANCE = 5.f;
-    glm::ivec3 hitNormal = {0, 0, 0};
+    glm::ivec3 hitNormal;
     float distance = 0.f;
     while (distance < MAX_DISTANCE) {
         if (rayLength1D.x < rayLength1D.y && rayLength1D.x < rayLength1D.z) {
@@ -117,9 +117,9 @@ RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDi
         const int localChunkZ = worldZ - chunkZ;
 
         // Get block type
-        if (const BlockType block = m_cachedChunks[chunkIndex]->getBlockTypeOrSurfaceFeature(
+        if (const Block::BlockType block = m_cachedChunks[chunkIndex]->getBlockTypeOrSurfaceFeature(
                 localChunkX, localChunkY, localChunkZ);
-            !(block == BlockType::AIR || block == BlockType::WATER)) {
+            !(block == Block::BlockType::AIR || block == Block::BlockType::WATER)) {
             return {
                 m_cachedChunks[chunkIndex],
                 {localChunkX, localChunkY, localChunkZ},
@@ -134,10 +134,4 @@ RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDi
     static RaycastResult result;
     result.hitBlock = false;
     return result; // No block found within the maximum distance
-}
-
-void Raycast::clearCache() {
-    m_cachedChunks[0] = nullptr;
-    m_cachedChunks[1] = nullptr;
-    m_cachedChunks[2] = nullptr;
 }

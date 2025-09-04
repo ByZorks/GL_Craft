@@ -2,10 +2,10 @@
 
 Player::Player() = default;
 
-BlockType Player::getSelectedBlockType() const {
+Block::BlockType Player::getSelectedBlockType() const {
     return m_selectedBlockType;
 }
 
-void Player::setSelectedBlockType(const BlockType blockType) {
+void Player::setSelectedBlockType(const Block::BlockType blockType) {
     m_selectedBlockType = blockType;
 }

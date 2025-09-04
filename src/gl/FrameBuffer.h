@@ -3,16 +3,9 @@
 #include "Texture.h"
 
 class FrameBuffer {
-private:
-    unsigned int m_ID = 0;
-    int m_Width, m_Height;
-    Texture m_colorTexture;
-    Texture m_depthTexture;
-
 public:
     FrameBuffer(int width, int height);
     ~FrameBuffer();
-
     FrameBuffer(const FrameBuffer&) = delete;
     FrameBuffer& operator=(const FrameBuffer&) = delete;
     FrameBuffer(FrameBuffer&& other) noexcept;
@@ -23,6 +16,11 @@ public:
 
     [[nodiscard]] const Texture & getColorTexture() const;
     [[nodiscard]] const Texture & getDepthTexture() const;
+
+private:
+    unsigned int m_ID = 0;
+    int m_Width, m_Height;
+    Texture m_colorTexture, m_depthTexture;
 };
 
 #endif //GL_CRAFT_FRAMEBUFFER_H

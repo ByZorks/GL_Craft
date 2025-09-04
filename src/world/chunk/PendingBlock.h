@@ -5,7 +5,7 @@ enum class BlockType : unsigned char;
 
 struct PendingBlock {
     int localX, localY, localZ;
-    BlockType blockType;
+    Block::BlockType blockType;
 };
 
 #endif //GL_CRAFT_PENDINGBLOCK_H

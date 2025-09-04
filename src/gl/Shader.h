@@ -7,13 +7,6 @@
 #include "glm/fwd.hpp"
 
 class Shader {
-private:
-    unsigned int m_ID = 0;
-    std::string m_vertexFilePath;
-    std::string m_fragmentFilePath;
-    std::pmr::unordered_map<std::string, int> m_uniformLocationCache;
-    bool m_isInitialized = false;
-
 public:
     Shader(std::string vertexPath, std::string fragmentPath);
     ~Shader();
@@ -30,6 +23,12 @@ private:
     static std::string readFile(const std::string &filePath);
     static unsigned int compile(GLenum shaderType, const std::string& shader);
     void compileAndLink();
+
+private:
+    unsigned int m_ID = 0;
+    std::string m_vertexFilePath, m_fragmentFilePath;
+    std::unordered_map<std::string, int> m_uniformLocationCache;
+    bool m_isInitialized = false;
 };
 
 #endif //SHADER_H

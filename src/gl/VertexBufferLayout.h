@@ -6,32 +6,29 @@
 
 #include "glad/gl.h"
 
-struct VertexBufferElement {
-    unsigned int type;
-    unsigned int count;
-    unsigned char normalized;
-    bool isInteger;
-
-    static unsigned int GetSizeOfType(const unsigned int type) {
-        switch (type) {
-            case GL_FLOAT:
-                return sizeof(GLfloat);
-            case GL_UNSIGNED_INT:
-                return sizeof(GLuint);
-            case GL_UNSIGNED_BYTE:
-                return sizeof(GLubyte);
-            case GL_BYTE:
-                return sizeof(GLbyte);
-            default:
-                return 0;
-        }
-    }
-};
-
 class VertexBufferLayout {
-private:
-    std::vector<VertexBufferElement> m_Elements;
-    unsigned int m_Stride;
+public:
+    struct VertexBufferElement {
+        unsigned int type;
+        unsigned int count;
+        unsigned char normalized;
+        bool isInteger;
+
+        static unsigned int GetSizeOfType(const unsigned int type) {
+            switch (type) {
+                case GL_FLOAT:
+                    return sizeof(GLfloat);
+                case GL_UNSIGNED_INT:
+                    return sizeof(GLuint);
+                case GL_UNSIGNED_BYTE:
+                    return sizeof(GLubyte);
+                case GL_BYTE:
+                    return sizeof(GLbyte);
+                default:
+                    return 0;
+            }
+        }
+    };
 
 public:
     VertexBufferLayout() : m_Stride(0) {
@@ -54,6 +51,10 @@ public:
     [[nodiscard]] unsigned int m_stride() const {
         return m_Stride;
     }
+
+private:
+    std::vector<VertexBufferElement> m_Elements;
+    unsigned int m_Stride;
 };
 
 template<>

@@ -2,16 +2,11 @@
 #define VERTEXBUFFER_H
 
 class VertexBuffer {
-private:
-    unsigned int m_ID = 0;
-
 public:
     VertexBuffer();
     ~VertexBuffer();
-
     VertexBuffer(const VertexBuffer &other);
     VertexBuffer & operator=(const VertexBuffer &other);
-
     VertexBuffer(VertexBuffer &&other) noexcept;
     VertexBuffer & operator=(VertexBuffer &&other) noexcept;
 
@@ -20,6 +15,9 @@ public:
     void deleteBuffer();
 
     [[nodiscard]] unsigned int getID() const;
+
+private:
+    unsigned int m_ID = 0;
 };
 
 #endif //VERTEXBUFFER_H

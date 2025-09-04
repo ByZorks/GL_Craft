@@ -97,13 +97,13 @@ void WorldManager::addPendingBlocks(const std::unordered_map<ChunkPosition, std:
 }
 
 void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
-    if (hit.blockType == BlockType::BEDROCK) return;
+    if (hit.blockType == Block::BlockType::BEDROCK) return;
 
     // TODO: Implement partial mesh update
     m_threadPool.enqueue_no_future([this, hit] {
         ScopedTimer timer("Delete block");
 
-        const BlockType type = hit.blockType;
+        const Block::BlockType type = hit.blockType;
         const auto &blockLocalPosition = hit.blockLocalPosition;
         const std::shared_ptr<Chunk> chunk = hit.chunk;
 
@@ -183,8 +183,8 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
     });
 }
 
-void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockType blockToPlace) {
-    if (blockToPlace == BlockType::AIR) return;
+void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block::BlockType blockToPlace) {
+    if (blockToPlace == Block::BlockType::AIR) return;
 
     // TODO: Implement partial mesh update
     m_threadPool.enqueue_no_future([this, hit, blockToPlace] {
@@ -366,7 +366,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
         for (const auto &key: m_tempKeysToProcess) {
             if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
                 const std::shared_ptr<Chunk> p_chunk = it->second;
-                if (p_chunk->getState() < State::VOXEL_GENERATED) continue;
+                if (p_chunk->getState() < Mesh::State::VOXEL_GENERATED) continue;
 
                 std::vector<PendingBlock> blocks; {
                     std::lock_guard lock(m_chunksData.pendingBlocksMutex);

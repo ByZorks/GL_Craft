@@ -7,37 +7,13 @@
 
 struct MeshingResult;
 
-enum class State : uint8_t {
-    UNINITIALIZED,
-    VOXEL_GENERATED,
-    READY_TO_DRAW,
-};
-
 class Mesh {
-protected:
-    struct BufferData {
-        std::vector<BlockVertex> vertices;
-        unsigned int verticesCount = 0; // vertices.size() * 6; Used to draw the mesh, so we must only update it once the GL buffers are ready
-        bool hasFaces = false;
-
-        void shrinkVertices() {
-            vertices.shrink_to_fit();
-        }
-
-        void deleteMesh() {
-            vertices.clear();
-        }
+public:
+    enum class State : uint8_t {
+        UNINITIALIZED,
+        VOXEL_GENERATED,
+        READY_TO_DRAW,
     };
-
-    const unsigned int m_size;
-    const int m_x, m_y, m_z;
-    std::vector<BlockType> m_blocks;
-    BufferData m_opaqueData;
-    BufferData m_waterData;
-    State m_state = State::UNINITIALIZED;
-    const AABB m_box;
-    bool m_wasInFrustum = false;
-    unsigned int m_visibleBlocks = 0;
 
 public:
     Mesh(int x, int y, int z, unsigned int size);
@@ -54,13 +30,12 @@ public:
 
     [[nodiscard]] bool hasOpaqueFaces() const;
     void setHasOpaqueFaces(bool hasFaces);
-
     [[nodiscard]] bool hasWaterFaces() const;
     void setHasWaterFaces(bool hasFaces);
 
-    [[nodiscard]] bool shouldDrawFace(int x, int y, int z, BlockType currentBlockType, Face face) const;
+    [[nodiscard]] bool shouldDrawFace(int x, int y, int z, Block::BlockType currentBlockType, Block::Face face) const;
     [[nodiscard]] virtual bool isBlockPresent(int localX, int localY, int localZ) const;
-    [[nodiscard]] virtual BlockType getBlockType(int localX, int localY, int localZ) const;
+    [[nodiscard]] virtual Block::BlockType getBlockType(int localX, int localY, int localZ) const;
     [[nodiscard]] virtual int index(int x, int y, int z) const;
 
     [[nodiscard]] int getX() const;
@@ -73,14 +48,38 @@ public:
     void setWasInFrustum(bool isInFrustum);
     [[nodiscard]] bool wasInFrustum() const;
 
-    [[nodiscard]] std::vector<BlockVertex> getOpaqueVerticesCopy() const;
-    [[nodiscard]] const std::vector<BlockVertex> &getOpaqueVertices() const;
-    [[nodiscard]] std::vector<BlockVertex> &getOpaqueVertices();
-    [[nodiscard]] const std::vector<BlockVertex> &getWaterVertices() const;
-    [[nodiscard]] std::vector<BlockVertex> &getWaterVertices();
+    [[nodiscard]] std::vector<Block::BlockVertex> getOpaqueVerticesCopy() const;
+    [[nodiscard]] const std::vector<Block::BlockVertex> &getOpaqueVertices() const;
+    [[nodiscard]] std::vector<Block::BlockVertex> &getOpaqueVertices();
+    [[nodiscard]] const std::vector<Block::BlockVertex> &getWaterVertices() const;
+    [[nodiscard]] std::vector<Block::BlockVertex> &getWaterVertices();
     [[nodiscard]] unsigned int getOpaqueVertexCount() const;
     [[nodiscard]] unsigned int getWaterVertexCount() const;
-};
 
+protected:
+    struct BufferData {
+        std::vector<Block::BlockVertex> vertices;
+        unsigned int verticesCount = 0; // vertices.size() * 6; Used to draw the mesh, so we must only update it once the GL buffers are ready
+        bool hasFaces = false;
+
+        void shrinkVertices() {
+            vertices.shrink_to_fit();
+        }
+
+        void deleteMesh() {
+            vertices.clear();
+        }
+    };
+
+    const unsigned int m_size;
+    const int m_x, m_y, m_z;
+    std::vector<Block::BlockType> m_blocks;
+    BufferData m_opaqueData;
+    BufferData m_waterData;
+    State m_state = State::UNINITIALIZED;
+    const AABB m_box;
+    bool m_wasInFrustum = false;
+    unsigned int m_visibleBlocks = 0;
+};
 
 #endif //MESH_H

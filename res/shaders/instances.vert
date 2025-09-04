@@ -28,19 +28,19 @@ layout (std430, binding = 1) readonly buffer instanceData {
 out vec2 v_texCoord;
 flat out uint v_texLayer;
 
-const vec3 faceOffsets[2][4] = {
+const vec3 faceOffsets[8] = {
     // FRONT (+Z)
-    vec3[4](vec3(0,1,1), vec3(1,1,0), vec3(1,0,0), vec3(0,0,1)),
+    vec3(0,1,1), vec3(1,1,0), vec3(1,0,0), vec3(0,0,1),
     // BACK (-Z)
-    vec3[4](vec3(1,1,1), vec3(0,1,0), vec3(0,0,0), vec3(1,0,1)),
+    vec3(1,1,1), vec3(0,1,0), vec3(0,0,0), vec3(1,0,1)
 };
 
-const vec2 texOffsets[4] = vec2[4](
+const vec2 texOffsets[4] = {
     vec2(0, 1), // Top-left
     vec2(1, 1), // Top-right
     vec2(1, 0), // Bottom-right
     vec2(0, 0)  // Bottom-left
-);
+};
 
 const int indices[6] = {0, 2, 1, 0, 3, 2};
 
@@ -75,10 +75,10 @@ void main() {
     const BlockVertex data = unpackVertexData(packedData);
 
     // Position and offset calculation
-    const vec3 instancePos = vec3(instancePos[gl_InstanceID * 3], instancePos[gl_InstanceID * 3 + 1], instancePos[gl_InstanceID * 3 + 2]);
+    const vec3 currentInstancePos = vec3(instancePos[gl_InstanceID * 3], instancePos[gl_InstanceID * 3 + 1], instancePos[gl_InstanceID * 3 + 2]);
     const int quadVertexIndex = indices[currentVertexID];
-    const vec3 vertexOffset = faceOffsets[data.face][quadVertexIndex];
-    vec3 worldPos = instancePos + vertexOffset;
+    const vec3 vertexOffset = faceOffsets[int(data.face) * 4 + quadVertexIndex];
+    vec3 worldPos = currentInstancePos + vertexOffset;
     // Top vertex
     if (vertexOffset.y > 0.5) {
         worldPos.x += sin(u_Time * 2.5 + worldPos.x * 1.5 + worldPos.z * 1.0) * 0.05;

@@ -121,30 +121,30 @@ const char *TerrainGenerator::getBiomeName(const Biome biome) {
 }
 
 
-BlockType TerrainGenerator::getBlockType(const int y, const int columnHeight, const Biome biome) {
+Block::BlockType TerrainGenerator::getBlockType(const int y, const int columnHeight, const Biome biome) {
     const int waterLevel = getSeaLevel();
 
-    if (y < 1) return BlockType::AIR;
-    if (y == 1) return BlockType::BEDROCK;
+    if (y < 1) return Block::BlockType::AIR;
+    if (y == 1) return Block::BlockType::BEDROCK;
 
     if (y <= columnHeight) {
         // Surface block
         if (y == columnHeight && columnHeight >= waterLevel) return getSurfaceBlockType(biome);
         // Disallow cave entrances underwater bc water doesn't flow into caves yet
-        if (y == columnHeight) return BlockType::DIRT;
+        if (y == columnHeight) return Block::BlockType::DIRT;
 
         // Subsurface blocks
-        if (y < columnHeight - 4) return BlockType::STONE;
+        if (y < columnHeight - 4) return Block::BlockType::STONE;
 
         // Near-surface blocks
         if (y < columnHeight && y < 200) return getNearSurfaceBlockType(biome);
     }
 
     if (y > columnHeight && y <= waterLevel) {
-        return BlockType::WATER;
+        return Block::BlockType::WATER;
     }
 
-    return BlockType::AIR;
+    return Block::BlockType::AIR;
 }
 
 bool TerrainGenerator::isSnowBiome(const Biome biome) {
@@ -462,35 +462,35 @@ float TerrainGenerator::getErosionLevel(const float erosion) {
     return 180; // Fallback (should not happen)
 }
 
-BlockType TerrainGenerator::getSurfaceBlockType(const Biome biome) {
+Block::BlockType TerrainGenerator::getSurfaceBlockType(const Biome biome) {
     switch (biome) {
         case Biome::DEEP_OCEAN:
-            return BlockType::GRAVEL;
+            return Block::BlockType::GRAVEL;
         case Biome::DESERT:
-            return BlockType::SAND;
+            return Block::BlockType::SAND;
         case Biome::SNOWY_TAIGA:
         case Biome::SNOWY_PLAINS:
-            return BlockType::SNOW_GRASS;
+            return Block::BlockType::SNOW_GRASS;
         case Biome::MOUNTAINS:
-            return BlockType::STONE;
+            return Block::BlockType::STONE;
         case Biome::SNOWY_MOUNTAINS:
-            return BlockType::SNOW;
+            return Block::BlockType::SNOW;
         case Biome::JUNGLE:
-            return BlockType::JUNGLE_GRASS;
+            return Block::BlockType::JUNGLE_GRASS;
         default:
-            return BlockType::GRASS;
+            return Block::BlockType::GRASS;
     }
 }
 
-BlockType TerrainGenerator::getNearSurfaceBlockType(const Biome biome) {
+Block::BlockType TerrainGenerator::getNearSurfaceBlockType(const Biome biome) {
     switch (biome) {
         case Biome::DESERT:
-            return BlockType::SAND;
+            return Block::BlockType::SAND;
         case Biome::MOUNTAINS:
-            return BlockType::STONE;
+            return Block::BlockType::STONE;
         case Biome::SNOWY_MOUNTAINS:
-            return BlockType::SNOW;
+            return Block::BlockType::SNOW;
         default:
-            return BlockType::DIRT;
+            return Block::BlockType::DIRT;
     }
 }

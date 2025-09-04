@@ -8,9 +8,9 @@
 #include "../../utils/ThreadSafeQueue.h"
 
 struct MeshingResult {
-    ChunkPosition position;
-    std::vector<BlockVertex> opaqueVertices;
-    std::vector<BlockVertex> waterVertices;
+    ChunkPosition position {0, 0, 0};
+    std::vector<Block::BlockVertex> opaqueVertices;
+    std::vector<Block::BlockVertex> waterVertices;
     bool hasOpaqueFaces = false;
     bool hasWaterFaces = false;
     bool needInstanceUpdate = false;

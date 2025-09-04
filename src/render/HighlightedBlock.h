@@ -7,7 +7,20 @@
 #include "../world/Block.h"
 
 class HighlightedBlock {
+public:
+    HighlightedBlock();
+
+    void draw() const;
+
 private:
+    void createGLBuffers();
+
+private:
+    struct HighlightedVertex {
+        std::array<uint8_t, 3> position; // Position
+        std::array<uint8_t, 3> color; // Color
+    };
+
     VertexArray m_VAO;
     VertexBuffer m_VBO;
     IndexBuffer m_IBO;
@@ -26,14 +39,6 @@ private:
         4, 5, 5, 6, 6, 7, 7, 4,
         0, 4, 1, 5, 2, 6, 3, 7
     };
-
-public:
-    HighlightedBlock();
-
-    void draw() const;
-
-private:
-    void createGLBuffers();
 };
 
 #endif //GL_CRAFT_HIGHLIGHTEDBLOCK_H

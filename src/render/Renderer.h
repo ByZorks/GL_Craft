@@ -1,14 +1,11 @@
 #ifndef RENDERER_H
 #define RENDERER_H
-#include "../gl/IndexBuffer.h"
 #include "../gl/IndirectBuffer.h"
 #include "../gl/StorageBuffer.h"
 #include "../gl/VertexArray.h"
 
 class Renderer {
 public:
-    static float s_renderDistance;
-
     static void init();
     static void clear();
 
@@ -30,6 +27,8 @@ public:
                                            const StorageBuffer &offsets, unsigned int drawCount, const void *offset);
     static void drawElements(const VertexArray &vao, unsigned int IBOCount);
     static void drawElementsInstanced(const VertexArray &vao, unsigned int IBOCount, unsigned int instanceCount);
+
+    static float s_renderDistance;
 };
 
 #endif //RENDERER_H

@@ -11,7 +11,6 @@ Camera::Camera(const unsigned int windowWidth,
                const unsigned int windowHeight) : m_lastX(static_cast<float>(windowWidth) / 2.0f),
                                                   m_lastY(static_cast<float>(windowHeight) / 2.0f),
                                                   m_yaw(-90.0f), m_pitch(0.0f), m_lastYaw(0.f), m_lastPitch(.0f),
-                                                  m_lastSticterYaw(0.0f), m_lastStricterPitch(0.0f),
                                                   m_firstMouse(true), m_cameraPos(glm::vec3(0.0f, 200, .0f)),
                                                   m_cameraFront(glm::vec3(0.0f, 0.0f, 0.0f)),
                                                   m_cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
@@ -36,12 +35,10 @@ void Camera::updateLastState() {
 
     if (std::abs(m_lastYaw - m_yaw) > 15.f) m_lastYaw = m_yaw;
     if (std::abs(m_lastPitch - m_pitch) > 15.f) m_lastPitch = m_pitch;
-    if (std::abs(m_lastSticterYaw - m_yaw) > 5.f) m_lastSticterYaw = m_yaw;
-    if (std::abs(m_lastStricterPitch - m_pitch) > 5.f) m_lastStricterPitch = m_pitch;
 }
 
 void Camera::processInput(const std::shared_ptr<GLFWwindow> &window, const double deltaTime) {
-    const float cameraSpeed = 150.0f * static_cast<float>(deltaTime);
+    const float cameraSpeed = 100.0f * static_cast<float>(deltaTime);
     if (glfwGetKey(window.get(), GLFW_KEY_W) == GLFW_PRESS)
         m_cameraPos += cameraSpeed * m_cameraFront;
     if (glfwGetKey(window.get(), GLFW_KEY_S) == GLFW_PRESS)
@@ -52,24 +49,24 @@ void Camera::processInput(const std::shared_ptr<GLFWwindow> &window, const doubl
         m_cameraPos += glm::normalize(glm::cross(m_cameraFront, m_cameraUp)) * cameraSpeed;
 }
 
-void Camera::handleMouse(const double xpos, const double ypos) {
+void Camera::handleMouse(const double xPos, const double yPos) {
     if (m_firstMouse) {
-        m_lastX = static_cast<float>(xpos);
-        m_lastY = static_cast<float>(ypos);
+        m_lastX = static_cast<float>(xPos);
+        m_lastY = static_cast<float>(yPos);
         m_firstMouse = false;
     }
 
-    double xoffset = xpos - m_lastX;
-    double yoffset = m_lastY - ypos;
-    m_lastX = static_cast<float>(xpos);
-    m_lastY = static_cast<float>(ypos);
+    double xOffset = xPos - m_lastX;
+    double yOffset = m_lastY - yPos;
+    m_lastX = static_cast<float>(xPos);
+    m_lastY = static_cast<float>(yPos);
 
     constexpr float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
+    xOffset *= sensitivity;
+    yOffset *= sensitivity;
 
-    m_yaw += static_cast<float>(xoffset);
-    m_pitch += static_cast<float>(yoffset);
+    m_yaw += static_cast<float>(xOffset);
+    m_pitch += static_cast<float>(yOffset);
 
     if (m_pitch > 89.0f)
         m_pitch = 89.0f;
@@ -136,10 +133,6 @@ bool Camera::hasCameraChangedDirection() const {
     return std::abs(m_lastYaw - m_yaw) > 15.f || std::abs(m_lastPitch - m_pitch) > 15.f;
 }
 
-bool Camera::hasCameraChangedDirectionStricter() const {
-    return std::abs(m_lastSticterYaw - m_yaw) > 5.f || std::abs(m_lastStricterPitch - m_pitch) > 5.f;
-}
-
 bool Camera::hasCameraUpdated() const {
     return hasCameraChangedBlock() || hasCameraChangedDirection();
 }
@@ -169,48 +162,48 @@ const void *Camera::getMVPData() const {
     return &m_mvp[0][0];
 }
 
-Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
+Frustum Camera::getFrustum(glm::mat4 modelViewProjectionMatrix) {
     constexpr float padding = Chunk::SIZE * 1.7f; // Prevent popping
 
-    auto left = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][0],
-                      modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][0],
-                      modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][0],
-                      modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][0]
+    auto left = Plane(modelViewProjectionMatrix[0][3] + modelViewProjectionMatrix[0][0],
+                      modelViewProjectionMatrix[1][3] + modelViewProjectionMatrix[1][0],
+                      modelViewProjectionMatrix[2][3] + modelViewProjectionMatrix[2][0],
+                      modelViewProjectionMatrix[3][3] + modelViewProjectionMatrix[3][0]
     );
     left.setD(left.m_d1() + padding);
 
-    auto right = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][0],
-                       modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][0],
-                       modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][0],
-                       modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][0]
+    auto right = Plane(modelViewProjectionMatrix[0][3] - modelViewProjectionMatrix[0][0],
+                       modelViewProjectionMatrix[1][3] - modelViewProjectionMatrix[1][0],
+                       modelViewProjectionMatrix[2][3] - modelViewProjectionMatrix[2][0],
+                       modelViewProjectionMatrix[3][3] - modelViewProjectionMatrix[3][0]
     );
     right.setD(right.m_d1() + padding);
 
-    auto bottom = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][1],
-                        modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][1],
-                        modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][1],
-                        modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][1]
+    auto bottom = Plane(modelViewProjectionMatrix[0][3] + modelViewProjectionMatrix[0][1],
+                        modelViewProjectionMatrix[1][3] + modelViewProjectionMatrix[1][1],
+                        modelViewProjectionMatrix[2][3] + modelViewProjectionMatrix[2][1],
+                        modelViewProjectionMatrix[3][3] + modelViewProjectionMatrix[3][1]
     );
     bottom.setD(bottom.m_d1() + padding);
 
-    auto top = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][1],
-                     modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][1],
-                     modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][1],
-                     modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][1]
+    auto top = Plane(modelViewProjectionMatrix[0][3] - modelViewProjectionMatrix[0][1],
+                     modelViewProjectionMatrix[1][3] - modelViewProjectionMatrix[1][1],
+                     modelViewProjectionMatrix[2][3] - modelViewProjectionMatrix[2][1],
+                     modelViewProjectionMatrix[3][3] - modelViewProjectionMatrix[3][1]
     );
     top.setD(top.m_d1() + padding);
 
-    auto near = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][2],
-                      modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][2],
-                      modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][2],
-                      modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][2]
+    auto near = Plane(modelViewProjectionMatrix[0][3] + modelViewProjectionMatrix[0][2],
+                      modelViewProjectionMatrix[1][3] + modelViewProjectionMatrix[1][2],
+                      modelViewProjectionMatrix[2][3] + modelViewProjectionMatrix[2][2],
+                      modelViewProjectionMatrix[3][3] + modelViewProjectionMatrix[3][2]
     );
     near.setD(near.m_d1() + padding);
 
-    const auto far = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][2],
-                           modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][2],
-                           modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][2],
-                           modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][2]
+    const auto far = Plane(modelViewProjectionMatrix[0][3] - modelViewProjectionMatrix[0][2],
+                           modelViewProjectionMatrix[1][3] - modelViewProjectionMatrix[1][2],
+                           modelViewProjectionMatrix[2][3] - modelViewProjectionMatrix[2][2],
+                           modelViewProjectionMatrix[3][3] - modelViewProjectionMatrix[3][2]
     );
 
     const Frustum frustum(left, right, bottom, top, near, far);

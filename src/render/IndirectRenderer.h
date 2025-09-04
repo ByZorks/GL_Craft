@@ -10,20 +10,6 @@
 
 class IndirectRenderer {
 private:
-    // Structs and enums
-    struct DrawArraysIndirectCommand {
-        unsigned int count = 0;
-        unsigned int instanceCount = 0;
-        unsigned int first = 0;
-        unsigned int baseInstance = 0;
-    };
-
-    struct GPUSlot {
-        // Size: 4 KiB = 1000 BlockVertex (1 unsigned int)
-        bool isUsed = false;
-        uint8_t numberOfSlotsUsed = 0; // 0 means it is not the first slot of a multi-slot allocation
-    };
-
     struct MeshData {
         IndirectBuffer IBO;
         StorageBuffer offsetsSSBO;
@@ -35,14 +21,6 @@ private:
         OPAQUE,
         WATER
     };
-
-    StorageBuffer m_verticesSSBO;
-    size_t m_highestSlotUsed = 0;
-    std::vector<GPUSlot> m_gpuSlots;
-    MeshData m_opaqueData;
-    MeshData m_waterData;
-
-    unsigned int m_vertexPerSlot = 1000;
 
 public:
     IndirectRenderer();
@@ -57,6 +35,28 @@ private:
     void add(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk);
     void remove(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk);
     void update(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk);
+
+private:
+    struct DrawArraysIndirectCommand {
+        unsigned int count = 0;
+        unsigned int instanceCount = 0;
+        unsigned int first = 0;
+        unsigned int baseInstance = 0;
+    };
+
+    struct GPUSlot {
+        // Size: 4 KiB = 1000 BlockVertex (1 unsigned int)
+        bool isUsed = false;
+        uint8_t numberOfSlotsUsed = 0; // 0 means it is not the first slot of a multi-slot allocation
+    };
+
+    StorageBuffer m_verticesSSBO;
+    size_t m_highestSlotUsed = 0;
+    std::vector<GPUSlot> m_gpuSlots;
+    MeshData m_opaqueData;
+    MeshData m_waterData;
+
+    unsigned int m_vertexPerSlot = 1000;
 };
 
 #endif //GL_CRAFT_INDIRECTRENDERER_H

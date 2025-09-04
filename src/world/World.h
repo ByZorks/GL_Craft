@@ -5,11 +5,6 @@
 #include "WorldRenderer.h"
 
 class World {
-private:
-    WorldManager m_worldManager;
-    WorldRenderer m_worldRenderer;
-    TerrainGenerator m_terrainGenerator;
-
 public:
     World();
 
@@ -23,6 +18,11 @@ public:
     [[nodiscard]] WorldManager &getWorldManager();
     [[nodiscard]] WorldRenderer &getWorldRenderer();
     [[nodiscard]] TerrainGenerator &getTerrainGenerator();
+
+private:
+    WorldManager m_worldManager;
+    WorldRenderer m_worldRenderer;
+    TerrainGenerator m_terrainGenerator;
 };
 
 #endif //WORLD_H

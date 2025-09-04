@@ -62,7 +62,7 @@ void VertexArray::addBuffer(const VertexBuffer &vb, const IndexBuffer &ibo, cons
         }
 
         glVertexArrayAttribBinding(m_ID, m_nextAttributeIndex + i, bindingIndex);
-        offset += count * VertexBufferElement::GetSizeOfType(type);
+        offset += count * VertexBufferLayout::VertexBufferElement::GetSizeOfType(type);
     }
     m_nextAttributeIndex += elements.size();
 }

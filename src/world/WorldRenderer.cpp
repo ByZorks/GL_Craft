@@ -10,15 +10,15 @@
 #include "surfaceFeatures/grass/ShortGrass.h"
 
 WorldRenderer::WorldRenderer() {
-    m_instanceRenderers.emplace(SurfaceFeatureType::SHORT_GRASS, InstanceRenderer());
-    m_instanceRenderers.emplace(SurfaceFeatureType::POPPY, InstanceRenderer());
-    m_instanceRenderers.emplace(SurfaceFeatureType::CORNFLOWER, InstanceRenderer());
-    m_instanceRenderers.emplace(SurfaceFeatureType::ALLIUM, InstanceRenderer());
+    m_instanceRenderers.emplace(SurfaceFeature::SurfaceFeatureType::SHORT_GRASS, InstanceRenderer());
+    m_instanceRenderers.emplace(SurfaceFeature::SurfaceFeatureType::POPPY, InstanceRenderer());
+    m_instanceRenderers.emplace(SurfaceFeature::SurfaceFeatureType::CORNFLOWER, InstanceRenderer());
+    m_instanceRenderers.emplace(SurfaceFeature::SurfaceFeatureType::ALLIUM, InstanceRenderer());
 
-    m_instanceRenderers.at(SurfaceFeatureType::SHORT_GRASS).init(std::move(ShortGrass(0, 0, 0)));
-    m_instanceRenderers.at(SurfaceFeatureType::POPPY).init(std::move(Poppy(0, 0, 0)));
-    m_instanceRenderers.at(SurfaceFeatureType::CORNFLOWER).init(std::move(Cornflower(0, 0, 0)));
-    m_instanceRenderers.at(SurfaceFeatureType::ALLIUM).init(std::move(Allium(0, 0, 0)));
+    m_instanceRenderers.at(SurfaceFeature::SurfaceFeatureType::SHORT_GRASS).init(std::move(ShortGrass(0, 0, 0)));
+    m_instanceRenderers.at(SurfaceFeature::SurfaceFeatureType::POPPY).init(std::move(Poppy(0, 0, 0)));
+    m_instanceRenderers.at(SurfaceFeature::SurfaceFeatureType::CORNFLOWER).init(std::move(Cornflower(0, 0, 0)));
+    m_instanceRenderers.at(SurfaceFeature::SurfaceFeatureType::ALLIUM).init(std::move(Allium(0, 0, 0)));
 }
 
 void WorldRenderer::updateVisibleChunks(const Camera &camera, const Frustum &frustum, const WorldManager &manager) {
@@ -86,7 +86,7 @@ void WorldRenderer::sortChunks(const Frustum &frustum, const Camera &camera,
     }
 
     for (const auto &chunk: loadedChunks | std::views::values) {
-        if (chunk->getState() < State::READY_TO_DRAW) continue;
+        if (chunk->getState() < Mesh::State::READY_TO_DRAW) continue;
 
         const bool isInFrutum = frustum.isAABBInFrustum(chunk->getBoundingBox());
 
@@ -103,23 +103,23 @@ void WorldRenderer::sortChunks(const Frustum &frustum, const Camera &camera,
                 // They are no longer visible at this distance event if we draw them
                 for (const auto &feature: chunk->getSurfaceFeatures()) {
                     switch (feature.getType()) {
-                        case SurfaceFeatureType::SHORT_GRASS:
-                            m_instanceRenderers.at(SurfaceFeatureType::SHORT_GRASS).addInstance({
+                        case SurfaceFeature::SurfaceFeatureType::SHORT_GRASS:
+                            m_instanceRenderers.at(SurfaceFeature::SurfaceFeatureType::SHORT_GRASS).addInstance({
                                 feature.getX() - 1, feature.getY(), feature.getZ() - 1
                             });
                             break;
-                        case SurfaceFeatureType::POPPY:
-                            m_instanceRenderers.at(SurfaceFeatureType::POPPY).addInstance({
+                        case SurfaceFeature::SurfaceFeatureType::POPPY:
+                            m_instanceRenderers.at(SurfaceFeature::SurfaceFeatureType::POPPY).addInstance({
                                 feature.getX() - 1, feature.getY(), feature.getZ() - 1
                             });
                             break;
-                        case SurfaceFeatureType::CORNFLOWER:
-                            m_instanceRenderers.at(SurfaceFeatureType::CORNFLOWER).addInstance({
+                        case SurfaceFeature::SurfaceFeatureType::CORNFLOWER:
+                            m_instanceRenderers.at(SurfaceFeature::SurfaceFeatureType::CORNFLOWER).addInstance({
                                 feature.getX() - 1, feature.getY(), feature.getZ() - 1
                             });
                             break;
-                        case SurfaceFeatureType::ALLIUM:
-                            m_instanceRenderers.at(SurfaceFeatureType::ALLIUM).addInstance({
+                        case SurfaceFeature::SurfaceFeatureType::ALLIUM:
+                            m_instanceRenderers.at(SurfaceFeature::SurfaceFeatureType::ALLIUM).addInstance({
                                 feature.getX() - 1, feature.getY(), feature.getZ() - 1
                             });
                             break;

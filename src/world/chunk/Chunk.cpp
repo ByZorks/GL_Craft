@@ -14,7 +14,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
 
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
     m_waterData.vertices.reserve(avg_faces_water);
-    m_blocks.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), BlockType::AIR); // +2 for boundary checks
+    m_blocks.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), Block::BlockType::AIR); // +2 for boundary checks
     m_pendingBlocksForNeighbors.reserve(SIZE);
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
 }
@@ -90,7 +90,7 @@ void Chunk::generateVoxel() {
                 if (const float surfaceFeatureNoise =
                             (TerrainGenerator::getSurfaceFeaturesNoiseAt(worldX, worldZ) + 1.0f) * 0.5f;
                     surfaceFeatureNoise >= 0.69f) {
-                    const BlockType blockType = TerrainGenerator::getBlockType(columnHeight, columnHeight, biome);
+                    const Block::BlockType blockType = TerrainGenerator::getBlockType(columnHeight, columnHeight, biome);
                     m_surfaceFeatures.emplace(worldX, columnHeight, worldZ,
                                               SurfaceFeature::getSurfaceFeatureType(
                                                   surfaceFeatureNoise, blockType, biome));
@@ -115,17 +115,17 @@ void Chunk::generateVoxel() {
                 if (const auto it = m_surfaceFeatures.find(SurfaceFeature(worldX, columnHeight, worldZ));
                     it != m_surfaceFeatures.end()) {
                     switch (it->getType()) {
-                        case SurfaceFeatureType::TREE: {
+                        case SurfaceFeature::SurfaceFeatureType::TREE: {
                             SurfaceFeature::addTree(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blocks,
                                                     m_pendingBlocksForNeighbors);
                             break;
                         }
-                        case SurfaceFeatureType::BUSH: {
+                        case SurfaceFeature::SurfaceFeatureType::BUSH: {
                             SurfaceFeature::addBush(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blocks,
                                                     m_pendingBlocksForNeighbors);
                             break;
                         }
-                        case SurfaceFeatureType::POND: {
+                        case SurfaceFeature::SurfaceFeatureType::POND: {
                             SurfaceFeature::addPond(m_rng, {m_x, m_y, m_z}, localX, localY - 1, localZ, biome, m_blocks,
                                                     m_pendingBlocksForNeighbors);
                         }
@@ -167,8 +167,8 @@ void Chunk::generateMesh() {
     for (int localX = 0; localX < SIZE; localX++) {
         for (int localY = 0; localY < SIZE; localY++) {
             for (int localZ = 0; localZ < SIZE; localZ++) {
-                const BlockType blockType = getBlockType(localX, localY, localZ);
-                if (blockType == BlockType::AIR) continue;
+                const Block::BlockType blockType = getBlockType(localX, localY, localZ);
+                if (blockType == Block::BlockType::AIR) continue;
 
                 // Check if block will have visible faces by checking its 6 neighbors
                 uint8_t visibleFaces = 0;
@@ -208,8 +208,8 @@ void Chunk::generateNewMesh(MeshingResult &result) const {
     for (int localX = 0; localX < SIZE; localX++) {
         for (int localY = 0; localY < SIZE; localY++) {
             for (int localZ = 0; localZ < SIZE; localZ++) {
-                const BlockType blockType = getBlockType(localX, localY, localZ);
-                if (blockType == BlockType::AIR) continue;
+                const Block::BlockType blockType = getBlockType(localX, localY, localZ);
+                if (blockType == Block::BlockType::AIR) continue;
 
                 // Check if block will have visible faces by checking its 6 neighbors
                 uint8_t visibleFaces = 0;
@@ -235,23 +235,23 @@ void Chunk::transferPendingBlocksToWorld(WorldManager &world) {
     m_pendingBlocksForNeighbors.clear();
 }
 
-void Chunk::deleteBlock(const int localX, const int localY, const int localZ, const BlockType type,
+void Chunk::deleteBlock(const int localX, const int localY, const int localZ, const Block::BlockType type,
                         MeshingResult &result) {
     // Voxel
     m_visibleBlocks--;
     if (Block::isInstance(type)) {
-        m_blocks[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
+        m_blocks[index(localX + 1, localY + 1, localZ + 1)] = Block::BlockType::AIR;
         m_surfaceFeatures.erase(SurfaceFeature(m_x + localX + 1, m_y + localY, m_z + localZ + 1));
         return;
     }
 
-    m_blocks[index(localX + 1, localY + 1, localZ + 1)] = BlockType::AIR;
+    m_blocks[index(localX + 1, localY + 1, localZ + 1)] = Block::BlockType::AIR;
 
     // Mesh data
     generateNewMesh(result);
 }
 
-void Chunk::addBlock(const int localX, const int localY, const int localZ, const BlockType type,
+void Chunk::addBlock(const int localX, const int localY, const int localZ, const Block::BlockType type,
                      MeshingResult &result) {
     // Voxel
     m_visibleBlocks++;
@@ -272,12 +272,12 @@ int Chunk::index(const int x, const int y, const int z) const {
     return x * stride * stride + y * stride + z;
 }
 
-BlockType Chunk::getBlockType(const int localX, const int localY, const int localZ) const {
+Block::BlockType Chunk::getBlockType(const int localX, const int localY, const int localZ) const {
     return m_blocks[index(localX + 1, localY + 1, localZ + 1)];
 }
 
-BlockType Chunk::getBlockTypeOrSurfaceFeature(const int localX, const int localY, const int localZ) const {
-    BlockType type;
+Block::BlockType Chunk::getBlockTypeOrSurfaceFeature(const int localX, const int localY, const int localZ) const {
+    Block::BlockType type;
     const int worldX = m_x + localX + 1;
     const int worldY = m_y + localY;
     const int worldZ = m_z + localZ + 1;
@@ -299,42 +299,42 @@ const std::unordered_set<SurfaceFeature> &Chunk::getSurfaceFeatures() const {
 }
 
 unsigned int Chunk::getOpaqueDrawIndex() const {
-    return m_opaqueDrawIndex;
+    return m_drawIndexOpaque;
 }
 
 void Chunk::setOpaqueDrawIndex(const unsigned int m_draw_index) {
-    m_opaqueDrawIndex = m_draw_index;
+    m_drawIndexOpaque = m_draw_index;
 }
 
 unsigned int Chunk::getWaterDrawIndex() const {
-    return m_waterDrawIndex;
+    return m_drawIndexWater;
 }
 
 void Chunk::setWaterDrawIndex(const unsigned int m_water_draw_index) {
-    m_waterDrawIndex = m_water_draw_index;
+    m_drawIndexWater = m_water_draw_index;
 }
 
-unsigned int Chunk::getGPUSlotOpaque() const {
-    return m_gpuOpaqueSlot;
+unsigned int Chunk::getIndirectRendererSlotOpaque() const {
+    return m_indirectRendererSlotOpaque;
 }
 
-void Chunk::setGPUSlotOpaque(const unsigned int m_gpu_opaque_slot) {
-    m_gpuOpaqueSlot = m_gpu_opaque_slot;
+void Chunk::setIndirectRendererSlotOpaque(const unsigned int m_gpu_opaque_slot) {
+    m_indirectRendererSlotOpaque = m_gpu_opaque_slot;
 }
 
-unsigned int Chunk::getGPUSlotWater() const {
-    return m_gpuWaterSlot;
+unsigned int Chunk::getIndirectRendererSlotWater() const {
+    return m_indirectRendererSlotWater;
 }
 
-void Chunk::setGPUSlotWater(const unsigned int m_gpu_water_slot) {
-    m_gpuWaterSlot = m_gpu_water_slot;
+void Chunk::setIndirectRendererSlotWater(const unsigned int m_gpu_water_slot) {
+    m_indirectRendererSlotWater = m_gpu_water_slot;
 }
 
-void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const BlockType blockType) {
+void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const Block::BlockType blockType) {
     const auto localXf = static_cast<unsigned int>(localX);
     const auto localYf = static_cast<unsigned int>(localY);
     const auto localZf = static_cast<unsigned int>(localZ);
-    const bool isWater = blockType == BlockType::WATER;
+    const bool isWater = blockType == Block::BlockType::WATER;
 
     std::array<bool, 26> adjacentFaces{};
     const bool isTopBlockTransparent = Block::isTransparent(getBlockType(localX, localY + 1, localZ));
@@ -355,7 +355,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
                 index = index < MIDDLE_INDEX ? index : index - 1;
                 const bool isAdjacentBlockTransparent = Block::isTransparent(
                     getBlockType(localX + dx, localY + dy, localZ + dz));
-                if (dy == 1 && blockType == BlockType::WATER && !isTopBlockTransparent) {
+                if (dy == 1 && blockType == Block::BlockType::WATER && !isTopBlockTransparent) {
                     adjacentFaces[index] = true; // AO is applied when top block is not transparent
                 } else {
                     adjacentFaces[index] = !isAdjacentBlockTransparent;
@@ -366,7 +366,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 
     constexpr int NUMBER_OF_FACES = 6;
     for (int i = 0; i < NUMBER_OF_FACES; ++i) {
-        const auto face = static_cast<Face>(i);
+        const auto face = static_cast<Block::Face>(i);
         if (!shouldDrawFace(localX, localY, localZ, blockType, face)) continue;
 
         if (isWater) {
@@ -379,14 +379,14 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     }
 }
 
-void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const BlockType blockType,
+void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const Block::BlockType blockType,
                           MeshingResult &result) const {
-    if (blockType == BlockType::AIR || Block::isInstance(blockType)) return;
+    if (blockType == Block::BlockType::AIR || Block::isInstance(blockType)) return;
 
     const auto localXf = static_cast<unsigned int>(localX);
     const auto localYf = static_cast<unsigned int>(localY);
     const auto localZf = static_cast<unsigned int>(localZ);
-    const bool isWater = blockType == BlockType::WATER;
+    const bool isWater = blockType == Block::BlockType::WATER;
 
     std::array<bool, 26> adjacentFaces{};
     const bool isTopBlockTransparent = Block::isTransparent(getBlockType(localX, localY + 1, localZ));
@@ -407,7 +407,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
                 index = index < MIDDLE_INDEX ? index : index - 1;
                 const bool isAdjacentBlockTransparent = Block::isTransparent(
                     getBlockType(localX + dx, localY + dy, localZ + dz));
-                if (dy == 1 && blockType == BlockType::WATER && !isTopBlockTransparent) {
+                if (dy == 1 && blockType == Block::BlockType::WATER && !isTopBlockTransparent) {
                     adjacentFaces[index] = true; // AO is applied when top block is not transparent
                 } else {
                     adjacentFaces[index] = !isAdjacentBlockTransparent;
@@ -418,7 +418,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 
     constexpr int NUMBER_OF_FACES = 6;
     for (int i = 0; i < NUMBER_OF_FACES; ++i) {
-        const auto face = static_cast<Face>(i);
+        const auto face = static_cast<Block::Face>(i);
         if (!shouldDrawFace(localX, localY, localZ, blockType, face)) continue;
 
         if (isWater) {
@@ -432,7 +432,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {
-    return m_blocks[index(localX + 1, localY + 1, localZ + 1)] != BlockType::AIR;
+    return m_blocks[index(localX + 1, localY + 1, localZ + 1)] != Block::BlockType::AIR;
 }
 
 bool Chunk::hasVisibleFaces() const {

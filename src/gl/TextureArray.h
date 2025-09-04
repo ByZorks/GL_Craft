@@ -4,10 +4,6 @@
 #include <vector>
 
 class TextureArray {
-    unsigned int m_ID = 0;
-    int m_width, m_height;
-    std::string m_dirPath;
-
 public:
     TextureArray(int width, int height, std::string dirPath);
     ~TextureArray();
@@ -16,6 +12,11 @@ public:
 
 private:
     static std::vector<std::string> getFilesInDirectory(const std::string& dirPath);
+
+private:
+    unsigned int m_ID = 0;
+    int m_width, m_height;
+    std::string m_dirPath;
 };
 
 #endif //GL_CRAFT_TEXTUREARRAY_H

@@ -26,27 +26,27 @@ flat out uint v_texLayer;
 flat out uint v_face;
 out float v_AO;
 
-const vec3 faceOffsets[6][4] = {
-    // FRONT (+Z)
-    vec3[4](vec3(0,1,1), vec3(1,1,1), vec3(1,0,1), vec3(0,0,1)),
-    // BACK (-Z)
-    vec3[4](vec3(1,1,0), vec3(0,1,0), vec3(0,0,0), vec3(1,0,0)),
-    // LEFT (-X)
-    vec3[4](vec3(0,1,0), vec3(0,1,1), vec3(0,0,1), vec3(0,0,0)),
-    // RIGHT (+X)
-    vec3[4](vec3(1,1,1), vec3(1,1,0), vec3(1,0,0), vec3(1,0,1)),
-    // TOP (+Y)
-    vec3[4](vec3(0,1,0), vec3(1,1,0), vec3(1,1,1), vec3(0,1,1)),
-    // BOTTOM (-Y)
-    vec3[4](vec3(0,0,1), vec3(1,0,1), vec3(1,0,0), vec3(0,0,0))
+const vec3 faceOffsets[24] = {
+// FRONT (+Z)
+vec3(0,1,1), vec3(1,1,1), vec3(1,0,1), vec3(0,0,1),
+// BACK (-Z)
+vec3(1,1,0), vec3(0,1,0), vec3(0,0,0), vec3(1,0,0),
+// LEFT (-X)
+vec3(0,1,0), vec3(0,1,1), vec3(0,0,1), vec3(0,0,0),
+// RIGHT (+X)
+vec3(1,1,1), vec3(1,1,0), vec3(1,0,0), vec3(1,0,1),
+// TOP (+Y)
+vec3(0,1,0), vec3(1,1,0), vec3(1,1,1), vec3(0,1,1),
+// BOTTOM (-Y)
+vec3(0,0,1), vec3(1,0,1), vec3(1,0,0), vec3(0,0,0)
 };
 
-const vec2 texOffsets[4] = vec2[4](
+const vec2 texOffsets[4] = {
     vec2(0, 1),  // Top-left
     vec2(1, 1), // Top-right
     vec2(1, 0), // Bottom-right
     vec2(0, 0) // Bottom-left
-);
+};
 
 const int indices[6] = {0, 2, 1, 0, 3, 2};
 
@@ -87,7 +87,7 @@ void main() {
 
     // Position and offset calculation
     const int quadVertexIndex = indices[currentVertexID];
-    const vec3 vertexOffset = faceOffsets[data.face][quadVertexIndex];
+    const vec3 vertexOffset = faceOffsets[int(data.face) * 4 + quadVertexIndex];
     const vec3 worldPos = vec3(data.position) + vertexOffset + vec3(positionOffset[gl_DrawID * 3], positionOffset[gl_DrawID * 3 + 1], positionOffset[gl_DrawID * 3 + 2]);
     gl_Position = u_MVP * vec4(worldPos, 1.0);
 

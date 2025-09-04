@@ -6,10 +6,6 @@
 #include "../render/InstanceRenderer.h"
 
 class WorldRenderer {
-    IndirectRenderer m_indirectRenderer;
-    std::unordered_map<SurfaceFeatureType, InstanceRenderer> m_instanceRenderers;
-    unsigned int m_visibleChunksCount = 0;
-
 public:
     WorldRenderer();
 
@@ -24,6 +20,11 @@ private:
     void sortChunks(const Frustum &frustum, const Camera &camera,
                     const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &loadedChunks,
                     bool needInstanceUpdate);
+
+private:
+    IndirectRenderer m_indirectRenderer;
+    std::unordered_map<SurfaceFeature::SurfaceFeatureType, InstanceRenderer> m_instanceRenderers;
+    unsigned int m_visibleChunksCount = 0;
 };
 
 #endif //GL_CRAFT_WORLDRENDERER_H

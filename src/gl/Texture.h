@@ -3,12 +3,6 @@
 #include <string>
 
 class Texture {
-private:
-    unsigned int m_ID = 0;
-    std::string m_FilePath;
-    unsigned char *m_LocalBuffer;
-    int m_Width, m_Height, m_BPP; // BPP: Bytes Per Pixel
-
 public:
     explicit Texture(std::string filePath);
     Texture(int width, int height, bool isDepthTexture = false);
@@ -18,6 +12,12 @@ public:
 
     [[nodiscard]] unsigned int getID() const;
     void setID(unsigned int m_id);
+
+private:
+    unsigned int m_ID = 0;
+    std::string m_filePath;
+    unsigned char *m_buffer;
+    int m_width, m_height, m_BPP; // BPP: Bytes Per Pixel
 };
 
 #endif //TEXTURE_H

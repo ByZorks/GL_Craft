@@ -12,17 +12,6 @@ enum class Biome : uint8_t {
 };
 
 class TerrainGenerator {
-private:
-    static constexpr int SEED = 1337;
-    static constexpr int SEA_LEVEL = 60;
-    static constexpr int MIN_HEIGHT = 1;
-    static constexpr int HEIGHT_MULTIPLIER = 256;
-
-    struct Step {
-        float noise;
-        float height;
-    };
-
 public:
     struct NoiseValues {
         float terrain = 0.0f;
@@ -66,8 +55,8 @@ public:
 
     static Biome getBiome(const NoiseValues &noises, int worldX, int worldZ);
     static const char *getBiomeName(Biome biome);
-    static BlockType getBlockType(int y, int columnHeight, Biome biome);
-    static BlockType getNearSurfaceBlockType(Biome biome);
+    static Block::BlockType getBlockType(int y, int columnHeight, Biome biome);
+    static Block::BlockType getNearSurfaceBlockType(Biome biome);
 
     static bool isSnowBiome(Biome biome);
     static int getSeed();
@@ -85,7 +74,7 @@ private:
     static int getBaseLevel(const NoiseValues &noises);
     static float getContinentalnessLevel(float continentalness);
     static float getErosionLevel(float erosion);
-    static BlockType getSurfaceBlockType(Biome biome);
+    static Block::BlockType getSurfaceBlockType(Biome biome);
 
     static FastNoiseLite makeTerrainNoise();
     static FastNoiseLite makeContinentalnessNoise();
@@ -107,6 +96,17 @@ private:
     static float trilinearInterpolation(const std::span<const float> &noises, const ChunkPosition &position,
                                         int gridSizeX, int gridSizeY, int gridSizeZ, int worldX, int worldY, int worldZ,
                                         int step);
+
+private:
+    static constexpr int SEED = 1337;
+    static constexpr int SEA_LEVEL = 60;
+    static constexpr int MIN_HEIGHT = 1;
+    static constexpr int HEIGHT_MULTIPLIER = 256;
+
+    struct Step {
+        float noise;
+        float height;
+    };
 };
 
 #endif //GL_CRAFT_TERRAINGENERATOR_H

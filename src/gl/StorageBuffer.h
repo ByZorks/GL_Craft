@@ -3,15 +3,9 @@
 #include <cstddef>
 
 class StorageBuffer {
-private:
-    unsigned int m_ID = 0;
-    unsigned int m_bindingPoint = 999;
-    size_t m_size = 0;
-
 public:
     StorageBuffer();
     ~StorageBuffer();
-
     StorageBuffer(const StorageBuffer &other);
     StorageBuffer(StorageBuffer &&other) noexcept;
     StorageBuffer & operator=(const StorageBuffer &other);
@@ -24,6 +18,11 @@ public:
     void bind() const;
 
     [[nodiscard]] size_t getSize() const;
+
+private:
+    unsigned int m_ID = 0;
+    unsigned int m_bindingPoint = 999;
+    size_t m_size = 0;
 };
 
 #endif //GL_CRAFT_STORAGEBUFFER_H

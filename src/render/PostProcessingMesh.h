@@ -7,6 +7,14 @@
 #include "../gl/VertexArray.h"
 
 class PostProcessingMesh {
+public:
+    PostProcessingMesh(int width, int height);
+
+    void resize(int width, int height);
+    void draw() const;
+
+    [[nodiscard]] const FrameBuffer & getFBO() const;
+
 private:
     int m_width{}, m_height{};
     std::array<int8_t, 16> m_vertices = {
@@ -24,14 +32,6 @@ private:
     VertexBuffer m_VBO;
     IndexBuffer m_IBO;
     FrameBuffer m_FBO;
-
-public:
-    PostProcessingMesh(int width, int height);
-
-    void resize(int width, int height);
-    void draw() const;
-
-    [[nodiscard]] const FrameBuffer & getFBO() const;
 };
 
 #endif //GL_CRAFT_POSTPROCESSINGMESH_H

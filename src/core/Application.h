@@ -14,6 +14,27 @@
 #include "GLFW/glfw3.h"
 
 class Application {
+public:
+    Application(int width, int height, const char *title);
+
+    void run();
+
+private:
+    void initGLFW(int width, int height, const char *title);
+    static void initGL();
+    void initResources();
+    void processInput(double deltaTime);
+    void update();
+    void render();
+    void stateUpdate();
+
+    void onMouseMove(double xPos, double yPos);
+    void onFrameBufferResize(int width, int height);
+    void onMouseEvent(int button, int action);
+
+    static void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity,
+                                       GLsizei length, const char *message, const void *userParam);
+
 private:
     std::shared_ptr<GLFWwindow> m_window;
 
@@ -47,26 +68,6 @@ private:
     int m_postProcessingSceneTextureSlot = 1;
     int m_postProcessingDepthTextureSlot = 2;
 
-public:
-    Application(int width, int height, const char *title);
-
-    void run();
-
-private:
-    void initGLFW(int width, int height, const char *title);
-    static void initGL();
-    void initResources();
-    void processInput(double deltaTime);
-    void update();
-    void render();
-    void stateUpdate();
-
-    void onMouseMove(double xPos, double yPos);
-    void onFrameBufferResize(int width, int height);
-    void onMouseEvent(int button, int action);
-
-    static void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity,
-                                       GLsizei length, const char *message, const void *userParam);
 };
 
 #endif //GL_CRAFT_APPLICATION_H

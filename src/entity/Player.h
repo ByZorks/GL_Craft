@@ -3,14 +3,15 @@
 #include "../world/Block.h"
 
 class Player {
-private:
-    BlockType m_selectedBlockType = BlockType::AIR;
-
 public:
     Player();
 
-    [[nodiscard]] BlockType getSelectedBlockType() const;
-    void setSelectedBlockType(BlockType blockType);
+    [[nodiscard]] Block::BlockType getSelectedBlockType() const;
+    void setSelectedBlockType(Block::BlockType blockType);
+
+private:
+    Block::BlockType m_selectedBlockType = Block::BlockType::AIR;
+
 };
 
 #endif //GL_CRAFT_PLAYER_H

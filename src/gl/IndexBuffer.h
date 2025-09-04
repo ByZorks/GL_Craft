@@ -2,17 +2,11 @@
 #define INDEXBUFFER_H
 
 class IndexBuffer {
-private:
-    unsigned int m_ID = 0;
-    unsigned int m_Count = 0;
-
 public:
     IndexBuffer();
     ~IndexBuffer();
-
     IndexBuffer(const IndexBuffer &other);
     IndexBuffer & operator=(const IndexBuffer &other);
-
     IndexBuffer(IndexBuffer &&other) noexcept;
     IndexBuffer & operator=(IndexBuffer &&other) noexcept;
 
@@ -21,8 +15,12 @@ public:
     void deleteBuffer();
 
     [[nodiscard]] unsigned int getCount() const;
-
     [[nodiscard]] unsigned int getID() const;
+
+private:
+    unsigned int m_ID = 0;
+    unsigned int m_Count = 0;
+
 };
 
 #endif //INDEXBUFFER_H
