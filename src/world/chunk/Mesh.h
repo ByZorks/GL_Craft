@@ -52,7 +52,7 @@ public:
     void updateVertexCount();
     void resetMesh();
 
-    bool isEmpty() const;
+    [[nodiscard]] bool isEmpty() const;
 
     [[nodiscard]] bool hasOpaqueFaces() const;
     void setHasOpaqueFaces(bool hasFaces);
