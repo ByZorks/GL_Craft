@@ -5,12 +5,14 @@
 #include "glad/gl.h"
 
 FrameBuffer::FrameBuffer(const int width, const int height) : m_Width(width), m_Height(height),
-                                                              m_colorTexture(width, height), m_depthTexture(width, height, true) {
+                                                              m_colorTexture(width, height),
+                                                              m_depthTexture(width, height, true) {
     glCreateFramebuffers(1, &m_ID);
     glNamedFramebufferTexture(m_ID, GL_COLOR_ATTACHMENT0, m_colorTexture.getID(), 0);
     glNamedFramebufferTexture(m_ID, GL_DEPTH_ATTACHMENT, m_depthTexture.getID(), 0);
 
-    if (const auto status = glCheckNamedFramebufferStatus(m_ID, GL_FRAMEBUFFER); status != GL_FRAMEBUFFER_COMPLETE) {
+    if (const auto status = glCheckNamedFramebufferStatus(m_ID, GL_FRAMEBUFFER);
+        status != GL_FRAMEBUFFER_COMPLETE) {
         std::cerr << "[OpengGL] Framebuffer error: " << status << std::endl;
     }
 }
@@ -56,10 +58,10 @@ void FrameBuffer::unbind() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-const Texture & FrameBuffer::getColorTexture() const {
+const Texture &FrameBuffer::getColorTexture() const {
     return m_colorTexture;
 }
 
-const Texture & FrameBuffer::getDepthTexture() const {
+const Texture &FrameBuffer::getDepthTexture() const {
     return m_depthTexture;
 }

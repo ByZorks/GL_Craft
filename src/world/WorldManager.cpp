@@ -9,7 +9,8 @@
 
 WorldManager::WorldManager() : m_threadPool(std::max(1u, std::thread::hardware_concurrency())) {
     m_chunksData.loadedMeshes.reserve(
-       static_cast<size_t>(Renderer::s_renderDistance * Renderer::s_renderDistance * Renderer::s_renderDistance * 2.5f));
+        static_cast<size_t>(Renderer::s_renderDistance * Renderer::s_renderDistance * Renderer::s_renderDistance *
+                            2.5f));
     m_tempKeysToProcess.reserve(100);
 
     const int r = static_cast<int>(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE));
@@ -36,7 +37,7 @@ WorldManager::WorldManager() : m_threadPool(std::max(1u, std::thread::hardware_c
 void WorldManager::updateChunks(const Camera &camera, IndirectRenderer &renderer) {
     if (camera.hasCameraChangedChunk() || m_renderDistanceChanged) {
         const int cameraWorldX = static_cast<int>(std::floor(camera.getPos().x / static_cast<float>(Chunk::SIZE))) *
-                             static_cast<int>(Chunk::SIZE);
+                                 static_cast<int>(Chunk::SIZE);
         const int cameraWorldY = static_cast<int>(std::floor(camera.getPos().y / static_cast<float>(Chunk::SIZE))) *
                                  static_cast<int>(Chunk::SIZE);
         const int cameraWorldZ = static_cast<int>(std::floor(camera.getPos().z / static_cast<float>(Chunk::SIZE))) *
@@ -50,12 +51,13 @@ void WorldManager::updateChunks(const Camera &camera, IndirectRenderer &renderer
     }
 
     m_needInstanceUpdate = camera.hasCameraChangedDirection() || camera.hasCameraChangedChunk() ||
-                          m_renderDistanceChanged;
+                           m_renderDistanceChanged;
     processChunksQueues(renderer);
     m_renderDistanceChanged = false;
 }
 
-void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Camera &camera, IndirectRenderer &renderer) {
+void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Camera &camera,
+                                        IndirectRenderer &renderer) {
     postProcessingShader.use();
     postProcessingShader.setUniform1f("u_RenderDistance", Renderer::s_renderDistance);
 
@@ -85,7 +87,7 @@ void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Came
     updateChunks(camera, renderer);
 }
 
-void WorldManager::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData) {
+void WorldManager::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &blockData) {
     std::lock_guard lock(m_chunksData.pendingBlocksMutex);
     for (const auto &[key, blocks]: blockData) {
         auto &targetVector = m_chunksData.pendingBlocks[key];
@@ -310,7 +312,7 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, BlockT
     });
 }
 
-const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> & WorldManager::getLoadedChunks() const {
+const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &WorldManager::getLoadedChunks() const {
     return m_chunksData.loadedMeshes;
 }
 
@@ -340,21 +342,20 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 
         m_threadPool.enqueue_no_future([this, p_chunk] {
             p_chunk->generateVoxel();
-            if (p_chunk->isEmpty()) return; // Will be deleted when out of range, don't delete now to avoid it being reloaded immediately
+            if (p_chunk->isEmpty()) return;
+            // Will be deleted when out of range, don't delete now to avoid it being reloaded immediately
 
             p_chunk->generateMesh();
             m_needInstanceUpdate.store(true);
             p_chunk->transferPendingBlocksToWorld(*this);
         });
-
     }
 
     // Second pass: generate pending blocks
     // Check if no pending blocks have been added/removed since the last frame because needed chunk was not loaded yet
     if (!m_chunksData.pendingBlocks.empty() && m_chunksData.pendingBlocks.size() != m_chunksData.lastPendingBlockSize) {
         m_chunksData.lastPendingBlockSize = m_chunksData.pendingBlocks.size();
-        m_tempKeysToProcess.clear();
-        {
+        m_tempKeysToProcess.clear(); {
             std::lock_guard lock(m_chunksData.pendingBlocksMutex);
             m_tempKeysToProcess.reserve(m_chunksData.pendingBlocks.size());
             for (const auto &key: m_chunksData.pendingBlocks | std::views::keys) {
@@ -367,8 +368,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
                 const std::shared_ptr<Chunk> p_chunk = it->second;
                 if (p_chunk->getState() < State::VOXEL_GENERATED) continue;
 
-                std::vector<PendingBlock> blocks;
-                {
+                std::vector<PendingBlock> blocks; {
                     std::lock_guard lock(m_chunksData.pendingBlocksMutex);
                     if (auto pending_it = m_chunksData.pendingBlocks.find(key);
                         pending_it != m_chunksData.pendingBlocks.end()) {

@@ -16,7 +16,7 @@ class WorldManager;
 class Chunk final : public Mesh {
 private:
     std::unordered_set<SurfaceFeature> m_surfaceFeatures;
-    std::unordered_map<ChunkPosition, std::vector<PendingBlock>> m_pendingBlocksForNeighbors;
+    std::unordered_map<ChunkPosition, std::vector<PendingBlock> > m_pendingBlocksForNeighbors;
     unsigned int m_opaqueDrawIndex = UINT_MAX;
     unsigned int m_waterDrawIndex = UINT_MAX;
     unsigned int m_gpuOpaqueSlot = UINT_MAX;
@@ -39,7 +39,7 @@ public:
     [[nodiscard]] int index(int x, int y, int z) const override;
     [[nodiscard]] BlockType getBlockType(int localX, int localY, int localZ) const override;
     [[nodiscard]] BlockType getBlockTypeOrSurfaceFeature(int localX, int localY, int localZ) const;
-    [[nodiscard]] const std::unordered_set<SurfaceFeature> & getSurfaceFeatures() const;
+    [[nodiscard]] const std::unordered_set<SurfaceFeature> &getSurfaceFeatures() const;
     [[nodiscard]] unsigned int getOpaqueDrawIndex() const;
     void setOpaqueDrawIndex(unsigned int m_draw_index);
     [[nodiscard]] unsigned int getWaterDrawIndex() const;
@@ -55,7 +55,6 @@ private:
 
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const override;
     [[nodiscard]] bool hasVisibleFaces() const;
-
 };
 
 #endif //CHUNK_H

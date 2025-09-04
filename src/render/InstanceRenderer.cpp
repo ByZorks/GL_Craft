@@ -14,7 +14,8 @@ void InstanceRenderer::addInstance(const std::array<int, 3> &position) {
 void InstanceRenderer::updateInstanceBuffer() {
     if (m_instanceCount == 0) return;
 
-    if (const size_t newSize = m_instanceSSBO.updateData(m_instancePositions.data(), m_instanceCount * sizeof(std::array<int, 3>));
+    if (const size_t newSize = m_instanceSSBO.updateData(m_instancePositions.data(),
+                                                         m_instanceCount * sizeof(std::array<int, 3>));
         newSize > 0) {
         m_instancePositions.resize(newSize / sizeof(std::array<int, 3>));
     }
@@ -28,7 +29,8 @@ void InstanceRenderer::resetInstances() {
 void InstanceRenderer::draw() const {
     if (m_instanceCount == 0) return;
 
-    Renderer::drawWithVertexPullingInstanced(m_VAO, m_verticesSSBO, m_instanceSSBO,  m_vertices.size() * 6, m_instanceCount);
+    Renderer::drawWithVertexPullingInstanced(m_VAO, m_verticesSSBO, m_instanceSSBO, m_vertices.size() * 6,
+                                             m_instanceCount);
 }
 
 unsigned int InstanceRenderer::getInstancesCount() const {

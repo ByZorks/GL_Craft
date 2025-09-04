@@ -43,21 +43,28 @@ protected:
 
 public:
     Mesh(const int x, const int y, const int z, const unsigned int size) : m_size(size), m_x(x), m_y(y), m_z(z),
-                                                  m_box(AABB(static_cast<float>(x), static_cast<float>(y),
-                                                             static_cast<float>(z),
-                                                             static_cast<float>(x) + static_cast<float>(size) - 1.0f,
-                                                             static_cast<float>(y) + static_cast<float>(size) - 1.0f,
-                                                             static_cast<float>(z) + static_cast<float>(size) - 1.0f
-                                                  )) {
+                                                                           m_box(AABB(static_cast<float>(x),
+                                                                               static_cast<float>(y),
+                                                                               static_cast<float>(z),
+                                                                               static_cast<float>(x) + static_cast<
+                                                                                   float>(size) - 1.0f,
+                                                                               static_cast<float>(y) + static_cast<
+                                                                                   float>(size) - 1.0f,
+                                                                               static_cast<float>(z) + static_cast<
+                                                                                   float>(size) - 1.0f
+                                                                           )) {
         m_blocks.resize(m_size * m_size * m_size, BlockType::AIR);
     }
+
     virtual ~Mesh() = default;
 
     virtual void generateVoxel();
+
     virtual void generateMesh();
 
     void updateVertexCount() {
-        m_opaqueData.verticesCount = static_cast<unsigned int>(m_opaqueData.vertices.size() * 6); // Only 1 vertex is stored
+        m_opaqueData.verticesCount = static_cast<unsigned int>(m_opaqueData.vertices.size() * 6);
+        // Only 1 vertex is stored
         m_waterData.verticesCount = static_cast<unsigned int>(m_waterData.vertices.size() * 6);
     }
 
@@ -89,12 +96,18 @@ public:
     [[nodiscard]] virtual bool shouldDrawFace(int x, int y, int z,
                                               const BlockType currentBlockType, const Face face) const {
         switch (face) {
-            case Face::TOP: y++; break;
-            case Face::BOTTOM: y--; break;
-            case Face::FRONT: z++; break;
-            case Face::BACK: z--; break;
-            case Face::RIGHT: x++; break;
-            case Face::LEFT: x--; break;
+            case Face::TOP: y++;
+                break;
+            case Face::BOTTOM: y--;
+                break;
+            case Face::FRONT: z++;
+                break;
+            case Face::BACK: z--;
+                break;
+            case Face::RIGHT: x++;
+                break;
+            case Face::LEFT: x--;
+                break;
             default: ;
         }
 
@@ -107,12 +120,15 @@ public:
             currentBlockType == BlockType::SNOW_OAK_LEAVES ||
             currentBlockType == BlockType::JUNGLE_LEAVES ||
             currentBlockType == BlockType::SPRUCE_LEAVES
-            && neighborTransparent) return true; // Leaves block, always draw face
-        if (currentBlockType == BlockType::WATER && face == Face::TOP && neighborType != BlockType::WATER) return true; // Always draw water top face if neighbor is not water
+            && neighborTransparent)
+            return true; // Leaves block, always draw face
+        // Always draw water top face if neighbor is not water
+        if (currentBlockType == BlockType::WATER && face == Face::TOP && neighborType != BlockType::WATER) return true;
         if (currentBlockType == neighborType) return false; // Same block type, no need to draw face
 
         const bool currentTransparent = Block::isTransparent(currentBlockType);
-        if (currentTransparent && !neighborTransparent) return false; // Current block is transparent, neighbor is not, do not draw face
+        // Current block is transparent, neighbor is not, do not draw face
+        if (currentTransparent && !neighborTransparent) return false;
 
         return currentTransparent != neighborTransparent; // Different transparency state, draw face
     }
@@ -172,19 +188,19 @@ public:
         return m_opaqueData.vertices; // Only used for initializing instance rendering, so a copy is fine
     }
 
-    [[nodiscard]] const std::vector<BlockVertex> & getOpaqueVertices() const {
+    [[nodiscard]] const std::vector<BlockVertex> &getOpaqueVertices() const {
         return m_opaqueData.vertices;
     }
 
-    [[nodiscard]] std::vector<BlockVertex> & getOpaqueVertices() {
+    [[nodiscard]] std::vector<BlockVertex> &getOpaqueVertices() {
         return m_opaqueData.vertices;
     }
 
-    [[nodiscard]] const std::vector<BlockVertex> & getWaterVertices() const {
+    [[nodiscard]] const std::vector<BlockVertex> &getWaterVertices() const {
         return m_waterData.vertices;
     }
 
-    [[nodiscard]] std::vector<BlockVertex> & getWaterVertices() {
+    [[nodiscard]] std::vector<BlockVertex> &getWaterVertices() {
         return m_waterData.vertices;
     }
 

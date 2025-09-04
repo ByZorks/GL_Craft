@@ -8,30 +8,30 @@ void World::update(const Camera &camera, const Frustum &frustum) {
 }
 
 void World::draw(const Shader &blockShader, const Shader &waterShader, const Shader &instancesShader,
-    unsigned int &drawCmd) {
+                 unsigned int &drawCmd) {
     m_worldRenderer.draw(blockShader, waterShader, instancesShader, drawCmd);
 }
 
-const WorldManager & World::getWorldManagerConst() const {
+const WorldManager &World::getWorldManagerConst() const {
     return m_worldManager;
 }
 
-const WorldRenderer & World::getWorldRendererConst() const {
+const WorldRenderer &World::getWorldRendererConst() const {
     return m_worldRenderer;
 }
 
-const TerrainGenerator & World::getTerrainGeneratorConst() const {
+const TerrainGenerator &World::getTerrainGeneratorConst() const {
     return m_terrainGenerator;
 }
 
-WorldManager & World::getWorldManager() {
+WorldManager &World::getWorldManager() {
     return m_worldManager;
 }
 
-WorldRenderer & World::getWorldRenderer() {
+WorldRenderer &World::getWorldRenderer() {
     return m_worldRenderer;
 }
 
-TerrainGenerator & World::getTerrainGenerator() {
+TerrainGenerator &World::getTerrainGenerator() {
     return m_terrainGenerator;
 }

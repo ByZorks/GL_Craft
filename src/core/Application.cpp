@@ -83,7 +83,8 @@ void Application::initGL() {
     }
 
     #if defined(DEBUG_BUILD) || defined(RELWITHDEBINFO_BUILD)
-    int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+    int flags;
+    glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
     if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -125,14 +126,16 @@ void Application::initResources() {
     m_waterShader->use();
     m_waterShader->setUniform1i("u_TextureArray", m_textureSlot);
 
-    m_highlightedBlockShader = std::make_unique<Shader>("../res/shaders/highlightBlock.vert", "../res/shaders/highlightBlock.frag");
+    m_highlightedBlockShader = std::make_unique<Shader>("../res/shaders/highlightBlock.vert",
+                                                        "../res/shaders/highlightBlock.frag");
 
     m_crosshairShader = std::make_unique<Shader>("../res/shaders/crosshair.vert", "../res/shaders/crosshair.frag");
     m_crosshairShader->use();
     m_crosshairShader->setUniform1i("u_TextureArray", m_textureSlot);
     m_crosshairShader->setUniform1f("u_AspectRatio", m_aspectRatio);
 
-    m_postProcessingShader = std::make_unique<Shader>("../res/shaders/postProcessing.vert", "../res/shaders/postProcessing.frag");
+    m_postProcessingShader = std::make_unique<Shader>("../res/shaders/postProcessing.vert",
+                                                      "../res/shaders/postProcessing.frag");
     m_postProcessingShader->use();
     m_postProcessingShader->setUniform1i("u_SceneTexture", m_postProcessingSceneTextureSlot);
     m_postProcessingShader->setUniform1i("u_DepthTexture", m_postProcessingDepthTextureSlot);
@@ -169,7 +172,8 @@ void Application::update() {
         m_postProcessingShader->use();
         TerrainGenerator::NoiseValues noises;
         noises.computeHeightNoises(static_cast<int>(m_camera.getPos().x), static_cast<int>(m_camera.getPos().z));
-        m_postProcessingShader->setUniform1b("u_IsUnderWater", m_camera.isUnderWater(TerrainGenerator::getHeight(noises)));
+        m_postProcessingShader->setUniform1b("u_IsUnderWater",
+                                             m_camera.isUnderWater(TerrainGenerator::getHeight(noises)));
     }
 
     m_waterShader->use();
@@ -179,7 +183,8 @@ void Application::update() {
                                 m_camera.getPos().z);
 
     // Raycasting
-    if (m_raycastResult = Raycast::castRay(m_camera.getPos(), m_camera.getFront(), m_world->getWorldManagerConst().getLoadedChunks());
+    if (m_raycastResult = Raycast::castRay(m_camera.getPos(), m_camera.getFront(),
+                                           m_world->getWorldManagerConst().getLoadedChunks());
         m_raycastResult.hitBlock) {
         if (!m_camera.isInputEnabled()) return;
 
@@ -206,9 +211,9 @@ void Application::render() {
     if (m_raycastResult.hitBlock) {
         m_highlightedBlockShader->use();
         m_highlightedBlockShader->setUniform3f("u_Offset",
-            m_raycastResult.blockWorldPosition[0],
-            m_raycastResult.blockWorldPosition[1],
-            m_raycastResult.blockWorldPosition[2]);
+                                               m_raycastResult.blockWorldPosition[0],
+                                               m_raycastResult.blockWorldPosition[1],
+                                               m_raycastResult.blockWorldPosition[2]);
         m_highlightedBlockMesh->draw();
         ++m_drawCmds;
     }
@@ -226,9 +231,13 @@ void Application::render() {
     Renderer::enableDepthTesting();
 
     // ImGui
-    DebugUI::render(m_world->getWorldRendererConst().getVisibleChunksCount(), m_world->getWorldManagerConst().getLoadedChunks().size(), m_drawCmds, m_camera, m_player.getSelectedBlockType(), [this] {
-        m_world->getWorldManager().updateRenderDistance(*m_postProcessingShader, m_camera, m_world->getWorldRenderer().getIndirectRenderer());
-    });
+    DebugUI::render(m_world->getWorldRendererConst().getVisibleChunksCount(),
+                    m_world->getWorldManagerConst().getLoadedChunks().size(), m_drawCmds, m_camera,
+                    m_player.getSelectedBlockType(), [this] {
+                        m_world->getWorldManager().updateRenderDistance(*m_postProcessingShader, m_camera,
+                                                                        m_world->getWorldRenderer().
+                                                                        getIndirectRenderer());
+                    });
     DebugUI::draw();
 }
 
@@ -267,42 +276,64 @@ void Application::onMouseEvent(const int button, const int action) {
 }
 
 
-void Application::glDebugOutput(const GLenum source, const GLenum type, const unsigned int id, const GLenum severity, GLsizei length,
-    const char *message, const void *userParam) {
+void Application::glDebugOutput(const GLenum source, const GLenum type, const unsigned int id, const GLenum severity,
+                                GLsizei length, const char *message, const void *userParam) {
     // ignore non-significant error/warning codes
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
+    if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 
     std::cout << "---------------" << std::endl;
-    std::cout << "Debug message (" << id << "): " <<  message << std::endl;
+    std::cout << "Debug message (" << id << "): " << message << std::endl;
 
     switch (source) {
-        case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
-        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
-        case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
-        case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
-        case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
+        case GL_DEBUG_SOURCE_API: std::cout << "Source: API";
+            break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM: std::cout << "Source: Window System";
+            break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler";
+            break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY: std::cout << "Source: Third Party";
+            break;
+        case GL_DEBUG_SOURCE_APPLICATION: std::cout << "Source: Application";
+            break;
+        case GL_DEBUG_SOURCE_OTHER: std::cout << "Source: Other";
+            break;
         default: ;
-    } std::cout << std::endl;
+    }
+    std::cout << std::endl;
 
     switch (type) {
-        case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break;
-        case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
-        case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
-        case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
-        case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
-        case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
-        case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
+        case GL_DEBUG_TYPE_ERROR: std::cout << "Type: Error";
+            break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour";
+            break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: std::cout << "Type: Undefined Behaviour";
+            break;
+        case GL_DEBUG_TYPE_PORTABILITY: std::cout << "Type: Portability";
+            break;
+        case GL_DEBUG_TYPE_PERFORMANCE: std::cout << "Type: Performance";
+            break;
+        case GL_DEBUG_TYPE_MARKER: std::cout << "Type: Marker";
+            break;
+        case GL_DEBUG_TYPE_PUSH_GROUP: std::cout << "Type: Push Group";
+            break;
+        case GL_DEBUG_TYPE_POP_GROUP: std::cout << "Type: Pop Group";
+            break;
+        case GL_DEBUG_TYPE_OTHER: std::cout << "Type: Other";
+            break;
         default: ;
-    } std::cout << std::endl;
+    }
+    std::cout << std::endl;
 
     switch (severity) {
-        case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
-        case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
-        case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
-        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+        case GL_DEBUG_SEVERITY_HIGH: std::cout << "Severity: high";
+            break;
+        case GL_DEBUG_SEVERITY_MEDIUM: std::cout << "Severity: medium";
+            break;
+        case GL_DEBUG_SEVERITY_LOW: std::cout << "Severity: low";
+            break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification";
+            break;
         default: ;
-    } std::cout << std::endl;
+    }
+    std::cout << std::endl;
 }

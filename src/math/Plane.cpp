@@ -3,7 +3,8 @@
 #include <cmath>
 #include <stdexcept>
 
-Plane::Plane() : m_a(0.0f), m_b(0.0f), m_c(0.0f), m_d(0.0f) {}
+Plane::Plane() : m_a(0.0f), m_b(0.0f), m_c(0.0f), m_d(0.0f) {
+}
 
 Plane::Plane(const float a, const float b, const float c, const float d) : m_a(a), m_b(b), m_c(c), m_d(d) {
     normalize();

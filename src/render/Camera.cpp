@@ -10,7 +10,8 @@
 Camera::Camera(const unsigned int windowWidth,
                const unsigned int windowHeight) : m_lastX(static_cast<float>(windowWidth) / 2.0f),
                                                   m_lastY(static_cast<float>(windowHeight) / 2.0f),
-                                                  m_yaw(-90.0f), m_pitch(0.0f), m_lastYaw(0.f), m_lastPitch(.0f), m_lastSticterYaw(0.0f), m_lastStricterPitch(0.0f),
+                                                  m_yaw(-90.0f), m_pitch(0.0f), m_lastYaw(0.f), m_lastPitch(.0f),
+                                                  m_lastSticterYaw(0.0f), m_lastStricterPitch(0.0f),
                                                   m_firstMouse(true), m_cameraPos(glm::vec3(0.0f, 200, .0f)),
                                                   m_cameraFront(glm::vec3(0.0f, 0.0f, 0.0f)),
                                                   m_cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
@@ -82,7 +83,7 @@ void Camera::handleMouse(const double xpos, const double ypos) {
     m_cameraFront = glm::normalize(direction);
 }
 
-float Camera::distanceToCamera(const Mesh& mesh) const {
+float Camera::distanceToCamera(const Mesh &mesh) const {
     const auto x = static_cast<float>(mesh.getX());
     const auto y = static_cast<float>(mesh.getY());
     const auto z = static_cast<float>(mesh.getZ());
@@ -144,8 +145,8 @@ bool Camera::hasCameraUpdated() const {
 }
 
 bool Camera::isUnderWater(const int columnHeight) const {
-    return m_cameraPos.y > static_cast<float>(columnHeight) && m_cameraPos.y <= static_cast<float>(TerrainGenerator::getSeaLevel());
-
+    return m_cameraPos.y > static_cast<float>(columnHeight) && m_cameraPos.y <= static_cast<float>(
+               TerrainGenerator::getSeaLevel());
 }
 
 glm::mat4 Camera::getProjectionMatrix() const {
@@ -164,52 +165,52 @@ glm::mat4 Camera::getMVP() const {
     return m_mvp;
 }
 
-const void * Camera::getMVPData() const {
-    return  &m_mvp[0][0];
+const void *Camera::getMVPData() const {
+    return &m_mvp[0][0];
 }
 
 Frustum Camera::getFrustum(glm::mat4 modelViewProjecMatrix) {
     constexpr float padding = Chunk::SIZE * 1.7f; // Prevent popping
 
     auto left = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][0],
-                       modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][0],
-                       modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][0],
-                       modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][0]
+                      modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][0],
+                      modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][0],
+                      modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][0]
     );
     left.setD(left.m_d1() + padding);
 
     auto right = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][0],
-                        modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][0],
-                        modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][0],
-                        modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][0]
+                       modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][0],
+                       modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][0],
+                       modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][0]
     );
     right.setD(right.m_d1() + padding);
 
     auto bottom = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][1],
-                         modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][1],
-                         modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][1],
-                         modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][1]
+                        modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][1],
+                        modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][1],
+                        modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][1]
     );
     bottom.setD(bottom.m_d1() + padding);
 
     auto top = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][1],
-                      modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][1],
-                      modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][1],
-                      modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][1]
+                     modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][1],
+                     modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][1],
+                     modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][1]
     );
     top.setD(top.m_d1() + padding);
 
     auto near = Plane(modelViewProjecMatrix[0][3] + modelViewProjecMatrix[0][2],
-                       modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][2],
-                       modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][2],
-                       modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][2]
+                      modelViewProjecMatrix[1][3] + modelViewProjecMatrix[1][2],
+                      modelViewProjecMatrix[2][3] + modelViewProjecMatrix[2][2],
+                      modelViewProjecMatrix[3][3] + modelViewProjecMatrix[3][2]
     );
     near.setD(near.m_d1() + padding);
 
     const auto far = Plane(modelViewProjecMatrix[0][3] - modelViewProjecMatrix[0][2],
-                      modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][2],
-                      modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][2],
-                      modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][2]
+                           modelViewProjecMatrix[1][3] - modelViewProjecMatrix[1][2],
+                           modelViewProjecMatrix[2][3] - modelViewProjecMatrix[2][2],
+                           modelViewProjecMatrix[3][3] - modelViewProjecMatrix[3][2]
     );
 
     const Frustum frustum(left, right, bottom, top, near, far);
@@ -224,11 +225,11 @@ void Camera::setInput(const bool m_input_enabled) {
     this->m_inputEnabled = m_input_enabled;
 }
 
-const glm::vec3 & Camera::getPos() const {
+const glm::vec3 &Camera::getPos() const {
     return m_cameraPos;
 }
 
-const glm::vec3 & Camera::getFront() const {
+const glm::vec3 &Camera::getFront() const {
     return m_cameraFront;
 }
 

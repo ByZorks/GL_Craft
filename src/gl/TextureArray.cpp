@@ -11,7 +11,8 @@
 #include "stb/stb_image.h"
 
 
-TextureArray::TextureArray(const int width, const int height, std::string dirPath) : m_width(width), m_height(height), m_dirPath(std::move(dirPath)) {
+TextureArray::TextureArray(const int width, const int height, std::string dirPath) : m_width(width), m_height(height),
+    m_dirPath(std::move(dirPath)) {
     stbi_set_flip_vertically_on_load(true);
 
     std::vector<std::string> files = getFilesInDirectory(m_dirPath);
@@ -38,7 +39,7 @@ TextureArray::TextureArray(const int width, const int height, std::string dirPat
     }
 
     for (unsigned int i = 0; i < layersCount; i++) {
-        unsigned char* buffer = stbi_load(files[i].c_str(), &m_width, &m_height, nullptr, 4);
+        unsigned char *buffer = stbi_load(files[i].c_str(), &m_width, &m_height, nullptr, 4);
         if (!buffer) {
             std::cerr << "Failed to load texture: " << files[i] << std::endl;
             continue;
@@ -46,14 +47,15 @@ TextureArray::TextureArray(const int width, const int height, std::string dirPat
 
         // Premultiply alpha
         for (int p = 0; p < m_width * m_height; p++) {
-            unsigned char* px = buffer + p * 4;
+            unsigned char *px = buffer + p * 4;
             const float a = static_cast<float>(px[3]) / 255.0f;
             px[0] = static_cast<unsigned char>(static_cast<float>(px[0]) * a);
             px[1] = static_cast<unsigned char>(static_cast<float>(px[1]) * a);
             px[2] = static_cast<unsigned char>(static_cast<float>(px[2]) * a);
         }
 
-        glTextureSubImage3D(m_ID, 0, 0, 0, static_cast<GLint>(i), m_width, m_height, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+        glTextureSubImage3D(m_ID, 0, 0, 0, static_cast<GLint>(i), m_width, m_height, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                            buffer);
 
         stbi_image_free(buffer);
     }
@@ -73,7 +75,7 @@ void TextureArray::bind(const unsigned int slot) const {
 
 std::vector<std::string> TextureArray::getFilesInDirectory(const std::string &dirPath) {
     std::vector<std::string> files;
-    for (const auto& entry : std::filesystem::directory_iterator(dirPath)) {
+    for (const auto &entry: std::filesystem::directory_iterator(dirPath)) {
         if (entry.is_regular_file()) {
             files.push_back(entry.path().string());
         }

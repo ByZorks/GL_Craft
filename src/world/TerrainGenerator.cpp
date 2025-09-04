@@ -18,7 +18,9 @@ int TerrainGenerator::getHeight(const NoiseValues &noises) {
     return static_cast<int>(columnHeight);
 }
 
-bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, const int worldY, const int worldZ, const int columnHeight, const std::span<const float> &largeCavesNoises, const std::span<const float> &tunnelCavesNoises) {
+bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, const int worldY, const int worldZ,
+                              const int columnHeight, const std::span<const float> &largeCavesNoises,
+                              const std::span<const float> &tunnelCavesNoises) {
     if (worldY <= 1 || worldY > HEIGHT_MULTIPLIER || (worldY >= columnHeight && columnHeight < SEA_LEVEL)) return false;
 
     // Up sample the 3D noise values
@@ -26,7 +28,8 @@ bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, c
     constexpr int gridSizeX8 = (Chunk::SIZE + 2 + step8 - 1) / step8 + 1;
     constexpr int gridSizeY8 = gridSizeX8;
     constexpr int gridSizeZ8 = gridSizeX8;
-    const float largeCave = trilinearInterpolation(largeCavesNoises, position, gridSizeX8, gridSizeY8, gridSizeZ8, worldX, worldY, worldZ, step8);
+    const float largeCave = trilinearInterpolation(largeCavesNoises, position, gridSizeX8, gridSizeY8, gridSizeZ8,
+                                                   worldX, worldY, worldZ, step8);
 
     constexpr float cheeseThreshold = 0.6f;
     const bool isCheeseCave = largeCave > cheeseThreshold;
@@ -40,7 +43,8 @@ bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, c
         constexpr int gridSizeX4 = (Chunk::SIZE + 2 + step4 - 1) / step4 + 1;
         constexpr int gridSizeY4 = gridSizeX4;
         constexpr int gridSizeZ4 = gridSizeX4;
-        const float tunnelCave = trilinearInterpolation(tunnelCavesNoises, position, gridSizeX4, gridSizeY4, gridSizeZ4, worldX, worldY, worldZ, step4);
+        const float tunnelCave = trilinearInterpolation(tunnelCavesNoises, position, gridSizeX4, gridSizeY4, gridSizeZ4,
+                                                        worldX, worldY, worldZ, step4);
 
         isTunnel = std::abs(tunnelCave) > tunnelThreshold;
         if (!isTunnel) return false;
@@ -99,7 +103,7 @@ Biome TerrainGenerator::getBiome(const NoiseValues &noises, const int worldX, co
     return temperature <= -0.7f ? Biome::SNOWY_PLAINS : Biome::PLAINS;
 }
 
-const char * TerrainGenerator::getBiomeName(const Biome biome) {
+const char *TerrainGenerator::getBiomeName(const Biome biome) {
     switch (biome) {
         case Biome::DEEP_OCEAN: return "Deep Ocean";
         case Biome::OCEAN: return "Ocean";
@@ -126,7 +130,8 @@ BlockType TerrainGenerator::getBlockType(const int y, const int columnHeight, co
     if (y <= columnHeight) {
         // Surface block
         if (y == columnHeight && columnHeight >= waterLevel) return getSurfaceBlockType(biome);
-        if (y == columnHeight) return BlockType::DIRT; // Disallow cave entrances underwater bc water doesn't flow into caves yet
+        // Disallow cave entrances underwater bc water doesn't flow into caves yet
+        if (y == columnHeight) return BlockType::DIRT;
 
         // Subsurface blocks
         if (y < columnHeight - 4) return BlockType::STONE;
@@ -190,6 +195,7 @@ FastNoiseLite TerrainGenerator::makeErosionNoise() {
     noise.SetDomainWarpAmp(10.f);
     return noise;
 }
+
 FastNoiseLite TerrainGenerator::makeTemperatureNoise() {
     FastNoiseLite noise;
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
@@ -241,38 +247,38 @@ FastNoiseLite TerrainGenerator::makeTunnelCaveNoise() {
     return noise;
 }
 
-FastNoiseLite & TerrainGenerator::getTerrainNoise() {
+FastNoiseLite &TerrainGenerator::getTerrainNoise() {
     thread_local FastNoiseLite instance = makeTerrainNoise();
     return instance;
 }
 
-FastNoiseLite & TerrainGenerator::getContinentalnessNoise() {
+FastNoiseLite &TerrainGenerator::getContinentalnessNoise() {
     thread_local FastNoiseLite instance = makeContinentalnessNoise();
     return instance;
 }
 
-FastNoiseLite & TerrainGenerator::getErosionNoise() {
+FastNoiseLite &TerrainGenerator::getErosionNoise() {
     thread_local FastNoiseLite instance = makeErosionNoise();
     return instance;
 }
 
-FastNoiseLite & TerrainGenerator::getTemperatureNoise() {
+FastNoiseLite &TerrainGenerator::getTemperatureNoise() {
     thread_local FastNoiseLite instance = makeTemperatureNoise();
     return instance;
 }
 
-FastNoiseLite & TerrainGenerator::getHumidityNoise() {
+FastNoiseLite &TerrainGenerator::getHumidityNoise() {
     thread_local FastNoiseLite instance = makeHumidityNoise();
     return instance;
 }
 
 
-FastNoiseLite & TerrainGenerator::getLargeCaveNoise() {
+FastNoiseLite &TerrainGenerator::getLargeCaveNoise() {
     thread_local FastNoiseLite instance = makeLargeCaveNoise();
     return instance;
 }
 
-FastNoiseLite & TerrainGenerator::getTunnelCaveNoise() {
+FastNoiseLite &TerrainGenerator::getTunnelCaveNoise() {
     thread_local FastNoiseLite instance = makeTunnelCaveNoise();
     return instance;
 }
@@ -320,7 +326,7 @@ float TerrainGenerator::trilinearInterpolation(const std::span<const float> &noi
     return std::lerp(c0, c1, fracZ);
 }
 
-FastNoiseLite & TerrainGenerator::getSurfaceFeaturesNoise() {
+FastNoiseLite &TerrainGenerator::getSurfaceFeaturesNoise() {
     thread_local FastNoiseLite instance = makeSurfaceFeaturesNoise();
     return instance;
 }
@@ -396,9 +402,9 @@ int TerrainGenerator::getBaseLevel(const NoiseValues &noises) {
 
 float TerrainGenerator::getContinentalnessLevel(const float continentalness) {
     static constexpr Step steps[] = {
-        { -1.0f, 10}, // Deep ocean
-        { -0.8f, 10},
-        { -0.45f, 10},
+        {-1.0f, 10}, // Deep ocean
+        {-0.8f, 10},
+        {-0.45f, 10},
         {-0.2f, 30}, // Shallow ocean
         {-0.15f, 30},
         {0.0f, 61}, // Coastline
@@ -462,7 +468,8 @@ BlockType TerrainGenerator::getSurfaceBlockType(const Biome biome) {
             return BlockType::GRAVEL;
         case Biome::DESERT:
             return BlockType::SAND;
-        case Biome::SNOWY_TAIGA: case Biome::SNOWY_PLAINS:
+        case Biome::SNOWY_TAIGA:
+        case Biome::SNOWY_PLAINS:
             return BlockType::SNOW_GRASS;
         case Biome::MOUNTAINS:
             return BlockType::STONE;

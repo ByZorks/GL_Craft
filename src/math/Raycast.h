@@ -25,9 +25,10 @@ private:
     static std::array<std::shared_ptr<Chunk>, 3> m_cachedChunks; // In the worst case, we can hit 3 chunks in a row
 
 public:
-    static RaycastResult castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDir, const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> &chunks);
-    static void clearCache();
+    static RaycastResult castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDir,
+                                 const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &chunks);
 
+    static void clearCache();
 };
 
 #endif //GL_CRAFT_RAYCAST_H

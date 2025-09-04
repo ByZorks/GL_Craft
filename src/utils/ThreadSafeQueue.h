@@ -12,24 +12,21 @@
 template<typename T>
 class ThreadSafeQueue {
 public:
-    void push(const T& item) {
-        {
+    void push(const T &item) { {
             std::lock_guard lk(mutex_);
             queue_.push(item);
         }
         condVar_.notify_one();
     }
 
-    void push(const T&& item) {
-        {
+    void push(const T &&item) { {
             std::lock_guard lk(mutex_);
             queue_.push(item);
         }
         condVar_.notify_one();
     }
 
-    void done() {
-        {
+    void done() { {
             std::lock_guard lk(mutex_);
             done_ = true;
         }
@@ -56,7 +53,7 @@ public:
 
     T popBlocking() {
         std::unique_lock lk(mutex_);
-        condVar_.wait(lk, [&]{ return done_ || !queue_.empty(); });
+        condVar_.wait(lk, [&] { return done_ || !queue_.empty(); });
         if (done_ && queue_.empty()) return nullptr;
 
         T item = queue_.front();
@@ -72,10 +69,10 @@ public:
     }
 
 private:
-    std::queue<T>           queue_;
-    std::mutex              mutex_;
+    std::queue<T> queue_;
+    std::mutex mutex_;
     std::condition_variable condVar_;
-    bool                    done_ = false;
+    bool done_ = false;
 };
 
 

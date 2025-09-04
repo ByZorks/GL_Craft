@@ -15,14 +15,14 @@ StorageBuffer::~StorageBuffer() {
 StorageBuffer::StorageBuffer(const StorageBuffer &other) = default;
 
 StorageBuffer::StorageBuffer(StorageBuffer &&other) noexcept
-        : m_ID(other.m_ID),
-          m_bindingPoint(other.m_bindingPoint), m_size(other.m_size) {
+    : m_ID(other.m_ID),
+      m_bindingPoint(other.m_bindingPoint), m_size(other.m_size) {
     other.m_ID = 0;
     other.m_bindingPoint = 999;
     other.m_size = 0;
 }
 
-StorageBuffer & StorageBuffer::operator=(const StorageBuffer &other) {
+StorageBuffer &StorageBuffer::operator=(const StorageBuffer &other) {
     if (this == &other)
         return *this;
     m_ID = other.m_ID;
@@ -31,7 +31,7 @@ StorageBuffer & StorageBuffer::operator=(const StorageBuffer &other) {
     return *this;
 }
 
-StorageBuffer & StorageBuffer::operator=(StorageBuffer &&other) noexcept {
+StorageBuffer &StorageBuffer::operator=(StorageBuffer &&other) noexcept {
     if (this == &other)
         return *this;
     m_ID = other.m_ID;

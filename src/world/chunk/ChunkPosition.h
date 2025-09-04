@@ -14,9 +14,9 @@ struct ChunkPosition {
     }
 };
 
-template <>
+template<>
 struct std::hash<ChunkPosition> {
-    size_t operator()(const ChunkPosition& pos) const noexcept {
+    size_t operator()(const ChunkPosition &pos) const noexcept {
         const size_t h1 = hash<int>{}(pos.x);
         const size_t h2 = hash<int>{}(pos.y);
         const size_t h3 = hash<int>{}(pos.z);

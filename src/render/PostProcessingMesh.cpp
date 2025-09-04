@@ -2,7 +2,8 @@
 
 #include "Renderer.h"
 
-PostProcessingMesh::PostProcessingMesh(const int width, const int height) : m_width(width), m_height(height), m_FBO(width, height) {
+PostProcessingMesh::PostProcessingMesh(const int width, const int height) : m_width(width), m_height(height),
+                                                                            m_FBO(width, height) {
     m_VBO.init(m_vertices.data(), m_vertices.size() * sizeof(uint8_t));
     m_IBO.init(m_indices.data(), m_indices.size());
 
@@ -24,6 +25,6 @@ void PostProcessingMesh::draw() const {
     Renderer::drawElements(m_VAO, m_IBO.getCount());
 }
 
-const FrameBuffer & PostProcessingMesh::getFBO() const {
+const FrameBuffer &PostProcessingMesh::getFBO() const {
     return m_FBO;
 }

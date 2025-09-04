@@ -18,7 +18,8 @@ IndirectRenderer::IndirectRenderer() {
     const size_t offsetsSSBOSize = sizeof(std::array<int, 3>) * chunksVisible;
     std::cout << "[Indirect Renderer] IBOs total size: " << (IBOSize + IBOSize / 5) / 1024 << " KiB\n";
     std::cout << "[Indirect Renderer] Vertex SSBO size: " << SSBOSize / (1024 * 1024) << " MiB\n";
-    std::cout << "[Indirect Renderer] Offsets SSBOs total size: " << (offsetsSSBOSize + offsetsSSBOSize / 5) / 1024 << " KiB\n";
+    std::cout << "[Indirect Renderer] Offsets SSBOs total size: " << (offsetsSSBOSize + offsetsSSBOSize / 5) / 1024 <<
+            " KiB\n";
 
     m_verticesSSBO.init(nullptr, SSBOSize, 0);
     m_gpuSlots.resize(nbSlotsMax);
@@ -64,12 +65,14 @@ void IndirectRenderer::updateChunk(const std::shared_ptr<Chunk> &chunk) {
 
 void IndirectRenderer::drawOpaque() const {
     if (m_opaqueData.count == 0) return;
-    Renderer::drawMultiWithVertexPulling(m_opaqueData.IBO, m_verticesSSBO, m_opaqueData.offsetsSSBO, m_opaqueData.count, nullptr);
+    Renderer::drawMultiWithVertexPulling(m_opaqueData.IBO, m_verticesSSBO, m_opaqueData.offsetsSSBO, m_opaqueData.count,
+                                         nullptr);
 }
 
 void IndirectRenderer::drawWater() const {
     if (m_waterData.count == 0) return;
-    Renderer::drawMultiWithVertexPulling(m_waterData.IBO, m_verticesSSBO, m_waterData.offsetsSSBO, m_waterData.count, nullptr);
+    Renderer::drawMultiWithVertexPulling(m_waterData.IBO, m_verticesSSBO, m_waterData.offsetsSSBO, m_waterData.count,
+                                         nullptr);
 }
 
 void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const std::shared_ptr<Chunk> &chunk) {
@@ -97,7 +100,8 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
             foundSlots = 0;
             startSlotIndex = UINT_MAX;
             if (const uint8_t &numberOfSlotsUsed = m_gpuSlots[i].numberOfSlotsUsed;
-                numberOfSlotsUsed > 0) i += numberOfSlotsUsed - 1; // Skip used slots
+                numberOfSlotsUsed > 0)
+                i += numberOfSlotsUsed - 1; // Skip used slots
         }
     }
 
@@ -151,13 +155,14 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
 
     // 4 integers for x, y, z, and a padding value
     const std::array offsets = {chunk->getX(), chunk->getY(), chunk->getZ()};
-    meshData.offsetsSSBO.updateData(offsets.data(), offsets.size() * sizeof(int), drawIndex * sizeof(std::array<int,3>));
+    meshData.offsetsSSBO.updateData(offsets.data(), offsets.size() * sizeof(int),
+                                    drawIndex * sizeof(std::array<int, 3>));
 
     const auto &vertices =
-        meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() :
-        chunk->getWaterVertices();
+            meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() : chunk->getWaterVertices();
     const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(BlockVertex);
-    if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), vertexBufferOffset);
+    if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex),
+                                                         vertexBufferOffset);
         newSize > 0) {
         const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(BlockVertex));
         m_gpuSlots.resize(newSlotCount);
@@ -224,7 +229,6 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
             drawIndex = chunk->getWaterDrawIndex();
             vertexCount = chunk->getWaterVertexCount();
             break;
-
     }
 
     const unsigned int newRequiredSlots = (vertexCount + m_vertexPerSlot - 1) / m_vertexPerSlot;
@@ -237,7 +241,7 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
         }
         m_gpuSlots[startSlotIndex].numberOfSlotsUsed = newRequiredSlots;
 
-    // Find new slots
+        // Find new slots
     } else if (newRequiredSlots > oldRequiredSlots) {
         bool canExtend = true;
         for (unsigned int i = oldRequiredSlots; i < newRequiredSlots; ++i) {
@@ -269,10 +273,10 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
     meshData.IBO.updateData(&cmd, sizeof(cmd), drawIndex * sizeof(DrawArraysIndirectCommand));
 
     const auto &vertices =
-        meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() :
-        chunk->getWaterVertices();
+            meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() : chunk->getWaterVertices();
     const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(BlockVertex);
-    if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex), vertexBufferOffset);
+    if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(BlockVertex),
+                                                         vertexBufferOffset);
         newSize > 0) {
         const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(BlockVertex));
         m_gpuSlots.resize(newSlotCount);

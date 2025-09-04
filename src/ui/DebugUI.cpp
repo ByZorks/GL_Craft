@@ -9,9 +9,10 @@
 
 TerrainGenerator::NoiseValues DebugUI::m_noises;
 
-DebugUI::DebugUI() : m_uiMode(false), m_tabKeyPressed(false) {}
+DebugUI::DebugUI() : m_uiMode(false), m_tabKeyPressed(false) {
+}
 
-DebugUI::DebugUI(const std::shared_ptr<GLFWwindow> &window): m_uiMode(false), m_tabKeyPressed(false) {
+DebugUI::DebugUI(const std::shared_ptr<GLFWwindow> &window) : m_uiMode(false), m_tabKeyPressed(false) {
     init(window);
 }
 
@@ -36,7 +37,9 @@ void DebugUI::newFrame() {
     ImGui::NewFrame();
 }
 
-void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCmds, const Camera &camera, const BlockType &selectedBlockType, const std::function<void()>& renderDistanceCallback) {
+void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCmds,
+                     const Camera &camera, const BlockType &selectedBlockType,
+                     const std::function<void()> &renderDistanceCallback) {
     ImGui::Begin("Debug");
     ImGui::Text("Performance:");
     const ImGuiIO &io = ImGui::GetIO();
@@ -58,10 +61,12 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
     ImGui::Text("Camera:");
     const glm::vec3 cameraPosition = camera.getPos();
     ImGui::Text("Position: (%.2f, %.2f, %.2f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-    if (camera.hasCameraChangedBlock()) m_noises = TerrainGenerator::NoiseValues(static_cast<int>(cameraPosition.x), static_cast<int>(cameraPosition.z));
+    if (camera.hasCameraChangedBlock()) m_noises = TerrainGenerator::NoiseValues(
+                                            static_cast<int>(cameraPosition.x), static_cast<int>(cameraPosition.z));
     ImGui::Text("C: %.3f, E: %.3f", m_noises.continentalness, m_noises.erosion);
     ImGui::Text("T: %.3f, H: %.3f", m_noises.temperature, m_noises.humidity);
-    const Biome biome = TerrainGenerator::getBiome(m_noises, static_cast<int>(cameraPosition.x), static_cast<int>(cameraPosition.z));
+    const Biome biome = TerrainGenerator::getBiome(m_noises, static_cast<int>(cameraPosition.x),
+                                                   static_cast<int>(cameraPosition.z));
     ImGui::Text("Biome: %s", TerrainGenerator::getBiomeName(biome));
 
     ImGui::Separator();

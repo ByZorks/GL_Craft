@@ -12,7 +12,7 @@ UniformBuffer::~UniformBuffer() {
 
 void UniformBuffer::init(const void *data, const unsigned int size, const unsigned int bindingPoint) {
     m_bindingPoint = bindingPoint;
-    glCreateBuffers(1 , &m_ID);
+    glCreateBuffers(1, &m_ID);
     glNamedBufferData(m_ID, size, data, GL_DYNAMIC_DRAW);
     glBindBufferRange(GL_UNIFORM_BUFFER, m_bindingPoint, m_ID, 0, size);
 }

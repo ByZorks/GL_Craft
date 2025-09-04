@@ -34,7 +34,6 @@ public:
 
 private:
     void createGLBuffers();
-
 };
 
 #endif //GL_CRAFT_HIGHLIGHTEDBLOCK_H

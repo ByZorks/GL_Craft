@@ -18,7 +18,7 @@ int Raycast::m_lastChunk2Z = -1;
 std::array<std::shared_ptr<Chunk>, 3> Raycast::m_cachedChunks = {nullptr, nullptr, nullptr};
 
 RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDir,
-                                    const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &chunks) {
+                               const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &chunks) {
     // DDA Algorithm
     glm::vec3 rayUnitStepSize;
     rayUnitStepSize.x = rayDir.x == 0.f ? FLT_MAX : std::abs(1.f / rayDir.x);
@@ -34,8 +34,8 @@ RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDi
             step[i] = -1.f;
             rayLength1D[i] = (rayStart[i] - rayCurrentPos[i]) * rayUnitStepSize[i];
         } else {
-            step[i]= 1.f;
-            rayLength1D[i]= (rayCurrentPos[i] + 1.f - rayStart[i]) * rayUnitStepSize[i];
+            step[i] = 1.f;
+            rayLength1D[i] = (rayCurrentPos[i] + 1.f - rayStart[i]) * rayUnitStepSize[i];
         }
     }
 
@@ -63,9 +63,12 @@ RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDi
 
         // Check collision
         // Chunk coordinates
-        const int chunkX = static_cast<int>(std::floor(rayCurrentPos.x / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
-        const int chunkY = static_cast<int>(std::floor(rayCurrentPos.y / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
-        const int chunkZ = static_cast<int>(std::floor(rayCurrentPos.z / static_cast<float>(Chunk::SIZE))) * static_cast<int>(Chunk::SIZE);
+        const int chunkX = static_cast<int>(std::floor(rayCurrentPos.x / static_cast<float>(Chunk::SIZE))) * static_cast
+                           <int>(Chunk::SIZE);
+        const int chunkY = static_cast<int>(std::floor(rayCurrentPos.y / static_cast<float>(Chunk::SIZE))) * static_cast
+                           <int>(Chunk::SIZE);
+        const int chunkZ = static_cast<int>(std::floor(rayCurrentPos.z / static_cast<float>(Chunk::SIZE))) * static_cast
+                           <int>(Chunk::SIZE);
 
         int chunkIndex;
         if (m_lastChunk0X == chunkX && m_lastChunk0Y == chunkY && m_lastChunk0Z == chunkZ) {
@@ -114,7 +117,8 @@ RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDi
         const int localChunkZ = worldZ - chunkZ;
 
         // Get block type
-        if (const BlockType block = m_cachedChunks[chunkIndex]->getBlockTypeOrSurfaceFeature(localChunkX, localChunkY, localChunkZ);
+        if (const BlockType block = m_cachedChunks[chunkIndex]->getBlockTypeOrSurfaceFeature(
+                localChunkX, localChunkY, localChunkZ);
             !(block == BlockType::AIR || block == BlockType::WATER)) {
             return {
                 m_cachedChunks[chunkIndex],

@@ -31,7 +31,8 @@ Texture::Texture(std::string filePath) : m_FilePath(std::move(filePath)), m_Loca
     if (m_LocalBuffer) stbi_image_free(m_LocalBuffer);
 }
 
-Texture::Texture(const int width, const int height, const bool isDepthTexture) : m_LocalBuffer(nullptr), m_Width(width), m_Height(height), m_BPP(0) {
+Texture::Texture(const int width, const int height, const bool isDepthTexture) : m_LocalBuffer(nullptr), m_Width(width),
+    m_Height(height), m_BPP(0) {
     glCreateTextures(GL_TEXTURE_2D, 1, &m_ID);
 
     glTextureParameteri(m_ID, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

@@ -16,8 +16,12 @@ private:
     glm::vec3 m_cameraPos, m_cameraFront, m_cameraUp;
     float m_FOVDegrees, m_aspectRatio, m_nearPlane, m_farPlane;
     glm::mat4 m_mvp{};
-    glm::vec3 m_lastCameraChunkPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
-    glm::vec3 m_lastCameraBlockPos = { std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max() };
+    glm::vec3 m_lastCameraChunkPos = {
+        std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max()
+    };
+    glm::vec3 m_lastCameraBlockPos = {
+        std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max()
+    };
 
 public:
     Camera(unsigned int windowWidth, unsigned int windowHeight);
@@ -26,26 +30,25 @@ public:
     void processInput(const std::shared_ptr<GLFWwindow> &window, double deltaTime);
     void handleMouse(double xpos, double ypos);
     void resetMousePosition(GLFWwindow *window);
+    void calculateMVP();
 
-    [[nodiscard]] float distanceToCamera(const Mesh& mesh) const;
+    [[nodiscard]] float distanceToCamera(const Mesh &mesh) const;
     [[nodiscard]] bool hasCameraChangedChunk() const;
     [[nodiscard]] bool hasCameraChangedBlock() const;
     [[nodiscard]] bool hasCameraChangedDirection() const;
     [[nodiscard]] bool hasCameraChangedDirectionStricter() const;
     [[nodiscard]] bool hasCameraUpdated() const;
     [[nodiscard]] bool isUnderWater(int columnHeight) const;
-
-    [[nodiscard]] glm::mat4 getProjectionMatrix() const ;
+    [[nodiscard]] glm::mat4 getProjectionMatrix() const;
     [[nodiscard]] glm::mat4 getViewMatrix() const;
-    void calculateMVP();
     [[nodiscard]] glm::mat4 getMVP() const;
-    [[nodiscard]] const void * getMVPData() const;
+    [[nodiscard]] const void *getMVPData() const;
     static Frustum getFrustum(glm::mat4 modelViewProjecMatrix);
+    [[nodiscard]] const glm::vec3 &getPos() const;
     [[nodiscard]] bool isInputEnabled() const;
-    void setInput(bool m_input_enabled);
-    [[nodiscard]] const glm::vec3 & getPos() const;
-    [[nodiscard]] const glm::vec3 & getFront() const;
+    [[nodiscard]] const glm::vec3 &getFront() const;
 
+    void setInput(bool m_input_enabled);
     void setAspectRatio(float m_aspect_ratio);
 };
 

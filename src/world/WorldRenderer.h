@@ -20,8 +20,10 @@ public:
     [[nodiscard]] unsigned int getVisibleChunksCount() const;
 
 private:
-    void drawInstances(const Shader& instancesShader, unsigned int& drawCmd);
-    void sortChunks(const Frustum &frustum, const Camera &camera, const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>> &loadedChunks, bool needInstanceUpdate);
+    void drawInstances(const Shader &instancesShader, unsigned int &drawCmd);
+    void sortChunks(const Frustum &frustum, const Camera &camera,
+                    const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &loadedChunks,
+                    bool needInstanceUpdate);
 };
 
 #endif //GL_CRAFT_WORLDRENDERER_H

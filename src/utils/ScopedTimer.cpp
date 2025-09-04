@@ -13,7 +13,8 @@ ScopedTimer::~ScopedTimer() {
 void ScopedTimer::stop() const {
     const auto endTimePoint = std::chrono::high_resolution_clock::now();
 
-    const auto start = std::chrono::time_point_cast<std::chrono::microseconds>(m_startTimePoint).time_since_epoch().count();
+    const auto start = std::chrono::time_point_cast<std::chrono::microseconds>(m_startTimePoint).time_since_epoch().
+            count();
     const auto end = std::chrono::time_point_cast<std::chrono::microseconds>(endTimePoint).time_since_epoch().count();
 
     const auto duration = end - start;

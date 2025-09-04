@@ -18,7 +18,8 @@ private:
         unsigned int baseInstance = 0;
     };
 
-    struct GPUSlot { // Size: 4 KiB = 1000 BlockVertex (1 unsigned int)
+    struct GPUSlot {
+        // Size: 4 KiB = 1000 BlockVertex (1 unsigned int)
         bool isUsed = false;
         uint8_t numberOfSlotsUsed = 0; // 0 means it is not the first slot of a multi-slot allocation
     };
@@ -49,7 +50,6 @@ public:
     void addChunk(const std::shared_ptr<Chunk> &chunk);
     void removeChunk(const std::shared_ptr<Chunk> &chunk);
     void updateChunk(const std::shared_ptr<Chunk> &chunk);
-
     void drawOpaque() const;
     void drawWater() const;
 

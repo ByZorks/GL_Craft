@@ -37,7 +37,6 @@ const char *Block::getBlockName(const BlockType blockType) {
 void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,
                             const std::array<bool, 26> &adjacentsFaces, const unsigned int startX,
                             const unsigned int startY, const unsigned int startZ) {
-
     const unsigned int position[3] = {startX, startY, startZ};
     const uint8_t texLayer = getTextureLayer(type, face);
 
@@ -69,21 +68,21 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             constexpr unsigned int faceIndex = 1;
             const unsigned int ao[4] = {
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(1, 0, -1)],
-                          adjacentsFaces[AOIndex(0, 1, -1)],
-                          adjacentsFaces[AOIndex(1, 1, -1)]),
+                    adjacentsFaces[AOIndex(1, 0, -1)],
+                    adjacentsFaces[AOIndex(0, 1, -1)],
+                    adjacentsFaces[AOIndex(1, 1, -1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(-1, 0, -1)],
-                          adjacentsFaces[AOIndex(0, 1, -1)],
-                          adjacentsFaces[AOIndex(-1, 1, -1)]),
+                    adjacentsFaces[AOIndex(-1, 0, -1)],
+                    adjacentsFaces[AOIndex(0, 1, -1)],
+                    adjacentsFaces[AOIndex(-1, 1, -1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(-1, 0, -1)],
-                          adjacentsFaces[AOIndex(0, -1, -1)],
-                          adjacentsFaces[AOIndex(-1, -1, -1)]),
+                    adjacentsFaces[AOIndex(-1, 0, -1)],
+                    adjacentsFaces[AOIndex(0, -1, -1)],
+                    adjacentsFaces[AOIndex(-1, -1, -1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(1, 0, -1)],
-                          adjacentsFaces[AOIndex(0, -1, -1)],
-                          adjacentsFaces[AOIndex(1, -1, -1)])
+                    adjacentsFaces[AOIndex(1, 0, -1)],
+                    adjacentsFaces[AOIndex(0, -1, -1)],
+                    adjacentsFaces[AOIndex(1, -1, -1)])
             };
             outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
@@ -92,21 +91,21 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             constexpr unsigned int faceIndex = 2;
             const unsigned int ao[4] = {
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(-1, 0, -1)],
-                          adjacentsFaces[AOIndex(-1, 1, 0)],
-                          adjacentsFaces[AOIndex(-1, 1, -1)]),
+                    adjacentsFaces[AOIndex(-1, 0, -1)],
+                    adjacentsFaces[AOIndex(-1, 1, 0)],
+                    adjacentsFaces[AOIndex(-1, 1, -1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(-1, 0, 1)],
-                          adjacentsFaces[AOIndex(-1, 1, 0)],
-                          adjacentsFaces[AOIndex(-1, 1, 1)]),
+                    adjacentsFaces[AOIndex(-1, 0, 1)],
+                    adjacentsFaces[AOIndex(-1, 1, 0)],
+                    adjacentsFaces[AOIndex(-1, 1, 1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(-1, 0, 1)],
-                          adjacentsFaces[AOIndex(-1, -1, 0)],
-                          adjacentsFaces[AOIndex(-1, -1, 1)]),
+                    adjacentsFaces[AOIndex(-1, 0, 1)],
+                    adjacentsFaces[AOIndex(-1, -1, 0)],
+                    adjacentsFaces[AOIndex(-1, -1, 1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(-1, 0, -1)],
-                          adjacentsFaces[AOIndex(-1, -1, 0)],
-                          adjacentsFaces[AOIndex(-1, -1, -1)])
+                    adjacentsFaces[AOIndex(-1, 0, -1)],
+                    adjacentsFaces[AOIndex(-1, -1, 0)],
+                    adjacentsFaces[AOIndex(-1, -1, -1)])
             };
             outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
@@ -115,46 +114,44 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
             constexpr unsigned int faceIndex = 3;
             const unsigned int ao[4] = {
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(1, 0, 1)],
-                          adjacentsFaces[AOIndex(1, 1, 0)],
-                          adjacentsFaces[AOIndex(1, 1, 1)]),
+                    adjacentsFaces[AOIndex(1, 0, 1)],
+                    adjacentsFaces[AOIndex(1, 1, 0)],
+                    adjacentsFaces[AOIndex(1, 1, 1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(1, 0, -1)],
-                          adjacentsFaces[AOIndex(1, 1, 0)],
-                          adjacentsFaces[AOIndex(1, 1, -1)]),
+                    adjacentsFaces[AOIndex(1, 0, -1)],
+                    adjacentsFaces[AOIndex(1, 1, 0)],
+                    adjacentsFaces[AOIndex(1, 1, -1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(1, 0, -1)],
-                          adjacentsFaces[AOIndex(1, -1, 0)],
-                          adjacentsFaces[AOIndex(1, -1, -1)]),
+                    adjacentsFaces[AOIndex(1, 0, -1)],
+                    adjacentsFaces[AOIndex(1, -1, 0)],
+                    adjacentsFaces[AOIndex(1, -1, -1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(1, 0, 1)],
-                          adjacentsFaces[AOIndex(1, -1, 0)],
-                          adjacentsFaces[AOIndex(1, -1, 1)])
+                    adjacentsFaces[AOIndex(1, 0, 1)],
+                    adjacentsFaces[AOIndex(1, -1, 0)],
+                    adjacentsFaces[AOIndex(1, -1, 1)])
             };
             outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
         }
-        case Face::TOP:
-        case Face::TOP_INVERSED: {
-            // const unsigned int faceIndex = face == Face::TOP ? 4 : 6;
+        case Face::TOP: {
             constexpr unsigned int faceIndex = 4; // TOP face
             const unsigned int ao[4] = {
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(-1, 1, 0)],
-                          adjacentsFaces[AOIndex(0, 1, -1)],
-                          adjacentsFaces[AOIndex(-1, 1, -1)]),
+                    adjacentsFaces[AOIndex(-1, 1, 0)],
+                    adjacentsFaces[AOIndex(0, 1, -1)],
+                    adjacentsFaces[AOIndex(-1, 1, -1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(1, 1, 0)],
-                          adjacentsFaces[AOIndex(0, 1, -1)],
-                          adjacentsFaces[AOIndex(1, 1, -1)]),
+                    adjacentsFaces[AOIndex(1, 1, 0)],
+                    adjacentsFaces[AOIndex(0, 1, -1)],
+                    adjacentsFaces[AOIndex(1, 1, -1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(1, 1, 0)],
-                          adjacentsFaces[AOIndex(0, 1, 1)],
-                          adjacentsFaces[AOIndex(1, 1, 1)]),
+                    adjacentsFaces[AOIndex(1, 1, 0)],
+                    adjacentsFaces[AOIndex(0, 1, 1)],
+                    adjacentsFaces[AOIndex(1, 1, 1)]),
                 computeVertexAO(
-                          adjacentsFaces[AOIndex(-1, 1, 0)],
-                          adjacentsFaces[AOIndex(0, 1, 1)],
-                          adjacentsFaces[AOIndex(-1, 1, 1)]),
+                    adjacentsFaces[AOIndex(-1, 1, 0)],
+                    adjacentsFaces[AOIndex(0, 1, 1)],
+                    adjacentsFaces[AOIndex(-1, 1, 1)]),
             };
             outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
             break;
@@ -231,7 +228,7 @@ bool Block::isInstance(const BlockType type) {
 }
 
 BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t texLayer, const unsigned int faceIndex,
-    const unsigned int ao[4]) {
+                                  const unsigned int ao[4]) {
     BlockVertex vertex{};
 
     constexpr unsigned int POS_MASK = 0x1F; // 5 bits, 0-31 range

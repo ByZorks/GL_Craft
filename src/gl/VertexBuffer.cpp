@@ -12,7 +12,7 @@ VertexBuffer::~VertexBuffer() {
 
 VertexBuffer::VertexBuffer(const VertexBuffer &other) = default;
 
-VertexBuffer & VertexBuffer::operator=(const VertexBuffer &other) {
+VertexBuffer &VertexBuffer::operator=(const VertexBuffer &other) {
     if (this == &other)
         return *this;
     m_ID = other.m_ID;
@@ -20,11 +20,11 @@ VertexBuffer & VertexBuffer::operator=(const VertexBuffer &other) {
 }
 
 VertexBuffer::VertexBuffer(VertexBuffer &&other) noexcept
-        : m_ID(other.m_ID) {
+    : m_ID(other.m_ID) {
     other.m_ID = 0;
 }
 
-VertexBuffer & VertexBuffer::operator=(VertexBuffer &&other) noexcept {
+VertexBuffer &VertexBuffer::operator=(VertexBuffer &&other) noexcept {
     if (this == &other)
         return *this;
     m_ID = other.m_ID;
