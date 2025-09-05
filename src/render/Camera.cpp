@@ -162,48 +162,48 @@ const void *Camera::getMVPData() const {
     return &m_mvp[0][0];
 }
 
-Frustum Camera::getFrustum(glm::mat4 modelViewProjectionMatrix) {
+Frustum Camera::getFrustum(glm::mat4 mvp) {
     constexpr float padding = Chunk::SIZE * 1.7f; // Prevent popping
 
-    auto left = Plane(modelViewProjectionMatrix[0][3] + modelViewProjectionMatrix[0][0],
-                      modelViewProjectionMatrix[1][3] + modelViewProjectionMatrix[1][0],
-                      modelViewProjectionMatrix[2][3] + modelViewProjectionMatrix[2][0],
-                      modelViewProjectionMatrix[3][3] + modelViewProjectionMatrix[3][0]
+    auto left = Plane(mvp[0][3] + mvp[0][0],
+                      mvp[1][3] + mvp[1][0],
+                      mvp[2][3] + mvp[2][0],
+                      mvp[3][3] + mvp[3][0]
     );
-    left.setD(left.m_d1() + padding);
+    left.setD(left.getD() + padding);
 
-    auto right = Plane(modelViewProjectionMatrix[0][3] - modelViewProjectionMatrix[0][0],
-                       modelViewProjectionMatrix[1][3] - modelViewProjectionMatrix[1][0],
-                       modelViewProjectionMatrix[2][3] - modelViewProjectionMatrix[2][0],
-                       modelViewProjectionMatrix[3][3] - modelViewProjectionMatrix[3][0]
+    auto right = Plane(mvp[0][3] - mvp[0][0],
+                       mvp[1][3] - mvp[1][0],
+                       mvp[2][3] - mvp[2][0],
+                       mvp[3][3] - mvp[3][0]
     );
-    right.setD(right.m_d1() + padding);
+    right.setD(right.getD() + padding);
 
-    auto bottom = Plane(modelViewProjectionMatrix[0][3] + modelViewProjectionMatrix[0][1],
-                        modelViewProjectionMatrix[1][3] + modelViewProjectionMatrix[1][1],
-                        modelViewProjectionMatrix[2][3] + modelViewProjectionMatrix[2][1],
-                        modelViewProjectionMatrix[3][3] + modelViewProjectionMatrix[3][1]
+    auto bottom = Plane(mvp[0][3] + mvp[0][1],
+                        mvp[1][3] + mvp[1][1],
+                        mvp[2][3] + mvp[2][1],
+                        mvp[3][3] + mvp[3][1]
     );
-    bottom.setD(bottom.m_d1() + padding);
+    bottom.setD(bottom.getD() + padding);
 
-    auto top = Plane(modelViewProjectionMatrix[0][3] - modelViewProjectionMatrix[0][1],
-                     modelViewProjectionMatrix[1][3] - modelViewProjectionMatrix[1][1],
-                     modelViewProjectionMatrix[2][3] - modelViewProjectionMatrix[2][1],
-                     modelViewProjectionMatrix[3][3] - modelViewProjectionMatrix[3][1]
+    auto top = Plane(mvp[0][3] - mvp[0][1],
+                     mvp[1][3] - mvp[1][1],
+                     mvp[2][3] - mvp[2][1],
+                     mvp[3][3] - mvp[3][1]
     );
-    top.setD(top.m_d1() + padding);
+    top.setD(top.getD() + padding);
 
-    auto near = Plane(modelViewProjectionMatrix[0][3] + modelViewProjectionMatrix[0][2],
-                      modelViewProjectionMatrix[1][3] + modelViewProjectionMatrix[1][2],
-                      modelViewProjectionMatrix[2][3] + modelViewProjectionMatrix[2][2],
-                      modelViewProjectionMatrix[3][3] + modelViewProjectionMatrix[3][2]
+    auto near = Plane(mvp[0][3] + mvp[0][2],
+                      mvp[1][3] + mvp[1][2],
+                      mvp[2][3] + mvp[2][2],
+                      mvp[3][3] + mvp[3][2]
     );
-    near.setD(near.m_d1() + padding);
+    near.setD(near.getD() + padding);
 
-    const auto far = Plane(modelViewProjectionMatrix[0][3] - modelViewProjectionMatrix[0][2],
-                           modelViewProjectionMatrix[1][3] - modelViewProjectionMatrix[1][2],
-                           modelViewProjectionMatrix[2][3] - modelViewProjectionMatrix[2][2],
-                           modelViewProjectionMatrix[3][3] - modelViewProjectionMatrix[3][2]
+    const auto far = Plane(mvp[0][3] - mvp[0][2],
+                           mvp[1][3] - mvp[1][2],
+                           mvp[2][3] - mvp[2][2],
+                           mvp[3][3] - mvp[3][2]
     );
 
     const Frustum frustum(left, right, bottom, top, near, far);

@@ -13,7 +13,7 @@ WorldManager::WorldManager() : m_threadPool(std::max(1u, std::thread::hardware_c
                             2.5f));
     m_tempKeysToProcess.reserve(100);
 
-    const int r = static_cast<int>(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE));
+    const int r = static_cast<int>(std::ceil(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE)));
     const int r2 = r * r;
 
     m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)) + 1);
@@ -63,7 +63,7 @@ void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Came
 
     m_renderDistanceOffsets.clear();
 
-    const int r = static_cast<int>(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE));
+    const int r = static_cast<int>(std::ceil(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE)));
     const int r2 = r * r;
 
     m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)) + 1);

@@ -27,7 +27,7 @@ public:
     [[nodiscard]] glm::mat4 getViewMatrix() const;
     [[nodiscard]] glm::mat4 getMVP() const;
     [[nodiscard]] const void *getMVPData() const;
-    static Frustum getFrustum(glm::mat4 modelViewProjectionMatrix);
+    static Frustum getFrustum(glm::mat4 mvp);
     [[nodiscard]] const glm::vec3 &getPos() const;
     [[nodiscard]] bool isInputEnabled() const;
     [[nodiscard]] const glm::vec3 &getFront() const;

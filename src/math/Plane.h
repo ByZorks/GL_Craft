@@ -6,10 +6,10 @@ public:
     Plane();
     Plane(float a, float b, float c, float d);
 
-    [[nodiscard]] float m_a1() const;
-    [[nodiscard]] float m_b1() const;
-    [[nodiscard]] float m_c1() const;
-    [[nodiscard]] float m_d1() const;
+    [[nodiscard]] float getA() const;
+    [[nodiscard]] float getB() const;
+    [[nodiscard]] float getC() const;
+    [[nodiscard]] float getD() const;
 
     void setD(float m_d);
 private:

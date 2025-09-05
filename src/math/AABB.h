@@ -10,7 +10,7 @@ public:
     [[nodiscard]] glm::vec3 getNVertex(const Plane &plane) const;
 
 private:
-    glm::vec3 m_corners[8];
+    glm::vec3 m_min, m_max;
 };
 
 #endif //AABB_H

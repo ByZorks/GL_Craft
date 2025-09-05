@@ -20,19 +20,19 @@ void Plane::normalize() {
     m_d /= length;
 }
 
-float Plane::m_a1() const {
+float Plane::getA() const {
     return m_a;
 }
 
-float Plane::m_b1() const {
+float Plane::getB() const {
     return m_b;
 }
 
-float Plane::m_c1() const {
+float Plane::getC() const {
     return m_c;
 }
 
-float Plane::m_d1() const {
+float Plane::getD() const {
     return m_d;
 }
 

@@ -7,7 +7,7 @@
 #include "../world/chunk/Mesh.h"
 
 IndirectRenderer::IndirectRenderer() {
-    const auto renderDistanceInChunks = static_cast<size_t>(Renderer::s_renderDistance / Chunk::SIZE);
+    const auto renderDistanceInChunks = static_cast<size_t>(std::ceil(Renderer::s_renderDistance / Chunk::SIZE));
     const size_t chunksVisible = renderDistanceInChunks * renderDistanceInChunks * renderDistanceInChunks / 2; // Rough estimate
     const size_t avgVerticesPerChunk = renderDistanceInChunks <= 16
                                                  ? 7000
