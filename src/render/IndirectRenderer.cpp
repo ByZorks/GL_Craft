@@ -106,7 +106,7 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
     }
 
     if (requiredSlots != foundSlots) {
-        const size_t newSize = m_verticesSSBO.getSize() * 2;
+        const auto newSize = static_cast<size_t>(static_cast<double>(m_verticesSSBO.getSize()) * 1.25);
         m_verticesSSBO.resize(newSize);
         const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(Block::BlockVertex));
         const size_t oldSlotCount = m_gpuSlots.size();
@@ -161,12 +161,7 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
     const auto &vertices =
             meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() : chunk->getWaterVertices();
     const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(Block::BlockVertex);
-    if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(Block::BlockVertex),
-                                                         vertexBufferOffset);
-        newSize > 0) {
-        const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(Block::BlockVertex));
-        m_gpuSlots.resize(newSlotCount);
-    }
+    m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(Block::BlockVertex), vertexBufferOffset);
 
     const size_t lastSlotUsed = startSlotIndex + requiredSlots - 1;
     m_highestSlotUsed = std::max(m_highestSlotUsed, lastSlotUsed);
@@ -278,6 +273,7 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
     if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(Block::BlockVertex),
                                                          vertexBufferOffset);
         newSize > 0) {
+        std::cout << "Resized vertex SSBO to " << newSize / (1024 * 1024) << " MiB\n";
         const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(Block::BlockVertex));
         m_gpuSlots.resize(newSlotCount);
     }
