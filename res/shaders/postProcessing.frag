@@ -11,7 +11,7 @@ uniform float u_RenderDistance;
 
 const float CHUNK_SIZE = 32.0f;
 const float CAMERA_NEAR = 0.1;
-const float CAMERA_FAR = 1024.0;
+const float CAMERA_FAR = 2048.0;
 const float WATER_FOG_NEAR = 0.1;
 const float WATER_FOG_FAR = 30.0;
 float FOG_FAR = u_RenderDistance - CHUNK_SIZE;
