@@ -1,5 +1,7 @@
 #include "IndirectBuffer.h"
 
+#include <iostream>
+
 #include "glad/gl.h"
 
 IndirectBuffer::IndirectBuffer() = default;
@@ -23,7 +25,7 @@ void IndirectBuffer::updateData(const void *data, const unsigned int size, const
 }
 
 void IndirectBuffer::resize(const unsigned int newSize) {
-    // std::cout << "[IndirectBuffer] Resizing from " << m_size / 1024 << " KiB to " << newSize / 1024 << " KiB\n";
+    // std::cout << "[IndirectBuffer " << m_ID << "] Resizing from " << m_size / 1024 << " KiB to " << newSize / 1024 << " KiB\n";
     const unsigned int oldID = m_ID;
     unsigned int newID = 0;
 

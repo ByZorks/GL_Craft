@@ -9,20 +9,30 @@
 IndirectRenderer::IndirectRenderer() {
     const auto renderDistanceInChunks = static_cast<size_t>(Renderer::s_renderDistance / Chunk::SIZE);
     const size_t chunksVisible = renderDistanceInChunks * renderDistanceInChunks * renderDistanceInChunks / 2; // Rough estimate
-    constexpr size_t avgVerticesPerChunk = 7000; // Rough estimate
+    const size_t avgVerticesPerChunk = renderDistanceInChunks <= 16
+                                                 ? 7000
+                                                 : renderDistanceInChunks <= 32
+                                                       ? 3000
+                                                       : 1500; // Rough estimate
     const size_t slotsPerChunkEstimate = (avgVerticesPerChunk + m_vertexPerSlot - 1) / m_vertexPerSlot;
     const size_t nbSlotsMax = chunksVisible * slotsPerChunkEstimate * 2; // x2 for safety margin
 
     const size_t IBOSize = sizeof(DrawArraysIndirectCommand) * chunksVisible;
     const size_t SSBOSize = sizeof(Block::BlockVertex) * m_vertexPerSlot * nbSlotsMax;
     const size_t offsetsSSBOSize = sizeof(std::array<int, 3>) * chunksVisible;
+    #if defined(DEBUG_BUILD) || defined(RELWITHDEBINFO_BUILD)
     std::cout << "[Indirect Renderer] IBOs total size: " << (IBOSize + IBOSize / 5) / 1024 << " KiB\n";
     std::cout << "[Indirect Renderer] Vertex SSBO size: " << SSBOSize / (1024 * 1024) << " MiB\n";
     std::cout << "[Indirect Renderer] Offsets SSBOs total size: " << (offsetsSSBOSize + offsetsSSBOSize / 5) / 1024 <<
             " KiB\n";
+    #endif
 
-    m_verticesSSBO.init(nullptr, SSBOSize, 0);
     m_gpuSlots.resize(nbSlotsMax);
+
+    // Use of mapping to avoid lots of big glBufferSubData calls that can result in ssbo being copied to ram
+    m_verticesSSBO.init(nullptr, SSBOSize, 0, false);
+    m_mappedVertices = static_cast<Block::BlockVertex *>(m_verticesSSBO.mapBuffer());
+    if (!m_mappedVertices) throw std::runtime_error("IndirectRenderer: Failed to map vertex SSBO");
 
     // Opaque
     m_opaqueData.IBO.init(nullptr, IBOSize);
@@ -107,13 +117,8 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
 
     if (requiredSlots != foundSlots) {
         const auto newSize = static_cast<size_t>(static_cast<double>(m_verticesSSBO.getSize()) * 1.25);
-        m_verticesSSBO.resize(newSize);
-        const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(Block::BlockVertex));
         const size_t oldSlotCount = m_gpuSlots.size();
-        std::cout << "Resized vertex SSBO to " << newSize / (1024 * 1024) << " MiB\n";
-
-        // Assign new slots
-        m_gpuSlots.resize(newSlotCount);
+        resizeVertexSSBOAndSlots(newSize);
         startSlotIndex = oldSlotCount;
     }
 
@@ -160,8 +165,8 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
 
     const auto &vertices =
             meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() : chunk->getWaterVertices();
-    const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(Block::BlockVertex);
-    m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(Block::BlockVertex), vertexBufferOffset);
+    const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot;
+    memcpy(m_mappedVertices + vertexBufferOffset, vertices.data(), vertices.size() * sizeof(Block::BlockVertex));
 
     const size_t lastSlotUsed = startSlotIndex + requiredSlots - 1;
     m_highestSlotUsed = std::max(m_highestSlotUsed, lastSlotUsed);
@@ -269,13 +274,23 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
 
     const auto &vertices =
             meshType == MeshType::OPAQUE ? chunk->getOpaqueVertices() : chunk->getWaterVertices();
-    const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot * sizeof(Block::BlockVertex);
-    if (const size_t newSize = m_verticesSSBO.updateData(vertices.data(), vertices.size() * sizeof(Block::BlockVertex),
-                                                         vertexBufferOffset);
-        newSize > 0) {
-        std::cout << "Resized vertex SSBO to " << newSize / (1024 * 1024) << " MiB\n";
-        const size_t newSlotCount = newSize / (m_vertexPerSlot * sizeof(Block::BlockVertex));
-        m_gpuSlots.resize(newSlotCount);
-    }
+    const size_t vertexBufferOffset = startSlotIndex * m_vertexPerSlot;
+    memcpy(m_mappedVertices + vertexBufferOffset, vertices.data(), vertices.size() * sizeof(Block::BlockVertex));
     // Chunk doesn't change coordinates so no need to update offsets ssbo
+}
+
+void IndirectRenderer::resizeVertexSSBOAndSlots(const size_t ssboSize) {
+    m_verticesSSBO.unmapBuffer();
+    m_mappedVertices = nullptr;
+
+    m_verticesSSBO.resize(ssboSize);
+    #if defined(DEBUG_BUILD) || defined(RELWITHDEBINFO_BUILD)
+    std::cout << "Resized vertex SSBO to " << ssboSize / (1024 * 1024) << " MiB\n";
+    #endif
+
+    m_mappedVertices = static_cast<Block::BlockVertex *>(m_verticesSSBO.mapBuffer());
+    if (!m_mappedVertices) throw std::runtime_error("IndirectRenderer: Failed to map vertex SSBO");
+
+    const size_t newSlotCount = ssboSize / (m_vertexPerSlot * sizeof(Block::BlockVertex));
+    m_gpuSlots.resize(newSlotCount);
 }

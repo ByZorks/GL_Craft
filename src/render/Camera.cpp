@@ -18,7 +18,7 @@ Camera::Camera(const unsigned int windowWidth,
                                                   m_aspectRatio(
                                                       static_cast<float>(windowWidth) / static_cast<float>(
                                                           windowHeight)),
-                                                  m_nearPlane(.1f), m_farPlane(1024.0f) {
+                                                  m_nearPlane(.1f), m_farPlane(2048.0f) {
 }
 
 void Camera::updateLastState() {

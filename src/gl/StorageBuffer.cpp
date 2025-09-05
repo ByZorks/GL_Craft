@@ -44,12 +44,26 @@ StorageBuffer &StorageBuffer::operator=(StorageBuffer &&other) noexcept {
 }
 
 
-void StorageBuffer::init(const void *data, const size_t size, const unsigned int bindingPoint) {
+void StorageBuffer::init(const void *data, const size_t size, const unsigned int bindingPoint, const bool isDynamic) {
     m_bindingPoint = bindingPoint;
     m_size = size;
+    m_isDynamic = isDynamic;
     glCreateBuffers(1, &m_ID);
-    glNamedBufferStorage(m_ID, static_cast<GLsizeiptr>(size), data, GL_DYNAMIC_STORAGE_BIT);
+    if (m_isDynamic) {
+        glNamedBufferStorage(m_ID, static_cast<GLsizeiptr>(size), data, GL_DYNAMIC_STORAGE_BIT);
+    } else {
+        glNamedBufferStorage(m_ID, static_cast<GLsizeiptr>(size), nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT  | GL_MAP_COHERENT_BIT);
+    }
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_bindingPoint, m_ID);
+}
+
+void StorageBuffer::unmapBuffer() const {
+    glUnmapNamedBuffer(m_ID);
+}
+
+void * StorageBuffer::mapBuffer() const {
+    if (m_isDynamic) throw std::runtime_error("StorageBuffer::mapBuffer() called on a dynamic buffer");
+    return glMapNamedBufferRange(m_ID, 0, static_cast<GLsizeiptr>(m_size), GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 }
 
 size_t StorageBuffer::updateData(const void *data, const size_t size, const unsigned int offset) {
@@ -63,13 +77,17 @@ size_t StorageBuffer::updateData(const void *data, const size_t size, const unsi
 }
 
 void StorageBuffer::resize(const size_t newSize) {
-    // std::cout << "[StorageBuffer] Resizing from " << m_size << " to " << newSize << " bytes.\n";
+    // std::cout << "[StorageBuffer " << m_ID << "] Resizing from " << m_size << " to " << newSize << " bytes.\n";
     const unsigned int oldID = m_ID;
     unsigned int newID = 0;
 
     // New buffer
     glCreateBuffers(1, &newID);
-    glNamedBufferStorage(newID, static_cast<GLsizeiptr>(newSize), nullptr, GL_DYNAMIC_STORAGE_BIT);
+    if (m_isDynamic) {
+        glNamedBufferStorage(newID, static_cast<GLsizeiptr>(newSize), nullptr, GL_DYNAMIC_STORAGE_BIT);
+    } else {
+        glNamedBufferStorage(newID, static_cast<GLsizeiptr>(newSize), nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT  | GL_MAP_COHERENT_BIT);
+    }
 
     // Copy old data
     glCopyNamedBufferSubData(oldID, newID, 0, 0, static_cast<GLsizeiptr>(m_size));

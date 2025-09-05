@@ -36,6 +36,8 @@ private:
     void remove(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk);
     void update(MeshData &meshData, MeshType meshType, const std::shared_ptr<Chunk> &chunk);
 
+    void resizeVertexSSBOAndSlots(size_t ssboSize);
+
 private:
     struct DrawArraysIndirectCommand {
         unsigned int count = 0;
@@ -51,6 +53,7 @@ private:
     };
 
     StorageBuffer m_verticesSSBO;
+    Block::BlockVertex *m_mappedVertices = nullptr;
     size_t m_highestSlotUsed = 0;
     std::vector<GPUSlot> m_gpuSlots;
     MeshData m_opaqueData;
