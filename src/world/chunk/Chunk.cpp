@@ -9,7 +9,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
                                                       m_rng(TerrainGenerator::getSeed() + x + y + z) {
     constexpr int NUMBER_OF_FACES = 6;
     constexpr size_t max_faces = NUMBER_OF_FACES * SIZE * SIZE * SIZE;
-    constexpr size_t avg_vertices_opaque = max_faces * static_cast<size_t>(0.02f);
+    constexpr size_t avg_vertices_opaque = max_faces * 0.02f;
     constexpr size_t avg_faces_water = SIZE * SIZE;
 
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
