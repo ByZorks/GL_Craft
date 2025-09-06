@@ -39,6 +39,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                             const unsigned int startY, const unsigned int startZ) {
     const unsigned int position[3] = {startX, startY, startZ};
     const uint8_t texLayer = getTextureLayer(type, face);
+    const unsigned int lightLevel = 15; // Max light level for now
 
     switch (face) {
         case Face::FRONT: {
@@ -61,7 +62,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                     adjacentsFaces[AOIndex(0, -1, 1)],
                     adjacentsFaces[AOIndex(-1, -1, 1)])
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
             break;
         }
         case Face::BACK: {
@@ -84,7 +85,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                     adjacentsFaces[AOIndex(0, -1, -1)],
                     adjacentsFaces[AOIndex(1, -1, -1)])
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
             break;
         }
         case Face::LEFT: {
@@ -107,7 +108,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                     adjacentsFaces[AOIndex(-1, -1, 0)],
                     adjacentsFaces[AOIndex(-1, -1, -1)])
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
             break;
         }
         case Face::RIGHT: {
@@ -130,7 +131,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                     adjacentsFaces[AOIndex(1, -1, 0)],
                     adjacentsFaces[AOIndex(1, -1, 1)])
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
             break;
         }
         case Face::TOP: {
@@ -153,7 +154,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                     adjacentsFaces[AOIndex(0, 1, 1)],
                     adjacentsFaces[AOIndex(-1, 1, 1)]),
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
             break;
         }
         case Face::BOTTOM: {
@@ -176,7 +177,7 @@ void Block::addFaceVertices(const Face face, const BlockType type, std::vector<B
                     adjacentsFaces[AOIndex(0, -1, -1)],
                     adjacentsFaces[AOIndex(-1, -1, -1)]),
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
             break;
         }
         default:
@@ -189,16 +190,17 @@ void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std
     const unsigned int position[3] = {startX, startY, startZ};
     const uint8_t texLayer = getTextureLayer(type, face);
     constexpr unsigned int ao[4] = {3, 3, 3, 3}; // AO is not used for billboards
+    constexpr unsigned int lightLevel = 15; // Max light level for now
 
     switch (face) {
         case Face::FRONT: {
             constexpr unsigned int faceIndex = 0;
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
             break;
         }
         case Face::BACK: {
             constexpr unsigned int faceIndex = 1;
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
             break;
         }
         default:
@@ -228,7 +230,7 @@ bool Block::isInstance(const BlockType type) {
 }
 
 Block::BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t texLayer, const unsigned int faceIndex,
-                                  const unsigned int ao[4]) {
+                                  const unsigned int ao[4], const unsigned int lightLevel) {
     BlockVertex vertex{};
 
     constexpr unsigned int POS_MASK = 0x1F; // 5 bits, 0-31 range
@@ -237,21 +239,26 @@ Block::BlockVertex Block::packVertexData(const unsigned int position[3], const u
     constexpr unsigned int AO_MASK = 0x3; // 2 bits, 0-3 range
 
     // Position (15 bits)
-    vertex.packedData |= position[0] & POS_MASK;
-    vertex.packedData |= (position[1] & POS_MASK) << 5;
-    vertex.packedData |= (position[2] & POS_MASK) << 10;
+    vertex.packedData[0] |= position[0] & POS_MASK;
+    vertex.packedData[0] |= (position[1] & POS_MASK) << 5;
+    vertex.packedData[0] |= (position[2] & POS_MASK) << 10;
 
     // TexLayer(6 bits)
-    vertex.packedData |= (texLayer & TEX_MASK) << 15;
+    vertex.packedData[0] |= (texLayer & TEX_MASK) << 15;
 
     // FaceIndex (3 bits)
-    vertex.packedData |= (faceIndex & FACE_MASK) << 21;
+    vertex.packedData[0] |= (faceIndex & FACE_MASK) << 21;
 
     // AO (8 bits)
-    vertex.packedData |= (ao[0] & AO_MASK) << 24;
-    vertex.packedData |= (ao[1] & AO_MASK) << 26;
-    vertex.packedData |= (ao[2] & AO_MASK) << 28;
-    vertex.packedData |= (ao[3] & AO_MASK) << 30;
+    vertex.packedData[0] |= (ao[0] & AO_MASK) << 24;
+    vertex.packedData[0] |= (ao[1] & AO_MASK) << 26;
+    vertex.packedData[0] |= (ao[2] & AO_MASK) << 28;
+    vertex.packedData[0] |= (ao[3] & AO_MASK) << 30;
+
+    constexpr unsigned int LIGHTING_MASK = 0xF; // 4 bits, 0-15 range
+
+    // Lighting (4 bits)
+    vertex.packedData[1] |= lightLevel & LIGHTING_MASK;
 
     return vertex;
 }

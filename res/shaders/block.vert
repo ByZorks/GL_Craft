@@ -5,6 +5,7 @@ struct BlockVertex {
     uint texLayer; // Texture layer for array texture
     uint face;// Face index (0-5 for 6 faces)
     uvec4 AO;// Ambient Occlusion values for each vertex (0-3)
+    uint lightLevel; // Light level (0-15)
 };
 
 // UBOs
@@ -14,7 +15,7 @@ layout(std140, binding = 0) uniform MVP {
 
 // SSBOs
 layout(std430, binding = 0) readonly buffer blockVertexPullData {
-    uint packedVertices[];
+    uvec2 packedVertices[];
 };
 
 layout(std430, binding = 1) readonly buffer blockOffsetPullData {
@@ -25,20 +26,21 @@ out vec2 v_texCoord;
 flat out uint v_texLayer;
 flat out uint v_face;
 out float v_AO;
+flat out float v_lightLevel;
 
 const vec3 faceOffsets[24] = {
-// FRONT (+Z)
-vec3(0,1,1), vec3(1,1,1), vec3(1,0,1), vec3(0,0,1),
-// BACK (-Z)
-vec3(1,1,0), vec3(0,1,0), vec3(0,0,0), vec3(1,0,0),
-// LEFT (-X)
-vec3(0,1,0), vec3(0,1,1), vec3(0,0,1), vec3(0,0,0),
-// RIGHT (+X)
-vec3(1,1,1), vec3(1,1,0), vec3(1,0,0), vec3(1,0,1),
-// TOP (+Y)
-vec3(0,1,0), vec3(1,1,0), vec3(1,1,1), vec3(0,1,1),
-// BOTTOM (-Y)
-vec3(0,0,1), vec3(1,0,1), vec3(1,0,0), vec3(0,0,0)
+    // FRONT (+Z)
+    vec3(0,1,1), vec3(1,1,1), vec3(1,0,1), vec3(0,0,1),
+    // BACK (-Z)
+    vec3(1,1,0), vec3(0,1,0), vec3(0,0,0), vec3(1,0,0),
+    // LEFT (-X)
+    vec3(0,1,0), vec3(0,1,1), vec3(0,0,1), vec3(0,0,0),
+    // RIGHT (+X)
+    vec3(1,1,1), vec3(1,1,0), vec3(1,0,0), vec3(1,0,1),
+    // TOP (+Y)
+    vec3(0,1,0), vec3(1,1,0), vec3(1,1,1), vec3(0,1,1),
+    // BOTTOM (-Y)
+    vec3(0,0,1), vec3(1,0,1), vec3(1,0,0), vec3(0,0,0)
 };
 
 const vec2 texOffsets[4] = {
@@ -52,25 +54,28 @@ const int indices[6] = {0, 2, 1, 0, 3, 2};
 
 const int SLOT_SIZE = 1000;
 
-BlockVertex unpackVertexData(uint packedData) {
+BlockVertex unpackVertexData(uvec2 packedData) {
     BlockVertex v;
 
     // Postion (15 bits)
-    v.position.x = (packedData >> 0)  & 0x1Fu;
-    v.position.y = (packedData >> 5)  & 0x1Fu;
-    v.position.z = (packedData >> 10) & 0x1Fu;
+    v.position.x = (packedData[0] >> 0)  & 0x1Fu;
+    v.position.y = (packedData[0] >> 5)  & 0x1Fu;
+    v.position.z = (packedData[0] >> 10) & 0x1Fu;
 
     // TexLayer (6 bits)
-    v.texLayer= (packedData >> 15) & 0x3Fu;
+    v.texLayer= (packedData[0] >> 15) & 0x3Fu;
 
     // FaceIndex (3 bits)
-    v.face = (packedData >> 21) & 0x7u;
+    v.face = (packedData[0] >> 21) & 0x7u;
 
     // AO (8 bits)
-    v.AO.x = (packedData >> 24) & 0x3u;
-    v.AO.y = (packedData >> 26) & 0x3u;
-    v.AO.z = (packedData >> 28) & 0x3u;
-    v.AO.w = (packedData >> 30) & 0x3u;
+    v.AO.x = (packedData[0] >> 24) & 0x3u;
+    v.AO.y = (packedData[0] >> 26) & 0x3u;
+    v.AO.z = (packedData[0] >> 28) & 0x3u;
+    v.AO.w = (packedData[0] >> 30) & 0x3u;
+
+    // LightLevel (4 bits)
+    v.lightLevel = (packedData[1] >> 0) & 0xFu;
 
     return v;
 }
@@ -79,7 +84,7 @@ void main() {
     // Pull data from the buffer
     const int quadIndex = gl_VertexID / 6;
     const int currentVertexID = gl_VertexID % 6;
-    const uint packedData = packedVertices[gl_BaseInstance * SLOT_SIZE + quadIndex]; // gl_BaseInstnance is the first slot of the current chunk
+    const uvec2 packedData = packedVertices[gl_BaseInstance * SLOT_SIZE + quadIndex]; // gl_BaseInstnance is the first slot of the current chunk
     const BlockVertex data = unpackVertexData(packedData);
 
     // Face index
@@ -98,4 +103,7 @@ void main() {
     // Ambient Occlusion
     const float AO_f = float(data.AO[quadVertexIndex]) / 3.0;// Normalize AO to 0-1 range
     v_AO = max(AO_f, 0.1); // Prevent completely dark faces
+
+    // Light level
+    v_lightLevel = float(data.lightLevel) / 15.0;
 }

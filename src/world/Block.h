@@ -18,8 +18,9 @@ public:
     };
 
     struct BlockVertex {
-        // position, texture layer, facetype, AO
-        unsigned int packedData;
+        // [0] position, texture layer, facetype, AO
+        // [1] lighting
+        unsigned int packedData[2];
     };
 
 public:
@@ -34,7 +35,7 @@ public:
 
 private:
     static BlockVertex packVertexData(const unsigned int position[3], uint8_t texLayer, unsigned int faceIndex,
-                                      const unsigned int ao[4]);
+                                      const unsigned int ao[4], unsigned int lightLevel);
 
     static uint8_t getTextureLayer(BlockType type, Face face);
     static uint8_t computeVertexAO(bool side1, bool side2, bool corner);
