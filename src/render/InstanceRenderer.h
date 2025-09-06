@@ -6,11 +6,12 @@
 #include "../gl/StorageBuffer.h"
 #include "../gl/VertexArray.h"
 #include "../world/Block.h"
+#include "../world/chunk/Mesh.h"
 #include "../world/chunk/MeshManager.h"
 
 class InstanceRenderer {
 public:
-    template<typename MeshType>
+    template<std::derived_from<Mesh> MeshType>
     void init(MeshType &&mesh);
 
     void addInstance(const std::array<int, 3> &position);
@@ -30,7 +31,7 @@ private:
     unsigned int m_instanceCount = 0;
 };
 
-template<typename MeshType>
+template<std::derived_from<Mesh> MeshType>
 void InstanceRenderer::init(MeshType &&mesh) {
     mesh.generateVoxel();
     mesh.generateMesh();
