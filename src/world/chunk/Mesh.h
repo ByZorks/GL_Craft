@@ -74,6 +74,7 @@ protected:
     const unsigned int m_size;
     const int m_x, m_y, m_z;
     std::vector<Block::BlockType> m_blocks;
+    std::vector<uint8_t> m_lightLevels;
     BufferData m_opaqueData;
     BufferData m_waterData;
     State m_state = State::UNINITIALIZED;

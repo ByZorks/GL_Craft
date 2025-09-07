@@ -38,7 +38,7 @@ void Camera::updateLastState() {
 }
 
 void Camera::processInput(const std::shared_ptr<GLFWwindow> &window, const double deltaTime) {
-    const float cameraSpeed = 100.0f * static_cast<float>(deltaTime);
+    const float cameraSpeed = 50.0f * static_cast<float>(deltaTime);
     if (glfwGetKey(window.get(), GLFW_KEY_W) == GLFW_PRESS)
         m_cameraPos += cameraSpeed * m_cameraFront;
     if (glfwGetKey(window.get(), GLFW_KEY_S) == GLFW_PRESS)

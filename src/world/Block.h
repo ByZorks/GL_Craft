@@ -10,6 +10,16 @@ public:
         FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM,
     };
 
+    // Same order as Face enum
+    static constexpr std::array<std::tuple<int, int, int>, 6> s_faceOffset = {
+        std::make_tuple(0, 0, 1),  // Front (+Z)
+        std::make_tuple(0, 0, -1), // Back (-Z)
+        std::make_tuple(-1, 0, 0), // Left (-X)
+        std::make_tuple(1, 0, 0),  // Right (+X)
+        std::make_tuple(0, 1, 0),  // Top (+Y)
+        std::make_tuple(0, -1, 0)  // Bottom (-Y)
+    };
+
     enum class BlockType : uint8_t {
         AIR, BEDROCK, DIRT, GRASS, STONE, WATER, OAK_LOG, OAK_LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER,
         FLOWER_ALLIUM,
@@ -25,12 +35,14 @@ public:
 
 public:
     static const char *getBlockName(BlockType blockType);
-    static void addFaceVertices(Face face, BlockType type, std::vector<BlockVertex> &outVertices,
+    static void addFaceVertex(Face face, BlockType type, std::vector<BlockVertex> &outVertices,
                                 const std::array<bool, 26> &adjacentsFaces, unsigned int startX, unsigned int startY,
-                                unsigned int startZ);
+                                unsigned int startZ, unsigned int lightLevel);
     static void addFaceVerticesAsBilboard(Face face, BlockType type, std::vector<BlockVertex> &outVertices,
                                           unsigned int startX, unsigned int startY, unsigned int startZ);
+    static bool isOpaque(BlockType type);
     static bool isTransparent(BlockType type);
+    static bool isSemiTransparent(BlockType type);
     static bool isInstance(BlockType type);
 
 private:

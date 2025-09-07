@@ -345,6 +345,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
             if (p_chunk->isEmpty()) return;
             // Will be deleted when out of range, don't delete now to avoid it being reloaded immediately
 
+            p_chunk->propagateLight();
             p_chunk->generateMesh();
             m_needInstanceUpdate.store(true);
             p_chunk->transferPendingBlocksToWorld(*this);

@@ -21,6 +21,7 @@ public:
 
     void generateVoxel() override;
     void generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResult &result);
+    void propagateLight();
     void generateMesh() override;
     void generateNewMesh(MeshingResult &result) const;
     void transferPendingBlocksToWorld(WorldManager &world);
@@ -43,6 +44,9 @@ public:
 private:
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType);
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType, MeshingResult &result) const;
+
+    uint8_t getLightLevelAt(int localX, int localY, int localZ) const;
+    void setLightLevelAt(int localX, int localY, int localZ, uint8_t lightLevel);
 
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const override;
     [[nodiscard]] bool hasVisibleFaces() const;

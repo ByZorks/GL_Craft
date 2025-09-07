@@ -34,12 +34,11 @@ const char *Block::getBlockName(const BlockType blockType) {
     }
 }
 
-void Block::addFaceVertices(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,
+void Block::addFaceVertex(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,
                             const std::array<bool, 26> &adjacentsFaces, const unsigned int startX,
-                            const unsigned int startY, const unsigned int startZ) {
+                            const unsigned int startY, const unsigned int startZ, const unsigned int lightLevel) {
     const unsigned int position[3] = {startX, startY, startZ};
     const uint8_t texLayer = getTextureLayer(type, face);
-    const unsigned int lightLevel = 15; // Max light level for now
 
     switch (face) {
         case Face::FRONT: {
@@ -218,10 +217,19 @@ uint8_t Block::computeVertexAO(const bool side1, const bool side2, const bool co
     return AO_MAX - (side1 + side2 + corner);
 }
 
+bool Block::isOpaque(const BlockType type) {
+    return type != BlockType::AIR && !isTransparent(type);
+}
+
 bool Block::isTransparent(const BlockType type) {
     return type == BlockType::WATER || type == BlockType::AIR ||
            type == BlockType::OAK_LEAVES || type == BlockType::SNOW_OAK_LEAVES || type == BlockType::JUNGLE_LEAVES ||
            type == BlockType::SPRUCE_LEAVES || isInstance(type);
+}
+
+bool Block::isSemiTransparent(const BlockType type) {
+    return type == BlockType::WATER || type == BlockType::OAK_LEAVES ||
+           type == BlockType::SNOW_OAK_LEAVES || type == BlockType::JUNGLE_LEAVES || type == BlockType::SPRUCE_LEAVES;
 }
 
 bool Block::isInstance(const BlockType type) {

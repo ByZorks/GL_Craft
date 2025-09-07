@@ -9,12 +9,13 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
                                                       m_rng(TerrainGenerator::getSeed() + x + y + z) {
     constexpr int NUMBER_OF_FACES = 6;
     constexpr size_t max_faces = NUMBER_OF_FACES * SIZE * SIZE * SIZE;
-    constexpr size_t avg_vertices_opaque = max_faces * 0.02f;
+    constexpr auto avg_vertices_opaque = static_cast<size_t>(max_faces * 0.02f);
     constexpr size_t avg_faces_water = SIZE * SIZE;
 
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
     m_waterData.vertices.reserve(avg_faces_water);
     m_blocks.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), Block::BlockType::AIR); // +2 for boundary checks
+    m_lightLevels.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), 15u);
     m_pendingBlocksForNeighbors.reserve(SIZE);
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
 }
@@ -151,19 +152,39 @@ void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResu
     }
     blocks.clear();
 
+    propagateLight();
     generateNewMesh(result);
 }
 
-void Chunk::generateMesh() {
-    constexpr std::array FaceOffset = {
-        std::make_tuple(0, 1, 0), // Up
-        std::make_tuple(0, -1, 0), // Down
-        std::make_tuple(-1, 0, 0), // Left
-        std::make_tuple(1, 0, 0), // Right
-        std::make_tuple(0, 0, 1), // Front
-        std::make_tuple(0, 0, -1) // Back
-    };
+void Chunk::propagateLight() {
+    for (int localX = 0; localX < SIZE + 2; localX++) {
+        const int adjustedX = localX - 1;
 
+        for (int localZ = 0; localZ < SIZE + 2; localZ++) {
+            const int adjustedZ = localZ - 1;
+            unsigned int currentLightLevel = 15u;
+
+            for (int localY = SIZE + 1; localY >= 0; localY--) {
+                const int adjustedY = localY - 1;
+                constexpr unsigned int MIN_LIGHT_LEVEL = 2u;
+
+                const Block::BlockType blockType = getBlockType(adjustedX, adjustedY, adjustedZ);
+
+                if (Block::isTransparent(blockType)) {
+                    setLightLevelAt(adjustedX, adjustedY, adjustedZ, currentLightLevel);
+                    if (blockType != Block::BlockType::AIR) {
+                        currentLightLevel = std::max(MIN_LIGHT_LEVEL, currentLightLevel - 1u);
+                    }
+                } else {
+                    setLightLevelAt(adjustedX, adjustedY, adjustedZ, MIN_LIGHT_LEVEL);
+                    currentLightLevel = MIN_LIGHT_LEVEL; // reset light after hitting an opaque block
+                }
+            }
+        }
+    }
+}
+
+void Chunk::generateMesh() {
     for (int localX = 0; localX < SIZE; localX++) {
         for (int localY = 0; localY < SIZE; localY++) {
             for (int localZ = 0; localZ < SIZE; localZ++) {
@@ -173,7 +194,7 @@ void Chunk::generateMesh() {
                 // Check if block will have visible faces by checking its 6 neighbors
                 uint8_t visibleFaces = 0;
                 for (int dir = 0; dir < 6; dir++) {
-                    if (const auto [dx, dy, dz] = FaceOffset[dir];
+                    if (const auto [dx, dy, dz] = Block::s_faceOffset[dir];
                         Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz))) {
                         visibleFaces |= 1 << dir;
                         break;
@@ -196,15 +217,6 @@ void Chunk::generateMesh() {
 }
 
 void Chunk::generateNewMesh(MeshingResult &result) const {
-    constexpr std::array FaceOffset = {
-        std::make_tuple(0, 1, 0), // Up
-        std::make_tuple(0, -1, 0), // Down
-        std::make_tuple(-1, 0, 0), // Left
-        std::make_tuple(1, 0, 0), // Right
-        std::make_tuple(0, 0, 1), // Front
-        std::make_tuple(0, 0, -1) // Back
-    };
-
     for (int localX = 0; localX < SIZE; localX++) {
         for (int localY = 0; localY < SIZE; localY++) {
             for (int localZ = 0; localZ < SIZE; localZ++) {
@@ -214,7 +226,7 @@ void Chunk::generateNewMesh(MeshingResult &result) const {
                 // Check if block will have visible faces by checking its 6 neighbors
                 uint8_t visibleFaces = 0;
                 for (int dir = 0; dir < 6; dir++) {
-                    if (const auto [dx, dy, dz] = FaceOffset[dir];
+                    if (const auto [dx, dy, dz] = Block::s_faceOffset[dir];
                         Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz))) {
                         visibleFaces |= 1 << dir;
                         break;
@@ -247,7 +259,7 @@ void Chunk::deleteBlock(const int localX, const int localY, const int localZ, co
 
     m_blocks[index(localX + 1, localY + 1, localZ + 1)] = Block::BlockType::AIR;
 
-    // Mesh data
+    propagateLight();
     generateNewMesh(result);
 }
 
@@ -263,7 +275,7 @@ void Chunk::addBlock(const int localX, const int localY, const int localZ, const
     }
     m_blocks[index(localX + 1, localY + 1, localZ + 1)] = type;
 
-    // Mesh data
+    propagateLight();
     generateNewMesh(result);
 }
 
@@ -369,11 +381,17 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         const auto face = static_cast<Block::Face>(i);
         if (!shouldDrawFace(localX, localY, localZ, blockType, face)) continue;
 
+        const auto [dx, dy, dz] = Block::s_faceOffset[i];
+        const int nx = localX + dx;
+        const int ny = localY + dy;
+        const int nz = localZ + dz;
+        const unsigned int lightLevel = getLightLevelAt(nx, ny, nz);
+
         if (isWater) {
-            Block::addFaceVertices(face, blockType, m_waterData.vertices, adjacentFaces, localXf, localYf, localZf);
+            Block::addFaceVertex(face, blockType, m_waterData.vertices, adjacentFaces, localXf, localYf, localZf, lightLevel);
             m_waterData.hasFaces = true;
         } else {
-            Block::addFaceVertices(face, blockType, m_opaqueData.vertices, adjacentFaces, localXf, localYf, localZf);
+            Block::addFaceVertex(face, blockType, m_opaqueData.vertices, adjacentFaces, localXf, localYf, localZf, lightLevel);
             m_opaqueData.hasFaces = true;
         }
     }
@@ -381,8 +399,6 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const Block::BlockType blockType,
                           MeshingResult &result) const {
-    if (blockType == Block::BlockType::AIR || Block::isInstance(blockType)) return;
-
     const auto localXf = static_cast<unsigned int>(localX);
     const auto localYf = static_cast<unsigned int>(localY);
     const auto localZf = static_cast<unsigned int>(localZ);
@@ -421,14 +437,28 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         const auto face = static_cast<Block::Face>(i);
         if (!shouldDrawFace(localX, localY, localZ, blockType, face)) continue;
 
+        const auto [dx, dy, dz] = Block::s_faceOffset[i];
+        const int nx = localX + dx;
+        const int ny = localY + dy;
+        const int nz = localZ + dz;
+        const unsigned int lightLevel = getLightLevelAt(nx, ny, nz);
+
         if (isWater) {
-            Block::addFaceVertices(face, blockType, result.waterVertices, adjacentFaces, localXf, localYf, localZf);
+            Block::addFaceVertex(face, blockType, result.waterVertices, adjacentFaces, localXf, localYf, localZf, lightLevel);
             result.hasWaterFaces = true;
         } else {
-            Block::addFaceVertices(face, blockType, result.opaqueVertices, adjacentFaces, localXf, localYf, localZf);
+            Block::addFaceVertex(face, blockType, result.opaqueVertices, adjacentFaces, localXf, localYf, localZf, lightLevel);
             result.hasOpaqueFaces = true;
         }
     }
+}
+
+uint8_t Chunk::getLightLevelAt(const int localX, const int localY, const int localZ) const {
+    return m_lightLevels[index(localX + 1, localY + 1, localZ + 1)];
+}
+
+void Chunk::setLightLevelAt(const int localX, const int localY, const int localZ, const uint8_t lightLevel) {
+    m_lightLevels[index(localX + 1, localY + 1, localZ + 1)] = lightLevel;
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {
