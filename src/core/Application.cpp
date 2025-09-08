@@ -185,7 +185,7 @@ void Application::update() {
     // Raycasting
     if (m_raycastResult = Raycast::castRay(m_camera.getPos(), m_camera.getFront(),
                                            m_world->getWorldManagerConst().getLoadedChunks());
-        m_raycastResult.hitBlock) {
+        m_raycastResult.hasHitBlock) {
         if (!m_camera.isInputEnabled()) return;
 
         if (m_leftClicked) {
@@ -208,7 +208,7 @@ void Application::render() {
     m_world->draw(*m_blockShader, *m_waterShader, *m_instancesShader, m_drawCmds);
 
     // Block highlighting
-    if (m_raycastResult.hitBlock) {
+    if (m_raycastResult.hasHitBlock) {
         m_highlightedBlockShader->use();
         m_highlightedBlockShader->setUniform3f("u_Offset",
                                                m_raycastResult.blockWorldPosition[0],

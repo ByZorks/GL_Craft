@@ -21,120 +21,31 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
 }
 
 void Chunk::generateVoxel() {
-    // Pre calculate noises values at 4x down sampling
+    // 3D Noises
     constexpr int step4 = 4;
     constexpr int gridSizeX4 = (SIZE + 2 + step4 - 1) / step4 + 1;
     constexpr int gridSizeY4 = gridSizeX4;
     constexpr int gridSizeZ4 = gridSizeX4;
     std::array<float, gridSizeX4 * gridSizeY4 * gridSizeZ4> tunnelCavesNoises{};
-    for (int gx = 0; gx < gridSizeX4; ++gx) {
-        const int wx = m_x + gx * step4;
+    std::span<float> tunnelCavesNoisesSpan{tunnelCavesNoises};
+    getDownsampledNoises(step4, tunnelCavesNoisesSpan, TerrainGenerator::getTunnelCaveNoiseAt);
 
-        for (int gy = 0; gy < gridSizeY4; ++gy) {
-            const int wy = m_y + gy * step4;
-
-            for (int gz = 0; gz < gridSizeZ4; ++gz) {
-                const int wz = m_z + gz * step4;
-
-                const int index = gx + gridSizeX4 * (gy + gridSizeY4 * gz);
-                tunnelCavesNoises[index] = TerrainGenerator::getTunnelCaveNoiseAt(wx, wy, wz);
-            }
-        }
-    }
-
-    // Pre calculate noises values at 12x down sampling
     constexpr int step8 = 8;
     constexpr int gridSizeX8 = (SIZE + 2 + step8 - 1) / step8 + 1;
     constexpr int gridSizeY8 = gridSizeX8;
     constexpr int gridSizeZ8 = gridSizeX8;
     std::array<float, gridSizeX8 * gridSizeY8 * gridSizeZ8> largeCavesNoises{};
-    for (int gx = 0; gx < gridSizeX8; ++gx) {
-        const int wx = m_x + gx * step8;
+    std::span<float> largeCavesNoisesSpan{largeCavesNoises};
+    getDownsampledNoises(step8, largeCavesNoisesSpan, TerrainGenerator::getLargeCaveNoiseAt);
 
-        for (int gy = 0; gy < gridSizeY8; ++gy) {
-            const int wy = m_y + gy * step8;
-
-            for (int gz = 0; gz < gridSizeZ8; ++gz) {
-                const int wz = m_z + gz * step8;
-
-                const int index = gx + gridSizeX8 * (gy + gridSizeY8 * gz);
-                largeCavesNoises[index] = TerrainGenerator::getLargeCaveNoiseAt(wx, wy, wz);
-            }
-        }
-    }
-
-    for (int localX = 0; localX < SIZE + 2; localX++) {
+    // Voxel
+    for (int localX = 0; localX < SIZE + 2; ++localX) {
         const int worldX = m_x + localX;
 
-        for (int localZ = 0; localZ < SIZE + 2; localZ++) {
+        for (int localZ = 0; localZ < SIZE + 2; ++localZ) {
             const int worldZ = m_z + localZ;
 
-            TerrainGenerator::NoiseValues noises;
-            noises.computeHeightNoises(worldX, worldZ);
-            const int columnHeight = TerrainGenerator::getHeight(noises);
-
-            // Early exit for aerial chunks, cast is mandatory
-            if (columnHeight < m_y - static_cast<int>(SIZE)) continue;
-
-            noises.computeRemainingNoises(worldX, worldZ);
-            const Biome biome = TerrainGenerator::getBiome(noises, worldX, worldZ);
-            const auto position = ChunkPosition(m_x, m_y, m_z);
-
-            // Surface features noise
-            if (localX > 0 && localX < SIZE && localZ > 0 && localZ < SIZE &&
-                // I think it can cause issues but I didn't find any in my testing
-                columnHeight >= TerrainGenerator::getSeaLevel() && m_y <= columnHeight + 1 &&
-                columnHeight >= m_y - static_cast<int>(SIZE) &&
-                columnHeight < m_y + static_cast<int>(SIZE) &&
-                !TerrainGenerator::isCave(position, worldX, columnHeight, worldZ, columnHeight, largeCavesNoises,
-                                          tunnelCavesNoises)) {
-                if (const float surfaceFeatureNoise =
-                            (TerrainGenerator::getSurfaceFeaturesNoiseAt(worldX, worldZ) + 1.0f) * 0.5f;
-                    surfaceFeatureNoise >= 0.69f) {
-                    const Block::BlockType blockType = TerrainGenerator::getBlockType(columnHeight, columnHeight, biome);
-                    m_surfaceFeatures.emplace(worldX, columnHeight, worldZ,
-                                              SurfaceFeature::getSurfaceFeatureType(
-                                                  surfaceFeatureNoise, blockType, biome));
-                }
-            }
-
-            // Pre-compute the max height for the current column
-            const int maxHeightInChunk = std::max(columnHeight, TerrainGenerator::getSeaLevel());
-            const int endY = std::min(static_cast<int>(SIZE) + 2, std::max(0, maxHeightInChunk - m_y + 2));
-
-            for (int localY = 0; localY < endY; localY++) {
-                const int worldY = m_y + localY;
-
-                // Terrain
-                if (TerrainGenerator::isCave(position, worldX, worldY, worldZ, columnHeight, largeCavesNoises,
-                                             tunnelCavesNoises)) continue;
-                m_blocks[index(localX, localY, localZ)] = TerrainGenerator::getBlockType(worldY, columnHeight, biome);
-                m_visibleBlocks++;
-
-                // Surface features
-                if (worldY != columnHeight + 1) continue;
-                if (const auto it = m_surfaceFeatures.find(SurfaceFeature(worldX, columnHeight, worldZ));
-                    it != m_surfaceFeatures.end()) {
-                    switch (it->getType()) {
-                        case SurfaceFeature::SurfaceFeatureType::TREE: {
-                            SurfaceFeature::addTree(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blocks,
-                                                    m_pendingBlocksForNeighbors);
-                            break;
-                        }
-                        case SurfaceFeature::SurfaceFeatureType::BUSH: {
-                            SurfaceFeature::addBush(m_rng, {m_x, m_y, m_z}, localX, localY, localZ, biome, m_blocks,
-                                                    m_pendingBlocksForNeighbors);
-                            break;
-                        }
-                        case SurfaceFeature::SurfaceFeatureType::POND: {
-                            SurfaceFeature::addPond(m_rng, {m_x, m_y, m_z}, localX, localY - 1, localZ, biome, m_blocks,
-                                                    m_pendingBlocksForNeighbors);
-                        }
-                        default: {
-                        }
-                    }
-                }
-            }
+            processColumn(worldX, worldZ, localX, localZ, tunnelCavesNoisesSpan, largeCavesNoisesSpan);
         }
     }
 
@@ -224,22 +135,22 @@ void Chunk::propagateLight() {
 
 void Chunk::generateMesh() {
     for (int localX = 0; localX < SIZE; localX++) {
-        for (int localY = 0; localY < SIZE; localY++) {
-            for (int localZ = 0; localZ < SIZE; localZ++) {
+        for (int localZ = 0; localZ < SIZE; localZ++) {
+            for (int localY = 0; localY < SIZE; localY++) {
                 const Block::BlockType blockType = getBlockType(localX, localY, localZ);
                 if (blockType == Block::BlockType::AIR) continue;
 
                 // Check if block will have visible faces by checking its 6 neighbors
-                uint8_t visibleFaces = 0;
+                bool hasVisibleFaces = false;
                 for (int dir = 0; dir < 6; dir++) {
                     if (const auto [dx, dy, dz] = Block::s_faceOffset[dir];
                         Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz))) {
-                        visibleFaces |= 1 << dir;
+                        hasVisibleFaces = true;
                         break;
                     }
                 }
 
-                if (visibleFaces != 0) {
+                if (hasVisibleFaces) {
                     addBlockFaces(localX, localY, localZ, blockType);
                 }
             }
@@ -256,22 +167,22 @@ void Chunk::generateMesh() {
 
 void Chunk::generateNewMesh(MeshingResult &result) const {
     for (int localX = 0; localX < SIZE; localX++) {
-        for (int localY = 0; localY < SIZE; localY++) {
-            for (int localZ = 0; localZ < SIZE; localZ++) {
+        for (int localZ = 0; localZ < SIZE; localZ++) {
+            for (int localY = 0; localY < SIZE; localY++) {
                 const Block::BlockType blockType = getBlockType(localX, localY, localZ);
                 if (blockType == Block::BlockType::AIR) continue;
 
                 // Check if block will have visible faces by checking its 6 neighbors
-                uint8_t visibleFaces = 0;
+                bool hasVisibleFaces = false;
                 for (int dir = 0; dir < 6; dir++) {
                     if (const auto [dx, dy, dz] = Block::s_faceOffset[dir];
                         Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz))) {
-                        visibleFaces |= 1 << dir;
+                        hasVisibleFaces = true;
                         break;
                     }
                 }
 
-                if (visibleFaces != 0) {
+                if (hasVisibleFaces) {
                     addBlockFaces(localX, localY, localZ, blockType, result);
                 }
             }
@@ -319,7 +230,7 @@ void Chunk::addBlock(const int localX, const int localY, const int localZ, const
 
 int Chunk::index(const int x, const int y, const int z) const {
     constexpr int stride = static_cast<int>(SIZE) + 2;
-    return x * stride * stride + y * stride + z;
+    return x * stride * stride + z * stride + y;
 }
 
 Block::BlockType Chunk::getBlockType(const int localX, const int localY, const int localZ) const {
@@ -378,6 +289,108 @@ unsigned int Chunk::getIndirectRendererSlotWater() const {
 
 void Chunk::setIndirectRendererSlotWater(const unsigned int m_gpu_water_slot) {
     m_indirectRendererSlotWater = m_gpu_water_slot;
+}
+
+void Chunk::processColumn(const int worldX, const int worldZ, const int localX, const int localZ,
+                          const std::span<float> &tunnelCavesNoises, const std::span<float> &largeCavesNoises) {
+    TerrainGenerator::NoiseValues noises;
+    noises.computeHeightNoises(worldX, worldZ);
+
+    const int columnHeight = TerrainGenerator::getHeight(noises);
+
+    // Early exit for aerial chunks
+    if (columnHeight < m_y - static_cast<int>(SIZE)) return;
+
+    noises.computeRemainingNoises(worldX, worldZ);
+    const Biome biome = TerrainGenerator::getBiome(noises, worldX, worldZ);
+    const ChunkPosition position(m_x, m_y, m_z);
+
+    generateSurfaceFeaturesPositions(position, worldX, worldZ, localX, localZ, columnHeight, biome, tunnelCavesNoises,
+                           largeCavesNoises);
+
+    fillColumnBlocks(position, worldX, worldZ, localX, localZ, columnHeight, biome, tunnelCavesNoises, largeCavesNoises);
+}
+
+void Chunk::generateSurfaceFeaturesPositions(const ChunkPosition &position, int worldX, int worldZ, const int localX,
+                                   const int localZ, int columnHeight, const Biome biome,
+                                   const std::span<float> &tunnelCavesNoises, const std::span<float> &largeCavesNoises) {
+    if (localX <= 0 || localX >= SIZE || localZ <= 0 || localZ >= SIZE) return;
+    if (columnHeight < TerrainGenerator::getSeaLevel()) return;
+    if (m_y > columnHeight + 1) return;
+    if (columnHeight < m_y - SIZE || columnHeight >= m_y + SIZE) return;
+    if (TerrainGenerator::isCave(position, worldX, columnHeight, worldZ, columnHeight, largeCavesNoises,
+        tunnelCavesNoises)) return;
+
+    const float noise = (TerrainGenerator::getSurfaceFeaturesNoiseAt(worldX, worldZ) + 1.0f) * 0.5f;
+    if (noise < 0.69f) return;
+
+    const Block::BlockType blockType = TerrainGenerator::getBlockType(columnHeight, columnHeight, biome);
+    m_surfaceFeatures.emplace(worldX, columnHeight, worldZ, SurfaceFeature::getSurfaceFeatureType(noise, blockType, biome));
+}
+
+void Chunk::fillColumnBlocks(const ChunkPosition &position, const int worldX, const int worldZ, const int localX,
+                             const int localZ, const int columnHeight, const Biome biome,
+                             const std::span<float> &tunnelCavesNoises, const std::span<float> &largeCavesNoises) {
+    const int maxHeight = std::max(columnHeight, TerrainGenerator::getSeaLevel());
+    const int endY = std::min(static_cast<int>(SIZE) + 2, std::max(0, maxHeight - m_y + 2));
+
+    for (int localY = 0; localY < endY; ++localY) {
+        const int worldY = m_y + localY;
+
+        if (TerrainGenerator::isCave(position, worldX, worldY, worldZ, columnHeight, largeCavesNoises, tunnelCavesNoises))
+            continue;
+
+        m_blocks[index(localX, localY, localZ)] = TerrainGenerator::getBlockType(worldY, columnHeight, biome);
+        m_visibleBlocks++;
+
+        if (worldY == columnHeight + 1) {
+            addSurfaceFeatureBlocks(worldX, columnHeight, worldZ, localX, localY, localZ, biome);
+        }
+    }
+}
+
+void Chunk::addSurfaceFeatureBlocks(const int worldX, const int columnHeight, const int worldZ, const int localX,
+                                       const int localY, const int localZ, const Biome biome) {
+    const auto it = m_surfaceFeatures.find(SurfaceFeature(worldX, columnHeight, worldZ));
+    if (it == m_surfaceFeatures.end()) return;
+
+    switch (it->getType()) {
+        case SurfaceFeature::SurfaceFeatureType::TREE:
+            SurfaceFeature::addTree(m_rng, {m_x, m_y, m_z}, localX, localY, localZ,
+                                    biome, m_blocks, m_pendingBlocksForNeighbors);
+            break;
+        case SurfaceFeature::SurfaceFeatureType::BUSH:
+            SurfaceFeature::addBush(m_rng, {m_x, m_y, m_z}, localX, localY, localZ,
+                                    biome, m_blocks, m_pendingBlocksForNeighbors);
+            break;
+        case SurfaceFeature::SurfaceFeatureType::POND:
+            SurfaceFeature::addPond(m_rng, {m_x, m_y, m_z}, localX, localY - 1, localZ,
+                                    biome, m_blocks, m_pendingBlocksForNeighbors);
+            break;
+        default: break;
+    }
+}
+
+template<typename NoiseFunction>
+void Chunk::getDownsampledNoises(const int factor, std::span<float>& outNoises, NoiseFunction noiseFunction) const {
+    const int gridSizeX = (static_cast<int>(SIZE) + 2 + factor - 1) / factor + 1;
+    const int gridSizeY = gridSizeX;
+    const int gridSizeZ = gridSizeX;
+
+    for (int gx = 0; gx < gridSizeX; ++gx) {
+        const int wx = m_x + gx * factor;
+
+        for (int gy = 0; gy < gridSizeY; ++gy) {
+            const int wy = m_y + gy * factor;
+
+            for (int gz = 0; gz < gridSizeZ; ++gz) {
+                const int wz = m_z + gz * factor;
+
+                const int index = gx + gridSizeX * (gy + gridSizeY * gz);
+                outNoises[index] = noiseFunction(wx, wy, wz);
+            }
+        }
+    }
 }
 
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const Block::BlockType blockType) {

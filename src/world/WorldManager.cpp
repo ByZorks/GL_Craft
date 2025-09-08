@@ -397,7 +397,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
     // Third pass: update meshes that needs it
     for (int i = 0; i < maxChunksPerFrame; ++i) {
         if (m_chunksData.completedMeshes.empty()) break;
-        auto [position, opaqueVertices, waterVertices,
+        auto [opaqueVertices, waterVertices, position,
             hasOpaqueFaces, hasWaterFaces,
             needInstanceUpdate, needIndirectRendererUpdate] = m_chunksData.completedMeshes.pop();
 

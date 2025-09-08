@@ -1,6 +1,7 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 #include <climits>
+#include <functional>
 #include <random>
 #include <unordered_map>
 #include <unordered_set>
@@ -42,6 +43,19 @@ public:
     void setIndirectRendererSlotWater(unsigned int m_gpu_water_slot);
 
 private:
+    template<typename NoiseFunction>
+    void getDownsampledNoises(int factor, std::span<float> &outNoises, NoiseFunction noiseFunction) const;
+    void processColumn(int worldX, int worldZ, int localX, int localZ, const std::span<float> &tunnelCavesNoises,
+                       const std::span<float> &largeCavesNoises);
+    void generateSurfaceFeaturesPositions(const ChunkPosition &position, int worldX, int worldZ, int localX, int localZ,
+                                          int columnHeight, Biome biome, const std::span<float> &tunnelCavesNoises,
+                                          const std::span<float> &largeCavesNoises);
+    void fillColumnBlocks(const ChunkPosition &position, int worldX, int worldZ, int localX, int localZ,
+                          int columnHeight, Biome biome, const std::span<float> &tunnelCavesNoises,
+                          const std::span<float> &largeCavesNoises);
+    void addSurfaceFeatureBlocks(int worldX, int columnHeight, int worldZ, int localX, int localY, int localZ,
+                                 Biome biome);
+
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType);
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType, MeshingResult &result) const;
 

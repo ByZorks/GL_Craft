@@ -124,14 +124,14 @@ RaycastResult Raycast::castRay(const glm::vec3 &rayStart, const glm::vec3 &rayDi
                 m_cachedChunks[chunkIndex],
                 {localChunkX, localChunkY, localChunkZ},
                 {worldX, worldY, worldZ},
+                hitNormal,
                 true,
-                block,
-                hitNormal
+                block
             };
         }
     }
 
     static RaycastResult result;
-    result.hitBlock = false;
+    result.hasHitBlock = false;
     return result; // No block found within the maximum distance
 }

@@ -8,9 +8,9 @@
 #include "../../utils/ThreadSafeQueue.h"
 
 struct MeshingResult {
-    ChunkPosition position {0, 0, 0};
     std::vector<Block::BlockVertex> opaqueVertices;
     std::vector<Block::BlockVertex> waterVertices;
+    ChunkPosition position {0, 0, 0};
     bool hasOpaqueFaces = false;
     bool hasWaterFaces = false;
     bool needInstanceUpdate = false;
@@ -28,6 +28,5 @@ public:
     ThreadSafeQueue<std::shared_ptr<MeshType> > meshesToDelete;
     ThreadSafeQueue<MeshingResult> completedMeshes;
 };
-
 
 #endif //MESHDATA_H

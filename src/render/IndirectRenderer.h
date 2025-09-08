@@ -11,13 +11,13 @@
 class IndirectRenderer {
 private:
     struct MeshData {
-        IndirectBuffer IBO;
-        StorageBuffer offsetsSSBO;
-        size_t count = 0;
         std::queue<unsigned int> freeDrawIndices;
+        StorageBuffer offsetsSSBO;
+        IndirectBuffer IBO;
+        size_t count = 0;
     };
 
-    enum class MeshType {
+    enum class MeshType : uint8_t {
         OPAQUE,
         WATER
     };
