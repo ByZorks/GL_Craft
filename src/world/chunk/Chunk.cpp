@@ -15,7 +15,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
     m_waterData.vertices.reserve(avg_faces_water);
     m_blocks.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), Block::BlockType::AIR); // +2 for boundary checks
-    m_lightLevels.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), 15u);
+    m_lightLevels.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), 0u);
     m_pendingBlocksForNeighbors.reserve(SIZE);
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
 }
@@ -157,6 +157,12 @@ void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResu
 }
 
 void Chunk::propagateLight() {
+    constexpr unsigned int MIN_LIGHT_LEVEL = 2u;
+    constexpr unsigned int POS_MASK = 0x3F; // 6 bits
+
+    std::queue<uint32_t> bfsQueue;
+
+    // First pass: vertical light propagation from the top
     for (int localX = 0; localX < SIZE + 2; localX++) {
         const int adjustedX = localX - 1;
 
@@ -166,19 +172,51 @@ void Chunk::propagateLight() {
 
             for (int localY = SIZE + 1; localY >= 0; localY--) {
                 const int adjustedY = localY - 1;
-                constexpr unsigned int MIN_LIGHT_LEVEL = 2u;
 
                 const Block::BlockType blockType = getBlockType(adjustedX, adjustedY, adjustedZ);
 
                 if (Block::isTransparent(blockType)) {
                     setLightLevelAt(adjustedX, adjustedY, adjustedZ, currentLightLevel);
                     if (blockType != Block::BlockType::AIR) {
-                        currentLightLevel = std::max(MIN_LIGHT_LEVEL, currentLightLevel - 1u);
+                        currentLightLevel = std::max(MIN_LIGHT_LEVEL, currentLightLevel - 2u);
+                    }
+                    if (currentLightLevel > MIN_LIGHT_LEVEL) {
+                        // Use local values instead of adjusted to avoid negative values
+                        bfsQueue.emplace(localX & POS_MASK | (localY & POS_MASK) << 6 | (localZ & POS_MASK) << 12);
                     }
                 } else {
                     setLightLevelAt(adjustedX, adjustedY, adjustedZ, MIN_LIGHT_LEVEL);
-                    currentLightLevel = MIN_LIGHT_LEVEL; // reset light after hitting an opaque block
+                    currentLightLevel = MIN_LIGHT_LEVEL;
                 }
+            }
+        }
+    }
+
+    // Second pass: horizontal light propagation (BFS algorithm)
+    while (!bfsQueue.empty()) {
+        const auto packed = bfsQueue.front();
+        bfsQueue.pop();
+        const int x = static_cast<int>(packed & POS_MASK) - 1;
+        const int y = static_cast<int>(packed >> 6 & POS_MASK) - 1;
+        const int z = static_cast<int>(packed >> 12 & POS_MASK) - 1;
+        const uint8_t currentLightLevel = getLightLevelAt(x, y, z);
+        if (currentLightLevel <= MIN_LIGHT_LEVEL) continue; // No more light to propagate
+
+        for (auto [dx, dy, dz]: Block::s_faceOffset) {
+            const int nx = x + dx;
+            const int ny = y + dy;
+            const int nz = z + dz;
+
+            if (nx < -1 || ny < -1 || nz < -1 || nx >= SIZE + 1 || ny >= SIZE + 1 || nz >= SIZE + 1) continue;
+
+            if (const Block::BlockType neighborBlockType = getBlockType(nx, ny, nz);
+                Block::isOpaque(neighborBlockType)) continue;
+
+            if (uint8_t neighborLightLevel = getLightLevelAt(nx, ny, nz);
+                neighborLightLevel + 2 <= currentLightLevel) {
+                neighborLightLevel = currentLightLevel - 1;
+                setLightLevelAt(nx, ny, nz, neighborLightLevel);
+                bfsQueue.emplace(nx + 1 & POS_MASK | (ny + 1 & POS_MASK) << 6 | (nz + 1 & POS_MASK) << 12);
             }
         }
     }
