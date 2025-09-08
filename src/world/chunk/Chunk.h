@@ -1,6 +1,7 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 #include <climits>
+#include <functional>
 #include <random>
 #include <unordered_map>
 #include <unordered_set>
@@ -41,6 +42,8 @@ public:
     void setIndirectRendererSlotWater(unsigned int m_gpu_water_slot);
 
 private:
+    template<typename NoiseFunction>
+    void getDownsampledNoises(int factor, std::span<float> &outNoises, NoiseFunction noiseFunction) const;
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType);
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType, MeshingResult &result) const;
 

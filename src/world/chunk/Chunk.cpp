@@ -20,48 +20,24 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
 }
 
 void Chunk::generateVoxel() {
-    // Pre calculate noises values at 4x down sampling
+    // 3D Noises
     constexpr int step4 = 4;
     constexpr int gridSizeX4 = (SIZE + 2 + step4 - 1) / step4 + 1;
     constexpr int gridSizeY4 = gridSizeX4;
     constexpr int gridSizeZ4 = gridSizeX4;
     std::array<float, gridSizeX4 * gridSizeY4 * gridSizeZ4> tunnelCavesNoises{};
-    for (int gx = 0; gx < gridSizeX4; ++gx) {
-        const int wx = m_x + gx * step4;
+    std::span<float> tunnelCavesNoisesSpan{tunnelCavesNoises};
+    getDownsampledNoises(step4, tunnelCavesNoisesSpan, TerrainGenerator::getTunnelCaveNoiseAt);
 
-        for (int gy = 0; gy < gridSizeY4; ++gy) {
-            const int wy = m_y + gy * step4;
-
-            for (int gz = 0; gz < gridSizeZ4; ++gz) {
-                const int wz = m_z + gz * step4;
-
-                const int index = gx + gridSizeX4 * (gy + gridSizeY4 * gz);
-                tunnelCavesNoises[index] = TerrainGenerator::getTunnelCaveNoiseAt(wx, wy, wz);
-            }
-        }
-    }
-
-    // Pre calculate noises values at 12x down sampling
     constexpr int step8 = 8;
     constexpr int gridSizeX8 = (SIZE + 2 + step8 - 1) / step8 + 1;
     constexpr int gridSizeY8 = gridSizeX8;
     constexpr int gridSizeZ8 = gridSizeX8;
     std::array<float, gridSizeX8 * gridSizeY8 * gridSizeZ8> largeCavesNoises{};
-    for (int gx = 0; gx < gridSizeX8; ++gx) {
-        const int wx = m_x + gx * step8;
+    std::span<float> largeCavesNoisesSpan{largeCavesNoises};
+    getDownsampledNoises(step8, largeCavesNoisesSpan, TerrainGenerator::getLargeCaveNoiseAt);
 
-        for (int gy = 0; gy < gridSizeY8; ++gy) {
-            const int wy = m_y + gy * step8;
-
-            for (int gz = 0; gz < gridSizeZ8; ++gz) {
-                const int wz = m_z + gz * step8;
-
-                const int index = gx + gridSizeX8 * (gy + gridSizeY8 * gz);
-                largeCavesNoises[index] = TerrainGenerator::getLargeCaveNoiseAt(wx, wy, wz);
-            }
-        }
-    }
-
+    // Voxel
     for (int localX = 0; localX < SIZE + 2; localX++) {
         const int worldX = m_x + localX;
 
@@ -328,6 +304,28 @@ unsigned int Chunk::getIndirectRendererSlotWater() const {
 
 void Chunk::setIndirectRendererSlotWater(const unsigned int m_gpu_water_slot) {
     m_indirectRendererSlotWater = m_gpu_water_slot;
+}
+
+template<typename NoiseFunction>
+void Chunk::getDownsampledNoises(const int factor, std::span<float>& outNoises, NoiseFunction noiseFunction) const {
+    const int gridSizeX = (static_cast<int>(SIZE) + 2 + factor - 1) / factor + 1;
+    const int gridSizeY = gridSizeX;
+    const int gridSizeZ = gridSizeX;
+
+    for (int gx = 0; gx < gridSizeX; ++gx) {
+        const int wx = m_x + gx * factor;
+
+        for (int gy = 0; gy < gridSizeY; ++gy) {
+            const int wy = m_y + gy * factor;
+
+            for (int gz = 0; gz < gridSizeZ; ++gz) {
+                const int wz = m_z + gz * factor;
+
+                const int index = gx + gridSizeX * (gy + gridSizeY * gz);
+                outNoises[index] = noiseFunction(wx, wy, wz);
+            }
+        }
+    }
 }
 
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const Block::BlockType blockType) {
