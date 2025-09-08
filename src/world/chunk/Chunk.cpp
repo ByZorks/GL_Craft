@@ -9,7 +9,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
                                                       m_rng(TerrainGenerator::getSeed() + x + y + z) {
     constexpr int NUMBER_OF_FACES = 6;
     constexpr size_t max_faces = NUMBER_OF_FACES * SIZE * SIZE * SIZE;
-    constexpr size_t avg_vertices_opaque = max_faces * 0.02f;
+    constexpr auto avg_vertices_opaque = static_cast<size_t>(max_faces * 0.02f);
     constexpr size_t avg_faces_water = SIZE * SIZE;
 
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
@@ -165,22 +165,22 @@ void Chunk::generateMesh() {
     };
 
     for (int localX = 0; localX < SIZE; localX++) {
-        for (int localY = 0; localY < SIZE; localY++) {
-            for (int localZ = 0; localZ < SIZE; localZ++) {
+        for (int localZ = 0; localZ < SIZE; localZ++) {
+            for (int localY = 0; localY < SIZE; localY++) {
                 const Block::BlockType blockType = getBlockType(localX, localY, localZ);
                 if (blockType == Block::BlockType::AIR) continue;
 
                 // Check if block will have visible faces by checking its 6 neighbors
-                uint8_t visibleFaces = 0;
+                bool hasVisibleFaces = false;
                 for (int dir = 0; dir < 6; dir++) {
                     if (const auto [dx, dy, dz] = FaceOffset[dir];
                         Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz))) {
-                        visibleFaces |= 1 << dir;
+                        hasVisibleFaces = true;
                         break;
                     }
                 }
 
-                if (visibleFaces != 0) {
+                if (hasVisibleFaces) {
                     addBlockFaces(localX, localY, localZ, blockType);
                 }
             }
@@ -206,22 +206,22 @@ void Chunk::generateNewMesh(MeshingResult &result) const {
     };
 
     for (int localX = 0; localX < SIZE; localX++) {
-        for (int localY = 0; localY < SIZE; localY++) {
-            for (int localZ = 0; localZ < SIZE; localZ++) {
+        for (int localZ = 0; localZ < SIZE; localZ++) {
+            for (int localY = 0; localY < SIZE; localY++) {
                 const Block::BlockType blockType = getBlockType(localX, localY, localZ);
                 if (blockType == Block::BlockType::AIR) continue;
 
                 // Check if block will have visible faces by checking its 6 neighbors
-                uint8_t visibleFaces = 0;
+                bool hasVisibleFaces = false;
                 for (int dir = 0; dir < 6; dir++) {
                     if (const auto [dx, dy, dz] = FaceOffset[dir];
                         Block::isTransparent(getBlockType(localX + dx, localY + dy, localZ + dz))) {
-                        visibleFaces |= 1 << dir;
+                        hasVisibleFaces = true;
                         break;
                     }
                 }
 
-                if (visibleFaces != 0) {
+                if (hasVisibleFaces) {
                     addBlockFaces(localX, localY, localZ, blockType, result);
                 }
             }
@@ -269,7 +269,7 @@ void Chunk::addBlock(const int localX, const int localY, const int localZ, const
 
 int Chunk::index(const int x, const int y, const int z) const {
     constexpr int stride = static_cast<int>(SIZE) + 2;
-    return x * stride * stride + y * stride + z;
+    return x * stride * stride + z * stride + y;
 }
 
 Block::BlockType Chunk::getBlockType(const int localX, const int localY, const int localZ) const {

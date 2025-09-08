@@ -4,7 +4,7 @@
 
 static int index(const int x, const int y, const int z) {
     constexpr int stride = static_cast<int>(Chunk::SIZE) + 2;
-    return x * stride * stride + y * stride + z;
+    return x * stride * stride + z * stride + y;
 }
 
 SurfaceFeature::SurfaceFeature(const int x, const int y, const int z, const SurfaceFeatureType type) : m_x(x), m_y(y),
