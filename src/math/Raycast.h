@@ -12,9 +12,9 @@ struct RaycastResult {
     std::shared_ptr<Chunk> chunk;
     std::array<int, 3> blockLocalPosition = {0, 0, 0};
     glm::vec3 blockWorldPosition = {0.f, 0.f, 0.f};
-    bool hitBlock = false;
-    Block::BlockType blockType = Block::BlockType::AIR;
     glm::ivec3 normal = {0, 0, 0};
+    bool hasHitBlock = false;
+    Block::BlockType blockType = Block::BlockType::AIR;
 };
 
 class Raycast {
