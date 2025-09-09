@@ -29,7 +29,7 @@ public:
     struct BlockVertex {
         // [0] position, texture layer, facetype, AO
         // [1] lighting
-        unsigned int packedData[2];
+        uint32_t packedData[2];
     };
 
 public:
