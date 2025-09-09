@@ -43,7 +43,7 @@ public:
     [[nodiscard]] int getZ() const;
 
     [[nodiscard]] State getState() const;
-    void setState(State m_state);
+    void setState(State state);
     [[nodiscard]] const AABB &getBoundingBox() const;
     void setWasInFrustum(bool isInFrustum);
     [[nodiscard]] bool wasInFrustum() const;

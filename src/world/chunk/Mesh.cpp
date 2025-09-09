@@ -118,8 +118,8 @@ Mesh::State Mesh::getState() const {
     return m_state;
 }
 
-void Mesh::setState(const State m_state) {
-    this->m_state = m_state;
+void Mesh::setState(const State state) {
+    m_state = state;
 }
 
 const AABB & Mesh::getBoundingBox() const {
