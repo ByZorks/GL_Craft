@@ -15,7 +15,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
     m_opaqueData.vertices.reserve(avg_vertices_opaque);
     m_waterData.vertices.reserve(avg_faces_water);
     m_blocks.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), Block::BlockType::AIR); // +2 for boundary checks
-    m_lightLevels.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), 0u);
+    m_lightLevels.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), 1u);
     m_pendingBlocksForNeighbors.reserve(SIZE);
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
 }
@@ -68,7 +68,7 @@ void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResu
 }
 
 void Chunk::propagateLight() {
-    constexpr unsigned int MIN_LIGHT_LEVEL = 2u;
+    constexpr unsigned int MIN_LIGHT_LEVEL = 1u;
     constexpr unsigned int POS_MASK = 0x3F; // 6 bits
 
     std::queue<uint32_t> bfsQueue;
@@ -81,6 +81,10 @@ void Chunk::propagateLight() {
             const int adjustedZ = localZ - 1;
             unsigned int currentLightLevel = 15u;
 
+            TerrainGenerator::NoiseValues noises;
+            noises.computeHeightNoises(m_x + adjustedX, m_z + adjustedZ);
+            if (TerrainGenerator::getHeight(noises) > m_y + SIZE) continue; // Not in direct sunlight
+
             for (int localY = SIZE + 1; localY >= 0; localY--) {
                 const int adjustedY = localY - 1;
 
@@ -89,7 +93,10 @@ void Chunk::propagateLight() {
                 if (Block::isTransparent(blockType)) {
                     setLightLevelAt(adjustedX, adjustedY, adjustedZ, currentLightLevel);
                     if (blockType != Block::BlockType::AIR) {
-                        currentLightLevel = std::max(MIN_LIGHT_LEVEL, currentLightLevel - 2u);
+                        // use signed int to avoid unsigned underflow when subtracting
+                        int signedLevel = static_cast<int>(currentLightLevel) - 2;
+                        signedLevel = std::max(static_cast<int>(MIN_LIGHT_LEVEL), signedLevel);
+                        currentLightLevel = static_cast<unsigned int>(signedLevel);
                     }
                     if (currentLightLevel > MIN_LIGHT_LEVEL) {
                         // Use local values instead of adjusted to avoid negative values
@@ -124,8 +131,8 @@ void Chunk::propagateLight() {
                 Block::isOpaque(neighborBlockType)) continue;
 
             if (uint8_t neighborLightLevel = getLightLevelAt(nx, ny, nz);
-                neighborLightLevel + 2 <= currentLightLevel) {
-                neighborLightLevel = currentLightLevel - 1;
+                neighborLightLevel + 2u <= currentLightLevel) {
+                neighborLightLevel = currentLightLevel - 1u;
                 setLightLevelAt(nx, ny, nz, neighborLightLevel);
                 bfsQueue.emplace(nx + 1 & POS_MASK | (ny + 1 & POS_MASK) << 6 | (nz + 1 & POS_MASK) << 12);
             }
