@@ -458,8 +458,5 @@ std::shared_ptr<Chunk> WorldManager::getChunk(const int x, const int y, const in
         return it->second;
     }
 
-    // Should not happen, but if it does, return a null chunk
-    static auto nullChunk = std::make_shared<Chunk>(-1, -1, -1); // Return a null chunk if not found
-    std::cerr << "Chunk not found at (" << x << ", " << y << ", " << z << ")\n";
-    return nullChunk;
+    return nullptr;
 }
