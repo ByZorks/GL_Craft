@@ -24,15 +24,15 @@ public:
     Chunk(int x, int y, int z);
 
     void generateVoxel() override;
-    void generatePendingBlocks(std::list<PendingBlock> &blocks, MeshingResult &result);
+    void generatePendingBlocks(std::list<PendingBlock> &blocks, MeshingResult &outResult);
     void propagateLight();
     void generateMesh() override;
-    void generateNewMesh(MeshingResult &result) const;
+    void generateNewMesh(MeshingResult &outResult) const;
     void transferPendingBlocksToWorld(WorldManager &world);
     void transferPendingLightsToWorld(WorldManager &world);
-    void generatePendingLights(std::list<PendingLight> &lights, MeshingResult &result);
-    void deleteBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &result);
-    void addBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &result);
+    void generatePendingLights(std::list<PendingLight> &lights, MeshingResult &outResult);
+    void deleteBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &outResult);
+    void addBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &outResult);
     void emitBorderLights();
 
     [[nodiscard]] int index(int x, int y, int z) const override;
@@ -63,7 +63,7 @@ private:
                                  Biome biome);
 
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType);
-    void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType, MeshingResult &result) const;
+    void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType, MeshingResult &outResult) const;
 
     static uint32_t packLightPos(int x, int y, int z);
     static std::tuple<int, int, int> unpackLightPos(uint32_t v);

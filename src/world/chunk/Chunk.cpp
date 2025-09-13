@@ -60,14 +60,13 @@ void Chunk::generateVoxel() {
     m_state = State::VOXEL_GENERATED;
 }
 
-void Chunk::generatePendingBlocks(std::list<PendingBlock> &blocks, MeshingResult &result) {
+void Chunk::generatePendingBlocks(std::list<PendingBlock> &blocks, MeshingResult &outResult) {
     for (const auto &[localX, localY, localZ, blockType]: blocks) {
         m_blocks[index(localX, localY, localZ)] = blockType;
     }
-    blocks.clear();
 
     propagateLight();
-    generateNewMesh(result);
+    generateNewMesh(outResult);
 }
 
 void Chunk::propagateLight() {
@@ -88,7 +87,7 @@ void Chunk::propagateLight() {
 
             TerrainGenerator::NoiseValues noises;
             noises.computeHeightNoises(m_x + adjustedX, m_z + adjustedZ);
-            if (TerrainGenerator::getHeight(noises) > m_y + SIZE) continue; // Not in direct sunlight
+            if (TerrainGenerator::getHeight(noises) > m_y + SIZE || TerrainGenerator::getSeaLevel() > m_y + SIZE) continue; // Not in direct sunlight
 
             for (int localY = SIZE + 1; localY >= 0; localY--) {
                 const int adjustedY = localY - 1;
@@ -174,7 +173,7 @@ void Chunk::generateMesh() {
     m_state = State::READY_TO_DRAW;
 }
 
-void Chunk::generateNewMesh(MeshingResult &result) const {
+void Chunk::generateNewMesh(MeshingResult &outResult) const {
     for (int localX = 0; localX < SIZE; localX++) {
         for (int localZ = 0; localZ < SIZE; localZ++) {
             for (int localY = 0; localY < SIZE; localY++) {
@@ -192,7 +191,7 @@ void Chunk::generateNewMesh(MeshingResult &result) const {
                 }
 
                 if (hasVisibleFaces) {
-                    addBlockFaces(localX, localY, localZ, blockType, result);
+                    addBlockFaces(localX, localY, localZ, blockType, outResult);
                 }
             }
         }
@@ -265,7 +264,7 @@ void Chunk::transferPendingLightsToWorld(WorldManager &world) {
 }
 
 void Chunk::deleteBlock(const int localX, const int localY, const int localZ, const Block::BlockType type,
-                        MeshingResult &result) {
+                        MeshingResult &outResult) {
     // Voxel
     m_visibleBlocks--;
     if (Block::isInstance(type)) {
@@ -277,11 +276,11 @@ void Chunk::deleteBlock(const int localX, const int localY, const int localZ, co
     m_blocks[index(localX + 1, localY + 1, localZ + 1)] = Block::BlockType::AIR;
 
     propagateLight();
-    generateNewMesh(result);
+    generateNewMesh(outResult);
 }
 
 void Chunk::addBlock(const int localX, const int localY, const int localZ, const Block::BlockType type,
-                     MeshingResult &result) {
+                     MeshingResult &outResult) {
     // Voxel
     m_visibleBlocks++;
     if (Block::isInstance(type)) {
@@ -293,7 +292,7 @@ void Chunk::addBlock(const int localX, const int localY, const int localZ, const
     m_blocks[index(localX + 1, localY + 1, localZ + 1)] = type;
 
     propagateLight();
-    generateNewMesh(result);
+    generateNewMesh(outResult);
 }
 
 int Chunk::index(const int x, const int y, const int z) const {
@@ -517,7 +516,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 }
 
 void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, const Block::BlockType blockType,
-                          MeshingResult &result) const {
+                          MeshingResult &outResult) const {
     const auto localXf = static_cast<unsigned int>(localX);
     const auto localYf = static_cast<unsigned int>(localY);
     const auto localZf = static_cast<unsigned int>(localZ);
@@ -563,11 +562,11 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         const unsigned int lightLevel = getLightLevelAt(nx, ny, nz);
 
         if (isWater) {
-            Block::addFaceVertex(face, blockType, result.waterVertices, adjacentFaces, localXf, localYf, localZf, lightLevel);
-            result.hasWaterFaces = true;
+            Block::addFaceVertex(face, blockType, outResult.waterVertices, adjacentFaces, localXf, localYf, localZf, lightLevel);
+            outResult.hasWaterFaces = true;
         } else {
-            Block::addFaceVertex(face, blockType, result.opaqueVertices, adjacentFaces, localXf, localYf, localZf, lightLevel);
-            result.hasOpaqueFaces = true;
+            Block::addFaceVertex(face, blockType, outResult.opaqueVertices, adjacentFaces, localXf, localYf, localZf, lightLevel);
+            outResult.hasOpaqueFaces = true;
         }
     }
 }
@@ -605,7 +604,7 @@ bool Chunk::hasVisibleFaces() const {
     return !m_opaqueData.vertices.empty() || !m_waterData.vertices.empty();
 }
 
-void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult &result) {
+void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult &outResult) {
     if (lights.empty()) return;
     constexpr uint8_t MIN_LIGHT_LEVEL = 1u;
 
@@ -625,7 +624,6 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
             if (lightLevel > MIN_LIGHT_LEVEL) bfsQueue.emplace(packLightPos(localX,localY,localZ));
         }
     }
-    lights.clear();
 
     // BFS propagation
     while (!bfsQueue.empty()) {
@@ -680,7 +678,7 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
         }
     }
 
-    result.needIndirectRendererUpdate = true;
-    result.needInstanceUpdate = false;
-    generateNewMesh(result);
+    outResult.needIndirectRendererUpdate = true;
+    outResult.needInstanceUpdate = false;
+    generateNewMesh(outResult);
 }
