@@ -586,8 +586,11 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
 }
 
 uint32_t Chunk::packLightPos(const int x, const int y, const int z) {
+    static_assert(SIZE <= 63, "Chunk SIZE exceeds 63, cannot pack light position in 18 bits");
     constexpr unsigned int POS_MASK = 0x3F; // 6 bits
-    return x + 1 & POS_MASK | (y + 1 & POS_MASK) << 6 | (z + 1 & POS_MASK) << 12;
+    return static_cast<uint32_t>(x + 1) & POS_MASK
+         | (static_cast<uint32_t>(y + 1) & POS_MASK) << 6
+         | (static_cast<uint32_t>(z + 1) & POS_MASK) << 12;
 }
 
 std::tuple<int, int, int> Chunk::unpackLightPos(const uint32_t v) {
