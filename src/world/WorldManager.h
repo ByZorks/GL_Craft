@@ -15,6 +15,7 @@ public:
     void updateChunks(const Camera &camera, IndirectRenderer &renderer);
     void updateRenderDistance(Shader &postProcessingShader, const Camera &camera, IndirectRenderer &renderer);
     void addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock>> &blockData);
+    void addPendingLights(const std::unordered_map<ChunkPosition, std::vector<PendingLight>> &lightData);
     void deleteBlockAndUpdateNeighbors(const RaycastResult &hit);
     void placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block::BlockType blockToPlace);
 

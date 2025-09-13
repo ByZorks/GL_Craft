@@ -5,6 +5,7 @@
 
 #include "ChunkPosition.h"
 #include "PendingBlock.h"
+#include "PendingLight.h"
 #include "../../utils/ThreadSafeQueue.h"
 
 struct MeshingResult {
@@ -21,9 +22,13 @@ template<typename MeshType>
 class MeshManager {
 public:
     std::unordered_map<ChunkPosition, std::shared_ptr<MeshType> > loadedMeshes;
+
     std::unordered_map<ChunkPosition, std::vector<PendingBlock> > pendingBlocks;
     std::mutex pendingBlocksMutex;
-    unsigned int lastPendingBlockSize = 0;
+
+    std::unordered_map<ChunkPosition, std::vector<PendingLight> > pendingLights;
+    std::mutex pendingLightsMutex;
+
     ThreadSafeQueue<ChunkPosition> meshesToGenerate;
     ThreadSafeQueue<std::shared_ptr<MeshType> > meshesToDelete;
     ThreadSafeQueue<MeshingResult> completedMeshes;

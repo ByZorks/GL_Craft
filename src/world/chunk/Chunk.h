@@ -2,6 +2,7 @@
 #define CHUNK_H
 #include <climits>
 #include <functional>
+#include <mutex>
 #include <random>
 #include <unordered_map>
 #include <unordered_set>
@@ -9,6 +10,7 @@
 #include "ChunkPosition.h"
 #include "Mesh.h"
 #include "PendingBlock.h"
+#include "PendingLight.h"
 #include "../TerrainGenerator.h"
 #include "../surfaceFeatures/SurfaceFeature.h"
 
@@ -26,6 +28,8 @@ public:
     void generateMesh() override;
     void generateNewMesh(MeshingResult &result) const;
     void transferPendingBlocksToWorld(WorldManager &world);
+    void transferPendingLightsToWorld(WorldManager &world);
+    void generatePendingLights(std::vector<PendingLight> &lights, MeshingResult &result);
     void deleteBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &result);
     void addBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &result);
 
@@ -59,6 +63,9 @@ private:
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType);
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType, MeshingResult &result) const;
 
+    static uint32_t packLightPos(int x, int y, int z);
+    static std::tuple<int, int, int> unpackLightPos(uint32_t v);
+
     uint8_t getLightLevelAt(int localX, int localY, int localZ) const;
     void setLightLevelAt(int localX, int localY, int localZ, uint8_t lightLevel);
 
@@ -68,6 +75,8 @@ private:
 private:
     std::unordered_set<SurfaceFeature> m_surfaceFeatures;
     std::unordered_map<ChunkPosition, std::vector<PendingBlock> > m_pendingBlocksForNeighbors;
+    std::unordered_map<ChunkPosition, std::vector<PendingLight> > m_pendingLightsForNeighbors;
+    mutable std::mutex m_pendingLightsForNeighborsMutex;
     unsigned int m_drawIndexOpaque = UINT_MAX;
     unsigned int m_drawIndexWater = UINT_MAX;
     unsigned int m_indirectRendererSlotOpaque = UINT_MAX;

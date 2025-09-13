@@ -96,6 +96,15 @@ void WorldManager::addPendingBlocks(const std::unordered_map<ChunkPosition, std:
     }
 }
 
+void WorldManager::addPendingLights(const std::unordered_map<ChunkPosition, std::vector<PendingLight> > &lightData) {
+    std::lock_guard lock(m_chunksData.pendingLightsMutex);
+    for (const auto &[key, lights]: lightData) {
+        auto &targetVector = m_chunksData.pendingLights[key];
+        targetVector.reserve(targetVector.size() + lights.size());
+        targetVector.insert(targetVector.end(), lights.begin(), lights.end());
+    }
+}
+
 void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
     if (hit.blockType == Block::BlockType::BEDROCK) return;
 
@@ -129,6 +138,8 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
             result.needInstanceUpdate = isInstance;
 
             m_chunksData.completedMeshes.push(std::move(result));
+            // Propagation de lumière transfrontalière
+            chunk->transferPendingLightsToWorld(*this);
             return;
         }
 
@@ -166,6 +177,8 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
                         result.needInstanceUpdate = isInstance;
 
                         m_chunksData.completedMeshes.push(std::move(result));
+                        // Transférer les lumières frontalières
+                        adjacentChunk->transferPendingLightsToWorld(*this);
                     }
                 }
             }
@@ -180,6 +193,7 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         result.needInstanceUpdate = isInstance;
 
         m_chunksData.completedMeshes.push(std::move(result));
+        chunk->transferPendingLightsToWorld(*this);
     });
 }
 
@@ -256,6 +270,7 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
             result.needIndirectRendererUpdate = !isInstance;
             result.needInstanceUpdate = isInstance;
             m_chunksData.completedMeshes.push(std::move(result));
+            targetChunk->transferPendingLightsToWorld(*this);
         }
 
 
@@ -305,6 +320,7 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
                         result.needIndirectRendererUpdate = !isInstance;
                         result.needInstanceUpdate = isInstance;
                         m_chunksData.completedMeshes.push(std::move(result));
+                        adjacentChunk->transferPendingLightsToWorld(*this);
                     }
                 }
             }
@@ -349,13 +365,12 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
             p_chunk->generateMesh();
             m_needInstanceUpdate.store(true);
             p_chunk->transferPendingBlocksToWorld(*this);
+            p_chunk->transferPendingLightsToWorld(*this);
         });
     }
 
     // Second pass: generate pending blocks
-    // Check if no pending blocks have been added/removed since the last frame because needed chunk was not loaded yet
-    if (!m_chunksData.pendingBlocks.empty() && m_chunksData.pendingBlocks.size() != m_chunksData.lastPendingBlockSize) {
-        m_chunksData.lastPendingBlockSize = m_chunksData.pendingBlocks.size();
+    if (!m_chunksData.pendingBlocks.empty()) {
         m_tempKeysToProcess.clear(); {
             std::lock_guard lock(m_chunksData.pendingBlocksMutex);
             m_tempKeysToProcess.reserve(m_chunksData.pendingBlocks.size());
@@ -364,7 +379,9 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
             }
         }
 
+        int processed = 0;
         for (const auto &key: m_tempKeysToProcess) {
+            if (processed >= maxChunksPerFrame) break;
             if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
                 const std::shared_ptr<Chunk> p_chunk = it->second;
                 if (p_chunk->getState() < Mesh::State::VOXEL_GENERATED) continue;
@@ -379,6 +396,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
                 }
 
                 if (!blocks.empty()) {
+                    ++processed;
                     m_threadPool.enqueue_no_future([this, p_chunk, blocks = std::move(blocks)]() mutable {
                         MeshingResult result;
                         p_chunk->generatePendingBlocks(blocks, result);
@@ -388,6 +406,47 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
                         result.needInstanceUpdate = true;
 
                         m_chunksData.completedMeshes.push(std::move(result));
+                        p_chunk->transferPendingLightsToWorld(*this);
+                    });
+                }
+            }
+        }
+    }
+
+    // Second pass bis: generate pending lights
+    if (!m_chunksData.pendingLights.empty()) {
+        m_tempKeysToProcess.clear(); {
+            std::lock_guard lock(m_chunksData.pendingLightsMutex);
+            m_tempKeysToProcess.reserve(m_chunksData.pendingLights.size());
+            for (const auto &key: m_chunksData.pendingLights | std::views::keys) {
+                m_tempKeysToProcess.push_back(key);
+            }
+        }
+
+        int processed = 0;
+        for (const auto &key: m_tempKeysToProcess) {
+            if (processed >= maxChunksPerFrame) break;
+            if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
+                const std::shared_ptr<Chunk> p_chunk = it->second;
+                if (p_chunk->getState() < Mesh::State::VOXEL_GENERATED) continue;
+
+                std::vector<PendingLight> lights; {
+                    std::lock_guard lock(m_chunksData.pendingLightsMutex);
+                    if (auto pending_it = m_chunksData.pendingLights.find(key);
+                        pending_it != m_chunksData.pendingLights.end()) {
+                        lights = std::move(pending_it->second);
+                        m_chunksData.pendingLights.erase(pending_it);
+                    }
+                }
+
+                if (!lights.empty()) {
+                    ++processed;
+                    m_threadPool.enqueue_no_future([this, p_chunk, lights = std::move(lights)]() mutable {
+                        MeshingResult result;
+                        p_chunk->generatePendingLights(lights, result);
+                        result.position = {p_chunk->getX(), p_chunk->getY(), p_chunk->getZ()};
+                        m_chunksData.completedMeshes.push(std::move(result));
+                        p_chunk->transferPendingLightsToWorld(*this);
                     });
                 }
             }
