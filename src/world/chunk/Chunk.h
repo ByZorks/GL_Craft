@@ -68,8 +68,10 @@ private:
     static uint32_t packLightPos(int x, int y, int z);
     static std::tuple<int, int, int> unpackLightPos(uint32_t v);
 
-    uint8_t getLightLevelAt(int localX, int localY, int localZ) const;
-    void setLightLevelAt(int localX, int localY, int localZ, uint8_t lightLevel);
+    uint8_t getSunLightLevelAt(int localX, int localY, int localZ) const;
+    void setSunLightLevelAt(int localX, int localY, int localZ, uint8_t lightLevel);
+    uint8_t getBlockLightLevelAt(int localX, int localY, int localZ) const;
+    void setBlockLightLevelAt(int localX, int localY, int localZ, uint8_t lightLevel);
 
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const override;
     [[nodiscard]] bool hasVisibleFaces() const;

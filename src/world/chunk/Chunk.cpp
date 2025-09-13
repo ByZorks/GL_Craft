@@ -72,7 +72,8 @@ void Chunk::generatePendingBlocks(std::list<PendingBlock> &blocks, MeshingResult
 void Chunk::propagateLight() {
     constexpr unsigned int MIN_LIGHT_LEVEL = 1u;
 
-    std::queue<uint32_t> bfsQueue;
+    std::queue<uint32_t> sunlightQueue;
+    std::queue<uint32_t> blockLightQueue;
 
     // Reset all light levels before a full recompute to avoid stale values
     std::ranges::fill(m_lightLevels, static_cast<uint8_t>(MIN_LIGHT_LEVEL));
@@ -83,19 +84,29 @@ void Chunk::propagateLight() {
 
         for (int localZ = 0; localZ < SIZE + 2; localZ++) {
             const int adjustedZ = localZ - 1;
-            unsigned int currentLightLevel = 15u;
 
             TerrainGenerator::NoiseValues noises;
             noises.computeHeightNoises(m_x + adjustedX, m_z + adjustedZ);
-            if (TerrainGenerator::getHeight(noises) > m_y + SIZE || TerrainGenerator::getSeaLevel() > m_y + SIZE) continue; // Not in direct sunlight
+            const bool inDirectSunlight = !(TerrainGenerator::getHeight(noises) > m_y + SIZE ||
+                                            TerrainGenerator::getSeaLevel() > m_y + SIZE);
+
+            unsigned int currentLightLevel = inDirectSunlight ? 15u : MIN_LIGHT_LEVEL;
 
             for (int localY = SIZE + 1; localY >= 0; localY--) {
                 const int adjustedY = localY - 1;
 
                 const Block::BlockType blockType = getBlockType(adjustedX, adjustedY, adjustedZ);
 
+                if (Block::isLightEmitter(blockType)) {
+                    setBlockLightLevelAt(adjustedX, adjustedY, adjustedZ, 15u);
+                    blockLightQueue.emplace(packLightPos(adjustedX, adjustedY, adjustedZ));
+                    continue;
+                }
+
+                if (!inDirectSunlight) continue;
+
                 if (Block::isTransparent(blockType)) {
-                    setLightLevelAt(adjustedX, adjustedY, adjustedZ, currentLightLevel);
+                    setSunLightLevelAt(adjustedX, adjustedY, adjustedZ, currentLightLevel);
                     if (blockType != Block::BlockType::AIR) {
                         // use signed int to avoid unsigned underflow when subtracting
                         int signedLevel = static_cast<int>(currentLightLevel) - 2;
@@ -103,22 +114,22 @@ void Chunk::propagateLight() {
                         currentLightLevel = static_cast<unsigned int>(signedLevel);
                     }
                     if (currentLightLevel > MIN_LIGHT_LEVEL) {
-                        bfsQueue.emplace(packLightPos(adjustedX, adjustedY, adjustedZ));
+                        sunlightQueue.emplace(packLightPos(adjustedX, adjustedY, adjustedZ));
                     }
                 } else {
-                    setLightLevelAt(adjustedX, adjustedY, adjustedZ, MIN_LIGHT_LEVEL);
+                    setSunLightLevelAt(adjustedX, adjustedY, adjustedZ, MIN_LIGHT_LEVEL);
                     currentLightLevel = MIN_LIGHT_LEVEL;
                 }
             }
         }
     }
 
-    // Second pass: horizontal light propagation (BFS algorithm)
-    while (!bfsQueue.empty()) {
-        const auto packed = bfsQueue.front();
-        bfsQueue.pop();
+    // Second pass: horizontal sunlight propagation (BFS algorithm)
+    while (!sunlightQueue.empty()) {
+        const auto packed = sunlightQueue.front();
+        sunlightQueue.pop();
         const auto [x, y, z] = unpackLightPos(packed);
-        const uint8_t currentLightLevel = getLightLevelAt(x, y, z);
+        const uint8_t currentLightLevel = getSunLightLevelAt(x, y, z);
         if (currentLightLevel <= MIN_LIGHT_LEVEL) continue; // No more light to propagate
 
         for (auto [dx, dy, dz]: Block::s_faceOffset) {
@@ -131,14 +142,43 @@ void Chunk::propagateLight() {
             if (const Block::BlockType neighborBlockType = getBlockType(nx, ny, nz);
                 Block::isOpaque(neighborBlockType)) continue;
 
-            if (uint8_t neighborLightLevel = getLightLevelAt(nx, ny, nz);
+            if (uint8_t neighborLightLevel = getSunLightLevelAt(nx, ny, nz);
                 neighborLightLevel + 2u <= currentLightLevel) {
                 neighborLightLevel = currentLightLevel - 1u;
-                setLightLevelAt(nx, ny, nz, neighborLightLevel);
-                bfsQueue.emplace(packLightPos(nx, ny, nz));
+                setSunLightLevelAt(nx, ny, nz, neighborLightLevel);
+                sunlightQueue.emplace(packLightPos(nx, ny, nz));
             }
         }
     }
+
+    // Third pass: propagate block light from light-emitting blocks
+    while (!blockLightQueue.empty()) {
+        const auto packed = blockLightQueue.front();
+        blockLightQueue.pop();
+        const auto [x, y, z] = unpackLightPos(packed);
+        const uint8_t currentLightLevel = getBlockLightLevelAt(x, y, z);
+        if (currentLightLevel <= MIN_LIGHT_LEVEL) continue; // No more light to propagate
+
+        for (auto [dx, dy, dz]: Block::s_faceOffset) {
+            const int nx = x + dx;
+            const int ny = y + dy;
+            const int nz = z + dz;
+
+            if (nx < -1 || ny < -1 || nz < -1 || nx >= SIZE + 1 || ny >= SIZE + 1 || nz >= SIZE + 1) continue;
+
+            if (const Block::BlockType neighborBlockType = getBlockType(nx, ny, nz);
+                Block::isOpaque(neighborBlockType)) continue;
+
+            if (uint8_t neighborLightLevel = getBlockLightLevelAt(nx, ny, nz);
+                neighborLightLevel + 2u <= currentLightLevel) {
+                neighborLightLevel = currentLightLevel - 1u;
+                setBlockLightLevelAt(nx, ny, nz, neighborLightLevel);
+                blockLightQueue.emplace(packLightPos(nx, ny, nz));
+            }
+        }
+    }
+
+    emitBorderLights();
 }
 
 void Chunk::generateMesh() {
@@ -201,44 +241,47 @@ void Chunk::generateNewMesh(MeshingResult &outResult) const {
 void Chunk::emitBorderLights() {
     constexpr uint8_t MIN_LIGHT_LEVEL = 1u;
     auto emitFace = [&](const int faceAxis, const bool positive){
-        const int coord = positive ? static_cast<int>(SIZE) : -1;
+        const int sample = positive ? static_cast<int>(SIZE) - 1 : 0;
+        const int emitCoord = positive ? -1 : static_cast<int>(SIZE);
         const int offset = (positive ? 1 : -1) * static_cast<int>(SIZE);
-        const int border = positive ? -1 : static_cast<int>(SIZE);
         std::list<PendingLight> batch;
 
-        if (faceAxis == 0) {
+        if (faceAxis == 0) { // X faces
             for (int y = 0; y < static_cast<int>(SIZE); ++y) {
                 for (int z = 0; z < static_cast<int>(SIZE); ++z) {
-                    const uint8_t lvl = getLightLevelAt(coord, y, z);
-                    if (lvl <= MIN_LIGHT_LEVEL) continue;
+                    const uint8_t sunLvl = getSunLightLevelAt(sample, y, z);
+                    const uint8_t blockLvl = getBlockLightLevelAt(sample, y, z);
+                    if (sunLvl <= MIN_LIGHT_LEVEL && blockLvl <= MIN_LIGHT_LEVEL) continue;
 
-                    batch.emplace_back(border, y, z, lvl);
+                    batch.emplace_back(emitCoord, y, z, std::max(sunLvl, blockLvl));
                 }
             }
             if (!batch.empty()) {
                 const ChunkPosition key(m_x + offset, m_y, m_z);
                 m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
-        } else if (faceAxis == 1) {
+        } else if (faceAxis == 1) { // Y faces
             for (int x = 0; x < static_cast<int>(SIZE); ++x) {
                 for (int z = 0; z < static_cast<int>(SIZE); ++z) {
-                    const uint8_t lvl = getLightLevelAt(x, coord, z);
-                    if (lvl <= MIN_LIGHT_LEVEL) continue;
+                    const uint8_t sunLvl = getSunLightLevelAt(x, sample, z);
+                    const uint8_t blockLvl = getBlockLightLevelAt(x, sample, z);
+                    if (sunLvl <= MIN_LIGHT_LEVEL && blockLvl <= MIN_LIGHT_LEVEL) continue;
 
-                    batch.emplace_back(x, border, z, lvl);
+                    batch.emplace_back(x, emitCoord, z, std::max(sunLvl, blockLvl));
                 }
             }
             if (!batch.empty()) {
                 const ChunkPosition key(m_x, m_y + offset, m_z);
                 m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
-        } else {
+        } else { // Z faces
             for (int x = 0; x < static_cast<int>(SIZE); ++x) {
                 for (int y = 0; y < static_cast<int>(SIZE); ++y) {
-                    const uint8_t lvl = getLightLevelAt(x, y, coord);
-                    if (lvl <= MIN_LIGHT_LEVEL) continue;
+                    const uint8_t sunLvl = getSunLightLevelAt(x, y, sample);
+                    const uint8_t blockLvl = getBlockLightLevelAt(x, y, sample);
+                    if (sunLvl <= MIN_LIGHT_LEVEL && blockLvl <= MIN_LIGHT_LEVEL) continue;
 
-                    batch.emplace_back(x, y, border, lvl);
+                    batch.emplace_back(x, y, emitCoord, std::max(sunLvl, blockLvl));
                 }
             }
             if (!batch.empty()) {
@@ -248,12 +291,12 @@ void Chunk::emitBorderLights() {
         }
     };
 
-    emitFace(0, false);
-    emitFace(0, true);
-    emitFace(1, false);
-    emitFace(1, true);
-    emitFace(2, false);
-    emitFace(2, true);
+    emitFace(0, false); // X-
+    emitFace(0, true);  // X+
+    emitFace(1, false); // Y-
+    emitFace(1, true);  // Y+
+    emitFace(2, false); // Z-
+    emitFace(2, true);  // Z+
 }
 
 void Chunk::transferPendingBlocksToWorld(WorldManager &world) {
@@ -506,7 +549,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         const int nx = localX + dx;
         const int ny = localY + dy;
         const int nz = localZ + dz;
-        const unsigned int lightLevel = getLightLevelAt(nx, ny, nz);
+        const unsigned int lightLevel = std::max(getSunLightLevelAt(nx, ny, nz), getBlockLightLevelAt(nx, ny, nz));
 
         if (isWater) {
             Block::addFaceVertex(face, blockType, m_waterData.vertices, adjacentFaces, localXf, localYf, localZf, lightLevel);
@@ -562,7 +605,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
         const int nx = localX + dx;
         const int ny = localY + dy;
         const int nz = localZ + dz;
-        const unsigned int lightLevel = getLightLevelAt(nx, ny, nz);
+        const unsigned int lightLevel = std::max(getSunLightLevelAt(nx, ny, nz), getBlockLightLevelAt(nx, ny, nz));
 
         if (isWater) {
             Block::addFaceVertex(face, blockType, outResult.waterVertices, adjacentFaces, localXf, localYf, localZf, lightLevel);
@@ -591,12 +634,22 @@ std::tuple<int, int, int> Chunk::unpackLightPos(const uint32_t v) {
     };
 }
 
-uint8_t Chunk::getLightLevelAt(const int localX, const int localY, const int localZ) const {
-    return m_lightLevels[index(localX + 1, localY + 1, localZ + 1)];
+uint8_t Chunk::getSunLightLevelAt(const int localX, const int localY, const int localZ) const {
+    return m_lightLevels[index(localX + 1, localY + 1, localZ + 1)] & 0x0F;
 }
 
-void Chunk::setLightLevelAt(const int localX, const int localY, const int localZ, const uint8_t lightLevel) {
-    m_lightLevels[index(localX + 1, localY + 1, localZ + 1)] = lightLevel;
+void Chunk::setSunLightLevelAt(const int localX, const int localY, const int localZ, const uint8_t lightLevel) {
+    const int idx = index(localX + 1, localY + 1, localZ + 1);
+    m_lightLevels[idx] = static_cast<uint8_t>(m_lightLevels[idx] & 0xF0 | lightLevel & 0x0F);
+}
+
+uint8_t Chunk::getBlockLightLevelAt(const int localX, const int localY, const int localZ) const {
+    return m_lightLevels[index(localX + 1, localY + 1, localZ + 1)] >> 4 & 0x0F;
+}
+
+void Chunk::setBlockLightLevelAt(const int localX, const int localY, const int localZ, const uint8_t lightLevel) {
+    const int idx = index(localX + 1, localY + 1, localZ + 1);
+    m_lightLevels[idx] = static_cast<uint8_t>(m_lightLevels[idx] & 0x0F | (lightLevel & 0x0F) << 4);
 }
 
 bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ) const {
@@ -611,7 +664,8 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
     if (lights.empty()) return;
     constexpr uint8_t MIN_LIGHT_LEVEL = 1u;
 
-    std::queue<uint32_t> bfsQueue;
+    std::queue<uint32_t> sunLightQueue;
+    std::queue<uint32_t> blockLightQueue;
 
     struct Pos { int x, y, z; };
     std::vector<Pos> changed;
@@ -622,18 +676,26 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
         if (localX < -1 || localY < -1 || localZ < -1 || localX > static_cast<int>(SIZE) || localY > static_cast<int>(SIZE) || localZ > static_cast<int>(SIZE)) continue;
         if (Block::isOpaque(getBlockType(localX, localY, localZ))) continue;
 
-        if (lightLevel > getLightLevelAt(localX, localY, localZ)) {
-            setLightLevelAt(localX, localY, localZ, lightLevel);
-            changed.emplace_back(localX, localY, localZ);
-            if (lightLevel > MIN_LIGHT_LEVEL) bfsQueue.emplace(packLightPos(localX, localY, localZ));
+        bool anyChange = false;
+        if (lightLevel > getSunLightLevelAt(localX, localY, localZ)) {
+            setSunLightLevelAt(localX, localY, localZ, lightLevel);
+            if (lightLevel > MIN_LIGHT_LEVEL) sunLightQueue.emplace(packLightPos(localX, localY, localZ));
+            anyChange = true;
         }
+        if (lightLevel > getBlockLightLevelAt(localX, localY, localZ)) {
+            setBlockLightLevelAt(localX, localY, localZ, lightLevel);
+            if (lightLevel > MIN_LIGHT_LEVEL) blockLightQueue.emplace(packLightPos(localX, localY, localZ));
+            anyChange = true;
+        }
+
+        if (anyChange) changed.emplace_back(localX, localY, localZ);
     }
 
     // BFS propagation
-    while (!bfsQueue.empty()) {
-        const auto n = bfsQueue.front(); bfsQueue.pop();
+    while (!sunLightQueue.empty()) {
+        const auto n = sunLightQueue.front(); sunLightQueue.pop();
         const auto [x, y, z] = unpackLightPos(n);
-        const uint8_t currentLightLevel = getLightLevelAt(x, y, z);
+        const uint8_t currentLightLevel = getSunLightLevelAt(x, y, z);
         if (currentLightLevel <= MIN_LIGHT_LEVEL) continue;
 
         for (auto [dx, dy, dz] : Block::s_faceOffset) {
@@ -641,14 +703,39 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
             if (nx < -1 || ny < -1 || nz < -1 || nx >= static_cast<int>(SIZE) + 1 || ny >= static_cast<int>(SIZE) + 1 || nz >= static_cast<int>(SIZE) + 1) continue;
             if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
 
-            if (const uint8_t neighborLightLevel = getLightLevelAt(nx, ny, nz);
+            if (const uint8_t neighborLightLevel = getSunLightLevelAt(nx, ny, nz);
                 neighborLightLevel + 2u <= currentLightLevel) {
 
                 if (const auto newLevel = static_cast<uint8_t>(currentLightLevel - 1u);
                     newLevel > neighborLightLevel) {
-                    setLightLevelAt(nx, ny, nz, newLevel);
+                    setSunLightLevelAt(nx, ny, nz, newLevel);
                     changed.emplace_back(nx,ny,nz);
-                    bfsQueue.emplace(packLightPos(nx,ny,nz));
+                    sunLightQueue.emplace(packLightPos(nx,ny,nz));
+                }
+            }
+        }
+    }
+
+    // BFS propagation
+    while (!blockLightQueue.empty()) {
+        const auto n = blockLightQueue.front(); blockLightQueue.pop();
+        const auto [x, y, z] = unpackLightPos(n);
+        const uint8_t currentLightLevel = getBlockLightLevelAt(x, y, z);
+        if (currentLightLevel <= MIN_LIGHT_LEVEL) continue;
+
+        for (auto [dx, dy, dz] : Block::s_faceOffset) {
+            const int nx = x + dx, ny = y + dy, nz = z + dz;
+            if (nx < -1 || ny < -1 || nz < -1 || nx >= static_cast<int>(SIZE) + 1 || ny >= static_cast<int>(SIZE) + 1 || nz >= static_cast<int>(SIZE) + 1) continue;
+            if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
+
+            if (const uint8_t neighborLightLevel = getBlockLightLevelAt(nx, ny, nz);
+                neighborLightLevel + 2u <= currentLightLevel) {
+
+                if (const auto newLevel = static_cast<uint8_t>(currentLightLevel - 1u);
+                    newLevel > neighborLightLevel) {
+                    setBlockLightLevelAt(nx, ny, nz, newLevel);
+                    changed.emplace_back(nx,ny,nz);
+                    blockLightQueue.emplace(packLightPos(nx,ny,nz));
                 }
             }
         }
@@ -665,7 +752,7 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
         const bool borderZ = z == -1 || z == static_cast<int>(SIZE);
         if (!borderX && !borderY && !borderZ) continue;
 
-        const uint8_t lvl = getLightLevelAt(x, y, z);
+        const uint8_t lvl = std::max(getSunLightLevelAt(x, y, z), getBlockLightLevelAt(x, y, z));
         if (lvl <= MIN_LIGHT_LEVEL) continue;
 
         if (x == -1)  toEmit[{m_x - static_cast<int>(SIZE), m_y, m_z}].emplace_back(static_cast<int>(SIZE), y, z, lvl);

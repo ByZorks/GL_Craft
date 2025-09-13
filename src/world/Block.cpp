@@ -237,8 +237,12 @@ bool Block::isInstance(const BlockType type) {
            type == BlockType::FLOWER_CORNFLOWER || type == BlockType::FLOWER_ALLIUM;
 }
 
+bool Block::isLightEmitter(const BlockType type) {
+    return type == BlockType::SAND; // Placeholder for future light-emitting blocks
+}
+
 Block::BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t texLayer, const unsigned int faceIndex,
-                                  const unsigned int ao[4], const unsigned int lightLevel) {
+                                         const unsigned int ao[4], const unsigned int lightLevel) {
     BlockVertex vertex{};
 
     constexpr unsigned int POS_MASK = 0x1F; // 5 bits, 0-31 range

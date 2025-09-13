@@ -43,6 +43,7 @@ public:
     static bool isTransparent(BlockType type);
     static bool isSemiTransparent(BlockType type);
     static bool isInstance(BlockType type);
+    static bool isLightEmitter(BlockType type);
 
 private:
     static BlockVertex packVertexData(const unsigned int position[3], uint8_t texLayer, unsigned int faceIndex,
