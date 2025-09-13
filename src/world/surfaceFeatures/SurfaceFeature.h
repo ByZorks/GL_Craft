@@ -1,6 +1,7 @@
 #ifndef GL_CRAFT_SURFACEFEATURE_H
 #define GL_CRAFT_SURFACEFEATURE_H
 #include <cstdint>
+#include <list>
 #include <random>
 #include <unordered_map>
 
@@ -27,13 +28,13 @@ public:
     static SurfaceFeatureType getSurfaceFeatureTypeFromBlockType(const Block::BlockType &blockType);
     static void addTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ,
                         Biome biome, std::vector<Block::BlockType> &outBlocks,
-                        std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &outPendings);
+                        std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings);
     static void addBush(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ,
                         Biome biome, std::vector<Block::BlockType> &outBlocks,
-                        std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &outPendings);
+                        std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings);
     static void addPond(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ,
                         Biome biome, std::vector<Block::BlockType> &outBlocks,
-                        std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &outPendings);
+                        std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings);
 
     [[nodiscard]] bool isMultiBlockFeature() const;
     [[nodiscard]] int getX() const;
@@ -45,19 +46,19 @@ private:
     friend std::size_t hash_value(const SurfaceFeature &obj);
     static void addFeatureBlocks(const ChunkPosition &position, int localX, int localY, int localZ, Block::BlockType blockType,
                                  std::vector<Block::BlockType> &outBlocks,
-                                 std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &outPendings);
+                                 std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings);
     static void addSmallTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ,
                              Biome biome, std::vector<Block::BlockType> &outBlocks,
-                             std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &outPendings);
+                             std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings);
     static void addCactus(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ,
                           std::vector<Block::BlockType> &outBlocks,
-                          std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &outPendings);
+                          std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings);
     static void addMegaJungleTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ,
                                   std::vector<Block::BlockType> &outBlocks,
-                                  std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &outPendings);
+                                  std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings);
     static void addSpruceTree(std::mt19937 &rng, const ChunkPosition &position, int localX, int localY, int localZ,
                               std::vector<Block::BlockType> &outBlocks,
-                              std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &outPendings);
+                              std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings);
 
 private:
     const int m_x, m_y, m_z; // Position in world coordinates

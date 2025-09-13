@@ -2,6 +2,7 @@
 #define CHUNK_H
 #include <climits>
 #include <functional>
+#include <list>
 #include <mutex>
 #include <random>
 #include <unordered_map>
@@ -23,13 +24,13 @@ public:
     Chunk(int x, int y, int z);
 
     void generateVoxel() override;
-    void generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResult &result);
+    void generatePendingBlocks(std::list<PendingBlock> &blocks, MeshingResult &result);
     void propagateLight();
     void generateMesh() override;
     void generateNewMesh(MeshingResult &result) const;
     void transferPendingBlocksToWorld(WorldManager &world);
     void transferPendingLightsToWorld(WorldManager &world);
-    void generatePendingLights(std::vector<PendingLight> &lights, MeshingResult &result);
+    void generatePendingLights(std::list<PendingLight> &lights, MeshingResult &result);
     void deleteBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &result);
     void addBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &result);
     void emitBorderLights();
@@ -75,9 +76,8 @@ private:
 
 private:
     std::unordered_set<SurfaceFeature> m_surfaceFeatures;
-    std::unordered_map<ChunkPosition, std::vector<PendingBlock> > m_pendingBlocksForNeighbors;
-    std::unordered_map<ChunkPosition, std::vector<PendingLight> > m_pendingLightsForNeighbors;
-    mutable std::mutex m_pendingLightsForNeighborsMutex;
+    std::unordered_map<ChunkPosition, std::list<PendingBlock> > m_pendingBlocksForNeighbors;
+    std::unordered_map<ChunkPosition, std::list<PendingLight> > m_pendingLightsForNeighbors;
     unsigned int m_drawIndexOpaque = UINT_MAX;
     unsigned int m_drawIndexWater = UINT_MAX;
     unsigned int m_indirectRendererSlotOpaque = UINT_MAX;

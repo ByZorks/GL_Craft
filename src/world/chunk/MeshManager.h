@@ -1,5 +1,6 @@
 #ifndef MESHDATA_H
 #define MESHDATA_H
+#include <list>
 #include <memory>
 #include <unordered_map>
 
@@ -23,10 +24,10 @@ class MeshManager {
 public:
     std::unordered_map<ChunkPosition, std::shared_ptr<MeshType> > loadedMeshes;
 
-    std::unordered_map<ChunkPosition, std::vector<PendingBlock> > pendingBlocks;
+    std::unordered_map<ChunkPosition, std::list<PendingBlock> > pendingBlocks;
     std::mutex pendingBlocksMutex;
 
-    std::unordered_map<ChunkPosition, std::vector<PendingLight> > pendingLights;
+    std::unordered_map<ChunkPosition, std::list<PendingLight> > pendingLights;
     std::mutex pendingLightsMutex;
 
     ThreadSafeQueue<ChunkPosition> meshesToGenerate;

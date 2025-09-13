@@ -86,21 +86,17 @@ void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Came
     updateChunks(camera, renderer);
 }
 
-void WorldManager::addPendingBlocks(const std::unordered_map<ChunkPosition, std::vector<PendingBlock> > &blockData) {
+void WorldManager::addPendingBlocks(std::unordered_map<ChunkPosition, std::list<PendingBlock> > &blockData) {
     std::lock_guard lock(m_chunksData.pendingBlocksMutex);
-    for (const auto &[key, blocks]: blockData) {
-        auto &targetVector = m_chunksData.pendingBlocks[key];
-        targetVector.reserve(targetVector.size() + blocks.size());
-        targetVector.insert(targetVector.end(), blocks.begin(), blocks.end());
+    for (auto & [key, blocks] : blockData) {
+        m_chunksData.pendingBlocks[key].splice(m_chunksData.pendingBlocks[key].end(), blocks);
     }
 }
 
-void WorldManager::addPendingLights(const std::unordered_map<ChunkPosition, std::vector<PendingLight> > &lightData) {
+void WorldManager::addPendingLights(std::unordered_map<ChunkPosition, std::list<PendingLight> > &lightData) {
     std::lock_guard lock(m_chunksData.pendingLightsMutex);
-    for (const auto &[key, lights]: lightData) {
-        auto &targetVector = m_chunksData.pendingLights[key];
-        targetVector.reserve(targetVector.size() + lights.size());
-        targetVector.insert(targetVector.end(), lights.begin(), lights.end());
+    for (auto &[key, lights]: lightData) {
+        m_chunksData.pendingLights[key].splice(m_chunksData.pendingLights[key].end(), lights);
     }
 }
 
@@ -386,7 +382,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
                     continue;
                 }
 
-                std::vector<PendingBlock> blocks = std::move(it->second);
+                std::list<PendingBlock> blocks = std::move(it->second);
                 it = m_chunksData.pendingBlocks.erase(it);
 
                 if (!blocks.empty()) {
@@ -424,7 +420,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
                     continue;
                 }
 
-                std::vector<PendingLight> lights = std::move(it->second);
+                std::list<PendingLight> lights = std::move(it->second);
                 it = m_chunksData.pendingLights.erase(it);
 
                 if (!lights.empty()) {

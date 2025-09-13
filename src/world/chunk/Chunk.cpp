@@ -18,8 +18,8 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
     m_waterData.vertices.reserve(avg_faces_water);
     m_blocks.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), Block::BlockType::AIR); // +2 for boundary checks
     m_lightLevels.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), 1u);
-    m_pendingBlocksForNeighbors.reserve(SIZE);
-    m_pendingLightsForNeighbors.reserve(SIZE * SIZE);
+    m_pendingBlocksForNeighbors.reserve(26);
+    m_pendingLightsForNeighbors.reserve(26);
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
 }
 
@@ -60,7 +60,7 @@ void Chunk::generateVoxel() {
     m_state = State::VOXEL_GENERATED;
 }
 
-void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResult &result) {
+void Chunk::generatePendingBlocks(std::list<PendingBlock> &blocks, MeshingResult &result) {
     for (const auto &[localX, localY, localZ, blockType]: blocks) {
         m_blocks[index(localX, localY, localZ)] = blockType;
     }
@@ -205,8 +205,7 @@ void Chunk::emitBorderLights() {
         const int coord = positive ? static_cast<int>(SIZE) : -1;
         const int offset = (positive ? 1 : -1) * static_cast<int>(SIZE);
         const int border = positive ? -1 : static_cast<int>(SIZE);
-        std::vector<PendingLight> batch;
-        batch.reserve(SIZE * SIZE / 2);
+        std::list<PendingLight> batch;
 
         if (faceAxis == 0) {
             const ChunkPosition key(m_x + offset, m_y, m_z);
@@ -218,10 +217,7 @@ void Chunk::emitBorderLights() {
                 }
             }
             if (!batch.empty()) {
-                std::lock_guard lock(m_pendingLightsForNeighborsMutex);
-                auto &vec = m_pendingLightsForNeighbors[key];
-                vec.reserve(vec.size() + batch.size());
-                vec.insert(vec.end(), batch.begin(), batch.end());
+                m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
         } else if (faceAxis == 1) {
             const ChunkPosition key(m_x, m_y + offset, m_z);
@@ -233,10 +229,7 @@ void Chunk::emitBorderLights() {
                 }
             }
             if (!batch.empty()) {
-                std::lock_guard lock(m_pendingLightsForNeighborsMutex);
-                auto &vec = m_pendingLightsForNeighbors[key];
-                vec.reserve(vec.size() + batch.size());
-                vec.insert(vec.end(), batch.begin(), batch.end());
+                m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
         } else {
             const ChunkPosition key(m_x, m_y, m_z + offset);
@@ -248,10 +241,7 @@ void Chunk::emitBorderLights() {
                 }
             }
             if (!batch.empty()) {
-                std::lock_guard lock(m_pendingLightsForNeighborsMutex);
-                auto &vec = m_pendingLightsForNeighbors[key];
-                vec.reserve(vec.size() + batch.size());
-                vec.insert(vec.end(), batch.begin(), batch.end());
+                m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
         }
     };
@@ -267,14 +257,11 @@ void Chunk::emitBorderLights() {
 void Chunk::transferPendingBlocksToWorld(WorldManager &world) {
     if (m_pendingBlocksForNeighbors.empty()) return;
     world.addPendingBlocks(m_pendingBlocksForNeighbors);
-    m_pendingBlocksForNeighbors.clear();
 }
 
 void Chunk::transferPendingLightsToWorld(WorldManager &world) {
-    std::lock_guard lock(m_pendingLightsForNeighborsMutex);
     if (m_pendingLightsForNeighbors.empty()) return;
     world.addPendingLights(m_pendingLightsForNeighbors);
-    m_pendingLightsForNeighbors.clear();
 }
 
 void Chunk::deleteBlock(const int localX, const int localY, const int localZ, const Block::BlockType type,
@@ -618,7 +605,7 @@ bool Chunk::hasVisibleFaces() const {
     return !m_opaqueData.vertices.empty() || !m_waterData.vertices.empty();
 }
 
-void Chunk::generatePendingLights(std::vector<PendingLight> &lights, MeshingResult &result) {
+void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult &result) {
     if (lights.empty()) return;
     constexpr uint8_t MIN_LIGHT_LEVEL = 1u;
 
@@ -668,7 +655,7 @@ void Chunk::generatePendingLights(std::vector<PendingLight> &lights, MeshingResu
     if (changed.empty()) return;
 
     // Emit only changed border cells to neighbors
-    std::unordered_map<ChunkPosition, std::vector<PendingLight>> toEmit;
+    std::unordered_map<ChunkPosition, std::list<PendingLight>> toEmit;
     toEmit.reserve(6);
     for (const auto [x, y, z] : changed) {
         const bool borderX = x == -1 || x == static_cast<int>(SIZE);
@@ -688,11 +675,8 @@ void Chunk::generatePendingLights(std::vector<PendingLight> &lights, MeshingResu
     }
 
     if (!toEmit.empty()) {
-        std::lock_guard lock(m_pendingLightsForNeighborsMutex);
         for (auto &[key, value] : toEmit) {
-            auto &vec = m_pendingLightsForNeighbors[key];
-            vec.reserve(vec.size() + value.size());
-            vec.insert(vec.end(), value.begin(), value.end());
+            m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), value);
         }
     }
 
