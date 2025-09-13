@@ -137,8 +137,8 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
             result.needInstanceUpdate = isInstance;
 
             m_chunksData.completedMeshes.push(std::move(result));
-            // Propagation de lumière transfrontalière
             chunk->transferPendingLightsToWorld(*this);
+            emitNeighborsBorderLights(chunk);
             return;
         }
 
@@ -176,8 +176,8 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
                         result.needInstanceUpdate = isInstance;
 
                         m_chunksData.completedMeshes.push(std::move(result));
-                        // Transférer les lumières frontalières
                         adjacentChunk->transferPendingLightsToWorld(*this);
+                        emitNeighborsBorderLights(adjacentChunk);
                     }
                 }
             }
@@ -193,6 +193,7 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
 
         m_chunksData.completedMeshes.push(std::move(result));
         chunk->transferPendingLightsToWorld(*this);
+        emitNeighborsBorderLights(chunk);
     });
 }
 
@@ -270,6 +271,7 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
             result.needInstanceUpdate = isInstance;
             m_chunksData.completedMeshes.push(std::move(result));
             targetChunk->transferPendingLightsToWorld(*this);
+            emitNeighborsBorderLights(targetChunk);
         }
 
 
@@ -320,6 +322,7 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
                         result.needInstanceUpdate = isInstance;
                         m_chunksData.completedMeshes.push(std::move(result));
                         adjacentChunk->transferPendingLightsToWorld(*this);
+                        emitNeighborsBorderLights(adjacentChunk);
                     }
                 }
             }
@@ -365,6 +368,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
             m_needInstanceUpdate.store(true);
             p_chunk->transferPendingBlocksToWorld(*this);
             p_chunk->transferPendingLightsToWorld(*this);
+            emitNeighborsBorderLights(p_chunk);
         });
     }
 
@@ -397,6 +401,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 
                         m_chunksData.completedMeshes.push(std::move(result));
                         p_chunk->transferPendingLightsToWorld(*this);
+                        emitNeighborsBorderLights(p_chunk);
                     });
                 }
             } else {
@@ -430,6 +435,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
                         result.position = {p_chunk->getX(), p_chunk->getY(), p_chunk->getZ()};
                         m_chunksData.completedMeshes.push(std::move(result));
                         p_chunk->transferPendingLightsToWorld(*this);
+                        // Note: do NOT emitNeighborsBorderLights here to avoid ping-pong loops
                     });
                 }
             } else {
@@ -503,4 +509,25 @@ std::shared_ptr<Chunk> WorldManager::getChunk(const int x, const int y, const in
     }
 
     return nullptr;
+}
+
+void WorldManager::emitNeighborsBorderLights(const std::shared_ptr<Chunk> &chunk) {
+    if (!chunk) return;
+    constexpr int S = static_cast<int>(Chunk::SIZE);
+    const int cx = chunk->getX();
+    const int cy = chunk->getY();
+    const int cz = chunk->getZ();
+
+    constexpr int dirs[6][3] = {
+        {-S, 0, 0}, {S, 0, 0},
+        {0, -S, 0}, {0, S, 0},
+        {0, 0, -S}, {0, 0, S}
+    };
+
+    for (const auto &d : dirs) {
+        if (const auto neighbor = getChunk(cx + d[0], cy + d[1], cz + d[2])) {
+            neighbor->emitBorderLights();
+            neighbor->transferPendingLightsToWorld(*this);
+        }
+    }
 }

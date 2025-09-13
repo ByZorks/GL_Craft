@@ -1,6 +1,8 @@
 #include "Chunk.h"
 
+#include <algorithm>
 #include <iostream>
+#include <vector>
 
 #include "../TerrainGenerator.h"
 #include "../WorldManager.h"
@@ -17,6 +19,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
     m_blocks.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), Block::BlockType::AIR); // +2 for boundary checks
     m_lightLevels.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), 1u);
     m_pendingBlocksForNeighbors.reserve(SIZE);
+    m_pendingLightsForNeighbors.reserve(SIZE * SIZE);
     m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
 }
 
@@ -71,6 +74,9 @@ void Chunk::propagateLight() {
     constexpr unsigned int MIN_LIGHT_LEVEL = 1u;
 
     std::queue<uint32_t> bfsQueue;
+
+    // Reset all light levels before a full recompute to avoid stale values
+    std::ranges::fill(m_lightLevels, static_cast<uint8_t>(MIN_LIGHT_LEVEL));
 
     // First pass: vertical light propagation from the top
     for (int localX = 0; localX < SIZE + 2; localX++) {
@@ -134,55 +140,6 @@ void Chunk::propagateLight() {
             }
         }
     }
-
-    // Emit border light to neighbors as pending lights
-    auto emitFace = [&](const int faceAxis, const bool positive){
-        const int coord = positive ? static_cast<int>(SIZE) : -1;
-        const int offset = (positive ? 1 : -1) * static_cast<int>(SIZE);
-        const int border = positive ? -1 : static_cast<int>(SIZE);
-
-        if (faceAxis == 0) {
-            const ChunkPosition key(m_x + offset, m_y, m_z);
-            for (int y = 0; y < static_cast<int>(SIZE); ++y) {
-                for (int z = 0; z < static_cast<int>(SIZE); ++z) {
-                    const uint8_t lvl = getLightLevelAt(coord, y, z);
-                    if (lvl <= MIN_LIGHT_LEVEL) continue;
-
-                    std::lock_guard lock(m_pendingLightsForNeighborsMutex);
-                    m_pendingLightsForNeighbors[key].push_back({border, y, z, lvl});
-                }
-            }
-        } else if (faceAxis == 1) {
-            const ChunkPosition key(m_x, m_y + offset, m_z);
-            for (int x = 0; x < static_cast<int>(SIZE); ++x) {
-                for (int z = 0; z < static_cast<int>(SIZE); ++z) {
-                    const uint8_t lvl = getLightLevelAt(x, coord, z);
-                    if (lvl <= MIN_LIGHT_LEVEL) continue;
-
-                    std::lock_guard lock(m_pendingLightsForNeighborsMutex);
-                    m_pendingLightsForNeighbors[key].push_back({x, border, z, lvl});
-                }
-            }
-        } else {
-            const ChunkPosition key(m_x, m_y, m_z + offset);
-            for (int x = 0; x < static_cast<int>(SIZE); ++x) {
-                for (int y = 0; y < static_cast<int>(SIZE); ++y) {
-                    const uint8_t lvl = getLightLevelAt(x, y, coord);
-                    if (lvl <= MIN_LIGHT_LEVEL) continue;
-
-                    std::lock_guard lock(m_pendingLightsForNeighborsMutex);
-                    m_pendingLightsForNeighbors[key].push_back({x, y, border, lvl});
-                }
-            }
-        }
-    };
-
-    emitFace(0, false); // left
-    emitFace(0, true);  // right
-    emitFace(1, false); // bottom
-    emitFace(1, true);  // top
-    emitFace(2, false); // front
-    emitFace(2, true);  // back
 }
 
 void Chunk::generateMesh() {
@@ -240,6 +197,71 @@ void Chunk::generateNewMesh(MeshingResult &result) const {
             }
         }
     }
+}
+
+void Chunk::emitBorderLights() {
+    constexpr uint8_t MIN_LIGHT_LEVEL = 1u;
+    auto emitFace = [&](const int faceAxis, const bool positive){
+        const int coord = positive ? static_cast<int>(SIZE) : -1;
+        const int offset = (positive ? 1 : -1) * static_cast<int>(SIZE);
+        const int border = positive ? -1 : static_cast<int>(SIZE);
+        std::vector<PendingLight> batch;
+        batch.reserve(SIZE * SIZE / 2);
+
+        if (faceAxis == 0) {
+            const ChunkPosition key(m_x + offset, m_y, m_z);
+            for (int y = 0; y < static_cast<int>(SIZE); ++y) {
+                for (int z = 0; z < static_cast<int>(SIZE); ++z) {
+                    const uint8_t lvl = getLightLevelAt(coord, y, z);
+                    if (lvl <= MIN_LIGHT_LEVEL) continue;
+                    batch.push_back({border, y, z, lvl});
+                }
+            }
+            if (!batch.empty()) {
+                std::lock_guard lock(m_pendingLightsForNeighborsMutex);
+                auto &vec = m_pendingLightsForNeighbors[key];
+                vec.reserve(vec.size() + batch.size());
+                vec.insert(vec.end(), batch.begin(), batch.end());
+            }
+        } else if (faceAxis == 1) {
+            const ChunkPosition key(m_x, m_y + offset, m_z);
+            for (int x = 0; x < static_cast<int>(SIZE); ++x) {
+                for (int z = 0; z < static_cast<int>(SIZE); ++z) {
+                    const uint8_t lvl = getLightLevelAt(x, coord, z);
+                    if (lvl <= MIN_LIGHT_LEVEL) continue;
+                    batch.push_back({x, border, z, lvl});
+                }
+            }
+            if (!batch.empty()) {
+                std::lock_guard lock(m_pendingLightsForNeighborsMutex);
+                auto &vec = m_pendingLightsForNeighbors[key];
+                vec.reserve(vec.size() + batch.size());
+                vec.insert(vec.end(), batch.begin(), batch.end());
+            }
+        } else {
+            const ChunkPosition key(m_x, m_y, m_z + offset);
+            for (int x = 0; x < static_cast<int>(SIZE); ++x) {
+                for (int y = 0; y < static_cast<int>(SIZE); ++y) {
+                    const uint8_t lvl = getLightLevelAt(x, y, coord);
+                    if (lvl <= MIN_LIGHT_LEVEL) continue;
+                    batch.push_back({x, y, border, lvl});
+                }
+            }
+            if (!batch.empty()) {
+                std::lock_guard lock(m_pendingLightsForNeighborsMutex);
+                auto &vec = m_pendingLightsForNeighbors[key];
+                vec.reserve(vec.size() + batch.size());
+                vec.insert(vec.end(), batch.begin(), batch.end());
+            }
+        }
+    };
+
+    emitFace(0, false);
+    emitFace(0, true);
+    emitFace(1, false);
+    emitFace(1, true);
+    emitFace(2, false);
+    emitFace(2, true);
 }
 
 void Chunk::transferPendingBlocksToWorld(WorldManager &world) {

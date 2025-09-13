@@ -32,6 +32,7 @@ public:
     void generatePendingLights(std::vector<PendingLight> &lights, MeshingResult &result);
     void deleteBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &result);
     void addBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &result);
+    void emitBorderLights();
 
     [[nodiscard]] int index(int x, int y, int z) const override;
     [[nodiscard]] Block::BlockType getBlockType(int localX, int localY, int localZ) const override;
