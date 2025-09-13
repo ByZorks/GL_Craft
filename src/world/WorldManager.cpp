@@ -11,7 +11,6 @@ WorldManager::WorldManager() : m_threadPool(std::max(1u, std::thread::hardware_c
     m_chunksData.loadedMeshes.reserve(
         static_cast<size_t>(Renderer::s_renderDistance * Renderer::s_renderDistance * Renderer::s_renderDistance *
                             2.5f));
-    m_tempKeysToProcess.reserve(100);
 
     const int r = static_cast<int>(std::ceil(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE)));
     const int r2 = r * r;
@@ -371,29 +370,20 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 
     // Second pass: generate pending blocks
     if (!m_chunksData.pendingBlocks.empty()) {
-        m_tempKeysToProcess.clear(); {
-            std::lock_guard lock(m_chunksData.pendingBlocksMutex);
-            m_tempKeysToProcess.reserve(m_chunksData.pendingBlocks.size());
-            for (const auto &key: m_chunksData.pendingBlocks | std::views::keys) {
-                m_tempKeysToProcess.push_back(key);
-            }
-        }
-
         int processed = 0;
-        for (const auto &key: m_tempKeysToProcess) {
-            if (processed >= maxChunksPerFrame) break;
-            if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
-                const std::shared_ptr<Chunk> p_chunk = it->second;
-                if (p_chunk->getState() < Mesh::State::VOXEL_GENERATED) continue;
+        std::lock_guard lock(m_chunksData.pendingBlocksMutex);
+        for (auto it = m_chunksData.pendingBlocks.begin(); it != m_chunksData.pendingBlocks.end() && processed < maxChunksPerFrame;) {
+            const ChunkPosition key = it->first;
 
-                std::vector<PendingBlock> blocks; {
-                    std::lock_guard lock(m_chunksData.pendingBlocksMutex);
-                    if (auto pending_it = m_chunksData.pendingBlocks.find(key);
-                        pending_it != m_chunksData.pendingBlocks.end()) {
-                        blocks = std::move(pending_it->second);
-                        m_chunksData.pendingBlocks.erase(pending_it);
-                    }
+            if (auto loaded_it = m_chunksData.loadedMeshes.find(key); loaded_it != m_chunksData.loadedMeshes.end()) {
+                const std::shared_ptr<Chunk> p_chunk = loaded_it->second;
+                if (p_chunk->getState() < Mesh::State::VOXEL_GENERATED) {
+                    ++it;
+                    continue;
                 }
+
+                std::vector<PendingBlock> blocks = std::move(it->second);
+                it = m_chunksData.pendingBlocks.erase(it);
 
                 if (!blocks.empty()) {
                     ++processed;
@@ -409,35 +399,28 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
                         p_chunk->transferPendingLightsToWorld(*this);
                     });
                 }
+            } else {
+                ++it;
             }
         }
     }
 
     // Second pass bis: generate pending lights
     if (!m_chunksData.pendingLights.empty()) {
-        m_tempKeysToProcess.clear(); {
-            std::lock_guard lock(m_chunksData.pendingLightsMutex);
-            m_tempKeysToProcess.reserve(m_chunksData.pendingLights.size());
-            for (const auto &key: m_chunksData.pendingLights | std::views::keys) {
-                m_tempKeysToProcess.push_back(key);
-            }
-        }
-
         int processed = 0;
-        for (const auto &key: m_tempKeysToProcess) {
-            if (processed >= maxChunksPerFrame) break;
-            if (auto it = m_chunksData.loadedMeshes.find(key); it != m_chunksData.loadedMeshes.end()) {
-                const std::shared_ptr<Chunk> p_chunk = it->second;
-                if (p_chunk->getState() < Mesh::State::VOXEL_GENERATED) continue;
+        std::lock_guard lock(m_chunksData.pendingLightsMutex);
+        for (auto it = m_chunksData.pendingLights.begin(); it != m_chunksData.pendingLights.end() && processed < maxChunksPerFrame; ) {
+            const ChunkPosition key = it->first;
 
-                std::vector<PendingLight> lights; {
-                    std::lock_guard lock(m_chunksData.pendingLightsMutex);
-                    if (auto pending_it = m_chunksData.pendingLights.find(key);
-                        pending_it != m_chunksData.pendingLights.end()) {
-                        lights = std::move(pending_it->second);
-                        m_chunksData.pendingLights.erase(pending_it);
-                    }
+            if (auto loaded_it = m_chunksData.loadedMeshes.find(key); loaded_it != m_chunksData.loadedMeshes.end()) {
+                const std::shared_ptr<Chunk> p_chunk = loaded_it->second;
+                if (p_chunk->getState() < Mesh::State::VOXEL_GENERATED) {
+                    ++it;
+                    continue;
                 }
+
+                std::vector<PendingLight> lights = std::move(it->second);
+                it = m_chunksData.pendingLights.erase(it);
 
                 if (!lights.empty()) {
                     ++processed;
@@ -449,6 +432,8 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
                         p_chunk->transferPendingLightsToWorld(*this);
                     });
                 }
+            } else {
+                ++it;
             }
         }
     }

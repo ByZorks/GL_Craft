@@ -35,7 +35,6 @@ private:
 
     ThreadPool m_threadPool;
     MeshManager<Chunk> m_chunksData;
-    std::vector<ChunkPosition> m_tempKeysToProcess;
     std::vector<Offset> m_renderDistanceOffsets;
     bool m_renderDistanceChanged = false;
     std::atomic_bool m_needInstanceUpdate = false;

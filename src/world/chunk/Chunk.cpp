@@ -69,7 +69,6 @@ void Chunk::generatePendingBlocks(std::vector<PendingBlock> &blocks, MeshingResu
 
 void Chunk::propagateLight() {
     constexpr unsigned int MIN_LIGHT_LEVEL = 1u;
-    constexpr unsigned int POS_MASK = 0x3F; // 6 bits
 
     std::queue<uint32_t> bfsQueue;
 
