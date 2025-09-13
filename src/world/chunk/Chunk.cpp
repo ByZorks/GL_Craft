@@ -207,39 +207,42 @@ void Chunk::emitBorderLights() {
         std::list<PendingLight> batch;
 
         if (faceAxis == 0) {
-            const ChunkPosition key(m_x + offset, m_y, m_z);
             for (int y = 0; y < static_cast<int>(SIZE); ++y) {
                 for (int z = 0; z < static_cast<int>(SIZE); ++z) {
                     const uint8_t lvl = getLightLevelAt(coord, y, z);
                     if (lvl <= MIN_LIGHT_LEVEL) continue;
-                    batch.push_back({border, y, z, lvl});
+
+                    batch.emplace_back(border, y, z, lvl);
                 }
             }
             if (!batch.empty()) {
+                const ChunkPosition key(m_x + offset, m_y, m_z);
                 m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
         } else if (faceAxis == 1) {
-            const ChunkPosition key(m_x, m_y + offset, m_z);
             for (int x = 0; x < static_cast<int>(SIZE); ++x) {
                 for (int z = 0; z < static_cast<int>(SIZE); ++z) {
                     const uint8_t lvl = getLightLevelAt(x, coord, z);
                     if (lvl <= MIN_LIGHT_LEVEL) continue;
-                    batch.push_back({x, border, z, lvl});
+
+                    batch.emplace_back(x, border, z, lvl);
                 }
             }
             if (!batch.empty()) {
+                const ChunkPosition key(m_x, m_y + offset, m_z);
                 m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
         } else {
-            const ChunkPosition key(m_x, m_y, m_z + offset);
             for (int x = 0; x < static_cast<int>(SIZE); ++x) {
                 for (int y = 0; y < static_cast<int>(SIZE); ++y) {
                     const uint8_t lvl = getLightLevelAt(x, y, coord);
                     if (lvl <= MIN_LIGHT_LEVEL) continue;
-                    batch.push_back({x, y, border, lvl});
+
+                    batch.emplace_back(x, y, border, lvl);
                 }
             }
             if (!batch.empty()) {
+                const ChunkPosition key(m_x, m_y, m_z + offset);
                 m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
         }
@@ -614,14 +617,15 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
     std::vector<Pos> changed;
     changed.reserve(lights.size() * 8);
 
+    // Initial light sources
     for (const auto &[localX, localY, localZ, lightLevel] : lights) {
         if (localX < -1 || localY < -1 || localZ < -1 || localX > static_cast<int>(SIZE) || localY > static_cast<int>(SIZE) || localZ > static_cast<int>(SIZE)) continue;
         if (Block::isOpaque(getBlockType(localX, localY, localZ))) continue;
 
         if (lightLevel > getLightLevelAt(localX, localY, localZ)) {
             setLightLevelAt(localX, localY, localZ, lightLevel);
-            changed.push_back({localX,localY,localZ});
-            if (lightLevel > MIN_LIGHT_LEVEL) bfsQueue.emplace(packLightPos(localX,localY,localZ));
+            changed.emplace_back(localX, localY, localZ);
+            if (lightLevel > MIN_LIGHT_LEVEL) bfsQueue.emplace(packLightPos(localX, localY, localZ));
         }
     }
 
@@ -643,7 +647,7 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
                 if (const auto newLevel = static_cast<uint8_t>(currentLightLevel - 1u);
                     newLevel > neighborLightLevel) {
                     setLightLevelAt(nx, ny, nz, newLevel);
-                    changed.push_back({nx,ny,nz});
+                    changed.emplace_back(nx,ny,nz);
                     bfsQueue.emplace(packLightPos(nx,ny,nz));
                 }
             }
@@ -664,12 +668,12 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
         const uint8_t lvl = getLightLevelAt(x, y, z);
         if (lvl <= MIN_LIGHT_LEVEL) continue;
 
-        if (x == -1)  toEmit[{m_x - static_cast<int>(SIZE), m_y, m_z}].push_back({static_cast<int>(SIZE), y, z, lvl});
-        if (x == static_cast<int>(SIZE)) toEmit[{m_x + static_cast<int>(SIZE), m_y, m_z}].push_back({-1, y, z, lvl});
-        if (y == -1)  toEmit[{m_x, m_y - static_cast<int>(SIZE), m_z}].push_back({x, static_cast<int>(SIZE), z, lvl});
-        if (y == static_cast<int>(SIZE)) toEmit[{m_x, m_y + static_cast<int>(SIZE), m_z}].push_back({x, -1, z, lvl});
-        if (z == -1)  toEmit[{m_x, m_y, m_z - static_cast<int>(SIZE)}].push_back({x, y, static_cast<int>(SIZE), lvl});
-        if (z == static_cast<int>(SIZE)) toEmit[{m_x, m_y, m_z + static_cast<int>(SIZE)}].push_back({x, y, -1, lvl});
+        if (x == -1)  toEmit[{m_x - static_cast<int>(SIZE), m_y, m_z}].emplace_back(static_cast<int>(SIZE), y, z, lvl);
+        if (x == static_cast<int>(SIZE)) toEmit[{m_x + static_cast<int>(SIZE), m_y, m_z}].emplace_back(-1, y, z, lvl);
+        if (y == -1)  toEmit[{m_x, m_y - static_cast<int>(SIZE), m_z}].emplace_back(x, static_cast<int>(SIZE), z, lvl);
+        if (y == static_cast<int>(SIZE)) toEmit[{m_x, m_y + static_cast<int>(SIZE), m_z}].emplace_back(x, -1, z, lvl);
+        if (z == -1)  toEmit[{m_x, m_y, m_z - static_cast<int>(SIZE)}].emplace_back(x, y, static_cast<int>(SIZE), lvl);
+        if (z == static_cast<int>(SIZE)) toEmit[{m_x, m_y, m_z + static_cast<int>(SIZE)}].emplace_back(x, y, -1, lvl);
     }
 
     if (!toEmit.empty()) {

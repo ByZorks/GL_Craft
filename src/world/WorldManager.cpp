@@ -19,10 +19,10 @@ WorldManager::WorldManager() : m_threadPool(std::max(1u, std::thread::hardware_c
     for (int x = -r; x <= r; ++x) {
         for (int z = -r; z <= r; ++z) {
             if (const int d2 = x * x + z * z; d2 <= r2) {
-                m_renderDistanceOffsets.push_back({
+                m_renderDistanceOffsets.emplace_back(
                     x, z,
                     static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))
-                });
+                );
             }
         }
     }
@@ -55,8 +55,7 @@ void WorldManager::updateChunks(const Camera &camera, IndirectRenderer &renderer
     m_renderDistanceChanged = false;
 }
 
-void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Camera &camera,
-                                        IndirectRenderer &renderer) {
+void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Camera &camera, IndirectRenderer &renderer) {
     postProcessingShader.use();
     postProcessingShader.setUniform1f("u_RenderDistance", Renderer::s_renderDistance);
 
@@ -69,10 +68,10 @@ void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Came
     for (int x = -r; x <= r; ++x) {
         for (int z = -r; z <= r; ++z) {
             if (const int d2 = x * x + z * z; d2 <= r2) {
-                m_renderDistanceOffsets.push_back({
+                m_renderDistanceOffsets.emplace_back(
                     x, z,
                     static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))
-                });
+                );
             }
         }
     }
