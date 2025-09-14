@@ -119,37 +119,34 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         const bool isAtBackBorder = blockLocalPosition[2] == Chunk::SIZE - 1;
 
         const bool isInstance = Block::isInstance(type);
+        const bool isLightEmitter = Block::isLightEmitter(type);
+
+        MeshingResult result;
+        chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type, result);
+
+        result.position = {chunk->getX(), chunk->getY(), chunk->getZ()};
+        result.needIndirectRendererUpdate = !isInstance || isLightEmitter;
+        result.needInstanceUpdate = isInstance;
+
+        m_chunksData.completedMeshes.push(std::move(result));
+        chunk->transferPendingLightsToWorld(*this);
+
         if (!isAtLeftBorder && !isAtRightBorder &&
             !isAtBottomBorder && !isAtTopBorder &&
             !isAtFrontBorder && !isAtBackBorder) {
-            // If the block is not at the border, we can delete it without updating neighbors
-            MeshingResult result;
-            chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type,
-                               result);
-
-            result.position = {chunk->getX(), chunk->getY(), chunk->getZ()};
-            result.needIndirectRendererUpdate = !isInstance;
-            result.needInstanceUpdate = isInstance;
-
-            m_chunksData.completedMeshes.push(std::move(result));
-            chunk->transferPendingLightsToWorld(*this);
-            emitNeighborsBorderLights(chunk);
             return;
         }
 
         // Update adjacent chunks if the block is at the border of the chunk
         for (int i = -1; i <= 1; ++i) {
-            for (int j = -1; j <= 1; ++j) {
-                for (int k = -1; k <= 1; ++k) {
-                    if (i == 0 && j == 0 && k == 0) {
-                        continue;
-                    }
+            if ((i == -1 && !isAtLeftBorder) || (i == 1 && !isAtRightBorder)) continue;
 
-                    if (i == -1 && !isAtLeftBorder || i == 1 && !isAtRightBorder ||
-                        j == -1 && !isAtBottomBorder || j == 1 && !isAtTopBorder ||
-                        k == -1 && !isAtFrontBorder || k == 1 && !isAtBackBorder) {
-                        continue;
-                    }
+            for (int j = -1; j <= 1; ++j) {
+                if ((j == -1 && !isAtBottomBorder) || (j == 1 && !isAtTopBorder)) continue;
+
+                for (int k = -1; k <= 1; ++k) {
+                    if ((k == -1 && !isAtFrontBorder) || (k == 1 && !isAtBackBorder)) continue;
+                    if (i == 0 && j == 0 && k == 0) continue;
 
                     constexpr int chunkSize = Chunk::SIZE;
                     if (const auto adjacentChunk = getChunk(
@@ -163,32 +160,19 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
                         const int adjY = j == 0 ? blockLocalPosition[1] : j == -1 ? maxBlockPos : minBlockPos;
                         const int adjZ = k == 0 ? blockLocalPosition[2] : k == -1 ? maxBlockPos : minBlockPos;
 
-                        MeshingResult result;
-                        adjacentChunk->deleteBlock(adjX, adjY, adjZ, type, result);
+                        MeshingResult neighborResult;
+                        adjacentChunk->deleteBlock(adjX, adjY, adjZ, type, neighborResult);
 
-                        result.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
-                        result.needIndirectRendererUpdate = !isInstance;
-                        result.needInstanceUpdate = isInstance;
+                        neighborResult.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
+                        neighborResult.needIndirectRendererUpdate = !isInstance || isLightEmitter;
+                        neighborResult.needInstanceUpdate = isInstance;
 
-                        m_chunksData.completedMeshes.push(std::move(result));
+                        m_chunksData.completedMeshes.push(std::move(neighborResult));
                         adjacentChunk->transferPendingLightsToWorld(*this);
-                        emitNeighborsBorderLights(adjacentChunk);
                     }
                 }
             }
         }
-
-        // Delete in current chunk last to avoid popping issues because meshing is too slow
-        MeshingResult result;
-        chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type, result);
-
-        result.position = {chunk->getX(), chunk->getY(), chunk->getZ()};
-        result.needIndirectRendererUpdate = !isInstance;
-        result.needInstanceUpdate = isInstance;
-
-        m_chunksData.completedMeshes.push(std::move(result));
-        chunk->transferPendingLightsToWorld(*this);
-        emitNeighborsBorderLights(chunk);
     });
 }
 
@@ -256,18 +240,14 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
         // Place the block in the target chunk
         const bool isInstance = Block::isInstance(blockToPlace);
 
-        // Scope so IDE does not complain about shadowed variables
-        {
-            MeshingResult result;
-            targetChunk->addBlock(targetX, targetY, targetZ, blockToPlace, result);
+        MeshingResult result;
+        targetChunk->addBlock(targetX, targetY, targetZ, blockToPlace, result);
 
-            result.position = {targetChunk->getX(), targetChunk->getY(), targetChunk->getZ()};
-            result.needIndirectRendererUpdate = !isInstance;
-            result.needInstanceUpdate = isInstance;
-            m_chunksData.completedMeshes.push(std::move(result));
-            targetChunk->transferPendingLightsToWorld(*this);
-            emitNeighborsBorderLights(targetChunk);
-        }
+        result.position = {targetChunk->getX(), targetChunk->getY(), targetChunk->getZ()};
+        result.needIndirectRendererUpdate = !isInstance;
+        result.needInstanceUpdate = isInstance;
+        m_chunksData.completedMeshes.push(std::move(result));
+        targetChunk->transferPendingLightsToWorld(*this);
 
 
         // Check borders for new block position
@@ -286,17 +266,14 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
 
         // Update adjacent chunks if the new block is at the border of the chunk
         for (int i = -1; i <= 1; ++i) {
-            for (int j = -1; j <= 1; ++j) {
-                for (int k = -1; k <= 1; ++k) {
-                    if (i == 0 && j == 0 && k == 0) {
-                        continue;
-                    }
+            if ((i == -1 && !willBeAtLeftBorder) || (i == 1 && !willBeAtRightBorder)) continue;
 
-                    if (i == -1 && !willBeAtLeftBorder || i == 1 && !willBeAtRightBorder ||
-                        j == -1 && !willBeAtBottomBorder || j == 1 && !willBeAtTopBorder ||
-                        k == -1 && !willBeAtFrontBorder || k == 1 && !willBeAtBackBorder) {
-                        continue;
-                    }
+            for (int j = -1; j <= 1; ++j) {
+                if ((j == -1 && !willBeAtBottomBorder) || (j == 1 && !willBeAtTopBorder)) continue;
+
+                for (int k = -1; k <= 1; ++k) {
+                    if ((k == -1 && !willBeAtFrontBorder) || (k == 1 && !willBeAtBackBorder)) continue;
+                    if (i == 0 && j == 0 && k == 0) continue;
 
                     if (const auto adjacentChunk = getChunk(
                         targetChunk->getX() + i * chunkSize,
@@ -309,15 +286,14 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
                         const int adjY = j == 0 ? targetY : j == -1 ? maxBlockPos : minBlockPos;
                         const int adjZ = k == 0 ? targetZ : k == -1 ? maxBlockPos : minBlockPos;
 
-                        MeshingResult result;
-                        adjacentChunk->addBlock(adjX, adjY, adjZ, blockToPlace, result);
+                        MeshingResult neighborResult;
+                        adjacentChunk->addBlock(adjX, adjY, adjZ, blockToPlace, neighborResult);
 
-                        result.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
-                        result.needIndirectRendererUpdate = !isInstance;
-                        result.needInstanceUpdate = isInstance;
-                        m_chunksData.completedMeshes.push(std::move(result));
+                        neighborResult.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
+                        neighborResult.needIndirectRendererUpdate = !isInstance;
+                        neighborResult.needInstanceUpdate = isInstance;
+                        m_chunksData.completedMeshes.push(std::move(neighborResult));
                         adjacentChunk->transferPendingLightsToWorld(*this);
-                        emitNeighborsBorderLights(adjacentChunk);
                     }
                 }
             }
@@ -363,7 +339,6 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
             m_needInstanceUpdate.store(true);
             p_chunk->transferPendingBlocksToWorld(*this);
             p_chunk->transferPendingLightsToWorld(*this);
-            emitNeighborsBorderLights(p_chunk);
         });
     }
 
@@ -396,7 +371,6 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 
                         m_chunksData.completedMeshes.push(std::move(result));
                         p_chunk->transferPendingLightsToWorld(*this);
-                        emitNeighborsBorderLights(p_chunk);
                     });
                 }
             } else {
@@ -504,25 +478,4 @@ std::shared_ptr<Chunk> WorldManager::getChunk(const int x, const int y, const in
     }
 
     return nullptr;
-}
-
-void WorldManager::emitNeighborsBorderLights(const std::shared_ptr<Chunk> &chunk) {
-    if (!chunk) return;
-    constexpr int S = static_cast<int>(Chunk::SIZE);
-    const int cx = chunk->getX();
-    const int cy = chunk->getY();
-    const int cz = chunk->getZ();
-
-    constexpr int dirs[6][3] = {
-        {-S, 0, 0}, {S, 0, 0},
-        {0, -S, 0}, {0, S, 0},
-        {0, 0, -S}, {0, 0, S}
-    };
-
-    for (const auto &d : dirs) {
-        if (const auto neighbor = getChunk(cx + d[0], cy + d[1], cz + d[2])) {
-            neighbor->emitBorderLights();
-            neighbor->transferPendingLightsToWorld(*this);
-        }
-    }
 }

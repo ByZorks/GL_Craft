@@ -11,10 +11,9 @@ Camera::Camera(const unsigned int windowWidth,
                const unsigned int windowHeight) : m_lastX(static_cast<float>(windowWidth) / 2.0f),
                                                   m_lastY(static_cast<float>(windowHeight) / 2.0f),
                                                   m_yaw(-90.0f), m_pitch(0.0f), m_lastYaw(0.f), m_lastPitch(.0f),
-                                                  m_firstMouse(true), m_cameraPos(glm::vec3(1813.0f, 200, 1170.0f)),
-                                                  m_cameraFront(glm::vec3(0.0f, 0.0f, 0.0f)),
-                                                  m_cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
-                                                  m_FOVDegrees(70.f),
+                                                  m_firstMouse(true), m_cameraPos(.0f, 100, .0f),
+                                                  m_cameraFront(0.0f, 0.0f, 0.0f),
+                                                  m_cameraUp(0.0f, 1.0f, 0.0f), m_FOVDegrees(70.f),
                                                   m_aspectRatio(
                                                       static_cast<float>(windowWidth) / static_cast<float>(
                                                           windowHeight)),
