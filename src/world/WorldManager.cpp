@@ -131,44 +131,97 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         m_chunksData.completedMeshes.push(std::move(result));
         chunk->transferPendingLightsToWorld(*this);
 
-        if (!isAtLeftBorder && !isAtRightBorder &&
-            !isAtBottomBorder && !isAtTopBorder &&
-            !isAtFrontBorder && !isAtBackBorder) {
-            return;
+        // Prevent processing the same chunk multiple times if the block is a light emitter and at the border
+        std::unordered_set<ChunkPosition> processedChunks;
+        processedChunks.emplace(chunk->getX(), chunk->getY(), chunk->getZ());
+
+        if (isAtLeftBorder || isAtRightBorder ||
+            isAtBottomBorder || isAtTopBorder ||
+            isAtFrontBorder || isAtBackBorder) {
+            // Update adjacent chunks if the block is at the border of the chunk
+            for (int i = -1; i <= 1; ++i) {
+                if ((i == -1 && !isAtLeftBorder) || (i == 1 && !isAtRightBorder)) continue;
+
+                for (int j = -1; j <= 1; ++j) {
+                    if ((j == -1 && !isAtBottomBorder) || (j == 1 && !isAtTopBorder)) continue;
+
+                    for (int k = -1; k <= 1; ++k) {
+                        if ((k == -1 && !isAtFrontBorder) || (k == 1 && !isAtBackBorder)) continue;
+                        if (i == 0 && j == 0 && k == 0) continue;
+
+                        constexpr int chunkSize = Chunk::SIZE;
+                        if (const auto adjacentChunk = getChunk(
+                            chunk->getX() + i * chunkSize,
+                            chunk->getY() + j * chunkSize,
+                            chunk->getZ() + k * chunkSize)) {
+                            constexpr int minBlockPos = -1; // chunk will add +1 when accessing the block
+                            constexpr int maxBlockPos = Chunk::SIZE; // chunk will add +1 when accessing the block
+
+                            const int adjX = i == 0 ? blockLocalPosition[0] : i == -1 ? maxBlockPos : minBlockPos;
+                            const int adjY = j == 0 ? blockLocalPosition[1] : j == -1 ? maxBlockPos : minBlockPos;
+                            const int adjZ = k == 0 ? blockLocalPosition[2] : k == -1 ? maxBlockPos : minBlockPos;
+
+                            MeshingResult neighborResult;
+                            adjacentChunk->deleteBlock(adjX, adjY, adjZ, type, neighborResult);
+
+                            neighborResult.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
+                            neighborResult.needIndirectRendererUpdate = !isInstance || isLightEmitter;
+                            neighborResult.needInstanceUpdate = isInstance;
+
+                            m_chunksData.completedMeshes.push(std::move(neighborResult));
+                            adjacentChunk->transferPendingLightsToWorld(*this);
+
+                            processedChunks.emplace(adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ());
+                        }
+                    }
+                }
+            }
         }
+        if (isLightEmitter) {
+            // Search chunks in the radius of light propagation
+            constexpr int lightPropagationRadius = 15;
+            constexpr int chunkSize = Chunk::SIZE;
+            const int chunkRadius = static_cast<int>(std::ceil(lightPropagationRadius / static_cast<float>(chunkSize)));
 
-        // Update adjacent chunks if the block is at the border of the chunk
-        for (int i = -1; i <= 1; ++i) {
-            if ((i == -1 && !isAtLeftBorder) || (i == 1 && !isAtRightBorder)) continue;
+            constexpr int radiusSq = lightPropagationRadius * lightPropagationRadius;
 
-            for (int j = -1; j <= 1; ++j) {
-                if ((j == -1 && !isAtBottomBorder) || (j == 1 && !isAtTopBorder)) continue;
+            const int worldBlockX = chunk->getX() + blockLocalPosition[0];
+            const int worldBlockY = chunk->getY() + blockLocalPosition[1];
+            const int worldBlockZ = chunk->getZ() + blockLocalPosition[2];
 
-                for (int k = -1; k <= 1; ++k) {
-                    if ((k == -1 && !isAtFrontBorder) || (k == 1 && !isAtBackBorder)) continue;
-                    if (i == 0 && j == 0 && k == 0) continue;
+            for (int dx = -chunkRadius; dx <= chunkRadius; ++dx) {
+                const int chunkWorldX = chunk->getX() + dx * chunkSize;
 
-                    constexpr int chunkSize = Chunk::SIZE;
-                    if (const auto adjacentChunk = getChunk(
-                        chunk->getX() + i * chunkSize,
-                        chunk->getY() + j * chunkSize,
-                        chunk->getZ() + k * chunkSize)) {
-                        constexpr int minBlockPos = -1; // chunk will add +1 when accessing the block
-                        constexpr int maxBlockPos = Chunk::SIZE; // chunk will add +1 when accessing the block
+                for (int dy = -chunkRadius; dy <= chunkRadius; ++dy) {
+                    const int chunkWorldY = chunk->getY() + dy * chunkSize;
 
-                        const int adjX = i == 0 ? blockLocalPosition[0] : i == -1 ? maxBlockPos : minBlockPos;
-                        const int adjY = j == 0 ? blockLocalPosition[1] : j == -1 ? maxBlockPos : minBlockPos;
-                        const int adjZ = k == 0 ? blockLocalPosition[2] : k == -1 ? maxBlockPos : minBlockPos;
+                    for (int dz = -chunkRadius; dz <= chunkRadius; ++dz) {
+                        const int chunkWorldZ = chunk->getZ() + dz * chunkSize;
 
-                        MeshingResult neighborResult;
-                        adjacentChunk->deleteBlock(adjX, adjY, adjZ, type, neighborResult);
+                        const int minDistX = std::max(0, std::max(chunkWorldX - worldBlockX, worldBlockX - (chunkWorldX + chunkSize - 1)));
+                        const int minDistY = std::max(0, std::max(chunkWorldY - worldBlockY, worldBlockY - (chunkWorldY + chunkSize - 1)));
+                        const int minDistZ = std::max(0, std::max(chunkWorldZ - worldBlockZ, worldBlockZ - (chunkWorldZ + chunkSize - 1)));
 
-                        neighborResult.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
-                        neighborResult.needIndirectRendererUpdate = !isInstance || isLightEmitter;
-                        neighborResult.needInstanceUpdate = isInstance;
+                        if (const int minDistSq = minDistX * minDistX + minDistY * minDistY + minDistZ * minDistZ;
+                            minDistSq > radiusSq) continue;
 
-                        m_chunksData.completedMeshes.push(std::move(neighborResult));
-                        adjacentChunk->transferPendingLightsToWorld(*this);
+                        const ChunkPosition pos{chunkWorldX, chunkWorldY, chunkWorldZ};
+                        if (processedChunks.contains(pos)) continue;
+
+                        if (const auto it = m_chunksData.loadedMeshes.find(pos);
+                            it != m_chunksData.loadedMeshes.end()) {
+                            const auto &adjacentChunk = it->second;
+                            MeshingResult neighborResult;
+                            adjacentChunk->propagateLight();
+                            adjacentChunk->generateNewMesh(neighborResult);
+
+                            neighborResult.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
+                            neighborResult.needIndirectRendererUpdate = true;
+                            neighborResult.needInstanceUpdate = false;
+
+                            m_chunksData.completedMeshes.push(std::move(neighborResult));
+                            adjacentChunk->transferPendingLightsToWorld(*this);
+                        }
                     }
                 }
             }
