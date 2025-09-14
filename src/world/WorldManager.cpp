@@ -1,6 +1,7 @@
 #include "WorldManager.h"
 
 #include <iostream>
+#include <numbers>
 #include <ranges>
 
 #include "WorldRenderer.h"
@@ -424,6 +425,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 
                         m_chunksData.completedMeshes.push(std::move(result));
                         p_chunk->transferPendingLightsToWorld(*this);
+                        emitNeighborsBorderLights(p_chunk); // Ensure pendings blocks are lit correctly
                     });
                 }
             } else {
@@ -531,4 +533,25 @@ std::shared_ptr<Chunk> WorldManager::getChunk(const int x, const int y, const in
     }
 
     return nullptr;
+}
+
+void WorldManager::emitNeighborsBorderLights(const std::shared_ptr<Chunk> &chunk) {
+    if (!chunk) return;
+
+    constexpr int S = static_cast<int>(Chunk::SIZE);
+    const int cx = chunk->getX();
+    const int cy = chunk->getY();
+    const int cz = chunk->getZ();
+    constexpr int dirs[6][3] = {
+        {-S, 0, 0}, {S, 0, 0},
+        {0, -S, 0}, {0, S, 0},
+        {0, 0, -S}, {0, 0, S}
+    };
+
+    for (const auto &d: dirs) {
+        if (const auto neighbor = getChunk(cx + d[0], cy + d[1], cz + d[2])) {
+            neighbor->emitBorderLights();
+            neighbor->transferPendingLightsToWorld(*this);
+        }
+    }
 }
