@@ -129,7 +129,6 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         result.needInstanceUpdate = isInstance;
 
         m_chunksData.completedMeshes.push(std::move(result));
-        chunk->transferPendingLightsToWorld(*this);
 
         // Prevent processing the same chunk multiple times if the block is a light emitter and at the border
         std::unordered_set<ChunkPosition> processedChunks;
@@ -226,6 +225,8 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
                 }
             }
         }
+
+        chunk->transferPendingLightsToWorld(*this);
     });
 }
 
@@ -301,7 +302,6 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
         result.needInstanceUpdate = isInstance;
         m_chunksData.completedMeshes.push(std::move(result));
         targetChunk->transferPendingLightsToWorld(*this);
-
 
         // Check borders for new block position
         const bool willBeAtLeftBorder = targetX == 0;
