@@ -30,13 +30,19 @@ const char *Block::getBlockName(const BlockType blockType) {
         case BlockType::JUNGLE_GRASS: return "JUNGLE_GRASS";
         case BlockType::SPRUCE_LEAVES: return "SPRUCE_LEAVES";
         case BlockType::SPRUCE_LOG: return "SPRUCE_LOG";
+        case BlockType::RED_LIGHT: return "RED_LIGHT";
+        case BlockType::GREEN_LIGHT: return "GREEN_LIGHT";
+        case BlockType::BLUE_LIGHT: return "BLUE_LIGHT";
+        case BlockType::PURPLE_LIGHT: return "PURPLE_LIGHT";
+        case BlockType::PINK_LIGHT: return "PINK_LIGHT";
+        case BlockType::YELLOW_LIGHT: return "YELLOW_LIGHT";
         default: return "UNKNOWN";
     }
 }
 
 void Block::addFaceVertex(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,
                             const std::array<bool, 26> &adjacentsFaces, const unsigned int startX,
-                            const unsigned int startY, const unsigned int startZ, const unsigned int lightLevel) {
+                            const unsigned int startY, const unsigned int startZ, const uint8_t sunlight, const RGBLight& blockLight) {
     const unsigned int position[3] = {startX, startY, startZ};
     const uint8_t texLayer = getTextureLayer(type, face);
 
@@ -61,7 +67,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
                     adjacentsFaces[AOIndex(0, -1, 1)],
                     adjacentsFaces[AOIndex(-1, -1, 1)])
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, sunlight, blockLight));
             break;
         }
         case Face::BACK: {
@@ -84,7 +90,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
                     adjacentsFaces[AOIndex(0, -1, -1)],
                     adjacentsFaces[AOIndex(1, -1, -1)])
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, sunlight, blockLight));
             break;
         }
         case Face::LEFT: {
@@ -107,7 +113,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
                     adjacentsFaces[AOIndex(-1, -1, 0)],
                     adjacentsFaces[AOIndex(-1, -1, -1)])
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, sunlight, blockLight));
             break;
         }
         case Face::RIGHT: {
@@ -130,7 +136,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
                     adjacentsFaces[AOIndex(1, -1, 0)],
                     adjacentsFaces[AOIndex(1, -1, 1)])
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, sunlight, blockLight));
             break;
         }
         case Face::TOP: {
@@ -153,7 +159,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
                     adjacentsFaces[AOIndex(0, 1, 1)],
                     adjacentsFaces[AOIndex(-1, 1, 1)]),
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, sunlight, blockLight));
             break;
         }
         case Face::BOTTOM: {
@@ -176,7 +182,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
                     adjacentsFaces[AOIndex(0, -1, -1)],
                     adjacentsFaces[AOIndex(-1, -1, -1)]),
             };
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, sunlight, blockLight));
             break;
         }
         default:
@@ -189,17 +195,18 @@ void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std
     const unsigned int position[3] = {startX, startY, startZ};
     const uint8_t texLayer = getTextureLayer(type, face);
     constexpr unsigned int ao[4] = {3, 3, 3, 3}; // AO is not used for billboards
-    constexpr unsigned int lightLevel = 15; // Max light level for now
+    constexpr unsigned int sunlight = 15; // Max light level for now
+    constexpr RGBLight blockLight = {0, 0, 0}; // No block light for now
 
     switch (face) {
         case Face::FRONT: {
             constexpr unsigned int faceIndex = 0;
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, sunlight, blockLight));
             break;
         }
         case Face::BACK: {
             constexpr unsigned int faceIndex = 1;
-            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, lightLevel));
+            outVertices.emplace_back(packVertexData(position, texLayer, faceIndex, ao, sunlight, blockLight));
             break;
         }
         default:
@@ -238,11 +245,32 @@ bool Block::isInstance(const BlockType type) {
 }
 
 bool Block::isLightEmitter(const BlockType type) {
-    return type == BlockType::SAND; // Placeholder for future light-emitting blocks
+    return type == BlockType::RED_LIGHT || type == BlockType::GREEN_LIGHT ||
+           type == BlockType::BLUE_LIGHT || type == BlockType::PURPLE_LIGHT ||
+           type == BlockType::PINK_LIGHT || type == BlockType::YELLOW_LIGHT;
+}
+
+RGBLight Block::getLightColor(const BlockType type) {
+    switch (type) {
+        case BlockType::RED_LIGHT:
+            return {15, 0, 0};
+        case BlockType::GREEN_LIGHT:
+            return {0, 15, 0};
+        case BlockType::BLUE_LIGHT:
+            return {0, 0, 15};
+        case BlockType::PURPLE_LIGHT:
+            return {10, 0, 15};
+        case BlockType::PINK_LIGHT:
+            return {15, 5, 10};
+        case BlockType::YELLOW_LIGHT:
+            return {15, 15, 0};
+        default:
+            return {0, 0, 0};
+    }
 }
 
 Block::BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t texLayer, const unsigned int faceIndex,
-                                         const unsigned int ao[4], const unsigned int lightLevel) {
+                                         const unsigned int ao[4], const uint8_t sunlight, const RGBLight& blockLight) {
     BlockVertex vertex{};
 
     constexpr unsigned int POS_MASK = 0x1F; // 5 bits, 0-31 range
@@ -255,7 +283,7 @@ Block::BlockVertex Block::packVertexData(const unsigned int position[3], const u
     vertex.packedData[0] |= (position[1] & POS_MASK) << 5;
     vertex.packedData[0] |= (position[2] & POS_MASK) << 10;
 
-    // TexLayer(6 bits)
+    // TexLayer (6 bits)
     vertex.packedData[0] |= (texLayer & TEX_MASK) << 15;
 
     // FaceIndex (3 bits)
@@ -269,8 +297,11 @@ Block::BlockVertex Block::packVertexData(const unsigned int position[3], const u
 
     constexpr unsigned int LIGHTING_MASK = 0xF; // 4 bits, 0-15 range
 
-    // Lighting (4 bits)
-    vertex.packedData[1] |= lightLevel & LIGHTING_MASK;
+    // Lighting (16 bits)
+    vertex.packedData[1] |= sunlight & LIGHTING_MASK;
+    vertex.packedData[1] |= (blockLight.r & LIGHTING_MASK) << 4;
+    vertex.packedData[1] |= (blockLight.g & LIGHTING_MASK) << 8;
+    vertex.packedData[1] |= (blockLight.b & LIGHTING_MASK) << 12;
 
     return vertex;
 }

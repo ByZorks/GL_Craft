@@ -10,7 +10,7 @@ public:
     void setSelectedBlockType(Block::BlockType blockType);
 
 private:
-    Block::BlockType m_selectedBlockType = Block::BlockType::AIR;
+    Block::BlockType m_selectedBlockType = Block::BlockType::PURPLE_LIGHT;
 
 };
 

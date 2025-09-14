@@ -12,6 +12,7 @@
 #include "Mesh.h"
 #include "PendingBlock.h"
 #include "PendingLight.h"
+#include "RGBLight.h"
 #include "../TerrainGenerator.h"
 #include "../surfaceFeatures/SurfaceFeature.h"
 
@@ -69,9 +70,9 @@ private:
     static std::tuple<int, int, int> unpackLightPos(uint32_t v);
 
     uint8_t getSunLightLevelAt(int localX, int localY, int localZ) const;
-    void setSunLightLevelAt(int localX, int localY, int localZ, uint8_t lightLevel);
-    uint8_t getBlockLightLevelAt(int localX, int localY, int localZ) const;
-    void setBlockLightLevelAt(int localX, int localY, int localZ, uint8_t lightLevel);
+    void setSunLightLevelAt(int localX, int localY, int localZ, uint16_t lightLevel);
+    RGBLight getRGBLightLevelAt(int localX, int localY, int localZ) const;
+    void setRGBAt(int localX, int localY, int localZ, const RGBLight &rgb);
 
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const override;
     [[nodiscard]] bool hasVisibleFaces() const;

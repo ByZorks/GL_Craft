@@ -3,10 +3,9 @@
 #include <cstdint>
 
 struct PendingLight {
-    int localX = 0;
-    int localY = 0;
-    int localZ = 0;
-    uint8_t lightLevel = 1u;
+    int localX, localY, localZ;
+    RGBLight blockLight;
+    uint8_t sunlight;
 };
 
 #endif // PENDING_LIGHT_H

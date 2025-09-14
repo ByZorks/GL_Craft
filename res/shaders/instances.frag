@@ -4,7 +4,8 @@ layout(location = 0) out vec4 color;
 
 in vec2 v_texCoord;
 flat in uint v_texLayer;
-flat in float v_lightLevel;
+flat in float v_sunlightLevel;
+flat in vec3 v_blockLightLevel;
 
 uniform sampler2DArray u_TextureArray;
 
@@ -13,7 +14,8 @@ void main() {
     if (texColor.a < 0.1) discard;
     texColor.rgb /= texColor.a; // Un-premultiply alpha
 
-    vec3 shaded = texColor.rgb * 0.7 * v_lightLevel; // Default side lighting
+    const vec3 totalLight = max(vec3(v_sunlightLevel), v_blockLightLevel);
+    vec3 shaded = texColor.rgb * 0.7 * totalLight; // Default side lighting
 
     color = vec4(shaded, texColor.a);
 }

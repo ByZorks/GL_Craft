@@ -5,7 +5,8 @@ struct BlockVertex {
     uint texLayer; // Texture layer for array texture
     uint face;// Face index (0-5 for 6 faces)
     uvec4 AO;// Ambient Occlusion values for each vertex (0-3)
-    uint lightLevel; // Light level (0-15)
+    uint sunlight; // Sunlight level (0-15)
+    uvec3 blockLightRGB; // Block light levels for R, G, B (0-15 each)
 };
 
 // UBOs
@@ -28,7 +29,8 @@ layout (std430, binding = 1) readonly buffer instanceData {
 
 out vec2 v_texCoord;
 flat out uint v_texLayer;
-flat out float v_lightLevel;
+flat out float v_sunlightLevel;
+flat out vec3 v_blockLightLevel;
 
 const vec3 faceOffsets[8] = {
     // FRONT (+Z)
@@ -66,8 +68,11 @@ BlockVertex unpackVertexData(uvec2 packedData) {
     v.AO.z = (packedData[0] >> 28) & 0x3u;
     v.AO.w = (packedData[0] >> 30) & 0x3u;
 
-    // LightLevel (4 bits)
-    v.lightLevel = (packedData[1] >> 0) & 0xFu;
+    // LightLevel (16 bits)
+    v.sunlight = (packedData[1] >> 0) & 0xFu;
+    v.blockLightRGB.x = (packedData[1] >> 4) & 0xFu;
+    v.blockLightRGB.y = (packedData[1] >> 8) & 0xFu;
+    v.blockLightRGB.z = (packedData[1] >> 12) & 0xFu;
 
     return v;
 }
@@ -96,5 +101,6 @@ void main() {
     v_texLayer = data.texLayer;
 
     // Light level
-    v_lightLevel = float(data.lightLevel) / 15.0;
+    v_sunlightLevel = float(data.sunlight) / 15.0;
+    v_blockLightLevel = vec3(data.blockLightRGB) / 15.0;
 }

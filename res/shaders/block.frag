@@ -6,7 +6,8 @@ in vec2 v_texCoord;
 flat in uint v_texLayer;
 flat in uint v_face;
 in float v_AO;
-flat in float v_lightLevel;
+flat in float v_sunlightLevel;
+flat in vec3 v_blockLightLevel;
 
 uniform sampler2DArray u_TextureArray;
 
@@ -22,6 +23,7 @@ void main() {
 //    if (aoLevel == 2) { color = vec4(0, 0.122, 1, 1); return; }
 //    if (aoLevel == 3) { color = vec4(1, 0, 0.953, 1); return; }
 
+    // Face lighting
     float lighting = 1.0;
     if (v_face == 4u) {
         lighting = 1.0; // Top
@@ -30,7 +32,9 @@ void main() {
     } else {
         lighting = 0.7; // Side
     }
-    const vec3 shaded = texColor.rgb * lighting * v_AO * v_lightLevel;
+
+    const vec3 totalLight = max(vec3(v_sunlightLevel), v_blockLightLevel);
+    const vec3 shaded = texColor.rgb * lighting * v_AO * totalLight;
 
     color = vec4(shaded, texColor.a);
 }

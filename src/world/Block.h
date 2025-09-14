@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <vector>
 
+#include "chunk/RGBLight.h"
+
 class Block {
 public:
     enum class Face : uint8_t {
@@ -23,7 +25,7 @@ public:
     enum class BlockType : uint8_t {
         AIR, BEDROCK, DIRT, GRASS, STONE, WATER, OAK_LOG, OAK_LEAVES, SHORT_GRASS, FLOWER_POPPY, FLOWER_CORNFLOWER,
         FLOWER_ALLIUM, SNOW, SNOW_GRASS, SAND, GRAVEL, SNOW_OAK_LEAVES, CACTUS, JUNGLE_LOG, JUNGLE_LEAVES, JUNGLE_GRASS,
-        SPRUCE_LOG, SPRUCE_LEAVES,
+        SPRUCE_LOG, SPRUCE_LEAVES, RED_LIGHT, GREEN_LIGHT, BLUE_LIGHT, PURPLE_LIGHT, PINK_LIGHT, YELLOW_LIGHT,
     };
 
     struct BlockVertex {
@@ -36,7 +38,7 @@ public:
     static const char *getBlockName(BlockType blockType);
     static void addFaceVertex(Face face, BlockType type, std::vector<BlockVertex> &outVertices,
                                 const std::array<bool, 26> &adjacentsFaces, unsigned int startX, unsigned int startY,
-                                unsigned int startZ, unsigned int lightLevel);
+                                unsigned int startZ, uint8_t sunlight, const RGBLight& blockLight);
     static void addFaceVerticesAsBilboard(Face face, BlockType type, std::vector<BlockVertex> &outVertices,
                                           unsigned int startX, unsigned int startY, unsigned int startZ);
     static bool isOpaque(BlockType type);
@@ -44,17 +46,18 @@ public:
     static bool isSemiTransparent(BlockType type);
     static bool isInstance(BlockType type);
     static bool isLightEmitter(BlockType type);
+    static RGBLight getLightColor(BlockType type);
 
 private:
     static BlockVertex packVertexData(const unsigned int position[3], uint8_t texLayer, unsigned int faceIndex,
-                                      const unsigned int ao[4], unsigned int lightLevel);
+                                      const unsigned int ao[4], uint8_t sunlight, const RGBLight& blockLight);
 
     static uint8_t getTextureLayer(BlockType type, Face face);
     static uint8_t computeVertexAO(bool side1, bool side2, bool corner);
     [[nodiscard]] static int AOIndex(int x, int y, int z);
 
 private:
-    static constexpr uint8_t s_textureLayer[24][3] = {
+    static constexpr uint8_t s_textureLayer[29][3] = {
         // [side, top, bottom]
         {0, 0, 0},    // AIR
         {0, 0, 0},    // BEDROCK
@@ -79,6 +82,12 @@ private:
         {32, 33, 1},  // JUNGLE_GRASS
         {34, 35, 35}, // SPRUCE_LOG
         {36, 36, 36}, // SPRUCE_LEAVES
+        {37, 37, 37}, // RED_LIGHT
+        {38, 38, 38}, // GREEN_LIGHT
+        {39, 39, 39}, // BLUE_LIGHT
+        {40, 40, 40}, // PURPLE_LIGHT
+        {41, 41, 41}, // PINK_LIGHT
+        {42, 42, 42}, // YELLOW_LIGHT
     };
 };
 
