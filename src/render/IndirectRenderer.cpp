@@ -1,6 +1,7 @@
 #include "IndirectRenderer.h"
 
 #include <cmath>
+#include <cstring>
 #include <iostream>
 
 #include "Renderer.h"
