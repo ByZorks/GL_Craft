@@ -70,9 +70,9 @@ private:
     static std::tuple<int, int, int> unpackLightPos(uint32_t v);
 
     uint8_t getSunLightLevelAt(int localX, int localY, int localZ) const;
-    void setSunLightLevelAt(int localX, int localY, int localZ, uint16_t lightLevel);
-    RGBLight getRGBLightLevelAt(int localX, int localY, int localZ) const;
-    void setRGBAt(int localX, int localY, int localZ, const RGBLight &rgb);
+    void setSunLightLevelAt(int localX, int localY, int localZ, uint8_t lightLevel);
+    RGBLight getBlockLightRGBLevelAt(int localX, int localY, int localZ) const;
+    void setBlockLightRGBAt(int localX, int localY, int localZ, const RGBLight &rgb);
 
     [[nodiscard]] bool isBlockPresent(int localX, int localY, int localZ) const override;
     [[nodiscard]] bool hasVisibleFaces() const;
