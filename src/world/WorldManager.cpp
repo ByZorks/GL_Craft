@@ -424,8 +424,11 @@ bool WorldManager::getNeedInstanceUpdate() const {
 }
 
 void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
-    const int maxChunksPerFrame = static_cast<int>(
-        0.05f * Renderer::s_renderDistance + 0.2f * static_cast<float>(m_threadPool.getNumberOfThreads()));
+    const int maxChunksPerFrame = std::max(static_cast<int>(
+        0.05f * Renderer::s_renderDistance + 0.2f * static_cast<float>(m_threadPool.getNumberOfThreads())), 10);
+    const int maxPendingBlocksPerFrame = std::max(static_cast<int>(static_cast<float>(maxChunksPerFrame) * 0.5f), 5);
+    const int maxPendingLightsPerFrame = std::max(static_cast<int>(static_cast<float>(maxChunksPerFrame) * 0.1f), 2);
+    const int maxUpdatePerFrame = std::max(static_cast<int>(static_cast<float>(maxChunksPerFrame) * 0.3f), 4);
 
     // Destroy chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {
@@ -460,7 +463,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
     if (!m_chunksData.pendingBlocks.empty()) {
         int processed = 0;
         std::lock_guard lock(m_chunksData.pendingBlocksMutex);
-        for (auto it = m_chunksData.pendingBlocks.begin(); it != m_chunksData.pendingBlocks.end() && processed < maxChunksPerFrame;) {
+        for (auto it = m_chunksData.pendingBlocks.begin(); it != m_chunksData.pendingBlocks.end() && processed < maxPendingBlocksPerFrame;) {
             const ChunkPosition key = it->first;
 
             if (auto loaded_it = m_chunksData.loadedMeshes.find(key); loaded_it != m_chunksData.loadedMeshes.end()) {
@@ -498,7 +501,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
     if (!m_chunksData.pendingLights.empty()) {
         int processed = 0;
         std::lock_guard lock(m_chunksData.pendingLightsMutex);
-        for (auto it = m_chunksData.pendingLights.begin(); it != m_chunksData.pendingLights.end() && processed < maxChunksPerFrame; ) {
+        for (auto it = m_chunksData.pendingLights.begin(); it != m_chunksData.pendingLights.end() && processed < maxPendingLightsPerFrame; ) {
             const ChunkPosition key = it->first;
 
             if (auto loaded_it = m_chunksData.loadedMeshes.find(key); loaded_it != m_chunksData.loadedMeshes.end()) {
@@ -529,7 +532,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
     }
 
     // Third pass: update meshes that needs it
-    for (int i = 0; i < maxChunksPerFrame; ++i) {
+    for (int i = 0; i < maxUpdatePerFrame; ++i) {
         if (m_chunksData.completedMeshes.empty()) break;
         auto [opaqueVertices, waterVertices, position,
             hasOpaqueFaces, hasWaterFaces,
