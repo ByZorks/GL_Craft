@@ -334,8 +334,7 @@ void Chunk::emitBorderLights() {
                 for (int z = 0; z < static_cast<int>(SIZE); ++z) {
                     const uint8_t sunLvl = getSunLightLevelAt(sample, y, z);
                     const RGBLight blockLight = getBlockLightRGBLevelAt(sample, y, z);
-                    const uint8_t blockLvl = blockLight.getEffectiveLevel();
-                    if (sunLvl <= MIN_LIGHT_LEVEL && blockLvl <= MIN_LIGHT_LEVEL) continue;
+                    if (sunLvl <= MIN_LIGHT_LEVEL + 1u && !blockLight.shouldPropagate(MIN_LIGHT_LEVEL)) continue;
 
                     batch.emplace_back(emitCoord, y, z, blockLight, sunLvl);
                 }
@@ -349,8 +348,7 @@ void Chunk::emitBorderLights() {
                 for (int z = 0; z < static_cast<int>(SIZE); ++z) {
                     const uint8_t sunLvl = getSunLightLevelAt(x, sample, z);
                     const RGBLight blockLight = getBlockLightRGBLevelAt(x, sample, z);
-                    const uint8_t blockLvl = blockLight.getEffectiveLevel();
-                    if (sunLvl <= MIN_LIGHT_LEVEL && blockLvl <= MIN_LIGHT_LEVEL) continue;
+                    if (sunLvl <= MIN_LIGHT_LEVEL + 1u && !blockLight.shouldPropagate(MIN_LIGHT_LEVEL)) continue;
 
                     batch.emplace_back(x, emitCoord, z, blockLight, sunLvl);
                 }
@@ -364,8 +362,7 @@ void Chunk::emitBorderLights() {
                 for (int y = 0; y < static_cast<int>(SIZE); ++y) {
                     const uint8_t sunLvl = getSunLightLevelAt(x, y, sample);
                     const RGBLight blockLight = getBlockLightRGBLevelAt(x, y, sample);
-                    const uint8_t blockLvl = blockLight.getEffectiveLevel();
-                    if (sunLvl <= MIN_LIGHT_LEVEL && blockLvl <= MIN_LIGHT_LEVEL) continue;
+                    if (sunLvl <= MIN_LIGHT_LEVEL + 1u && !blockLight.shouldPropagate(MIN_LIGHT_LEVEL)) continue;
 
                     batch.emplace_back(x, y, emitCoord, blockLight, sunLvl);
                 }
@@ -897,7 +894,7 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
         const uint8_t sunlightLvl = getSunLightLevelAt(x, y, z);
         const RGBLight rgbLvl = getBlockLightRGBLevelAt(x, y, z);
 
-        if (sunlightLvl <= MIN_LIGHT_LEVEL && !rgbLvl.shouldPropagate(MIN_LIGHT_LEVEL)) continue;
+        if (sunlightLvl <= MIN_LIGHT_LEVEL + 1u && !rgbLvl.shouldPropagate(MIN_LIGHT_LEVEL)) continue;
 
         if (x == -1)  toEmit[{m_x - static_cast<int>(SIZE), m_y, m_z}].emplace_back(static_cast<int>(SIZE), y, z, rgbLvl, sunlightLvl);
         if (x == static_cast<int>(SIZE)) toEmit[{m_x + static_cast<int>(SIZE), m_y, m_z}].emplace_back(-1, y, z, rgbLvl, sunlightLvl);

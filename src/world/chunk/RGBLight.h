@@ -13,7 +13,7 @@ struct RGBLight {
     }
 
     [[nodiscard]] bool shouldPropagate(const uint8_t minLevel = 1u) const {
-        return r > minLevel || g > minLevel || b > minLevel;
+        return r > minLevel + 1u || g > minLevel + 1u || b > minLevel + 1u;
     }
 
     [[nodiscard]] RGBLight attenuated() const {
