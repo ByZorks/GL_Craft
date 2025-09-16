@@ -1,6 +1,13 @@
 #include "Player.h"
 
-Player::Player() = default;
+Player::Player() {
+    m_blocks[0] = Block::BlockType::RED_LIGHT;
+    m_blocks[1] = Block::BlockType::GREEN_LIGHT;
+    m_blocks[2] = Block::BlockType::BLUE_LIGHT;
+    m_blocks[3] = Block::BlockType::PURPLE_LIGHT;
+    m_blocks[4] = Block::BlockType::PINK_LIGHT;
+    m_blocks[5] = Block::BlockType::YELLOW_LIGHT;
+}
 
 Block::BlockType Player::getSelectedBlockType() const {
     return m_selectedBlockType;

@@ -176,8 +176,24 @@ void Chunk::propagateLight() {
                 static_cast<uint8_t>(std::max(static_cast<int>(MIN_LIGHT_LEVEL), static_cast<int>(currentRGB.b) - 1))
             };
 
-            if (attenuatedLight.getEffectiveLevel() > neighborLight.getEffectiveLevel()) {
-                setBlockLightRGBAt(nx, ny, nz, attenuatedLight);
+            RGBLight mixedLight = neighborLight;
+            bool shouldUpdate = false;
+
+            if (attenuatedLight.r > neighborLight.r) {
+                mixedLight.r = attenuatedLight.r;
+                shouldUpdate = true;
+            }
+            if (attenuatedLight.g > neighborLight.g) {
+                mixedLight.g = attenuatedLight.g;
+                shouldUpdate = true;
+            }
+            if (attenuatedLight.b > neighborLight.b) {
+                mixedLight.b = attenuatedLight.b;
+                shouldUpdate = true;
+            }
+
+            if (shouldUpdate) {
+                setBlockLightRGBAt(nx, ny, nz, mixedLight);
                 if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && nz >= 0 && nz < SIZE) {
                     blockLightQueue.push(packLightPos(nx, ny, nz));
                 }
@@ -772,17 +788,35 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
             if (nx < -1 || ny < -1 || nz < -1 || nx >= static_cast<int>(SIZE) + 1 || ny >= static_cast<int>(SIZE) + 1 || nz >= static_cast<int>(SIZE) + 1) continue;
             if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
 
-            const RGBLight neighborRGB = getBlockLightRGBLevelAt(nx, ny, nz);
+            const RGBLight neighborLight = getBlockLightRGBLevelAt(nx, ny, nz);
             const RGBLight attenuatedLight = {
                 static_cast<uint8_t>(std::max(0, static_cast<int>(currentRGB.r) - 1)),
                 static_cast<uint8_t>(std::max(0, static_cast<int>(currentRGB.g) - 1)),
                 static_cast<uint8_t>(std::max(0, static_cast<int>(currentRGB.b) - 1))
             };
 
-            if (attenuatedLight.getEffectiveLevel() > neighborRGB.getEffectiveLevel()) {
-                setBlockLightRGBAt(nx, ny, nz, attenuatedLight);
-                changed.emplace_back(nx, ny, nz);
-                blockLightQueue.emplace(packLightPos(nx, ny, nz));
+            RGBLight mixedLight = neighborLight;
+            bool shouldUpdate = false;
+
+            if (attenuatedLight.r > neighborLight.r) {
+                mixedLight.r = attenuatedLight.r;
+                shouldUpdate = true;
+            }
+            if (attenuatedLight.g > neighborLight.g) {
+                mixedLight.g = attenuatedLight.g;
+                shouldUpdate = true;
+            }
+            if (attenuatedLight.b > neighborLight.b) {
+                mixedLight.b = attenuatedLight.b;
+                shouldUpdate = true;
+            }
+
+            if (shouldUpdate) {
+                if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && nz >= 0 && nz < SIZE) {
+                    setBlockLightRGBAt(nx, ny, nz, mixedLight);
+                    blockLightQueue.emplace(packLightPos(nx, ny, nz));
+                    changed.emplace_back(nx,ny,nz);
+                }
             }
         }
     }
