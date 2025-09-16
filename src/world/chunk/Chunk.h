@@ -27,6 +27,7 @@ public:
     void generateVoxel() override;
     void generatePendingBlocks(std::list<PendingBlock> &blocks, MeshingResult &outResult);
     void propagateLight();
+    void propagateBlockLightFrom(int localX, int localY, int localZ);
     void generateMesh() override;
     void generateNewMesh(MeshingResult &outResult) const;
     void transferPendingBlocksToWorld(WorldManager &world);
