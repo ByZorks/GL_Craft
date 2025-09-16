@@ -229,6 +229,7 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
             }
         }
 
+        emitNeighborsBorderLights(chunk);
         chunk->transferPendingLightsToWorld(*this);
     });
 }
@@ -305,7 +306,6 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
         result.needIndirectRendererUpdate = !isInstance || isLightEmitter;
         result.needInstanceUpdate = isInstance;
         m_chunksData.completedMeshes.push(std::move(result));
-        targetChunk->transferPendingLightsToWorld(*this);
 
         // Check borders for new block position
         const bool willBeAtLeftBorder = targetX == 0;
@@ -409,6 +409,9 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
                 }
             }
         }
+
+        emitNeighborsBorderLights(targetChunk);
+        targetChunk->transferPendingLightsToWorld(*this);
     });
 }
 
