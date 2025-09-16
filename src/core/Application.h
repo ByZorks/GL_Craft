@@ -31,6 +31,7 @@ private:
     void onMouseMove(double xPos, double yPos);
     void onFrameBufferResize(int width, int height);
     void onMouseEvent(int button, int action);
+    void onKeyEvent(int key, int action);
 
     static void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id, GLenum severity,
                                        GLsizei length, const char *message, const void *userParam);
@@ -61,6 +62,9 @@ private:
 
     unsigned int m_drawCmds = 0;
     bool m_leftClicked = false, m_rightClicked = false, m_middleClicked = false;
+    bool m_key1Pressed = false, m_key2Pressed = false, m_key3Pressed = false;
+    bool m_key4Pressed = false, m_key5Pressed = false, m_key6Pressed = false;
+    bool m_key7Pressed = false, m_key8Pressed = false, m_key9Pressed = false;
     float m_aspectRatio = 16.0f / 9.0f;
     int m_MVPUniformBufferBindingSlot = 0;
     int m_timeUniformBufferBindingSlot = 1;

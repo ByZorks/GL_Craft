@@ -7,10 +7,13 @@ public:
     Player();
 
     [[nodiscard]] Block::BlockType getSelectedBlockType() const;
-    void setSelectedBlockType(Block::BlockType blockType);
+    void setBlockForCurrentlySelectedHotbarSlot(Block::BlockType blockType);
+    void selectHotbarSlot(unsigned int hotbarIndex);
 
 private:
-    Block::BlockType m_selectedBlockType = Block::BlockType::PURPLE_LIGHT;
+    std::array<Block::BlockType, 9> m_blocks{};
+    uint8_t m_selectedHotbarSlot = 0;
+    Block::BlockType m_selectedBlockType = Block::BlockType::AIR;
 
 };
 

@@ -70,6 +70,11 @@ void Application::initGLFW(const int width, const int height, const char *title)
                                    auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
                                    app->onMouseEvent(button, action);
                                });
+    glfwSetKeyCallback(m_window.get(),
+        [](GLFWwindow *window, const int key, int scancode, const int action, int mods) {
+            auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
+            app->onKeyEvent(key, action);
+        });
 
     glfwSetInputMode(m_window.get(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(m_window.get(), this);
@@ -146,8 +151,6 @@ void Application::initResources() {
 }
 
 void Application::processInput(const double deltaTime) {
-    if (glfwGetKey(m_window.get(), GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(m_window.get(), true);
-
     m_debugUI.processInput(m_window, m_camera); // Tab key for ImGui
 
     if (m_camera.isInputEnabled()) m_camera.processInput(m_window, deltaTime);
@@ -193,9 +196,20 @@ void Application::update() {
         } else if (m_rightClicked) {
             m_world->getWorldManager().placeBlockAndUpdateNeighbors(m_raycastResult, m_player.getSelectedBlockType());
         } else if (m_middleClicked) {
-            m_player.setSelectedBlockType(m_raycastResult.blockType);
+            m_player.setBlockForCurrentlySelectedHotbarSlot(m_raycastResult.blockType);
         }
     }
+
+    // Hotbar selection
+    if (m_key1Pressed) m_player.selectHotbarSlot(0);
+    if (m_key2Pressed) m_player.selectHotbarSlot(1);
+    if (m_key3Pressed) m_player.selectHotbarSlot(2);
+    if (m_key4Pressed) m_player.selectHotbarSlot(3);
+    if (m_key5Pressed) m_player.selectHotbarSlot(4);
+    if (m_key6Pressed) m_player.selectHotbarSlot(5);
+    if (m_key7Pressed) m_player.selectHotbarSlot(6);
+    if (m_key8Pressed) m_player.selectHotbarSlot(7);
+    if (m_key9Pressed) m_player.selectHotbarSlot(8);
 }
 
 void Application::render() {
@@ -246,6 +260,15 @@ void Application::stateUpdate() {
     m_leftClicked = false;
     m_rightClicked = false;
     m_middleClicked = false;
+    m_key1Pressed = false;
+    m_key2Pressed = false;
+    m_key3Pressed = false;
+    m_key4Pressed = false;
+    m_key5Pressed = false;
+    m_key6Pressed = false;
+    m_key7Pressed = false;
+    m_key8Pressed = false;
+    m_key9Pressed = false;
 }
 
 void Application::onMouseMove(const double xPos, const double yPos) {
@@ -272,6 +295,43 @@ void Application::onMouseEvent(const int button, const int action) {
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
         m_middleClicked = true;
+    }
+}
+
+void Application::onKeyEvent(const int key, const int action) {
+    if (action == GLFW_PRESS) {
+        if (key == GLFW_KEY_ESCAPE) {
+            glfwSetWindowShouldClose(m_window.get(), GLFW_TRUE);
+        }
+        // Hotbar selection
+        // Qwerty or Azerty keyboard layouts
+        if (key == GLFW_KEY_1 || key == GLFW_KEY_KP_1) {
+            m_key1Pressed = true;
+        }
+        if (key == GLFW_KEY_2 || key == GLFW_KEY_KP_2) {
+            m_key2Pressed = true;
+        }
+        if (key == GLFW_KEY_3 || key == GLFW_KEY_KP_3) {
+            m_key3Pressed = true;
+        }
+        if (key == GLFW_KEY_4 || key == GLFW_KEY_KP_4) {
+            m_key4Pressed = true;
+        }
+        if (key == GLFW_KEY_5 || key == GLFW_KEY_KP_5) {
+            m_key5Pressed = true;
+        }
+        if (key == GLFW_KEY_6 || key == GLFW_KEY_KP_6) {
+            m_key6Pressed = true;
+        }
+        if (key == GLFW_KEY_7 || key == GLFW_KEY_KP_7) {
+            m_key8Pressed = true;
+        }
+        if (key == GLFW_KEY_8 || key == GLFW_KEY_KP_8) {
+            m_key7Pressed = true;
+        }
+        if (key == GLFW_KEY_9 || key == GLFW_KEY_KP_9) {
+            m_key9Pressed = true;
+        }
     }
 }
 
