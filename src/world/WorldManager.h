@@ -26,7 +26,7 @@ private:
     void processChunksQueues(IndirectRenderer &renderer);
     void generateChunksPositions(int cameraWorldX, int cameraWorldY, int cameraWorldZ);
     void getDistantChunks(const glm::vec3 &cameraChunkPos);
-    std::shared_ptr<Chunk> getChunk(int x, int y, int z) const;
+    std::shared_ptr<Chunk> getChunk(const ChunkPosition &position) const;
     void emitNeighborsBorderLights(const std::shared_ptr<Chunk> &chunk);
 
 private:
