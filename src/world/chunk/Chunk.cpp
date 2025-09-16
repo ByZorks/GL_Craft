@@ -871,11 +871,9 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
             }
 
             if (shouldUpdate) {
-                if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && nz >= 0 && nz < SIZE) {
-                    setBlockLightRGBAt(nx, ny, nz, mixedLight);
-                    blockLightQueue.emplace(packLightPos(nx, ny, nz));
-                    changed.emplace_back(nx,ny,nz);
-                }
+                setBlockLightRGBAt(nx, ny, nz, mixedLight);
+                blockLightQueue.emplace(packLightPos(nx, ny, nz));
+                changed.emplace_back(nx,ny,nz);
             }
         }
     }
