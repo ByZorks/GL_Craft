@@ -442,17 +442,17 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 
     // Destroy chunks that are no longer needed
     for (int i = 0; i < maxChunksPerFrame; ++i) {
-        if (m_chunksData.meshesToDelete.empty()) break;
-        auto chunk = m_chunksData.meshesToDelete.pop();
+        std::shared_ptr<Chunk> chunk;
+        if (!m_chunksData.meshesToDelete.try_pop(chunk)) break;
         renderer.removeChunk(chunk);
         m_chunksData.loadedMeshes.erase({chunk->getX(), chunk->getY(), chunk->getZ()});
     }
 
     // First pass: generate voxel and mesh
     for (int i = 0; i < maxChunksPerFrame; ++i) {
-        if (m_chunksData.meshesToGenerate.empty()) break;
+        ChunkPosition key{};
+        if (!m_chunksData.meshesToGenerate.try_pop(key)) break;
 
-        const ChunkPosition key = m_chunksData.meshesToGenerate.pop();
         auto [it, inserted] = m_chunksData.loadedMeshes.try_emplace(key, nullptr);
         if (!inserted) continue;
 
@@ -550,25 +550,23 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 
     // Third pass: update meshes that needs it
     for (int i = 0; i < maxUpdatePerFrame; ++i) {
-        if (m_chunksData.completedMeshes.empty()) break;
-        auto [opaqueVertices, waterVertices, position,
-            hasOpaqueFaces, hasWaterFaces,
-            needInstanceUpdate, needIndirectRendererUpdate] = m_chunksData.completedMeshes.pop();
+        MeshingResult result;
+        if (!m_chunksData.completedMeshes.try_pop(result)) break;
 
-        if (const auto it = m_chunksData.loadedMeshes.find(position);
+        if (const auto it = m_chunksData.loadedMeshes.find(result.position);
             it != m_chunksData.loadedMeshes.end()) {
             const std::shared_ptr<Chunk> p_chunk = it->second;
 
-            if (needIndirectRendererUpdate) {
-                p_chunk->getOpaqueVertices().swap(opaqueVertices);
-                p_chunk->getWaterVertices().swap(waterVertices);
-                p_chunk->setHasOpaqueFaces(hasOpaqueFaces);
-                p_chunk->setHasWaterFaces(hasWaterFaces);
+            if (result.needIndirectRendererUpdate) {
+                p_chunk->getOpaqueVertices().swap(result.opaqueVertices);
+                p_chunk->getWaterVertices().swap(result.waterVertices);
+                p_chunk->setHasOpaqueFaces(result.hasOpaqueFaces);
+                p_chunk->setHasWaterFaces(result.hasWaterFaces);
                 p_chunk->updateVertexCount();
                 renderer.updateChunk(p_chunk);
             }
 
-            m_needInstanceUpdate.store(m_needInstanceUpdate.load() || needInstanceUpdate);
+            m_needInstanceUpdate.store(m_needInstanceUpdate.load() || result.needInstanceUpdate);
         }
     }
 }

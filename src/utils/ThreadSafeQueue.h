@@ -1,54 +1,50 @@
 #ifndef SAFEQUEUE_H
 #define SAFEQUEUE_H
 
-#include <condition_variable>
 #include <mutex>
 #include <queue>
-
-/**
- * @author https://www.geeksforgeeks.org/dsa/implement-thread-safe-queue-in-c/
-*/
 
 template<typename T>
 class ThreadSafeQueue {
 public:
-    void push(const T &item) { {
-            std::lock_guard lk(mutex_);
-            queue_.push(item);
-        }
-    }
+    void push(const T &item);
+    void push(T &&item);
+    bool try_pop(T &out);
 
-    void push(T &&item) { {
-            std::lock_guard lk(mutex_);
-            queue_.push(std::move(item));
-        }
-    }
-
-    [[nodiscard]] bool empty() {
-        std::lock_guard lk(mutex_);
-        return queue_.empty();
-    }
-
-    T pop() {
-        std::unique_lock lk(mutex_);
-        if (queue_.empty()) return T{};
-        T item = std::move(queue_.front());
-        queue_.pop();
-        return item;
-    }
-
-    void clear() {
-        std::lock_guard lk(mutex_);
-        while (!queue_.empty()) {
-            queue_.pop();
-        }
-    }
+    void clear();
 
 private:
-    std::queue<T> queue_;
-    std::mutex mutex_;
-    bool done_ = false;
+    std::queue<T> m_queue;
+    std::mutex m_mutex;
 };
 
+template<typename T>
+void ThreadSafeQueue<T>::push(const T &item) {
+    std::lock_guard lock(m_mutex);
+    m_queue.push(item);
+}
+
+template<typename T>
+void ThreadSafeQueue<T>::push(T &&item) {
+    std::lock_guard lock(m_mutex);
+    m_queue.push(std::move(item));
+}
+
+template<typename T>
+bool ThreadSafeQueue<T>::try_pop(T &out) {
+    std::lock_guard lock(m_mutex);
+    if (m_queue.empty()) return false;
+    out = std::move(m_queue.front());
+    m_queue.pop();
+    return true;
+}
+
+template<typename T>
+void ThreadSafeQueue<T>::clear() {
+    std::lock_guard lock(m_mutex);
+    while (!m_queue.empty()) {
+        m_queue.pop();
+    }
+}
 
 #endif //SAFEQUEUE_H
