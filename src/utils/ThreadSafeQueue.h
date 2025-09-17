@@ -19,9 +19,9 @@ public:
         condVar_.notify_one();
     }
 
-    void push(const T &&item) { {
+    void push(T &&item) { {
             std::lock_guard lk(mutex_);
-            queue_.push(item);
+            queue_.push(std::move(item));
         }
         condVar_.notify_one();
     }
@@ -40,23 +40,13 @@ public:
 
     int size() {
         std::lock_guard lk(mutex_);
-        return queue_.size();
+        return static_cast<int>(queue_.size());
     }
 
     T pop() {
         std::unique_lock lk(mutex_);
         if (queue_.empty()) return T{};
-        T item = queue_.front();
-        queue_.pop();
-        return item;
-    }
-
-    T popBlocking() {
-        std::unique_lock lk(mutex_);
-        condVar_.wait(lk, [&] { return done_ || !queue_.empty(); });
-        if (done_ && queue_.empty()) return nullptr;
-
-        T item = queue_.front();
+        T item = std::move(queue_.front());
         queue_.pop();
         return item;
     }
