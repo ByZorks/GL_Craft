@@ -421,8 +421,8 @@ float TerrainGenerator::getContinentalnessLevel(const float continentalness) {
 
     for (size_t i = 1; i < std::size(steps); ++i) {
         if (continentalness <= steps[i].noise) {
-            const Step &a = steps[i - 1];
-            const Step &b = steps[i];
+            const Step a = steps[i - 1];
+            const Step b = steps[i];
 
             // Linear interpolation
             const float t = (continentalness - a.noise) / (b.noise - a.noise);
@@ -450,8 +450,8 @@ float TerrainGenerator::getErosionLevel(const float erosion) {
 
     for (size_t i = 1; i < std::size(steps); ++i) {
         if (erosion <= steps[i].noise) {
-            const Step &a = steps[i - 1];
-            const Step &b = steps[i];
+            const Step a = steps[i - 1];
+            const Step b = steps[i];
 
             // Linear interpolation
             const float t = (erosion - a.noise) / (b.noise - a.noise);
