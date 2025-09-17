@@ -55,6 +55,8 @@ public:
     [[nodiscard]] std::vector<Block::BlockVertex> &getWaterVertices();
     [[nodiscard]] unsigned int getOpaqueVertexCount() const;
     [[nodiscard]] unsigned int getWaterVertexCount() const;
+    [[nodiscard]] unsigned int getOpaqueVertexVectorSize() const;
+    [[nodiscard]] unsigned int getWaterVertexVectorSize() const;
 
 protected:
     struct BufferData {

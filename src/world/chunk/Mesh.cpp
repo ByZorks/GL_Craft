@@ -161,3 +161,11 @@ unsigned int Mesh::getOpaqueVertexCount() const {
 unsigned int Mesh::getWaterVertexCount() const {
     return m_waterData.verticesCount;
 }
+
+unsigned int Mesh::getOpaqueVertexVectorSize() const {
+    return static_cast<unsigned int>(m_opaqueData.vertices.size());
+}
+
+unsigned int Mesh::getWaterVertexVectorSize() const {
+    return static_cast<unsigned int>(m_waterData.vertices.size());
+}

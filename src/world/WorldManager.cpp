@@ -121,6 +121,8 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
         const bool isLightEmitter = Block::isLightEmitter(type);
 
         MeshingResult result;
+        result.opaqueVertices.reserve(chunk->getOpaqueVertexVectorSize());
+        result.waterVertices.reserve(chunk->getWaterVertexVectorSize());
         chunk->deleteBlock(blockLocalPosition[0], blockLocalPosition[1], blockLocalPosition[2], type, result);
 
         result.position = {chunk->getX(), chunk->getY(), chunk->getZ()};
@@ -161,6 +163,8 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
                             const int adjZ = k == 0 ? blockLocalPosition[2] : k == -1 ? maxBlockPos : minBlockPos;
 
                             MeshingResult neighborResult;
+                            neighborResult.opaqueVertices.reserve(adjacentChunk->getOpaqueVertexVectorSize());
+                            neighborResult.waterVertices.reserve(adjacentChunk->getWaterVertexVectorSize());
                             adjacentChunk->deleteBlock(adjX, adjY, adjZ, type, neighborResult);
 
                             neighborResult.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
@@ -212,6 +216,8 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
 
                         if (const auto adjacentChunk = getChunk(pos)) {
                             MeshingResult neighborResult;
+                            neighborResult.opaqueVertices.reserve(adjacentChunk->getOpaqueVertexVectorSize());
+                            neighborResult.waterVertices.reserve(adjacentChunk->getWaterVertexVectorSize());
                             adjacentChunk->propagateLight();
                             adjacentChunk->generateNewMesh(neighborResult);
 
@@ -298,6 +304,8 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
         const bool isLightEmitter = Block::isLightEmitter(blockToPlace);
 
         MeshingResult result;
+        result.opaqueVertices.reserve(targetChunk->getOpaqueVertexVectorSize());
+        result.waterVertices.reserve(targetChunk->getWaterVertexVectorSize());
         targetChunk->addBlock(targetX, targetY, targetZ, blockToPlace, result);
 
         result.position = {targetChunk->getX(), targetChunk->getY(), targetChunk->getZ()};
@@ -344,6 +352,8 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
                             const int adjZ = k == 0 ? targetZ : k == -1 ? maxBlockPos : minBlockPos;
 
                             MeshingResult neighborResult;
+                            neighborResult.opaqueVertices.reserve(adjacentChunk->getOpaqueVertexVectorSize());
+                            neighborResult.waterVertices.reserve(adjacentChunk->getWaterVertexVectorSize());
                             adjacentChunk->addBlock(adjX, adjY, adjZ, blockToPlace, neighborResult);
 
                             neighborResult.position = {adjacentChunk->getX(), adjacentChunk->getY(), adjacentChunk->getZ()};
@@ -393,6 +403,8 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
 
                         if (const auto adjacentChunk = getChunk(pos)) {
                             MeshingResult neighborResult;
+                            neighborResult.opaqueVertices.reserve(adjacentChunk->getOpaqueVertexVectorSize());
+                            neighborResult.waterVertices.reserve(adjacentChunk->getWaterVertexVectorSize());
                             adjacentChunk->propagateLight();
                             adjacentChunk->generateNewMesh(neighborResult);
 
@@ -478,6 +490,8 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
                     ++processed;
                     m_threadPool.enqueue_no_future([this, p_chunk, blocks = std::move(blocks)]() mutable {
                         MeshingResult result;
+                        result.opaqueVertices.reserve(p_chunk->getOpaqueVertexVectorSize());
+                        result.waterVertices.reserve(p_chunk->getWaterVertexVectorSize());
                         p_chunk->generatePendingBlocks(blocks, result);
 
                         result.position = {p_chunk->getX(), p_chunk->getY(), p_chunk->getZ()};
@@ -516,6 +530,8 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
                     ++processed;
                     m_threadPool.enqueue_no_future([this, p_chunk, lights = std::move(lights)]() mutable {
                         MeshingResult result;
+                        result.opaqueVertices.reserve(p_chunk->getOpaqueVertexVectorSize());
+                        result.waterVertices.reserve(p_chunk->getWaterVertexVectorSize());
                         p_chunk->generatePendingLights(lights, result);
                         result.position = {p_chunk->getX(), p_chunk->getY(), p_chunk->getZ()};
                         m_chunksData.completedMeshes.push(std::move(result));
