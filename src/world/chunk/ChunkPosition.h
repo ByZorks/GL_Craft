@@ -17,10 +17,11 @@ struct ChunkPosition {
 template<>
 struct std::hash<ChunkPosition> {
     size_t operator()(const ChunkPosition &pos) const noexcept {
-        const size_t h1 = hash<int>{}(pos.x);
-        const size_t h2 = hash<int>{}(pos.y);
-        const size_t h3 = hash<int>{}(pos.z);
-        return h1 ^ h2 << 1 ^ h3;
+        std::size_t seed = 0x32ECFE29;
+        seed ^= (seed << 6) + (seed >> 2) + 0x6063D87C + static_cast<std::size_t>(pos.x);
+        seed ^= (seed << 6) + (seed >> 2) + 0x72251FD8 + static_cast<std::size_t>(pos.y);
+        seed ^= (seed << 6) + (seed >> 2) + 0x0D7EA89A + static_cast<std::size_t>(pos.z);
+        return seed;
     }
 };
 
