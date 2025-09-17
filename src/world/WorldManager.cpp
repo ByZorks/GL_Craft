@@ -453,8 +453,11 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
         if (m_chunksData.meshesToGenerate.empty()) break;
 
         const ChunkPosition key = m_chunksData.meshesToGenerate.pop();
+        auto [it, inserted] = m_chunksData.loadedMeshes.try_emplace(key, nullptr);
+        if (!inserted) continue;
+
         const auto p_chunk = std::make_shared<Chunk>(key.x, key.y, key.z);
-        m_chunksData.loadedMeshes.try_emplace(key, p_chunk);
+        it->second = p_chunk;
 
         m_threadPool.enqueue_no_future([this, p_chunk] {
             p_chunk->generateVoxel();
