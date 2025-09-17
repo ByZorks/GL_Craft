@@ -21,8 +21,7 @@ WorldManager::WorldManager() : m_threadPool(std::max(1u, std::thread::hardware_c
         for (int z = -r; z <= r; ++z) {
             if (const int d2 = x * x + z * z; d2 <= r2) {
                 m_renderDistanceOffsets.emplace_back(
-                    x, z,
-                    static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))
+                    x, z, static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))
                 );
             }
         }
@@ -70,8 +69,7 @@ void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Came
         for (int z = -r; z <= r; ++z) {
             if (const int d2 = x * x + z * z; d2 <= r2) {
                 m_renderDistanceOffsets.emplace_back(
-                    x, z,
-                    static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))
+                    x, z, static_cast<int>(std::floor(std::sqrt(static_cast<float>(r2 - d2))))
                 );
             }
         }
@@ -557,7 +555,7 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
 }
 
 void WorldManager::generateChunksPositions(const int cameraWorldX, const int cameraWorldY, const int cameraWorldZ) {
-    for (auto &[x,z, maxY]: m_renderDistanceOffsets) {
+    for (const auto [x,z, maxY]: m_renderDistanceOffsets) {
         const int chunkX = cameraWorldX + static_cast<int>(x * Chunk::SIZE);
         const int chunkZ = cameraWorldZ + static_cast<int>(z * Chunk::SIZE);
 
@@ -579,7 +577,7 @@ void WorldManager::getDistantChunks(const glm::vec3 &cameraChunkPos) {
     const float camY = cameraChunkPos.y;
     const float camZ = cameraChunkPos.z;
 
-    for (auto &[position, chunk]: m_chunksData.loadedMeshes) {
+    for (const auto &[position, chunk]: m_chunksData.loadedMeshes) {
         const float dx = static_cast<float>(position.x) - camX;
         const float dy = static_cast<float>(position.y) - camY;
         const float dz = static_cast<float>(position.z) - camZ;
@@ -599,8 +597,6 @@ std::shared_ptr<Chunk> WorldManager::getChunk(const ChunkPosition &position) con
 }
 
 void WorldManager::emitNeighborsBorderLights(const std::shared_ptr<Chunk> &chunk) {
-    if (!chunk) return;
-
     constexpr int S = Chunk::SIZE;
     const int cx = chunk->getX();
     const int cy = chunk->getY();
