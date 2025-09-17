@@ -73,7 +73,6 @@ void Chunk::propagateLight() {
     constexpr unsigned int MIN_LIGHT_LEVEL = 1u;
 
     std::queue<uint32_t> sunlightQueue;
-    std::queue<uint32_t> blockLightQueue;
 
     // Reset all light levels before a full recompute to avoid stale values
     std::ranges::fill(m_lightLevels, static_cast<uint16_t>(MIN_LIGHT_LEVEL));
@@ -99,7 +98,7 @@ void Chunk::propagateLight() {
 
                 if (Block::isLightEmitter(blockType)) {
                     setBlockLightRGBAt(adjustedX, adjustedY, adjustedZ, Block::getLightColor(blockType));
-                    blockLightQueue.emplace(packLightPos(adjustedX, adjustedY, adjustedZ));
+                    propagateBlockLightFrom(adjustedX, adjustedY, adjustedZ);
                 }
 
                 if (!inDirectSunlight) continue;
@@ -146,57 +145,6 @@ void Chunk::propagateLight() {
                 neighborLightLevel = currentLightLevel - 1u;
                 setSunLightLevelAt(nx, ny, nz, neighborLightLevel);
                 sunlightQueue.emplace(packLightPos(nx, ny, nz));
-            }
-        }
-    }
-
-    // Third pass: propagate block light from light-emitting blocks
-    while (!blockLightQueue.empty()) {
-        const auto packed = blockLightQueue.front();
-        blockLightQueue.pop();
-        const auto [x, y, z] = unpackLightPos(packed);
-        const RGBLight currentRGB = getBlockLightRGBLevelAt(x, y, z);
-
-        if (!currentRGB.shouldPropagate(MIN_LIGHT_LEVEL)) continue;
-
-        for (auto [dx, dy, dz]: Block::s_faceOffset) {
-            const int nx = x + dx;
-            const int ny = y + dy;
-            const int nz = z + dz;
-
-            if (nx < -1 || ny < -1 || nz < -1 || nx >= SIZE + 1 || ny >= SIZE + 1 || nz >= SIZE + 1) continue;
-
-            if (const Block::BlockType neighborBlockType = getBlockType(nx, ny, nz);
-                Block::isOpaque(neighborBlockType)) continue;
-
-            const RGBLight neighborLight = getBlockLightRGBLevelAt(nx, ny, nz);
-            const RGBLight attenuatedLight = {
-                static_cast<uint8_t>(std::max(static_cast<int>(MIN_LIGHT_LEVEL), static_cast<int>(currentRGB.r) - 1)),
-                static_cast<uint8_t>(std::max(static_cast<int>(MIN_LIGHT_LEVEL), static_cast<int>(currentRGB.g) - 1)),
-                static_cast<uint8_t>(std::max(static_cast<int>(MIN_LIGHT_LEVEL), static_cast<int>(currentRGB.b) - 1))
-            };
-
-            RGBLight mixedLight = neighborLight;
-            bool shouldUpdate = false;
-
-            if (attenuatedLight.r > neighborLight.r) {
-                mixedLight.r = attenuatedLight.r;
-                shouldUpdate = true;
-            }
-            if (attenuatedLight.g > neighborLight.g) {
-                mixedLight.g = attenuatedLight.g;
-                shouldUpdate = true;
-            }
-            if (attenuatedLight.b > neighborLight.b) {
-                mixedLight.b = attenuatedLight.b;
-                shouldUpdate = true;
-            }
-
-            if (shouldUpdate) {
-                setBlockLightRGBAt(nx, ny, nz, mixedLight);
-                if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && nz >= 0 && nz < SIZE) {
-                    blockLightQueue.push(packLightPos(nx, ny, nz));
-                }
             }
         }
     }
