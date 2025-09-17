@@ -137,8 +137,7 @@ void Chunk::propagateLight() {
 
             if (nx < -1 || ny < -1 || nz < -1 || nx >= SIZE + 1 || ny >= SIZE + 1 || nz >= SIZE + 1) continue;
 
-            if (const Block::BlockType neighborBlockType = getBlockType(nx, ny, nz);
-                Block::isOpaque(neighborBlockType)) continue;
+            if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
 
             if (uint8_t neighborLightLevel = getSunLightLevelAt(nx, ny, nz);
                 neighborLightLevel + 2u <= currentLightLevel) {
@@ -159,6 +158,7 @@ void Chunk::propagateBlockLightFrom(const int localX, const int localY, const in
     setBlockLightRGBAt(localX, localY, localZ, Block::getLightColor(getBlockType(localX, localY, localZ)));
     blockLightQueue.emplace(packLightPos(localX, localY, localZ));
 
+    // BFS algorithm
     while (!blockLightQueue.empty()) {
         const auto packed = blockLightQueue.front();
         blockLightQueue.pop();
@@ -174,8 +174,7 @@ void Chunk::propagateBlockLightFrom(const int localX, const int localY, const in
 
             if (nx < -1 || ny < -1 || nz < -1 || nx >= SIZE + 1 || ny >= SIZE + 1 || nz >= SIZE + 1) continue;
 
-            if (const Block::BlockType neighborBlockType = getBlockType(nx, ny, nz);
-                Block::isOpaque(neighborBlockType)) continue;
+            if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
 
             const RGBLight neighborLight = getBlockLightRGBLevelAt(nx, ny, nz);
             const RGBLight attenuatedLight = {
@@ -202,9 +201,7 @@ void Chunk::propagateBlockLightFrom(const int localX, const int localY, const in
 
             if (shouldUpdate) {
                 setBlockLightRGBAt(nx, ny, nz, mixedLight);
-                if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && nz >= 0 && nz < SIZE) {
-                    blockLightQueue.push(packLightPos(nx, ny, nz));
-                }
+                blockLightQueue.push(packLightPos(nx, ny, nz));
             }
         }
     }
@@ -370,6 +367,8 @@ void Chunk::addBlock(const int localX, const int localY, const int localZ, const
 
     if (Block::isLightEmitter(type)) {
         propagateBlockLightFrom(localX, localY, localZ);
+    } else {
+        propagateLight();
     }
     generateNewMesh(outResult);
 }
@@ -766,7 +765,10 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
         if (currentLightLevel <= MIN_LIGHT_LEVEL) continue;
 
         for (auto [dx, dy, dz] : Block::s_faceOffset) {
-            const int nx = x + dx, ny = y + dy, nz = z + dz;
+            const int nx = x + dx;
+            const int ny = y + dy;
+            const int nz = z + dz;
+
             if (nx < -1 || ny < -1 || nz < -1 || nx >= static_cast<int>(SIZE) + 1 || ny >= static_cast<int>(SIZE) + 1 || nz >= static_cast<int>(SIZE) + 1) continue;
             if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
 
@@ -791,7 +793,10 @@ void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult
         if (!currentRGB.shouldPropagate(MIN_LIGHT_LEVEL)) continue;
 
         for (auto [dx, dy, dz] : Block::s_faceOffset) {
-            const int nx = x + dx, ny = y + dy, nz = z + dz;
+            const int nx = x + dx;
+            const int ny = y + dy;
+            const int nz = z + dz;
+
             if (nx < -1 || ny < -1 || nz < -1 || nx >= static_cast<int>(SIZE) + 1 || ny >= static_cast<int>(SIZE) + 1 || nz >= static_cast<int>(SIZE) + 1) continue;
             if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
 
