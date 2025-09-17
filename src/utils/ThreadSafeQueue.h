@@ -16,31 +16,17 @@ public:
             std::lock_guard lk(mutex_);
             queue_.push(item);
         }
-        condVar_.notify_one();
     }
 
     void push(T &&item) { {
             std::lock_guard lk(mutex_);
             queue_.push(std::move(item));
         }
-        condVar_.notify_one();
-    }
-
-    void done() { {
-            std::lock_guard lk(mutex_);
-            done_ = true;
-        }
-        condVar_.notify_all();
     }
 
     [[nodiscard]] bool empty() {
         std::lock_guard lk(mutex_);
         return queue_.empty();
-    }
-
-    int size() {
-        std::lock_guard lk(mutex_);
-        return static_cast<int>(queue_.size());
     }
 
     T pop() {
@@ -61,7 +47,6 @@ public:
 private:
     std::queue<T> queue_;
     std::mutex mutex_;
-    std::condition_variable condVar_;
     bool done_ = false;
 };
 
