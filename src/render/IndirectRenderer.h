@@ -47,7 +47,7 @@ private:
     };
 
     struct GPUSlot {
-        // Size: 4 KiB = 1000 BlockVertex (1 unsigned int)
+        // Size: 8 kB = 1000 BlockVertex (2 uint_32t)
         bool isUsed = false;
         uint8_t numberOfSlotsUsed = 0; // 0 means it is not the first slot of a multi-slot allocation
     };
