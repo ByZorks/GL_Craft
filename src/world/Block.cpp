@@ -202,29 +202,183 @@ uint8_t Block::computeVertexAO(const bool side1, const bool side2, const bool co
 }
 
 bool Block::isOpaque(const BlockType type) {
-    return type != BlockType::AIR && !isTransparent(type);
+    const auto idx = static_cast<size_t>(type);
+    static constexpr std::array opaqueBlocks = {
+        false, // AIR
+        true,  // BEDROCK
+        true,  // DIRT
+        true,  // GRASS
+        true,  // STONE
+        false, // WATER
+        true,  // OAK_LOG
+        false, // OAK_LEAVES
+        false, // SHORT_GRASS
+        false, // FLOWER_POPPY
+        false, // FLOWER_CORNFLOWER
+        false, // FLOWER_ALLIUM
+        true,  // SNOW
+        true,  // SNOWY_GRASS
+        true,  // SAND
+        true,  // GRAVEL
+        false, // SNOWY_OAK_LEAVES
+        true,  // CACTUS
+        true,  // JUNGLE_LOG
+        false, // JUNGLE_LEAVES
+        true,  // JUNGLE_GRASS
+        false, // SPRUCE_LEAVES
+        true,  // SPRUCE_LOG
+        true,  // RED_LIGHT
+        true,  // GREEN_LIGHT
+        true,  // BLUE_LIGHT
+        true,  // PURPLE_LIGHT
+        true,  // PINK_LIGHT
+        true   // YELLOW_LIGHT
+    };
+    return idx < opaqueBlocks.size() && opaqueBlocks[idx];
 }
 
 bool Block::isTransparent(const BlockType type) {
-    return type == BlockType::WATER || type == BlockType::AIR ||
-           type == BlockType::OAK_LEAVES || type == BlockType::SNOW_OAK_LEAVES || type == BlockType::JUNGLE_LEAVES ||
-           type == BlockType::SPRUCE_LEAVES || isInstance(type);
+    const auto idx = static_cast<size_t>(type);
+    static constexpr std::array transparentBlocks = {
+        true,  // AIR
+        false, // BEDROCK
+        false, // DIRT
+        false, // GRASS
+        false, // STONE
+        true,  // WATER
+        false, // OAK_LOG
+        true,  // OAK_LEAVES
+        true,  // SHORT_GRASS
+        true,  // FLOWER_POPPY
+        true,  // FLOWER_CORNFLOWER
+        true,  // FLOWER_ALLIUM
+        false, // SNOW
+        false, // SNOWY_GRASS
+        false, // SAND
+        false, // GRAVEL
+        true,  // SNOWY_OAK_LEAVES
+        false, // CACTUS
+        false, // JUNGLE_LOG
+        true,  // JUNGLE_LEAVES
+        false, // JUNGLE_GRASS
+        true,  // SPRUCE_LEAVES
+        false, // SPRUCE_LOG
+        false, // RED_LIGHT
+        false, // GREEN_LIGHT
+        false, // BLUE_LIGHT
+        false, // PURPLE_LIGHT
+        false, // PINK_LIGHT
+        false  // YELLOW_LIGHT
+    };
+    return idx < transparentBlocks.size() && transparentBlocks[idx];
 }
 
 bool Block::isSemiTransparent(const BlockType type) {
-    return type == BlockType::WATER || type == BlockType::OAK_LEAVES ||
-           type == BlockType::SNOW_OAK_LEAVES || type == BlockType::JUNGLE_LEAVES || type == BlockType::SPRUCE_LEAVES;
+    const auto idx = static_cast<size_t>(type);
+    static constexpr std::array semiTransparentBlocks = {
+        false, // AIR
+        false, // BEDROCK
+        false, // DIRT
+        false, // GRASS
+        false, // STONE
+        true,  // WATER
+        false, // OAK_LOG
+        true,  // OAK_LEAVES
+        false, // SHORT_GRASS
+        false, // FLOWER_POPPY
+        false, // FLOWER_CORNFLOWER
+        false, // FLOWER_ALLIUM
+        false, // SNOW
+        false, // SNOWY_GRASS
+        false, // SAND
+        false, // GRAVEL
+        true,  // SNOWY_OAK_LEAVES
+        false, // CACTUS
+        false, // JUNGLE_LOG
+        true,  // JUNGLE_LEAVES
+        false, // JUNGLE_GRASS
+        true,  // SPRUCE_LEAVES
+        false, // SPRUCE_LOG
+        false, // RED_LIGHT
+        false, // GREEN_LIGHT
+        false, // BLUE_LIGHT
+        false, // PURPLE_LIGHT
+        false, // PINK_LIGHT
+        false  // YELLOW_LIGHT
+    };
+    return idx < semiTransparentBlocks.size() && semiTransparentBlocks[idx];
 }
 
 bool Block::isInstance(const BlockType type) {
-    return type == BlockType::SHORT_GRASS || type == BlockType::FLOWER_POPPY ||
-           type == BlockType::FLOWER_CORNFLOWER || type == BlockType::FLOWER_ALLIUM;
+    const auto idx = static_cast<size_t>(type);
+    static constexpr std::array instanceBlocks = {
+        false, // AIR
+        false, // BEDROCK
+        false, // DIRT
+        false, // GRASS
+        false, // STONE
+        false, // WATER
+        false, // OAK_LOG
+        false, // OAK_LEAVES
+        true,  // SHORT_GRASS
+        true,  // FLOWER_POPPY
+        true,  // FLOWER_CORNFLOWER
+        true,  // FLOWER_ALLIUM
+        false, // SNOW
+        false, // SNOWY_GRASS
+        false, // SAND
+        false, // GRAVEL
+        false, // SNOWY_OAK_LEAVES
+        false, // CACTUS
+        false, // JUNGLE_LOG
+        false, // JUNGLE_LEAVES
+        false, // JUNGLE_GRASS
+        false, // SPRUCE_LEAVES
+        false, // SPRUCE_LOG
+        false, // RED_LIGHT
+        false, // GREEN_LIGHT
+        false, // BLUE_LIGHT
+        false, // PURPLE_LIGHT
+        false, // PINK_LIGHT
+        false  // YELLOW_LIGHT
+    };
+    return idx < instanceBlocks.size() && instanceBlocks[idx];
 }
 
 bool Block::isLightEmitter(const BlockType type) {
-    return type == BlockType::RED_LIGHT || type == BlockType::GREEN_LIGHT ||
-           type == BlockType::BLUE_LIGHT || type == BlockType::PURPLE_LIGHT ||
-           type == BlockType::PINK_LIGHT || type == BlockType::YELLOW_LIGHT;
+    const auto idx = static_cast<size_t>(type);
+    static constexpr std::array lightEmitterBlocks = {
+        false, // AIR
+        false, // BEDROCK
+        false, // DIRT
+        false, // GRASS
+        false, // STONE
+        false, // WATER
+        false, // OAK_LOG
+        false, // OAK_LEAVES
+        false, // SHORT_GRASS
+        false, // FLOWER_POPPY
+        false, // FLOWER_CORNFLOWER
+        false, // FLOWER_ALLIUM
+        false, // SNOW
+        false, // SNOWY_GRASS
+        false, // SAND
+        false, // GRAVEL
+        false, // SNOWY_OAK_LEAVES
+        false, // CACTUS
+        false, // JUNGLE_LOG
+        false, // JUNGLE_LEAVES
+        false, // JUNGLE_GRASS
+        false, // SPRUCE_LEAVES
+        false, // SPRUCE_LOG
+        true,  // RED_LIGHT
+        true,  // GREEN_LIGHT
+        true,  // BLUE_LIGHT
+        true,  // PURPLE_LIGHT
+        true,  // PINK_LIGHT
+        true   // YELLOW_LIGHT
+    };
+    return idx < lightEmitterBlocks.size() && lightEmitterBlocks[idx];
 }
 
 RGBLight Block::getLightColor(const BlockType type) {
