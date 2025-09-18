@@ -103,21 +103,14 @@ Biome TerrainGenerator::getBiome(const NoiseValues &noises, const int worldX, co
     return temperature <= -0.7f ? Biome::SNOWY_PLAINS : Biome::PLAINS;
 }
 
-const char *TerrainGenerator::getBiomeName(const Biome biome) {
-    switch (biome) {
-        case Biome::DEEP_OCEAN: return "Deep Ocean";
-        case Biome::OCEAN: return "Ocean";
-        case Biome::PLAINS: return "Plains";
-        case Biome::SNOWY_PLAINS: return "Snowy Plains";
-        case Biome::DESERT: return "Desert";
-        case Biome::FOREST: return "Forest";
-        case Biome::TAIGA: return "Taiga";
-        case Biome::SNOWY_TAIGA: return "Snowy Taiga";
-        case Biome::JUNGLE: return "Jungle";
-        case Biome::MOUNTAINS: return "Mountains";
-        case Biome::SNOWY_MOUNTAINS: return "Snowy Mountains";
-        default: return "Unknown";
-    }
+std::string_view TerrainGenerator::getBiomeName(const Biome biome) {
+    const auto idx = static_cast<size_t>(biome);
+    static constexpr std::array<std::string_view, 11> names = {
+        "Deep ocean", "Ocean", "Plains", "Snowy Plains", "Desert", "Forest", "Taiga", "Snowy Taiga", "Jungle",
+        "Mountains", "Snowy Mountains"
+    };
+    constexpr size_t count = names.size();
+    return idx < count ? names[idx] : std::string_view{"UNKNOWN"};
 }
 
 

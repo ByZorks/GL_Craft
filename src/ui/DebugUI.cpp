@@ -73,7 +73,8 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
     ImGui::Text("T: %.3f, H: %.3f", m_noises.temperature, m_noises.humidity);
     const Biome biome = TerrainGenerator::getBiome(m_noises, static_cast<int>(cameraPosition.x),
                                                    static_cast<int>(cameraPosition.z));
-    ImGui::Text("Biome: %s", TerrainGenerator::getBiomeName(biome));
+    const std::string_view biomeName = TerrainGenerator::getBiomeName(biome);
+    ImGui::Text("Biome: %.*s", static_cast<int>(biomeName.size()), biomeName.data());
 
     ImGui::Separator();
 

@@ -54,7 +54,7 @@ public:
                        const std::span<const float> &largeCavesNoises, const std::span<const float> &tunnelCavesNoises);
 
     static Biome getBiome(const NoiseValues &noises, int worldX, int worldZ);
-    static const char *getBiomeName(Biome biome);
+    static std::string_view getBiomeName(Biome biome);
     static Block::BlockType getBlockType(int y, int columnHeight, Biome biome);
     static Block::BlockType getNearSurfaceBlockType(Biome biome);
 
