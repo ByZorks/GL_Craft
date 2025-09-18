@@ -45,6 +45,9 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
     const ImGuiIO &io = ImGui::GetIO();
     ImGui::Text("Application average %.3f ms/frame (%.0f FPS)", 1000.0f / io.Framerate, io.Framerate);
     ImGui::Text("Draw commands: %u", drawCmds);
+    if (ImGui::Checkbox("V-Sync", &Renderer::s_vSync)) {
+        Renderer::toggleVSync();
+    }
 
     ImGui::Separator();
 
@@ -60,7 +63,7 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
 
     ImGui::Text("Camera:");
     const glm::vec3 cameraPosition = camera.getPos();
-    ImGui::Text("Position: (%.2f, %.2f, %.2f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+    ImGui::Text("Position: (%.0f, %.0f, %.0f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
     if (camera.hasCameraChangedBlock()) m_noises = TerrainGenerator::NoiseValues(
                                             static_cast<int>(cameraPosition.x), static_cast<int>(cameraPosition.z));
     ImGui::Text("C: %.3f, E: %.3f", m_noises.continentalness, m_noises.erosion);

@@ -9,6 +9,8 @@ public:
     static void init();
     static void clear();
 
+    static bool * toggleVSync();
+
     static void disableWireFrameMode();
     static void enableWireFrameMode();
     static void disableDepthTesting();
@@ -28,7 +30,12 @@ public:
     static void drawElements(const VertexArray &vao, unsigned int IBOCount);
     static void drawElementsInstanced(const VertexArray &vao, unsigned int IBOCount, unsigned int instanceCount);
 
+public:
     static float s_renderDistance;
+    static bool s_vSync;
+
+private:
+    static int s_swapInterval;
 };
 
 #endif //RENDERER_H

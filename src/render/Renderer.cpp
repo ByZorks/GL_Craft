@@ -1,5 +1,7 @@
 #include "Renderer.h"
 
+#include <GLFW/glfw3.h>
+
 #include "../world/chunk/Chunk.h"
 
 #ifndef DEBUG_BUILD
@@ -7,6 +9,9 @@ float Renderer::s_renderDistance = 16.0f * static_cast<float>(Chunk::SIZE); // R
 #else
 float Renderer::s_renderDistance = 8.0f * static_cast<float>(Chunk::SIZE); // Render distance in blocks
 #endif
+
+bool Renderer::s_vSync = false;
+int Renderer::s_swapInterval = 60; // Default to 60 Hz, will be updated when toggling V-Sync
 
 void Renderer::init() {
     glEnable(GL_DEPTH_TEST);
@@ -19,6 +24,22 @@ void Renderer::init() {
 void Renderer::clear() {
     glClearColor(0.54f, 0.82f, 0.9f, 1.0f); // Sky blue background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+bool * Renderer::toggleVSync() {
+    // s_vSync will be updated by the UI
+    if (s_vSync) {
+        if (GLFWmonitor *monitor = glfwGetPrimaryMonitor()) {
+            if (const GLFWvidmode *mode = glfwGetVideoMode(monitor)) {
+                s_swapInterval = mode->refreshRate;
+            }
+        }
+    } else {
+        s_swapInterval = 0;
+    }
+    glfwSwapInterval(s_swapInterval);
+
+    return &s_vSync;
 }
 
 void Renderer::disableWireFrameMode() {

@@ -79,7 +79,7 @@ void Application::initGLFW(const int width, const int height, const char *title)
     glfwSetInputMode(m_window.get(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetWindowUserPointer(m_window.get(), this);
 
-    glfwSwapInterval(0); // Disable VSync
+    Renderer::toggleVSync();
 }
 
 void Application::initGL() {
