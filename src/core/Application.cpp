@@ -15,17 +15,14 @@ Application::Application(const int width, const int height, const char *title) :
 
 void Application::run() {
     Renderer::init();
-    double lastTime = glfwGetTime();
 
     while (!glfwWindowShouldClose(m_window.get())) {
-        const double currentTime = glfwGetTime();
-        const double deltaTime = currentTime - lastTime;
-        lastTime = currentTime;
+        const double deltaTime = Renderer::getDeltaTime();
 
         processInput(deltaTime);
         update();
         render();
-        stateUpdate();
+        resetStates();
 
         glfwSwapBuffers(m_window.get());
         glfwPollEvents();
@@ -255,7 +252,7 @@ void Application::render() {
     DebugUI::draw();
 }
 
-void Application::stateUpdate() {
+void Application::resetStates() {
     m_camera.updateLastState();
     m_leftClicked = false;
     m_rightClicked = false;

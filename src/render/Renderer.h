@@ -9,6 +9,7 @@ public:
     static void init();
     static void clear();
 
+    static double getDeltaTime();
     static bool * toggleVSync();
 
     static void disableWireFrameMode();
@@ -35,6 +36,7 @@ public:
     static bool s_vSync;
 
 private:
+    static double s_lastFrameTime;
     static int s_swapInterval;
 };
 

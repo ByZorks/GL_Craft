@@ -26,7 +26,7 @@ private:
     void processInput(double deltaTime);
     void update();
     void render();
-    void stateUpdate();
+    void resetStates();
 
     void onMouseMove(double xPos, double yPos);
     void onFrameBufferResize(int width, int height);

@@ -11,6 +11,7 @@ float Renderer::s_renderDistance = 8.0f * static_cast<float>(Chunk::SIZE); // Re
 #endif
 
 bool Renderer::s_vSync = false;
+double Renderer::s_lastFrameTime = 0.0;
 int Renderer::s_swapInterval = 60; // Default to 60 Hz, will be updated when toggling V-Sync
 
 void Renderer::init() {
@@ -24,6 +25,14 @@ void Renderer::init() {
 void Renderer::clear() {
     glClearColor(0.54f, 0.82f, 0.9f, 1.0f); // Sky blue background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+double Renderer::getDeltaTime() {
+    const double currentTime = glfwGetTime();
+    const double deltaTime = currentTime - s_lastFrameTime;
+    s_lastFrameTime = currentTime;
+
+    return deltaTime;
 }
 
 bool * Renderer::toggleVSync() {
