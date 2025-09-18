@@ -12,7 +12,7 @@ float Renderer::s_renderDistance = 8.0f * static_cast<float>(Chunk::SIZE); // Re
 
 bool Renderer::s_vSync = false;
 double Renderer::s_lastFrameTime = 0.0;
-int Renderer::s_swapInterval = 60; // Default to 60 Hz, will be updated when toggling V-Sync
+int Renderer::s_swapInterval = 0;
 
 void Renderer::init() {
     glEnable(GL_DEPTH_TEST);
