@@ -38,16 +38,11 @@ double Renderer::getDeltaTime() {
 bool * Renderer::toggleVSync() {
     // s_vSync will be updated by the UI
     if (s_vSync) {
-        if (GLFWmonitor *monitor = glfwGetPrimaryMonitor()) {
-            if (const GLFWvidmode *mode = glfwGetVideoMode(monitor)) {
-                s_swapInterval = mode->refreshRate;
-            }
-        }
+        s_swapInterval = 1;
     } else {
         s_swapInterval = 0;
     }
     glfwSwapInterval(s_swapInterval);
-
     return &s_vSync;
 }
 
