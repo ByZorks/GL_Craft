@@ -5,39 +5,16 @@
 
 #include "chunk/Chunk.h"
 
-const char *Block::getBlockName(const BlockType blockType) {
-    switch (blockType) {
-        case BlockType::AIR: return "AIR";
-        case BlockType::BEDROCK: return "BEDROCK";
-        case BlockType::DIRT: return "DIRT";
-        case BlockType::GRASS: return "GRASS";
-        case BlockType::STONE: return "STONE";
-        case BlockType::WATER: return "WATER";
-        case BlockType::OAK_LOG: return "LOG";
-        case BlockType::OAK_LEAVES: return "LEAVES";
-        case BlockType::SHORT_GRASS: return "SHORT_GRASS";
-        case BlockType::FLOWER_POPPY: return "FLOWER_POPPY";
-        case BlockType::FLOWER_CORNFLOWER: return "FLOWER_CORNFLOWER";
-        case BlockType::FLOWER_ALLIUM: return "FLOWER_ALLIUM";
-        case BlockType::SNOW: return "SNOW";
-        case BlockType::SNOW_GRASS: return "SNOW_GRASS";
-        case BlockType::SAND: return "SAND";
-        case BlockType::GRAVEL: return "GRAVEL";
-        case BlockType::SNOW_OAK_LEAVES: return "SNOW_OAK_LEAVES";
-        case BlockType::CACTUS: return "CACTUS";
-        case BlockType::JUNGLE_LOG: return "JUNGLE_LOG";
-        case BlockType::JUNGLE_LEAVES: return "JUNGLE_LEAVES";
-        case BlockType::JUNGLE_GRASS: return "JUNGLE_GRASS";
-        case BlockType::SPRUCE_LEAVES: return "SPRUCE_LEAVES";
-        case BlockType::SPRUCE_LOG: return "SPRUCE_LOG";
-        case BlockType::RED_LIGHT: return "RED_LIGHT";
-        case BlockType::GREEN_LIGHT: return "GREEN_LIGHT";
-        case BlockType::BLUE_LIGHT: return "BLUE_LIGHT";
-        case BlockType::PURPLE_LIGHT: return "PURPLE_LIGHT";
-        case BlockType::PINK_LIGHT: return "PINK_LIGHT";
-        case BlockType::YELLOW_LIGHT: return "YELLOW_LIGHT";
-        default: return "UNKNOWN";
-    }
+std::string_view Block::getBlockName(const BlockType blockType) {
+    const auto idx = static_cast<size_t>(blockType);
+    static constexpr std::array<std::string_view, 29> names = {
+        "Air", "Bedrock", "Dirt", "Grass", "Stone", "Water", "Oak log", "Oak leaves", "Short grass", "Poppy",
+        "Cornflower", "Allium", "Snow", "Snowy grass", "Sand", "Gravel", "Snowy oak leaves", "Cactus", "Jungle log",
+        "Jungle leaves", "Jungle grass", "Spruce leaves", "Spruce log", "Red light", "Green light", "Blue light",
+        "Purple light", "Pink light", "Yellow light"
+    };
+    constexpr size_t count = names.size();
+    return idx < count ? names[idx] : std::string_view{"UNKNOWN"};
 }
 
 void Block::addFaceVertex(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,

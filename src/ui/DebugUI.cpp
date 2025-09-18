@@ -78,7 +78,8 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
     ImGui::Separator();
 
     ImGui::Text("Player:");
-    ImGui::Text("Selected Block Type: %s", Block::getBlockName(selectedBlockType));
+    const std::string_view blockName = Block::getBlockName(selectedBlockType);
+    ImGui::Text("Selected block: %.*s", static_cast<int>(blockName.size()), blockName.data());
     ImGui::End();
 }
 

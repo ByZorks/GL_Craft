@@ -2,6 +2,7 @@
 #define BLOCK_H
 #include <array>
 #include <cstdint>
+#include <string_view>
 #include <vector>
 
 #include "chunk/RGBLight.h"
@@ -35,7 +36,7 @@ public:
     };
 
 public:
-    static const char *getBlockName(BlockType blockType);
+    static std::string_view getBlockName(BlockType blockType);
     static void addFaceVertex(Face face, BlockType type, std::vector<BlockVertex> &outVertices,
                                 const std::array<bool, 26> &adjacentsFaces, unsigned int startX, unsigned int startY,
                                 unsigned int startZ, uint8_t sunlight, const RGBLight& blockLight);
