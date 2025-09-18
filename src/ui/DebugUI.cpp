@@ -38,7 +38,7 @@ void DebugUI::newFrame() {
 }
 
 void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &totalChunks, const unsigned int &drawCmds,
-                     const Camera &camera, const Block::BlockType &selectedBlockType,
+                     const Camera &camera, const Block::BlockType &selectedBlockType, bool &outGravityEnabled,
                      const std::function<void()> &renderDistanceCallback) {
     ImGui::Begin("Debug");
     ImGui::Text("Performance:");
@@ -64,6 +64,9 @@ void DebugUI::render(const unsigned int &visibleChunks, const unsigned int &tota
     ImGui::Text("Camera:");
     const glm::vec3 cameraPosition = camera.getPos();
     ImGui::Text("Position: (%.0f, %.0f, %.0f)", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+    if (ImGui::Checkbox("Gravity", &outGravityEnabled)) {
+        // This lambda is empty because gravity is handled in Application class
+    }
     if (camera.hasCameraChangedBlock()) m_noises = TerrainGenerator::NoiseValues(
                                             static_cast<int>(cameraPosition.x), static_cast<int>(cameraPosition.z));
     ImGui::Text("C: %.3f, E: %.3f", m_noises.continentalness, m_noises.erosion);

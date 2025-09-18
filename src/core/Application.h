@@ -26,7 +26,7 @@ private:
     void processInput(double deltaTime);
     void update();
     void render();
-    void resetStates();
+    void resetStates(double deltaTime);
 
     void onMouseMove(double xPos, double yPos);
     void onFrameBufferResize(int width, int height);
@@ -71,6 +71,7 @@ private:
     int m_textureSlot = 0;
     int m_postProcessingSceneTextureSlot = 1;
     int m_postProcessingDepthTextureSlot = 2;
+    bool m_gravityEnabled = false;
 
 };
 

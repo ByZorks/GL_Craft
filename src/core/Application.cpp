@@ -22,7 +22,7 @@ void Application::run() {
         processInput(deltaTime);
         update();
         render();
-        resetStates();
+        resetStates(deltaTime);
 
         glfwSwapBuffers(m_window.get());
         glfwPollEvents();
@@ -244,7 +244,7 @@ void Application::render() {
     // ImGui
     DebugUI::render(m_world->getWorldRendererConst().getVisibleChunksCount(),
                     m_world->getWorldManagerConst().getLoadedChunks().size(), m_drawCmds, m_camera,
-                    m_player.getSelectedBlockType(), [this] {
+                    m_player.getSelectedBlockType(), m_gravityEnabled, [this] {
                         m_world->getWorldManager().updateRenderDistance(*m_postProcessingShader, m_camera,
                                                                         m_world->getWorldRenderer().
                                                                         getIndirectRenderer());
@@ -252,8 +252,8 @@ void Application::render() {
     DebugUI::draw();
 }
 
-void Application::resetStates() {
-    m_camera.updateLastState();
+void Application::resetStates(const double deltaTime) {
+    m_camera.updateLastState(deltaTime, m_gravityEnabled);
     m_leftClicked = false;
     m_rightClicked = false;
     m_middleClicked = false;

@@ -20,7 +20,7 @@ Camera::Camera(const unsigned int windowWidth,
                                                   m_nearPlane(.1f), m_farPlane(2048.0f) {
 }
 
-void Camera::updateLastState() {
+void Camera::updateLastState(const double deltaTime, const bool applyGravity) {
     constexpr auto chunkSize = static_cast<float>(Chunk::SIZE);
     const float cameraChunkX = std::floor(m_cameraPos.x / chunkSize);
     const float cameraChunkY = std::floor(m_cameraPos.y / chunkSize);
@@ -34,6 +34,8 @@ void Camera::updateLastState() {
 
     if (std::abs(m_lastYaw - m_yaw) > 15.f) m_lastYaw = m_yaw;
     if (std::abs(m_lastPitch - m_pitch) > 15.f) m_lastPitch = m_pitch;
+
+    if (applyGravity) m_cameraPos.y -= 20.f * static_cast<float>(deltaTime);
 }
 
 void Camera::processInput(const std::shared_ptr<GLFWwindow> &window, const double deltaTime) {

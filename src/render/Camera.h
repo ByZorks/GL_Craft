@@ -11,7 +11,7 @@ class Camera {
 public:
     Camera(unsigned int windowWidth, unsigned int windowHeight);
 
-    void updateLastState();
+    void updateLastState(double deltaTime, bool applyGravity);
     void processInput(const std::shared_ptr<GLFWwindow> &window, double deltaTime);
     void handleMouse(double xPos, double yPos);
     void resetMousePosition(GLFWwindow *window);
