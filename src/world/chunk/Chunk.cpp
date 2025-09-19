@@ -185,6 +185,72 @@ void Chunk::generateNewMesh(MeshingResult &outResult) const {
     }
 }
 
+void Chunk::transferPendingBlocksToWorld(WorldManager &world) {
+    if (m_pendingBlocksForNeighbors.empty()) return;
+    world.addPendingBlocks(m_pendingBlocksForNeighbors);
+}
+
+void Chunk::transferPendingLightsToWorld(WorldManager &world) {
+    if (m_pendingLightsForNeighbors.empty()) return;
+    world.addPendingLights(m_pendingLightsForNeighbors);
+}
+
+void Chunk::generatePendingLights(const std::list<PendingLight> &lights, MeshingResult &outResult) {
+    if (lights.empty()) return;
+
+    std::queue<uint32_t> sunLightQueue;
+    std::queue<uint32_t> blockLightQueue;
+    std::vector<LightPos> changed;
+    changed.reserve(lights.size() * 8);
+
+    processInitialLightSources(lights, sunLightQueue, blockLightQueue, changed);
+    propagateSunLightBFS(sunLightQueue, changed);
+    propagateBlockLightBFS(blockLightQueue, changed);
+
+    if (changed.empty()) return;
+
+    emitChangedLightsToNeighbors(changed);
+    outResult.needIndirectRendererUpdate = true;
+    outResult.needInstanceUpdate = false;
+    generateNewMesh(outResult);
+}
+
+void Chunk::deleteBlock(const int localX, const int localY, const int localZ, const Block::BlockType type,
+                        MeshingResult &outResult) {
+    // Voxel
+    m_visibleBlocks--;
+    if (Block::isInstance(type)) {
+        m_blocks[index(localX + 1, localY + 1, localZ + 1)] = Block::BlockType::AIR;
+        m_surfaceFeatures.erase(SurfaceFeature(m_x + localX + 1, m_y + localY, m_z + localZ + 1));
+        return;
+    }
+
+    m_blocks[index(localX + 1, localY + 1, localZ + 1)] = Block::BlockType::AIR;
+
+    propagateLight();
+    generateNewMesh(outResult);
+}
+
+void Chunk::addBlock(const int localX, const int localY, const int localZ, const Block::BlockType type,
+                     MeshingResult &outResult) {
+    // Voxel
+    m_visibleBlocks++;
+    if (Block::isInstance(type)) {
+        m_blocks[index(localX + 1, localY + 1, localZ + 1)] = type;
+        m_surfaceFeatures.emplace(m_x + localX + 1, m_y + localY, m_z + localZ + 1,
+                                  SurfaceFeature::getSurfaceFeatureTypeFromBlockType(type));
+        return;
+    }
+    m_blocks[index(localX + 1, localY + 1, localZ + 1)] = type;
+
+    if (Block::isLightEmitter(type)) {
+        propagateBlockLightFrom(localX, localY, localZ);
+    } else {
+        propagateLight();
+    }
+    generateNewMesh(outResult);
+}
+
 void Chunk::emitBorderLights() {
     auto emitFace = [&](const int faceAxis, const bool positive){
         const int sample = positive ? static_cast<int>(SIZE) - 1 : 0;
@@ -243,52 +309,6 @@ void Chunk::emitBorderLights() {
     emitFace(1, true);  // Y+
     emitFace(2, false); // Z-
     emitFace(2, true);  // Z+
-}
-
-void Chunk::transferPendingBlocksToWorld(WorldManager &world) {
-    if (m_pendingBlocksForNeighbors.empty()) return;
-    world.addPendingBlocks(m_pendingBlocksForNeighbors);
-}
-
-void Chunk::transferPendingLightsToWorld(WorldManager &world) {
-    if (m_pendingLightsForNeighbors.empty()) return;
-    world.addPendingLights(m_pendingLightsForNeighbors);
-}
-
-void Chunk::deleteBlock(const int localX, const int localY, const int localZ, const Block::BlockType type,
-                        MeshingResult &outResult) {
-    // Voxel
-    m_visibleBlocks--;
-    if (Block::isInstance(type)) {
-        m_blocks[index(localX + 1, localY + 1, localZ + 1)] = Block::BlockType::AIR;
-        m_surfaceFeatures.erase(SurfaceFeature(m_x + localX + 1, m_y + localY, m_z + localZ + 1));
-        return;
-    }
-
-    m_blocks[index(localX + 1, localY + 1, localZ + 1)] = Block::BlockType::AIR;
-
-    propagateLight();
-    generateNewMesh(outResult);
-}
-
-void Chunk::addBlock(const int localX, const int localY, const int localZ, const Block::BlockType type,
-                     MeshingResult &outResult) {
-    // Voxel
-    m_visibleBlocks++;
-    if (Block::isInstance(type)) {
-        m_blocks[index(localX + 1, localY + 1, localZ + 1)] = type;
-        m_surfaceFeatures.emplace(m_x + localX + 1, m_y + localY, m_z + localZ + 1,
-                                  SurfaceFeature::getSurfaceFeatureTypeFromBlockType(type));
-        return;
-    }
-    m_blocks[index(localX + 1, localY + 1, localZ + 1)] = type;
-
-    if (Block::isLightEmitter(type)) {
-        propagateBlockLightFrom(localX, localY, localZ);
-    } else {
-        propagateLight();
-    }
-    generateNewMesh(outResult);
 }
 
 int Chunk::index(const int x, const int y, const int z) const {
@@ -354,6 +374,28 @@ void Chunk::setIndirectRendererSlotWater(const unsigned int m_gpu_water_slot) {
     m_indirectRendererSlotWater = m_gpu_water_slot;
 }
 
+template<typename NoiseFunction>
+void Chunk::getDownsampledNoises(const int factor, const std::span<float> &outNoises, NoiseFunction noiseFunction) const {
+    const int gridSizeX = (static_cast<int>(SIZE) + 2 + factor - 1) / factor + 1;
+    const int gridSizeY = gridSizeX;
+    const int gridSizeZ = gridSizeX;
+
+    for (int gx = 0; gx < gridSizeX; ++gx) {
+        const int wx = m_x + gx * factor;
+
+        for (int gy = 0; gy < gridSizeY; ++gy) {
+            const int wy = m_y + gy * factor;
+
+            for (int gz = 0; gz < gridSizeZ; ++gz) {
+                const int wz = m_z + gz * factor;
+
+                const int index = gx + gridSizeX * (gy + gridSizeY * gz);
+                outNoises[index] = noiseFunction(wx, wy, wz);
+            }
+        }
+    }
+}
+
 void Chunk::processColumn(const int worldX, const int worldZ, const int localX, const int localZ,
                           const std::span<float> &tunnelCavesNoises, const std::span<float> &largeCavesNoises) {
     TerrainGenerator::NoiseValues noises;
@@ -369,7 +411,7 @@ void Chunk::processColumn(const int worldX, const int worldZ, const int localX, 
     const ChunkPosition position{m_x, m_y, m_z};
 
     generateSurfaceFeaturesPositions(position, worldX, worldZ, localX, localZ, columnHeight, biome, tunnelCavesNoises,
-                           largeCavesNoises);
+                                     largeCavesNoises);
 
     fillColumnBlocks(position, worldX, worldZ, localX, localZ, columnHeight, biome, tunnelCavesNoises, largeCavesNoises);
 }
@@ -382,7 +424,7 @@ void Chunk::generateSurfaceFeaturesPositions(const ChunkPosition &position, int 
     if (m_y > columnHeight + 1) return;
     if (columnHeight < m_y - SIZE || columnHeight >= m_y + SIZE) return;
     if (TerrainGenerator::isCave(position, worldX, columnHeight, worldZ, columnHeight, largeCavesNoises,
-        tunnelCavesNoises)) return;
+                                 tunnelCavesNoises)) return;
 
     const float noise = (TerrainGenerator::getSurfaceFeaturesNoiseAt(worldX, worldZ) + 1.0f) * 0.5f;
     if (noise < 0.69f) return;
@@ -431,28 +473,6 @@ void Chunk::addSurfaceFeatureBlocks(const int worldX, const int columnHeight, co
                                     biome, m_blocks, m_pendingBlocksForNeighbors);
             break;
         default: break;
-    }
-}
-
-template<typename NoiseFunction>
-void Chunk::getDownsampledNoises(const int factor, const std::span<float> &outNoises, NoiseFunction noiseFunction) const {
-    const int gridSizeX = (static_cast<int>(SIZE) + 2 + factor - 1) / factor + 1;
-    const int gridSizeY = gridSizeX;
-    const int gridSizeZ = gridSizeX;
-
-    for (int gx = 0; gx < gridSizeX; ++gx) {
-        const int wx = m_x + gx * factor;
-
-        for (int gy = 0; gy < gridSizeY; ++gy) {
-            const int wy = m_y + gy * factor;
-
-            for (int gz = 0; gz < gridSizeZ; ++gz) {
-                const int wz = m_z + gz * factor;
-
-                const int index = gx + gridSizeX * (gy + gridSizeY * gz);
-                outNoises[index] = noiseFunction(wx, wy, wz);
-            }
-        }
     }
 }
 
@@ -573,6 +593,183 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     }
 }
 
+void Chunk::processInitialLightSources(const std::list<PendingLight> &lights, std::queue<uint32_t> &sunLightQueue,
+                                       std::queue<uint32_t> &blockLightQueue, std::vector<LightPos> &changed) {
+    for (const auto &[localX, localY, localZ, blockLight, sunlight] : lights) {
+        if (!isValidLightPosition(localX, localY, localZ)) continue;
+        if (Block::isOpaque(getBlockType(localX, localY, localZ))) continue;
+
+        const bool sunChanged = updateSunLight(localX, localY, localZ, sunlight, sunLightQueue);
+        const bool rgbChanged = updateBlockLight(localX, localY, localZ, blockLight, blockLightQueue);
+
+        if (sunChanged || rgbChanged) {
+            changed.emplace_back(localX, localY, localZ);
+        }
+    }
+}
+
+bool Chunk::isValidLightPosition(const int x, const int y, const int z) {
+    return x >= -1 && y >= -1 && z >= -1 &&
+           x <= static_cast<int>(SIZE) &&
+           y <= static_cast<int>(SIZE) &&
+           z <= static_cast<int>(SIZE);
+}
+
+bool Chunk::updateSunLight(const int x, const int y, const int z, const uint8_t sunlight, std::queue<uint32_t> &queue) {
+    if (sunlight <= getSunLightLevelAt(x, y, z)) return false;
+
+    setSunLightLevelAt(x, y, z, sunlight);
+    if (sunlight > LightConstants::SUN_MIN) {
+        queue.emplace(packLightPos(x, y, z));
+    }
+    return true;
+}
+
+bool Chunk::updateBlockLight(const int x, const int y, const int z, const RGBLight &blockLight, std::queue<uint32_t> &queue) {
+    const RGBLight currentRGB = getBlockLightRGBLevelAt(x, y, z);
+    const RGBLight newRGB = {
+        std::max(blockLight.r, currentRGB.r),
+        std::max(blockLight.g, currentRGB.g),
+        std::max(blockLight.b, currentRGB.b)
+    };
+
+    if (newRGB.r == currentRGB.r && newRGB.g == currentRGB.g && newRGB.b == currentRGB.b) {
+        return false;
+    }
+
+    setBlockLightRGBAt(x, y, z, newRGB);
+    if (newRGB.shouldPropagate(LightConstants::SUN_MIN)) {
+        queue.emplace(packLightPos(x, y, z));
+    }
+    return true;
+}
+
+void Chunk::propagateSunLightBFS(std::queue<uint32_t> &sunLightQueue, std::vector<LightPos> &changed) {
+    while (!sunLightQueue.empty()) {
+        const auto [x, y, z] = unpackLightPos(sunLightQueue.front());
+        sunLightQueue.pop();
+
+        const uint8_t currentLightLevel = getSunLightLevelAt(x, y, z);
+        if (currentLightLevel <= LightConstants::SUN_MIN) continue;
+
+        propagateSunLightToNeighbors(x, y, z, currentLightLevel, sunLightQueue, changed);
+    }
+}
+
+void Chunk::propagateSunLightToNeighbors(const int x, const int y, const int z, const uint8_t currentLevel,
+                                         std::queue<uint32_t> &queue, std::vector<LightPos> &changed) {
+    for (auto [dx, dy, dz] : Block::s_faceOffset) {
+        const int nx = x + dx;
+        const int ny = y + dy;
+        const int nz = z + dz;
+
+        if (!isValidLightPosition(nx, ny, nz)) continue;
+        if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
+
+        const uint8_t neighborLevel = getSunLightLevelAt(nx, ny, nz);
+        const auto newLevel = static_cast<uint8_t>(currentLevel - 1u);
+
+        if (neighborLevel + 2u <= currentLevel && newLevel > neighborLevel) {
+            setSunLightLevelAt(nx, ny, nz, newLevel);
+            changed.emplace_back(nx, ny, nz);
+            queue.emplace(packLightPos(nx, ny, nz));
+        }
+    }
+}
+
+void Chunk::propagateBlockLightBFS(std::queue<uint32_t> &blockLightQueue, std::vector<LightPos> &changed) {
+    while (!blockLightQueue.empty()) {
+        const auto [x, y, z] = unpackLightPos(blockLightQueue.front());
+        blockLightQueue.pop();
+
+        const RGBLight currentRGB = getBlockLightRGBLevelAt(x, y, z);
+        if (!currentRGB.shouldPropagate(LightConstants::SUN_MIN)) continue;
+
+        propagateBlockLightToNeighbors(x, y, z, currentRGB, blockLightQueue, changed);
+    }
+}
+
+void Chunk::propagateBlockLightToNeighbors(const int x, const int y, const int z, const RGBLight &currentRGB,
+                                           std::queue<uint32_t> &queue, std::vector<LightPos> &changed) {
+    for (auto [dx, dy, dz] : Block::s_faceOffset) {
+        const int nx = x + dx;
+        const int ny = y + dy;
+        const int nz = z + dz;
+
+        if (!isValidLightPosition(nx, ny, nz)) continue;
+        if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
+
+        if (tryUpdateBlockLightAt(nx, ny, nz, currentRGB)) {
+            queue.emplace(packLightPos(nx, ny, nz));
+            changed.emplace_back(nx, ny, nz);
+        }
+    }
+}
+
+bool Chunk::tryUpdateBlockLightAt(const int x, const int y, const int z, const RGBLight &sourceRGB) {
+    const RGBLight neighborLight = getBlockLightRGBLevelAt(x, y, z);
+    const RGBLight attenuatedLight = {
+        static_cast<uint8_t>(std::max(0, static_cast<int>(sourceRGB.r) - 1)),
+        static_cast<uint8_t>(std::max(0, static_cast<int>(sourceRGB.g) - 1)),
+        static_cast<uint8_t>(std::max(0, static_cast<int>(sourceRGB.b) - 1))
+    };
+
+    const RGBLight mixedLight = {
+        std::max(attenuatedLight.r, neighborLight.r),
+        std::max(attenuatedLight.g, neighborLight.g),
+        std::max(attenuatedLight.b, neighborLight.b)
+    };
+
+    if (mixedLight.r == neighborLight.r && mixedLight.g == neighborLight.g && mixedLight.b == neighborLight.b) {
+        return false;
+    }
+
+    setBlockLightRGBAt(x, y, z, mixedLight);
+    return true;
+}
+
+void Chunk::emitChangedLightsToNeighbors(const std::vector<LightPos> &changed) {
+    std::unordered_map<ChunkPosition, std::list<PendingLight>> toEmit;
+    toEmit.reserve(6);
+
+    for (const auto [x, y, z] : changed) {
+        if (!isBorderPosition(x, y, z)) continue;
+
+        const uint8_t sunlightLvl = getSunLightLevelAt(x, y, z);
+        const RGBLight rgbLvl = getBlockLightRGBLevelAt(x, y, z);
+
+        if (sunlightLvl <= LightConstants::SUN_MIN + 1u && !rgbLvl.shouldPropagate(LightConstants::SUN_MIN)) {
+            continue;
+        }
+
+        addLightToNeighborChunks(x, y, z, rgbLvl, sunlightLvl, toEmit);
+    }
+
+    if (!toEmit.empty()) {
+        for (auto &[key, value] : toEmit) {
+            m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), value);
+        }
+    }
+}
+
+bool Chunk::isBorderPosition(const int x, const int y, const int z) {
+    return x == -1 || x == static_cast<int>(SIZE) ||
+           y == -1 || y == static_cast<int>(SIZE) ||
+           z == -1 || z == static_cast<int>(SIZE);
+}
+
+void Chunk::addLightToNeighborChunks(int x, int y, int z, const RGBLight &rgb, uint8_t sunlight,
+                                     std::unordered_map<ChunkPosition, std::list<PendingLight>> &toEmit) const {
+    constexpr auto SIZE_INT = static_cast<int>(SIZE);
+
+    if (x == -1) toEmit[{m_x - SIZE_INT, m_y, m_z}].emplace_back(SIZE_INT, y, z, rgb, sunlight);
+    if (x == SIZE_INT) toEmit[{m_x + SIZE_INT, m_y, m_z}].emplace_back(-1, y, z, rgb, sunlight);
+    if (y == -1) toEmit[{m_x, m_y - SIZE_INT, m_z}].emplace_back(x, SIZE_INT, z, rgb, sunlight);
+    if (y == SIZE_INT) toEmit[{m_x, m_y + SIZE_INT, m_z}].emplace_back(x, -1, z, rgb, sunlight);
+    if (z == -1) toEmit[{m_x, m_y, m_z - SIZE_INT}].emplace_back(x, y, SIZE_INT, rgb, sunlight);
+    if (z == SIZE_INT) toEmit[{m_x, m_y, m_z + SIZE_INT}].emplace_back(x, y, -1, rgb, sunlight);
+}
+
 void Chunk::propagateSunLight(std::queue<uint32_t> &sunlightQueue) {
     // BFS algorithm
     while (!sunlightQueue.empty()) {
@@ -595,7 +792,7 @@ void Chunk::propagateSunLight(std::queue<uint32_t> &sunlightQueue) {
                 neighborLightLevel = currentLightLevel - 1u;
                 setSunLightLevelAt(nx, ny, nz, neighborLightLevel);
                 sunlightQueue.emplace(packLightPos(nx, ny, nz));
-                }
+            }
         }
     }
 
@@ -715,8 +912,8 @@ uint32_t Chunk::packLightPos(const int x, const int y, const int z) {
     static_assert(SIZE <= 63, "Chunk SIZE exceeds 63, cannot pack light position in 18 bits");
     constexpr unsigned int POS_MASK = 0x3F; // 6 bits
     return static_cast<uint32_t>(x + 1) & POS_MASK
-         | (static_cast<uint32_t>(y + 1) & POS_MASK) << 6
-         | (static_cast<uint32_t>(z + 1) & POS_MASK) << 12;
+           | (static_cast<uint32_t>(y + 1) & POS_MASK) << 6
+           | (static_cast<uint32_t>(z + 1) & POS_MASK) << 12;
 }
 
 std::tuple<int, int, int> Chunk::unpackLightPos(const uint32_t v) {
@@ -760,161 +957,4 @@ bool Chunk::isBlockPresent(const int localX, const int localY, const int localZ)
 
 bool Chunk::hasVisibleFaces() const {
     return !m_opaqueData.vertices.empty() || !m_waterData.vertices.empty();
-}
-
-void Chunk::generatePendingLights(const std::list<PendingLight> &lights, MeshingResult &outResult) {
-    if (lights.empty()) return;
-
-    std::queue<uint32_t> sunLightQueue;
-    std::queue<uint32_t> blockLightQueue;
-
-    struct Pos { int x, y, z; };
-    std::vector<Pos> changed;
-    changed.reserve(lights.size() * 8);
-
-    // Initial light sources
-    for (const auto &[localX, localY, localZ, blockLight, sunlight] : lights) {
-        if (localX < -1 || localY < -1 || localZ < -1 || localX > static_cast<int>(SIZE) || localY > static_cast<int>(SIZE) || localZ > static_cast<int>(SIZE)) continue;
-        if (Block::isOpaque(getBlockType(localX, localY, localZ))) continue;
-
-        bool anyChange = false;
-        if (sunlight > getSunLightLevelAt(localX, localY, localZ)) {
-            setSunLightLevelAt(localX, localY, localZ, sunlight);
-            if (sunlight > LightConstants::SUN_MIN) sunLightQueue.emplace(packLightPos(localX, localY, localZ));
-            anyChange = true;
-        }
-
-        const RGBLight currentRGB = getBlockLightRGBLevelAt(localX, localY, localZ);
-        RGBLight newRGB = currentRGB;
-        bool rgbChanged = false;
-
-        if (blockLight.r > currentRGB.r) {
-            newRGB.r = blockLight.r;
-            rgbChanged = true;
-        }
-        if (blockLight.g > currentRGB.g) {
-            newRGB.g = blockLight.g;
-            rgbChanged = true;
-        }
-        if (blockLight.b > currentRGB.b) {
-            newRGB.b = blockLight.b;
-            rgbChanged = true;
-        }
-
-        if (rgbChanged) {
-            setBlockLightRGBAt(localX, localY, localZ, newRGB);
-            if (newRGB.shouldPropagate(LightConstants::SUN_MIN)) blockLightQueue.emplace(packLightPos(localX, localY, localZ));
-            anyChange = true;
-        }
-
-        if (anyChange) changed.emplace_back(localX, localY, localZ);
-    }
-
-    // BFS propagation for sunlight
-    while (!sunLightQueue.empty()) {
-        const auto n = sunLightQueue.front(); sunLightQueue.pop();
-        const auto [x, y, z] = unpackLightPos(n);
-        const uint8_t currentLightLevel = getSunLightLevelAt(x, y, z);
-        if (currentLightLevel <= LightConstants::SUN_MIN) continue;
-
-        for (auto [dx, dy, dz] : Block::s_faceOffset) {
-            const int nx = x + dx;
-            const int ny = y + dy;
-            const int nz = z + dz;
-
-            if (nx < -1 || ny < -1 || nz < -1 || nx >= static_cast<int>(SIZE) + 1 || ny >= static_cast<int>(SIZE) + 1 || nz >= static_cast<int>(SIZE) + 1) continue;
-            if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
-
-            if (const uint8_t neighborLightLevel = getSunLightLevelAt(nx, ny, nz);
-                neighborLightLevel + 2u <= currentLightLevel) {
-
-                if (const auto newLevel = static_cast<uint8_t>(currentLightLevel - 1u);
-                    newLevel > neighborLightLevel) {
-                    setSunLightLevelAt(nx, ny, nz, newLevel);
-                    changed.emplace_back(nx,ny,nz);
-                    sunLightQueue.emplace(packLightPos(nx,ny,nz));
-                }
-            }
-        }
-    }
-
-    // BFS propagation for block light
-    while (!blockLightQueue.empty()) {
-        const auto n = blockLightQueue.front(); blockLightQueue.pop();
-        const auto [x, y, z] = unpackLightPos(n);
-        const RGBLight currentRGB = getBlockLightRGBLevelAt(x, y, z);
-        if (!currentRGB.shouldPropagate(LightConstants::SUN_MIN)) continue;
-
-        for (auto [dx, dy, dz] : Block::s_faceOffset) {
-            const int nx = x + dx;
-            const int ny = y + dy;
-            const int nz = z + dz;
-
-            if (nx < -1 || ny < -1 || nz < -1 || nx >= static_cast<int>(SIZE) + 1 || ny >= static_cast<int>(SIZE) + 1 || nz >= static_cast<int>(SIZE) + 1) continue;
-            if (Block::isOpaque(getBlockType(nx, ny, nz))) continue;
-
-            const RGBLight neighborLight = getBlockLightRGBLevelAt(nx, ny, nz);
-            const RGBLight attenuatedLight = {
-                static_cast<uint8_t>(std::max(0, static_cast<int>(currentRGB.r) - 1)),
-                static_cast<uint8_t>(std::max(0, static_cast<int>(currentRGB.g) - 1)),
-                static_cast<uint8_t>(std::max(0, static_cast<int>(currentRGB.b) - 1))
-            };
-
-            RGBLight mixedLight = neighborLight;
-            bool shouldUpdate = false;
-
-            if (attenuatedLight.r > neighborLight.r) {
-                mixedLight.r = attenuatedLight.r;
-                shouldUpdate = true;
-            }
-            if (attenuatedLight.g > neighborLight.g) {
-                mixedLight.g = attenuatedLight.g;
-                shouldUpdate = true;
-            }
-            if (attenuatedLight.b > neighborLight.b) {
-                mixedLight.b = attenuatedLight.b;
-                shouldUpdate = true;
-            }
-
-            if (shouldUpdate) {
-                setBlockLightRGBAt(nx, ny, nz, mixedLight);
-                blockLightQueue.emplace(packLightPos(nx, ny, nz));
-                changed.emplace_back(nx,ny,nz);
-            }
-        }
-    }
-
-    if (changed.empty()) return;
-
-    // Emit only changed border cells to neighbors
-    std::unordered_map<ChunkPosition, std::list<PendingLight>> toEmit;
-    toEmit.reserve(6);
-    for (const auto [x, y, z] : changed) {
-        const bool borderX = x == -1 || x == static_cast<int>(SIZE);
-        const bool borderY = y == -1 || y == static_cast<int>(SIZE);
-        const bool borderZ = z == -1 || z == static_cast<int>(SIZE);
-        if (!borderX && !borderY && !borderZ) continue;
-
-        const uint8_t sunlightLvl = getSunLightLevelAt(x, y, z);
-        const RGBLight rgbLvl = getBlockLightRGBLevelAt(x, y, z);
-
-        if (sunlightLvl <= LightConstants::SUN_MIN + 1u && !rgbLvl.shouldPropagate(LightConstants::SUN_MIN)) continue;
-
-        if (x == -1)  toEmit[{m_x - static_cast<int>(SIZE), m_y, m_z}].emplace_back(static_cast<int>(SIZE), y, z, rgbLvl, sunlightLvl);
-        if (x == static_cast<int>(SIZE)) toEmit[{m_x + static_cast<int>(SIZE), m_y, m_z}].emplace_back(-1, y, z, rgbLvl, sunlightLvl);
-        if (y == -1)  toEmit[{m_x, m_y - static_cast<int>(SIZE), m_z}].emplace_back(x, static_cast<int>(SIZE), z, rgbLvl, sunlightLvl);
-        if (y == static_cast<int>(SIZE)) toEmit[{m_x, m_y + static_cast<int>(SIZE), m_z}].emplace_back(x, -1, z, rgbLvl, sunlightLvl);
-        if (z == -1)  toEmit[{m_x, m_y, m_z - static_cast<int>(SIZE)}].emplace_back(x, y, static_cast<int>(SIZE), rgbLvl, sunlightLvl);
-        if (z == static_cast<int>(SIZE)) toEmit[{m_x, m_y, m_z + static_cast<int>(SIZE)}].emplace_back(x, y, -1, rgbLvl, sunlightLvl);
-    }
-
-    if (!toEmit.empty()) {
-        for (auto &[key, value] : toEmit) {
-            m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), value);
-        }
-    }
-
-    outResult.needIndirectRendererUpdate = true;
-    outResult.needInstanceUpdate = false;
-    generateNewMesh(outResult);
 }

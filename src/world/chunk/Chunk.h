@@ -51,6 +51,12 @@ public:
     void setIndirectRendererSlotWater(unsigned int m_gpu_water_slot);
 
 private:
+    struct LightPos {
+        int x, y, z;
+        LightPos(int x, int y, int z) : x(x), y(y), z(z) {}
+    };
+
+private:
     template<typename NoiseFunction>
     void getDownsampledNoises(int factor, const std::span<float> &outNoises, NoiseFunction noiseFunction) const;
     void processColumn(int worldX, int worldZ, int localX, int localZ, const std::span<float> &tunnelCavesNoises,
@@ -66,6 +72,27 @@ private:
 
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType);
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType, MeshingResult &outResult) const;
+
+    void processInitialLightSources(const std::list<PendingLight> &lights,
+                                       std::queue<uint32_t> &sunLightQueue,
+                                       std::queue<uint32_t> &blockLightQueue,
+                                       std::vector<LightPos> &changed);
+
+    static bool isValidLightPosition(int x, int y, int z);
+    bool updateSunLight(int x, int y, int z, uint8_t sunlight, std::queue<uint32_t> &queue);
+    bool updateBlockLight(int x, int y, int z, const RGBLight &blockLight, std::queue<uint32_t> &queue);
+    void propagateSunLightBFS(std::queue<uint32_t> &sunLightQueue, std::vector<LightPos> &changed);
+    void propagateSunLightToNeighbors(int x, int y, int z, uint8_t currentLevel,
+                                         std::queue<uint32_t> &queue, std::vector<LightPos> &changed);
+    void propagateBlockLightBFS(std::queue<uint32_t> &blockLightQueue, std::vector<LightPos> &changed);
+    void propagateBlockLightToNeighbors(int x, int y, int z, const RGBLight &currentRGB,
+                                           std::queue<uint32_t> &queue, std::vector<LightPos> &changed);
+    bool tryUpdateBlockLightAt(int x, int y, int z, const RGBLight &sourceRGB);
+    void emitChangedLightsToNeighbors(const std::vector<LightPos> &changed);
+
+    static bool isBorderPosition(int x, int y, int z);
+    void addLightToNeighborChunks(int x, int y, int z, const RGBLight &rgb, uint8_t sunlight,
+                                     std::unordered_map<ChunkPosition, std::list<PendingLight>> &toEmit) const;
 
     void propagateSunLight(std::queue<uint32_t> &sunlightQueue);
     void propagateBlockLight(std::queue<uint32_t> &blockLightQueue);
