@@ -63,12 +63,12 @@ void Application::initGLFW(const int width, const int height, const char *title)
         app->onMouseMove(xpos, ypos);
     });
     glfwSetMouseButtonCallback(m_window.get(),
-                               [](GLFWwindow *window, const int button, const int action, const int mods) {
+                               [](GLFWwindow *window, const int button, const int action, const int /*mods*/) {
                                    auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
                                    app->onMouseEvent(button, action);
                                });
     glfwSetKeyCallback(m_window.get(),
-        [](GLFWwindow *window, const int key, int scancode, const int action, int mods) {
+        [](GLFWwindow *window, const int key, int /*scancode*/, const int action, int /*mods*/) {
             auto *app = static_cast<Application *>(glfwGetWindowUserPointer(window));
             app->onKeyEvent(key, action);
         });
@@ -183,9 +183,9 @@ void Application::update() {
                                 m_camera.getPos().z);
 
     // Raycasting
-    if (m_raycastResult = Raycast::castRay(m_camera.getPos(), m_camera.getFront(),
+    m_raycastResult = Raycast::castRay(m_camera.getPos(), m_camera.getFront(),
                                            m_world->getWorldManagerConst().getLoadedChunks());
-        m_raycastResult.hasHitBlock) {
+    if (m_raycastResult.hasHitBlock) {
         if (!m_camera.isInputEnabled()) return;
 
         if (m_leftClicked) {
@@ -243,8 +243,8 @@ void Application::render() {
 
     // ImGui
     DebugUI::render(m_world->getWorldRendererConst().getVisibleChunksCount(),
-                    m_world->getWorldManagerConst().getLoadedChunks().size(), m_drawCmds, m_camera,
-                    m_player.getSelectedBlockType(), m_gravityEnabled, [this] {
+                    static_cast<unsigned int>(m_world->getWorldManagerConst().getLoadedChunks().size()),
+                    m_drawCmds, m_camera, m_player.getSelectedBlockType(), m_gravityEnabled, [this] {
                         m_world->getWorldManager().updateRenderDistance(*m_postProcessingShader, m_camera,
                                                                         m_world->getWorldRenderer().
                                                                         getIndirectRenderer());
@@ -296,45 +296,49 @@ void Application::onMouseEvent(const int button, const int action) {
 }
 
 void Application::onKeyEvent(const int key, const int action) {
-    if (action == GLFW_PRESS) {
-        if (key == GLFW_KEY_ESCAPE) {
-            glfwSetWindowShouldClose(m_window.get(), GLFW_TRUE);
-        }
-        // Hotbar selection
-        // Qwerty or Azerty keyboard layouts
-        if (key == GLFW_KEY_1 || key == GLFW_KEY_KP_1) {
+    if (action != GLFW_PRESS) return;
+
+    if (key == GLFW_KEY_ESCAPE) {
+        glfwSetWindowShouldClose(m_window.get(), GLFW_TRUE);
+        return;
+    }
+
+    // Hotbar selection (Qwerty or Azerty keyboard layouts)
+    switch (key) {
+        case GLFW_KEY_1: case GLFW_KEY_KP_1:
             m_key1Pressed = true;
-        }
-        if (key == GLFW_KEY_2 || key == GLFW_KEY_KP_2) {
+            break;
+        case GLFW_KEY_2: case GLFW_KEY_KP_2:
             m_key2Pressed = true;
-        }
-        if (key == GLFW_KEY_3 || key == GLFW_KEY_KP_3) {
+            break;
+        case GLFW_KEY_3: case GLFW_KEY_KP_3:
             m_key3Pressed = true;
-        }
-        if (key == GLFW_KEY_4 || key == GLFW_KEY_KP_4) {
+            break;
+        case GLFW_KEY_4: case GLFW_KEY_KP_4:
             m_key4Pressed = true;
-        }
-        if (key == GLFW_KEY_5 || key == GLFW_KEY_KP_5) {
+            break;
+        case GLFW_KEY_5: case GLFW_KEY_KP_5:
             m_key5Pressed = true;
-        }
-        if (key == GLFW_KEY_6 || key == GLFW_KEY_KP_6) {
+            break;
+        case GLFW_KEY_6: case GLFW_KEY_KP_6:
             m_key6Pressed = true;
-        }
-        if (key == GLFW_KEY_7 || key == GLFW_KEY_KP_7) {
+            break;
+        case GLFW_KEY_7: case GLFW_KEY_KP_7:
             m_key8Pressed = true;
-        }
-        if (key == GLFW_KEY_8 || key == GLFW_KEY_KP_8) {
+            break;
+        case GLFW_KEY_8: case GLFW_KEY_KP_8:
             m_key7Pressed = true;
-        }
-        if (key == GLFW_KEY_9 || key == GLFW_KEY_KP_9) {
+            break;
+        case GLFW_KEY_9: case GLFW_KEY_KP_9:
             m_key9Pressed = true;
-        }
+            break;
+        default:
+            break;
     }
 }
 
-
 void Application::glDebugOutput(const GLenum source, const GLenum type, const unsigned int id, const GLenum severity,
-                                GLsizei length, const char *message, const void *userParam) {
+                                GLsizei /*length*/, const char *message, const void* /*userParam*/) {
     // ignore non-significant error/warning codes
     if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 

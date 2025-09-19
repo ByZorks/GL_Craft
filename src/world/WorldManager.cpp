@@ -13,7 +13,7 @@ WorldManager::WorldManager() : m_threadPool(std::max(1u, std::thread::hardware_c
         static_cast<size_t>(Renderer::s_renderDistance * Renderer::s_renderDistance * Renderer::s_renderDistance *
                             2.5f));
 
-    const int r = static_cast<int>(std::ceil(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE)));
+    const auto r = static_cast<int>(std::ceil(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE)));
     const int r2 = r * r;
 
     m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)) + 1);
@@ -61,7 +61,7 @@ void WorldManager::updateRenderDistance(Shader &postProcessingShader, const Came
 
     m_renderDistanceOffsets.clear();
 
-    const int r = static_cast<int>(std::ceil(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE)));
+    const auto r = static_cast<int>(std::ceil(Renderer::s_renderDistance / static_cast<float>(Chunk::SIZE)));
     const int r2 = r * r;
 
     m_renderDistanceOffsets.reserve(static_cast<size_t>(std::numbers::pi * static_cast<double>(r2)) + 1);
@@ -201,7 +201,7 @@ void WorldManager::deleteBlockAndUpdateNeighbors(const RaycastResult &hit) {
                     for (int dz = -chunkRadius; dz <= chunkRadius; ++dz) {
                         const int chunkWorldZ = chunk->getZ() + dz * chunkSize;
 
-                        const ChunkPosition pos(chunkWorldX, chunkWorldY, chunkWorldZ);
+                        const ChunkPosition pos{chunkWorldX, chunkWorldY, chunkWorldZ};
                         if (processedChunks.contains(pos)) continue;
 
                         const int minDistX = std::max(
@@ -388,7 +388,7 @@ void WorldManager::placeBlockAndUpdateNeighbors(const RaycastResult &hit, Block:
                     for (int dz = -chunkRadius; dz <= chunkRadius; ++dz) {
                         const int chunkWorldZ = targetChunk->getZ() + dz * chunkSize;
 
-                        const ChunkPosition pos(chunkWorldX, chunkWorldY, chunkWorldZ);
+                        const ChunkPosition pos{chunkWorldX, chunkWorldY, chunkWorldZ};
                         if (processedChunks.contains(pos)) continue;
 
                         const int minDistX = std::max(
@@ -580,7 +580,7 @@ void WorldManager::generateChunksPositions(const int cameraWorldX, const int cam
             const int chunkY = cameraWorldY + static_cast<int>(y * Chunk::SIZE);
             if (chunkY < 0 || chunkY > 256) continue; // World height limit
 
-            const ChunkPosition key(chunkX, chunkY, chunkZ);
+            const ChunkPosition key{chunkX, chunkY, chunkZ};
             if (m_chunksData.loadedMeshes.contains(key)) continue;
             m_chunksData.meshesToGenerate.push(key);
         }
@@ -618,10 +618,12 @@ void WorldManager::emitNeighborsBorderLights(const std::shared_ptr<Chunk> &chunk
     const int cx = chunk->getX();
     const int cy = chunk->getY();
     const int cz = chunk->getZ();
-    constexpr int dirs[6][3] = {
-        {-S, 0, 0}, {S, 0, 0},
-        {0, -S, 0}, {0, S, 0},
-        {0, 0, -S}, {0, 0, S}
+    constexpr std::array<std::array<int, 3>, 6> dirs = {
+        {
+            {-S, 0, 0}, {S, 0, 0},
+            {0, -S, 0}, {0, S, 0},
+            {0, 0, -S}, {0, 0, S}
+        }
     };
 
     for (const auto &d: dirs) {

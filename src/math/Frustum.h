@@ -1,5 +1,7 @@
 #ifndef FRUSTUM_H
 #define FRUSTUM_H
+#include <array>
+
 #include "AABB.h"
 #include "Plane.h"
 
@@ -12,7 +14,7 @@ public:
     [[nodiscard]] bool isPointInFrustum(const glm::vec3& point) const;
 
 private:
-    Plane m_planes[6];
+    std::array<Plane, 6> m_planes;
 };
 
 #endif //FRUSTUM_H

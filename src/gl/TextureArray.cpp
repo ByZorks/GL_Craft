@@ -16,10 +16,10 @@ TextureArray::TextureArray(const int width, const int height, std::string dirPat
     stbi_set_flip_vertically_on_load(true);
 
     std::vector<std::string> files = getFilesInDirectory(m_dirPath);
-    std::ranges::sort(files, [](const std::string &a, const std::string &b) {
+    std::ranges::sort(files, [](const std::string_view &a, const std::string_view &b) {
         return a < b;
     });
-    const unsigned int layersCount = files.size();
+    const auto layersCount = static_cast<unsigned int>(files.size());
 
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_ID);
     const int mipLevels = 1 + static_cast<int>(std::floor(std::log2(std::max(m_width, m_height))));

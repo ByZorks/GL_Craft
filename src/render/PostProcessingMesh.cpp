@@ -4,8 +4,8 @@
 
 PostProcessingMesh::PostProcessingMesh(const int width, const int height) : m_width(width), m_height(height),
                                                                             m_FBO(width, height) {
-    m_VBO.init(m_vertices.data(), m_vertices.size() * sizeof(uint8_t));
-    m_IBO.init(m_indices.data(), m_indices.size());
+    m_VBO.init(m_vertices.data(), static_cast<unsigned int>(m_vertices.size()) * sizeof(uint8_t));
+    m_IBO.init(m_indices.data(), static_cast<unsigned int>(m_indices.size()));
 
     VertexBufferLayout layout;
     layout.Push<char>(2); // x, y

@@ -124,8 +124,8 @@ void Shader::compileAndLink() {
     int success;
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(program, 512, nullptr, infoLog);
+        std::string infoLog(512, '\0');
+        glGetProgramInfoLog(program, 512, nullptr, infoLog.data());
         std::cerr << "Shader error: " << infoLog << std::endl;
         glDeleteProgram(program);
         glDeleteShader(vs);

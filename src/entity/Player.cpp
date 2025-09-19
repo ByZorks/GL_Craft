@@ -21,5 +21,5 @@ void Player::setBlockForCurrentlySelectedHotbarSlot(const Block::BlockType block
 void Player::selectHotbarSlot(const unsigned int hotbarIndex) {
     if (hotbarIndex >= m_blocks.size()) return;
     m_selectedBlockType = m_blocks[hotbarIndex];
-    m_selectedHotbarSlot = hotbarIndex;
+    m_selectedHotbarSlot = static_cast<uint8_t>(hotbarIndex);
 }

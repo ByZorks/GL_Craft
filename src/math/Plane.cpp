@@ -12,7 +12,7 @@ Plane::Plane(const float a, const float b, const float c, const float d) : m_a(a
 
 void Plane::normalize() {
     const float length = std::sqrt(m_a * m_a + m_b * m_b + m_c * m_c);
-    if (length == 0.0f) throw std::runtime_error("Cannot normalize a plane with zero length.");
+    if (length == 0.0f) throw std::invalid_argument("Cannot normalize a plane with zero length.");
 
     m_a /= length;
     m_b /= length;
@@ -36,6 +36,6 @@ float Plane::getD() const {
     return m_d;
 }
 
-void Plane::setD(const float m_d) {
-    this->m_d = m_d;
+void Plane::setD(const float d) {
+    m_d = d;
 }

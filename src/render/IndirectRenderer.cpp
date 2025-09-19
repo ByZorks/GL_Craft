@@ -10,11 +10,15 @@
 IndirectRenderer::IndirectRenderer() {
     const auto renderDistanceInChunks = static_cast<size_t>(std::ceil(Renderer::s_renderDistance / Chunk::SIZE));
     const size_t chunksVisible = renderDistanceInChunks * renderDistanceInChunks * renderDistanceInChunks / 2; // Rough estimate
-    const size_t avgVerticesPerChunk = renderDistanceInChunks <= 16
-                                                 ? 7000
-                                                 : renderDistanceInChunks <= 32
-                                                       ? 3000
-                                                       : 1500; // Rough estimate
+    size_t avgVerticesPerChunk;
+    if (renderDistanceInChunks <= 16) {
+        avgVerticesPerChunk = 7000;
+    }
+    else if (renderDistanceInChunks <= 32) {
+        avgVerticesPerChunk = 3000;
+    } else {
+        avgVerticesPerChunk = 1500;
+    }
     const size_t slotsPerChunkEstimate = (avgVerticesPerChunk + m_vertexPerSlot - 1) / m_vertexPerSlot;
     const size_t nbSlotsMax = chunksVisible * slotsPerChunkEstimate * 2; // x2 for safety margin
 
@@ -36,11 +40,11 @@ IndirectRenderer::IndirectRenderer() {
     if (!m_mappedVertices) throw std::runtime_error("IndirectRenderer: Failed to map vertex SSBO");
 
     // Opaque
-    m_opaqueData.IBO.init(nullptr, IBOSize);
+    m_opaqueData.IBO.init(nullptr, static_cast<unsigned int>(IBOSize));
     m_opaqueData.offsetsSSBO.init(nullptr, offsetsSSBOSize, 1);
 
     // Water
-    m_waterData.IBO.init(nullptr, IBOSize / 5);
+    m_waterData.IBO.init(nullptr, static_cast<unsigned int>(IBOSize / 5));
     m_waterData.offsetsSSBO.init(nullptr, offsetsSSBOSize / 5, 1);
 }
 
@@ -55,6 +59,8 @@ void IndirectRenderer::removeChunk(const std::shared_ptr<Chunk> &chunk) {
 }
 
 void IndirectRenderer::updateChunk(const std::shared_ptr<Chunk> &chunk) {
+    using enum MeshType;
+
     const bool hasOpaque = chunk->hasOpaqueFaces();
     const bool hasWater = chunk->hasWaterFaces();
     const unsigned int opaqueSlot = chunk->getIndirectRendererSlotOpaque();
@@ -62,27 +68,27 @@ void IndirectRenderer::updateChunk(const std::shared_ptr<Chunk> &chunk) {
 
     // Chunk can have new type of faces, so we may need to add it to a new slot
     if (opaqueSlot != UINT_MAX && hasOpaque) {
-        update(m_opaqueData, MeshType::OPAQUE, chunk);
+        update(m_opaqueData, OPAQUE, chunk);
     } else if (opaqueSlot == UINT_MAX && hasOpaque) {
-        add(m_opaqueData, MeshType::OPAQUE, chunk);
+        add(m_opaqueData, OPAQUE, chunk);
     }
 
     if (waterSlot != UINT_MAX && hasWater) {
-        update(m_waterData, MeshType::WATER, chunk);
+        update(m_waterData, WATER, chunk);
     } else if (waterSlot == UINT_MAX && hasWater) {
-        add(m_waterData, MeshType::WATER, chunk);
+        add(m_waterData, WATER, chunk);
     }
 }
 
 void IndirectRenderer::drawOpaque() const {
     if (m_opaqueData.count == 0) return;
-    Renderer::drawMultiWithVertexPulling(m_opaqueData.IBO, m_verticesSSBO, m_opaqueData.offsetsSSBO, m_opaqueData.count,
+    Renderer::drawMultiWithVertexPulling(m_opaqueData.IBO, m_verticesSSBO, m_opaqueData.offsetsSSBO, static_cast<unsigned int>(m_opaqueData.count),
                                          nullptr);
 }
 
 void IndirectRenderer::drawWater() const {
     if (m_waterData.count == 0) return;
-    Renderer::drawMultiWithVertexPulling(m_waterData.IBO, m_verticesSSBO, m_waterData.offsetsSSBO, m_waterData.count,
+    Renderer::drawMultiWithVertexPulling(m_waterData.IBO, m_verticesSSBO, m_waterData.offsetsSSBO, static_cast<unsigned int>(m_waterData.count),
                                          nullptr);
 }
 
@@ -120,7 +126,7 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
         const auto newSize = static_cast<size_t>(static_cast<double>(m_verticesSSBO.getSize()) * 1.25);
         const size_t oldSlotCount = m_gpuSlots.size();
         resizeVertexSSBOAndSlots(newSize);
-        startSlotIndex = oldSlotCount;
+        startSlotIndex = static_cast<unsigned int>(oldSlotCount);
     }
 
     // Get draw index
@@ -129,7 +135,7 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
         drawIndex = meshData.freeDrawIndices.front();
         meshData.freeDrawIndices.pop();
     } else {
-        drawIndex = meshData.count++;
+        drawIndex = static_cast<unsigned int>(meshData.count++);
     }
 
     switch (meshType) {
@@ -148,7 +154,7 @@ void IndirectRenderer::add(MeshData &meshData, const MeshType meshType, const st
     for (unsigned int i = 0; i < requiredSlots; ++i) {
         const unsigned int currentSlot = startSlotIndex + i;
         m_gpuSlots[currentSlot].isUsed = true;
-        m_gpuSlots[currentSlot].numberOfSlotsUsed = i == 0 ? requiredSlots : 0;
+        m_gpuSlots[currentSlot].numberOfSlotsUsed = i == 0 ? static_cast<uint8_t>(requiredSlots) : 0;
     }
 
     DrawArraysIndirectCommand cmd{};
@@ -233,14 +239,14 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
     }
 
     const unsigned int newRequiredSlots = (vertexCount + m_vertexPerSlot - 1) / m_vertexPerSlot;
-    const unsigned int oldRequiredSlots = m_gpuSlots[startSlotIndex].numberOfSlotsUsed;
 
     // Release unused slots
-    if (newRequiredSlots < oldRequiredSlots) {
+    if (const unsigned int oldRequiredSlots = m_gpuSlots[startSlotIndex].numberOfSlotsUsed;
+        newRequiredSlots < oldRequiredSlots) {
         for (unsigned int i = startSlotIndex + oldRequiredSlots - 1; i > startSlotIndex + newRequiredSlots - 1; --i) {
             m_gpuSlots[i].isUsed = false;
         }
-        m_gpuSlots[startSlotIndex].numberOfSlotsUsed = newRequiredSlots;
+        m_gpuSlots[startSlotIndex].numberOfSlotsUsed = static_cast<uint8_t>(newRequiredSlots);
 
         // Find new slots
     } else if (newRequiredSlots > oldRequiredSlots) {
@@ -256,7 +262,7 @@ void IndirectRenderer::update(MeshData &meshData, const MeshType meshType, const
             for (unsigned int i = oldRequiredSlots; i < newRequiredSlots; ++i) {
                 m_gpuSlots[startSlotIndex + i].isUsed = true;
             }
-            m_gpuSlots[startSlotIndex].numberOfSlotsUsed = newRequiredSlots;
+            m_gpuSlots[startSlotIndex].numberOfSlotsUsed = static_cast<uint8_t>(newRequiredSlots);
         } else {
             remove(meshData, meshType, chunk);
             add(meshData, meshType, chunk);

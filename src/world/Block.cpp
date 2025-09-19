@@ -2,11 +2,12 @@
 
 #include <array>
 #include <stdexcept>
+#include <utility>
 
 #include "chunk/Chunk.h"
 
 std::string_view Block::getBlockName(const BlockType blockType) {
-    const auto idx = static_cast<size_t>(blockType);
+    const auto idx = static_cast<size_t>(std::to_underlying(blockType));
     static constexpr std::array<std::string_view, 29> names = {
         "Air", "Bedrock", "Dirt", "Grass", "Stone", "Water", "Oak log", "Oak leaves", "Short grass", "Poppy",
         "Cornflower", "Allium", "Snow", "Snowy grass", "Sand", "Gravel", "Snowy oak leaves", "Cactus", "Jungle log",
@@ -20,13 +21,13 @@ std::string_view Block::getBlockName(const BlockType blockType) {
 void Block::addFaceVertex(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,
                             const std::array<bool, 26> &adjacentsFaces, const unsigned int startX,
                             const unsigned int startY, const unsigned int startZ, const uint8_t sunlight, const RGBLight& blockLight) {
-    const unsigned int position[3] = {startX, startY, startZ};
+    const std::array position = {startX, startY, startZ};
     const uint8_t texLayer = getTextureLayer(type, face);
 
     switch (face) {
         case Face::FRONT: {
             constexpr unsigned int faceIndex = 0;
-            const unsigned int ao[4] = {
+            const std::array<unsigned int, 4> ao = {
                 computeVertexAO(
                     adjacentsFaces[AOIndex(-1, 0, 1)],
                     adjacentsFaces[AOIndex(0, 1, 1)],
@@ -49,7 +50,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
         }
         case Face::BACK: {
             constexpr unsigned int faceIndex = 1;
-            const unsigned int ao[4] = {
+            const std::array<unsigned int, 4> ao = {
                 computeVertexAO(
                     adjacentsFaces[AOIndex(1, 0, -1)],
                     adjacentsFaces[AOIndex(0, 1, -1)],
@@ -72,7 +73,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
         }
         case Face::LEFT: {
             constexpr unsigned int faceIndex = 2;
-            const unsigned int ao[4] = {
+            const std::array<unsigned int, 4> ao = {
                 computeVertexAO(
                     adjacentsFaces[AOIndex(-1, 0, -1)],
                     adjacentsFaces[AOIndex(-1, 1, 0)],
@@ -95,7 +96,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
         }
         case Face::RIGHT: {
             constexpr unsigned int faceIndex = 3;
-            const unsigned int ao[4] = {
+            const std::array<unsigned int, 4> ao = {
                 computeVertexAO(
                     adjacentsFaces[AOIndex(1, 0, 1)],
                     adjacentsFaces[AOIndex(1, 1, 0)],
@@ -118,7 +119,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
         }
         case Face::TOP: {
             constexpr unsigned int faceIndex = 4; // TOP face
-            const unsigned int ao[4] = {
+            const std::array<unsigned int, 4> ao = {
                 computeVertexAO(
                     adjacentsFaces[AOIndex(-1, 1, 0)],
                     adjacentsFaces[AOIndex(0, 1, -1)],
@@ -141,7 +142,7 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
         }
         case Face::BOTTOM: {
             constexpr unsigned int faceIndex = 5;
-            const unsigned int ao[4] = {
+            const std::array<unsigned int, 4> ao = {
                 computeVertexAO(
                     adjacentsFaces[AOIndex(-1, -1, 0)],
                     adjacentsFaces[AOIndex(0, -1, 1)],
@@ -169,9 +170,9 @@ void Block::addFaceVertex(const Face face, const BlockType type, std::vector<Blo
 
 void Block::addFaceVerticesAsBilboard(const Face face, const BlockType type, std::vector<BlockVertex> &outVertices,
                                       const unsigned int startX, const unsigned int startY, const unsigned int startZ) {
-    const unsigned int position[3] = {startX, startY, startZ};
+    const std::array position = {startX, startY, startZ};
     const uint8_t texLayer = getTextureLayer(type, face);
-    constexpr unsigned int ao[4] = {3, 3, 3, 3}; // AO is not used for billboards
+    constexpr std::array ao = {3u, 3u, 3u, 3u}; // AO is not used for billboards
     constexpr unsigned int sunlight = 15; // Max light level for now
     constexpr RGBLight blockLight = {0, 0, 0}; // No block light for now
 
@@ -198,11 +199,11 @@ uint8_t Block::computeVertexAO(const bool side1, const bool side2, const bool co
         constexpr uint8_t AO_MIN = 0;
         return AO_MIN;
     }
-    return AO_MAX - (side1 + side2 + corner);
+    return AO_MAX - (static_cast<uint8_t>(side1) + static_cast<uint8_t>(side2) + static_cast<uint8_t>(corner));
 }
 
 bool Block::isOpaque(const BlockType type) {
-    const auto idx = static_cast<size_t>(type);
+    const auto idx = static_cast<size_t>(std::to_underlying(type));
     static constexpr std::array opaqueBlocks = {
         false, // AIR
         true,  // BEDROCK
@@ -238,7 +239,7 @@ bool Block::isOpaque(const BlockType type) {
 }
 
 bool Block::isTransparent(const BlockType type) {
-    const auto idx = static_cast<size_t>(type);
+    const auto idx = static_cast<size_t>(std::to_underlying(type));
     static constexpr std::array transparentBlocks = {
         true,  // AIR
         false, // BEDROCK
@@ -274,7 +275,7 @@ bool Block::isTransparent(const BlockType type) {
 }
 
 bool Block::isSemiTransparent(const BlockType type) {
-    const auto idx = static_cast<size_t>(type);
+    const auto idx = static_cast<size_t>(std::to_underlying(type));
     static constexpr std::array semiTransparentBlocks = {
         false, // AIR
         false, // BEDROCK
@@ -310,7 +311,7 @@ bool Block::isSemiTransparent(const BlockType type) {
 }
 
 bool Block::isInstance(const BlockType type) {
-    const auto idx = static_cast<size_t>(type);
+    const auto idx = static_cast<size_t>(std::to_underlying(type));
     static constexpr std::array instanceBlocks = {
         false, // AIR
         false, // BEDROCK
@@ -346,7 +347,7 @@ bool Block::isInstance(const BlockType type) {
 }
 
 bool Block::isLightEmitter(const BlockType type) {
-    const auto idx = static_cast<size_t>(type);
+    const auto idx = static_cast<size_t>(std::to_underlying(type));
     static constexpr std::array lightEmitterBlocks = {
         false, // AIR
         false, // BEDROCK
@@ -383,25 +384,26 @@ bool Block::isLightEmitter(const BlockType type) {
 
 RGBLight Block::getLightColor(const BlockType type) {
     switch (type) {
-        case BlockType::RED_LIGHT:
+        using enum BlockType;
+        case RED_LIGHT:
             return {15, 0, 0};
-        case BlockType::GREEN_LIGHT:
+        case GREEN_LIGHT:
             return {0, 15, 0};
-        case BlockType::BLUE_LIGHT:
+        case BLUE_LIGHT:
             return {0, 0, 15};
-        case BlockType::PURPLE_LIGHT:
+        case PURPLE_LIGHT:
             return {10, 0, 15};
-        case BlockType::PINK_LIGHT:
+        case PINK_LIGHT:
             return {15, 5, 10};
-        case BlockType::YELLOW_LIGHT:
+        case YELLOW_LIGHT:
             return {15, 15, 0};
         default:
             return {0, 0, 0};
     }
 }
 
-Block::BlockVertex Block::packVertexData(const unsigned int position[3], const uint8_t texLayer, const unsigned int faceIndex,
-                                         const unsigned int ao[4], const uint8_t sunlight, const RGBLight& blockLight) {
+Block::BlockVertex Block::packVertexData(const std::array<unsigned int, 3> &position, const uint8_t texLayer, const unsigned int faceIndex,
+                                         const std::array<unsigned int, 4> &ao, const uint8_t sunlight, const RGBLight& blockLight) {
     BlockVertex vertex{};
 
     constexpr unsigned int POS_MASK = 0x1F; // 5 bits, 0-31 range
@@ -437,9 +439,14 @@ Block::BlockVertex Block::packVertexData(const unsigned int position[3], const u
     return vertex;
 }
 
-uint8_t Block::getTextureLayer(BlockType type, const Face face) {
-    const uint8_t typeIndex = static_cast<int>(type);
-    const uint8_t faceIndex = face == Face::TOP ? 1 : face == Face::BOTTOM ? 2 : 0;
+uint8_t Block::getTextureLayer(const BlockType type, const Face face) {
+    const auto typeIndex = std::to_underlying(type);
+    uint8_t faceIndex = 0;
+    if (face == Face::TOP) {
+        faceIndex = 1;
+    } else if (face == Face::BOTTOM) {
+        faceIndex = 2;
+    }
     return s_textureLayer[typeIndex][faceIndex];
 }
 

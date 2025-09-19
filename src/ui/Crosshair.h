@@ -17,7 +17,7 @@ private:
 private:
     #pragma pack(push, 1)
     struct CrosshairVertex {
-        float position[2]; // x, y
+        std::array<float, 2> position; // x, y
         uint8_t textureLayer; // Texture layer in the texture array
     };
     #pragma pack(pop)

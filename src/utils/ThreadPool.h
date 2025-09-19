@@ -23,7 +23,7 @@ public:
     [[nodiscard]] size_t getNumberOfThreads() const;
 
 private:
-    std::vector<std::thread> m_workers;
+    std::vector<std::jthread> m_workers;
     std::queue<std::function<void()> > m_tasks;
     std::vector<std::function<void()> > m_localTasks;
 
@@ -37,8 +37,9 @@ template<typename F, typename... Args>
 auto ThreadPool::enqueue(F &&f, Args &&... args) -> std::future<decltype(f(args...))> {
     using return_type = decltype(f(args...));
     auto task = std::make_shared<std::packaged_task<return_type()> >(
-        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-    std::future<return_type> res = task->get_future(); {
+        std::bind_front(std::forward<F>(f), std::forward<Args>(args)...));
+    std::future<return_type> res = task->get_future();
+    {
         std::lock_guard lock(m_mutex);
         m_tasks.emplace([task] { (*task)(); });
     }
@@ -47,7 +48,8 @@ auto ThreadPool::enqueue(F &&f, Args &&... args) -> std::future<decltype(f(args.
 }
 
 template<typename F>
-void ThreadPool::enqueue_no_future(F &&f) { {
+void ThreadPool::enqueue_no_future(F &&f) {
+    {
         std::lock_guard lock(m_mutex);
         m_tasks.emplace(std::forward<F>(f));
     }

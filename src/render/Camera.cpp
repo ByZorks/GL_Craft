@@ -105,9 +105,9 @@ bool Camera::hasCameraChangedChunk() const {
     constexpr auto chunkSize = static_cast<float>(Chunk::SIZE);
     const float cameraChunkX = std::floor(m_cameraPos.x / chunkSize);
     const float cameraChunkY = std::floor(m_cameraPos.y / chunkSize);
-    const float cameraChunkZ = std::floor(m_cameraPos.z / chunkSize);
 
-    if (m_lastCameraChunkPos.x == cameraChunkX &&
+    if (const float cameraChunkZ = std::floor(m_cameraPos.z / chunkSize);
+        m_lastCameraChunkPos.x == cameraChunkX &&
         m_lastCameraChunkPos.y == cameraChunkY &&
         m_lastCameraChunkPos.z == cameraChunkZ) {
         return false;
@@ -119,9 +119,9 @@ bool Camera::hasCameraChangedChunk() const {
 bool Camera::hasCameraChangedBlock() const {
     const float cameraBlockX = std::floor(m_cameraPos.x);
     const float cameraBlockY = std::floor(m_cameraPos.y);
-    const float cameraBlockZ = std::floor(m_cameraPos.z);
 
-    if (m_lastCameraBlockPos.x == cameraBlockX &&
+    if (const float cameraBlockZ = std::floor(m_cameraPos.z);
+        m_lastCameraBlockPos.x == cameraBlockX &&
         m_lastCameraBlockPos.y == cameraBlockY &&
         m_lastCameraBlockPos.z == cameraBlockZ) {
         return false;

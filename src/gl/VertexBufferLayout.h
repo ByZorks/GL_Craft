@@ -31,17 +31,16 @@ public:
     };
 
 public:
-    VertexBufferLayout() : m_Stride(0) {
+    VertexBufferLayout() = default;
+
+    template<typename T>
+    void Push(unsigned int count [[maybe_unused]], bool normalized [[maybe_unused]] = false) {
+        throw std::invalid_argument("Unsupported type for VertexBufferLayout::Push");
     }
 
     template<typename T>
-    void Push(unsigned int count, bool normalized = false) {
-        throw std::runtime_error("Unsupported type for VertexBufferLayout::Push");
-    }
-
-    template<typename T>
-    void PushInt(unsigned int count, bool normalized = false) {
-        throw std::runtime_error("Unsupported type for VertexBufferLayout::PushInt");
+    void PushInt(unsigned int count [[maybe_unused]], bool normalized [[maybe_unused]] = false) {
+        throw std::invalid_argument("Unsupported type for VertexBufferLayout::PushInt");
     }
 
     [[nodiscard]] std::vector<VertexBufferElement> m_elements() const {
@@ -54,7 +53,7 @@ public:
 
 private:
     std::vector<VertexBufferElement> m_Elements;
-    unsigned int m_Stride;
+    unsigned int m_Stride = 0;
 };
 
 template<>

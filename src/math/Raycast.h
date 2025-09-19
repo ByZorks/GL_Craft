@@ -23,6 +23,14 @@ public:
                                  const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &chunks);
 
 private:
+    static glm::ivec3 calculateChunkCoordinates(const glm::vec3 &rayCurrentPos);
+    static int findOrCacheChunk(const glm::ivec3 &chunkCoords,
+                                const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &chunks);
+    static bool checkBlockCollision(int chunkIndex, const glm::ivec3 &localCoords, Block::BlockType &outBlockType);
+    static void updateRayStep(glm::vec3 &rayCurrentPos, float &distance, glm::vec3 &rayLength1D,
+                              const glm::vec3 &step, const glm::vec3 &rayUnitStepSize, glm::ivec3 &hitNormal);
+
+private:
     static int m_lastChunk0X, m_lastChunk0Y, m_lastChunk0Z;
     static int m_lastChunk1X, m_lastChunk1Y, m_lastChunk1Z;
     static int m_lastChunk2X, m_lastChunk2Y, m_lastChunk2Z;

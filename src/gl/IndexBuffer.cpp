@@ -1,7 +1,5 @@
 #include "IndexBuffer.h"
 
-#include <algorithm>
-
 #include "glad/gl.h"
 
 IndexBuffer::IndexBuffer() = default;

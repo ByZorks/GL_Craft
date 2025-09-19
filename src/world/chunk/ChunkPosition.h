@@ -1,17 +1,10 @@
 #ifndef GL_CRAFT_CHUNKPOSITION_H
 #define GL_CRAFT_CHUNKPOSITION_H
-#include <tuple>
 
 struct ChunkPosition {
     int x, y, z;
 
-    friend bool operator==(const ChunkPosition &lhs, const ChunkPosition &rhs) {
-        return std::tie(lhs.x, lhs.y, lhs.z) == std::tie(rhs.x, rhs.y, rhs.z);
-    }
-
-    friend bool operator!=(const ChunkPosition &lhs, const ChunkPosition &rhs) {
-        return !(lhs == rhs);
-    }
+    friend bool operator==(const ChunkPosition &lhs, const ChunkPosition &rhs) = default;
 };
 
 template<>

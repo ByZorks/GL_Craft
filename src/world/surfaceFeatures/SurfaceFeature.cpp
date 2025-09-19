@@ -34,43 +34,46 @@ std::size_t hash_value(const SurfaceFeature &obj) {
 
 SurfaceFeature::SurfaceFeatureType SurfaceFeature::getSurfaceFeatureType(const float noiseValue, const Block::BlockType &blockType,
                                                          const Biome biome) {
-    if (biome == Biome::JUNGLE) {
-        if (noiseValue >= 0.75f && noiseValue < 0.77f) return SurfaceFeatureType::TREE;
-        if (noiseValue >= 0.70f && noiseValue < 0.71f) return SurfaceFeatureType::BUSH;
-        if (noiseValue >= 0.69f) return SurfaceFeatureType::SHORT_GRASS;
-        return SurfaceFeatureType::NONE;
+    using enum SurfaceFeatureType;
+    using enum Biome;
+
+    if (biome == JUNGLE) {
+        if (noiseValue >= 0.75f && noiseValue < 0.77f) return TREE;
+        if (noiseValue >= 0.70f && noiseValue < 0.71f) return BUSH;
+        if (noiseValue >= 0.69f) return SHORT_GRASS;
+        return NONE;
     }
 
-    if (biome == Biome::DESERT) {
-        if (noiseValue >= 0.9999f) return SurfaceFeatureType::POND;
+    if (biome == DESERT) {
+        if (noiseValue >= 0.9999f) return POND;
     }
 
-    if (biome == Biome::TAIGA || biome == Biome::SNOWY_TAIGA) {
-        if (noiseValue >= 0.85f) return SurfaceFeatureType::TREE;
+    if (biome == TAIGA || biome == SNOWY_TAIGA) {
+        if (noiseValue >= 0.85f) return TREE;
     }
 
-    if (biome == Biome::FOREST) {
-        if (noiseValue >= 0.82f) return SurfaceFeatureType::TREE;
+    if (biome == FOREST) {
+        if (noiseValue >= 0.82f) return TREE;
     }
 
-    if (biome == Biome::PLAINS) {
-        if (noiseValue >= 0.93f) return SurfaceFeatureType::TREE;
+    if (biome == PLAINS) {
+        if (noiseValue >= 0.93f) return TREE;
     }
 
-    if (noiseValue >= 0.8099f && noiseValue < 0.81f) return SurfaceFeatureType::POND;
+    if (noiseValue >= 0.8099f && noiseValue < 0.81f) return POND;
 
     if (blockType == Block::BlockType::GRASS || blockType == Block::BlockType::SNOW_GRASS) {
-        if (noiseValue >= 0.88f) return SurfaceFeatureType::TREE;
-        if (noiseValue >= 0.7111f && noiseValue < 0.7112f) return SurfaceFeatureType::BUSH;
-        if (noiseValue >= 0.70f) return SurfaceFeatureType::SHORT_GRASS;
-        if (noiseValue >= 0.696f) return SurfaceFeatureType::POPPY;
-        if (noiseValue >= 0.693f) return SurfaceFeatureType::CORNFLOWER;
-        if (noiseValue >= 0.690f) return SurfaceFeatureType::ALLIUM;
+        if (noiseValue >= 0.88f) return TREE;
+        if (noiseValue >= 0.7111f && noiseValue < 0.7112f) return BUSH;
+        if (noiseValue >= 0.70f) return SHORT_GRASS;
+        if (noiseValue >= 0.696f) return POPPY;
+        if (noiseValue >= 0.693f) return CORNFLOWER;
+        if (noiseValue >= 0.690f) return ALLIUM;
     } else if (blockType == Block::BlockType::SAND) {
-        if (noiseValue >= 0.88f) return SurfaceFeatureType::TREE;
+        if (noiseValue >= 0.88f) return TREE;
     }
 
-    return SurfaceFeatureType::NONE;
+    return NONE;
 }
 
 Block::BlockType SurfaceFeature::getBlockTypeOfSurfaceFeature(const SurfaceFeatureType type) {
@@ -112,18 +115,19 @@ void SurfaceFeature::addTree(std::mt19937 &rng, const ChunkPosition &position, c
                              std::vector<Block::BlockType> &outBlocks,
                              std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings) {
     switch (biome) {
-        case Biome::DESERT:
+        using enum Biome;
+        case DESERT:
             addCactus(rng, position, localX, localY, localZ, outBlocks, outPendings);
             break;
-        case Biome::JUNGLE: {
+        case JUNGLE: {
             std::bernoulli_distribution distribution(0.40);
             distribution(rng)
                 ? addMegaJungleTree(rng, position, localX, localY, localZ, outBlocks, outPendings)
                 : addSmallTree(rng, position, localX, localY, localZ, biome, outBlocks, outPendings);
             break;
         }
-        case Biome::TAIGA:
-        case Biome::SNOWY_TAIGA:
+        case TAIGA:
+        case SNOWY_TAIGA:
             addSpruceTree(rng, position, localX, localY, localZ, outBlocks, outPendings);
             break;
         default:
@@ -136,12 +140,14 @@ void SurfaceFeature::addBush(std::mt19937 &rng, const ChunkPosition &position, c
                              const int localZ,
                              const Biome biome, std::vector<Block::BlockType> &outBlocks,
                              std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings) {
-    const Block::BlockType leavesType =
-            TerrainGenerator::isSnowBiome(biome)
-                ?Block:: BlockType::SNOW_OAK_LEAVES
-                : biome == Biome::JUNGLE
-                      ? Block::BlockType::JUNGLE_LEAVES
-                      : Block::BlockType::OAK_LEAVES;
+    Block::BlockType leavesType;
+    if (TerrainGenerator::isSnowBiome(biome)) {
+        leavesType = Block::BlockType::SNOW_OAK_LEAVES;
+    } else if (biome == Biome::JUNGLE) {
+        leavesType = Block::BlockType::JUNGLE_LEAVES;
+    } else {
+        leavesType = Block::BlockType::OAK_LEAVES;
+    }
 
     for (int y = 0; y < 2; ++y) {
         for (int x = -1; x <= 1; ++x) {
@@ -206,17 +212,18 @@ void SurfaceFeature::addSmallTree(std::mt19937 &rng, const ChunkPosition &positi
                                   const int localZ, const Biome biome,
                                   std::vector<Block::BlockType> &outBlocks,
                                   std::unordered_map<ChunkPosition, std::list<PendingBlock> > &outPendings) {
-    const Block::BlockType leavesType =
-            TerrainGenerator::isSnowBiome(biome)
-                ? Block::BlockType::SNOW_OAK_LEAVES
-                : biome == Biome::JUNGLE
-                      ? Block::BlockType::JUNGLE_LEAVES
-                      : Block::BlockType::OAK_LEAVES;
+    Block::BlockType leavesType;
+    if (TerrainGenerator::isSnowBiome(biome)) {
+        leavesType = Block::BlockType::SNOW_OAK_LEAVES;
+    } else if (biome == Biome::JUNGLE) {
+        leavesType = Block::BlockType::JUNGLE_LEAVES;
+    } else {
+        leavesType = Block::BlockType::OAK_LEAVES;
+    }
 
-    const Block::BlockType logType =
-            biome == Biome::JUNGLE
-                ? Block::BlockType::JUNGLE_LOG
-                : Block::BlockType::OAK_LOG;
+    const Block::BlockType logType = biome == Biome::JUNGLE
+                                         ? Block::BlockType::JUNGLE_LOG
+                                         : Block::BlockType::OAK_LOG;
 
     // Trunk: 1x5x1 = 5 blocks (y=0 to y=4)
     for (int y = 0; y < 5; ++y) {

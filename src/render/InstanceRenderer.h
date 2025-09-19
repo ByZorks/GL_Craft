@@ -11,7 +11,7 @@
 
 class InstanceRenderer {
 public:
-    template<std::derived_from<Mesh> MeshType>
+    template<typename MeshType> requires std::derived_from<std::remove_cvref_t<MeshType>, Mesh>
     void init(MeshType &&mesh);
 
     void addInstance(const std::array<int, 3> &position);
@@ -31,7 +31,7 @@ private:
     unsigned int m_instanceCount = 0;
 };
 
-template<std::derived_from<Mesh> MeshType>
+template<typename MeshType> requires std::derived_from<std::remove_cvref_t<MeshType>, Mesh>
 void InstanceRenderer::init(MeshType &&mesh) {
     mesh.generateVoxel();
     mesh.generateMesh();

@@ -20,7 +20,7 @@ Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE),
     m_lightLevels.resize((SIZE + 2) * (SIZE + 2) * (SIZE + 2), 1u);
     m_pendingBlocksForNeighbors.reserve(26);
     m_pendingLightsForNeighbors.reserve(26);
-    m_surfaceFeatures.reserve(SIZE * SIZE * 0.25f);
+    m_surfaceFeatures.reserve(static_cast<unsigned long long>(SIZE * SIZE * 0.25f));
 }
 
 void Chunk::generateVoxel() {
@@ -60,7 +60,7 @@ void Chunk::generateVoxel() {
     m_state = State::VOXEL_GENERATED;
 }
 
-void Chunk::generatePendingBlocks(std::list<PendingBlock> &blocks, MeshingResult &outResult) {
+void Chunk::generatePendingBlocks(const std::list<PendingBlock> &blocks, MeshingResult &outResult) {
     for (const auto &[localX, localY, localZ, blockType]: blocks) {
         m_blocks[index(localX, localY, localZ)] = blockType;
     }
@@ -104,7 +104,7 @@ void Chunk::propagateLight() {
                 if (!inDirectSunlight) continue;
 
                 if (Block::isTransparent(blockType)) {
-                    setSunLightLevelAt(adjustedX, adjustedY, adjustedZ, currentLightLevel);
+                    setSunLightLevelAt(adjustedX, adjustedY, adjustedZ, static_cast<uint8_t>(currentLightLevel));
                     if (blockType != Block::BlockType::AIR) {
                         // use signed int to avoid unsigned underflow when subtracting
                         int signedLevel = static_cast<int>(currentLightLevel) - 2;
@@ -285,7 +285,7 @@ void Chunk::emitBorderLights() {
                 }
             }
             if (!batch.empty()) {
-                const ChunkPosition key(m_x + offset, m_y, m_z);
+                const ChunkPosition key{m_x + offset, m_y, m_z};
                 m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
         } else if (faceAxis == 1) { // Y faces
@@ -299,7 +299,7 @@ void Chunk::emitBorderLights() {
                 }
             }
             if (!batch.empty()) {
-                const ChunkPosition key(m_x, m_y + offset, m_z);
+                const ChunkPosition key{m_x, m_y + offset, m_z};
                 m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
         } else { // Z faces
@@ -313,7 +313,7 @@ void Chunk::emitBorderLights() {
                 }
             }
             if (!batch.empty()) {
-                const ChunkPosition key(m_x, m_y, m_z + offset);
+                const ChunkPosition key{m_x, m_y, m_z + offset};
                 m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
             }
         }
@@ -448,7 +448,7 @@ void Chunk::processColumn(const int worldX, const int worldZ, const int localX, 
 
     noises.computeRemainingNoises(worldX, worldZ);
     const Biome biome = TerrainGenerator::getBiome(noises, worldX, worldZ);
-    const ChunkPosition position(m_x, m_y, m_z);
+    const ChunkPosition position{m_x, m_y, m_z};
 
     generateSurfaceFeaturesPositions(position, worldX, worldZ, localX, localZ, columnHeight, biome, tunnelCavesNoises,
                            largeCavesNoises);
@@ -517,7 +517,7 @@ void Chunk::addSurfaceFeatureBlocks(const int worldX, const int columnHeight, co
 }
 
 template<typename NoiseFunction>
-void Chunk::getDownsampledNoises(const int factor, std::span<float> &outNoises, NoiseFunction noiseFunction) const {
+void Chunk::getDownsampledNoises(const int factor, const std::span<float> &outNoises, NoiseFunction noiseFunction) const {
     const int gridSizeX = (static_cast<int>(SIZE) + 2 + factor - 1) / factor + 1;
     const int gridSizeY = gridSizeX;
     const int gridSizeZ = gridSizeX;
@@ -708,7 +708,7 @@ bool Chunk::hasVisibleFaces() const {
     return !m_opaqueData.vertices.empty() || !m_waterData.vertices.empty();
 }
 
-void Chunk::generatePendingLights(std::list<PendingLight> &lights, MeshingResult &outResult) {
+void Chunk::generatePendingLights(const std::list<PendingLight> &lights, MeshingResult &outResult) {
     if (lights.empty()) return;
     constexpr uint8_t MIN_LIGHT_LEVEL = 1u;
 

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iterator>
+#include <utility>
 
 #include "chunk/Chunk.h"
 
@@ -72,11 +73,13 @@ Biome TerrainGenerator::getBiome(const NoiseValues &noises, const int worldX, co
 
     // Oceans
     if (continentalness < 0.0f) {
-        return continentalness < -0.45f && erosion > 0.2f
-                   ? Biome::DEEP_OCEAN
-                   : erosion > 0.0f
-                         ? Biome::OCEAN
-                         : Biome::PLAINS;
+        if (continentalness < -0.45f && erosion > 0.2f) {
+            return Biome::DEEP_OCEAN;
+        }
+        if (erosion > 0.0f) {
+            return Biome::OCEAN;
+        }
+        return Biome::PLAINS;
     }
 
     // Mountains
@@ -85,18 +88,21 @@ Biome TerrainGenerator::getBiome(const NoiseValues &noises, const int worldX, co
 
     // Biomes based on temperature and humidity
     if (temperature > 0.6f) return Biome::DESERT;
-    if (temperature > 0.1f)
-        return humidity > 0.5f
-                   ? Biome::JUNGLE
-                   : humidity > 0.1f
-                         ? Biome::PLAINS
-                         : Biome::PLAINS;
-    if (temperature > -0.2f)
-        return humidity > 0.1f
-                   ? Biome::FOREST
-                   : humidity > -0.1f
-                         ? Biome::PLAINS
-                         : Biome::PLAINS;
+    if (temperature > 0.1f) {
+        if (humidity > 0.5f)
+            return Biome::JUNGLE;
+        if (humidity > 0.1f)
+            return Biome::PLAINS;
+
+        return Biome::PLAINS;
+    }
+    if (temperature > -0.2f) {
+        if (humidity > 0.1f)
+            return Biome::FOREST;
+        if (humidity > -0.1f)
+            return Biome::PLAINS;
+        return Biome::PLAINS;
+    }
     if (temperature > -0.3f && humidity > -0.3f) return Biome::TAIGA;
     if (temperature > -0.7f && humidity > -0.3f) return Biome::SNOWY_TAIGA;
 
@@ -104,7 +110,7 @@ Biome TerrainGenerator::getBiome(const NoiseValues &noises, const int worldX, co
 }
 
 std::string_view TerrainGenerator::getBiomeName(const Biome biome) {
-    const auto idx = static_cast<size_t>(biome);
+    const auto idx = static_cast<size_t>(std::to_underlying(biome));
     static constexpr std::array<std::string_view, 11> names = {
         "Deep ocean", "Ocean", "Plains", "Snowy Plains", "Desert", "Forest", "Taiga", "Snowy Taiga", "Jungle",
         "Mountains", "Snowy Mountains"
@@ -115,33 +121,35 @@ std::string_view TerrainGenerator::getBiomeName(const Biome biome) {
 
 
 Block::BlockType TerrainGenerator::getBlockType(const int y, const int columnHeight, const Biome biome) {
+    using enum Block::BlockType;
     const int waterLevel = getSeaLevel();
 
-    if (y < 1) return Block::BlockType::AIR;
-    if (y == 1) return Block::BlockType::BEDROCK;
+    if (y < 1) return AIR;
+    if (y == 1) return BEDROCK;
 
     if (y <= columnHeight) {
         // Surface block
         if (y == columnHeight && columnHeight >= waterLevel) return getSurfaceBlockType(biome);
         // Disallow cave entrances underwater bc water doesn't flow into caves yet
-        if (y == columnHeight) return Block::BlockType::DIRT;
+        if (y == columnHeight) return DIRT;
 
         // Subsurface blocks
-        if (y < columnHeight - 4) return Block::BlockType::STONE;
+        if (y < columnHeight - 4) return STONE;
 
         // Near-surface blocks
         if (y < columnHeight && y < 200) return getNearSurfaceBlockType(biome);
     }
 
     if (y > columnHeight && y <= waterLevel) {
-        return Block::BlockType::WATER;
+        return WATER;
     }
 
-    return Block::BlockType::AIR;
+    return AIR;
 }
 
 bool TerrainGenerator::isSnowBiome(const Biome biome) {
-    return biome == Biome::SNOWY_MOUNTAINS || biome == Biome::SNOWY_PLAINS || biome == Biome::SNOWY_TAIGA;
+    using enum Biome;
+    return biome == SNOWY_MOUNTAINS || biome == SNOWY_PLAINS || biome == SNOWY_TAIGA;
 }
 
 int TerrainGenerator::getSeed() {
@@ -394,22 +402,24 @@ int TerrainGenerator::getBaseLevel(const NoiseValues &noises) {
 }
 
 float TerrainGenerator::getContinentalnessLevel(const float continentalness) {
-    static constexpr Step steps[] = {
-        {-1.0f, 10}, // Deep ocean
-        {-0.8f, 10},
-        {-0.45f, 10},
-        {-0.2f, 30}, // Shallow ocean
-        {-0.15f, 30},
-        {0.0f, 61}, // Coastline
-        {0.1f, 90}, // Lowlands
-        {0.2f, 90},
-        {0.3f, 115}, // Highland
-        {0.4f, 130},
-        {0.5f, 130},
-        {0.8f, 150}, // Mountains
-        {0.85f, 150},
-        {0.9f, 180},
-        {1.0f, 200} // High mountains
+    static constexpr std::array<Step, 15> steps = {
+        {
+            {-1.0f, 10}, // Deep ocean
+            {-0.8f, 10},
+            {-0.45f, 10},
+            {-0.2f, 30}, // Shallow ocean
+            {-0.15f, 30},
+            {0.0f, 61}, // Coastline
+            {0.1f, 90}, // Lowlands
+            {0.2f, 90},
+            {0.3f, 115}, // Highland
+            {0.4f, 130},
+            {0.5f, 130},
+            {0.8f, 150}, // Mountains
+            {0.85f, 150},
+            {0.9f, 180},
+            {1.0f, 200} // High mountains
+        }
     };
 
     for (size_t i = 1; i < std::size(steps); ++i) {
@@ -427,18 +437,20 @@ float TerrainGenerator::getContinentalnessLevel(const float continentalness) {
 }
 
 float TerrainGenerator::getErosionLevel(const float erosion) {
-    static constexpr Step steps[] = {
-        {-1.0f, 180},
-        {-0.8f, 150},
-        {-0.45f, 120},
-        {-0.2f, 130},
-        {0.0f, 50},
-        {0.2f, 46},
-        {0.4f, 40},
-        {0.6f, 66},
-        {0.7f, 66},
-        {0.85f, 50},
-        {1.0f, 40}
+    static constexpr std::array<Step, 11> steps = {
+        {
+            {-1.0f, 180},
+            {-0.8f, 150},
+            {-0.45f, 120},
+            {-0.2f, 130},
+            {0.0f, 50},
+            {0.2f, 46},
+            {0.4f, 40},
+            {0.6f, 66},
+            {0.7f, 66},
+            {0.85f, 50},
+            {1.0f, 40}
+        }
     };
 
     for (size_t i = 1; i < std::size(steps); ++i) {
@@ -457,33 +469,37 @@ float TerrainGenerator::getErosionLevel(const float erosion) {
 
 Block::BlockType TerrainGenerator::getSurfaceBlockType(const Biome biome) {
     switch (biome) {
-        case Biome::DEEP_OCEAN:
-            return Block::BlockType::GRAVEL;
-        case Biome::DESERT:
-            return Block::BlockType::SAND;
-        case Biome::SNOWY_TAIGA:
-        case Biome::SNOWY_PLAINS:
-            return Block::BlockType::SNOW_GRASS;
-        case Biome::MOUNTAINS:
-            return Block::BlockType::STONE;
-        case Biome::SNOWY_MOUNTAINS:
-            return Block::BlockType::SNOW;
-        case Biome::JUNGLE:
-            return Block::BlockType::JUNGLE_GRASS;
+        using enum Block::BlockType;
+        using enum Biome;
+        case DEEP_OCEAN:
+            return GRAVEL;
+        case DESERT:
+            return SAND;
+        case SNOWY_TAIGA:
+        case SNOWY_PLAINS:
+            return SNOW_GRASS;
+        case MOUNTAINS:
+            return STONE;
+        case SNOWY_MOUNTAINS:
+            return SNOW;
+        case JUNGLE:
+            return JUNGLE_GRASS;
         default:
-            return Block::BlockType::GRASS;
+            return GRASS;
     }
 }
 
 Block::BlockType TerrainGenerator::getNearSurfaceBlockType(const Biome biome) {
     switch (biome) {
-        case Biome::DESERT:
-            return Block::BlockType::SAND;
-        case Biome::MOUNTAINS:
-            return Block::BlockType::STONE;
-        case Biome::SNOWY_MOUNTAINS:
-            return Block::BlockType::SNOW;
+        using enum Block::BlockType;
+        using enum Biome;
+        case DESERT:
+            return SAND;
+        case MOUNTAINS:
+            return STONE;
+        case SNOWY_MOUNTAINS:
+            return SNOW;
         default:
-            return Block::BlockType::DIRT;
+            return DIRT;
     }
 }

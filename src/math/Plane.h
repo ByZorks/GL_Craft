@@ -11,7 +11,7 @@ public:
     [[nodiscard]] float getC() const;
     [[nodiscard]] float getD() const;
 
-    void setD(float m_d);
+    void setD(float d);
 private:
     void normalize();
 

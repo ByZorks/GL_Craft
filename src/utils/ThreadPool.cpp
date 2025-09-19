@@ -21,9 +21,6 @@ ThreadPool::ThreadPool(const size_t numThreads) : m_stop(false), m_numThreads(nu
 ThreadPool::~ThreadPool() {
     m_stop = true;
     m_condition.notify_all();
-    for (std::thread &worker: m_workers)
-        if (worker.joinable())
-            worker.join();
 }
 
 size_t ThreadPool::getNumberOfThreads() const {

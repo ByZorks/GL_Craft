@@ -25,9 +25,22 @@ private:
     void compileAndLink();
 
 private:
+    struct TransparentStringHash {
+        using is_transparent = void;
+        size_t operator()(const std::string_view txt) const noexcept {
+            return std::hash<std::string_view>{}(txt);
+        }
+        size_t operator()(const std::string& txt) const noexcept {
+            return std::hash<std::string_view>{}(txt);
+        }
+        size_t operator()(const char* txt) const noexcept {
+            return std::hash<std::string_view>{}(txt);
+        }
+    };
+
     unsigned int m_ID = 0;
     std::string m_vertexFilePath, m_fragmentFilePath;
-    std::unordered_map<std::string, int> m_uniformLocationCache;
+    std::unordered_map<std::string, int, TransparentStringHash, std::equal_to<>> m_uniformLocationCache;
     bool m_isInitialized = false;
 };
 

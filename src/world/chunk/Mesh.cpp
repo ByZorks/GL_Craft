@@ -11,8 +11,12 @@ Mesh::Mesh(const int x, const int y, const int z, const unsigned int size) : m_s
     m_blocks.resize(m_size * m_size * m_size, Block::BlockType::AIR);
 }
 
-void Mesh::generateVoxel() {}
-void Mesh::generateMesh() {}
+void Mesh::generateVoxel() {
+    // Implemented in derived classes
+}
+void Mesh::generateMesh() {
+    // Implemented in derived classes
+}
 
 void Mesh::updateVertexCount() {
     m_opaqueData.verticesCount = static_cast<unsigned int>(m_opaqueData.vertices.size() * 6); // Only 1 vertex is stored
@@ -46,34 +50,37 @@ void Mesh::setHasWaterFaces(const bool hasFaces) {
 
 bool Mesh::shouldDrawFace(int x, int y, int z, const Block::BlockType currentBlockType, const Block::Face face) const {
     switch (face) {
-        case Block::Face::TOP: y++;
+        using enum Block::Face;
+        case TOP: y++;
             break;
-        case Block::Face::BOTTOM: y--;
+        case BOTTOM: y--;
             break;
-        case Block::Face::FRONT: z++;
+        case FRONT: z++;
             break;
-        case Block::Face::BACK: z--;
+        case BACK: z--;
             break;
-        case Block::Face::RIGHT: x++;
+        case RIGHT: x++;
             break;
-        case Block::Face::LEFT: x--;
+        case LEFT: x--;
             break;
         default: ;
     }
 
     if (!isBlockPresent(x, y, z)) return true; // Air block
 
+    using enum Block::BlockType;
+
     const Block::BlockType neighborType = getBlockType(x, y, z);
     const bool neighborTransparent = Block::isTransparent(neighborType);
 
-    if (currentBlockType == Block::BlockType::OAK_LEAVES ||
-        currentBlockType == Block::BlockType::SNOW_OAK_LEAVES ||
-        currentBlockType == Block::BlockType::JUNGLE_LEAVES ||
-        currentBlockType == Block::BlockType::SPRUCE_LEAVES
+    if (currentBlockType == OAK_LEAVES ||
+        currentBlockType == SNOW_OAK_LEAVES ||
+        currentBlockType == JUNGLE_LEAVES ||
+        currentBlockType == SPRUCE_LEAVES
         && neighborTransparent)
         return true; // Leaves block, always draw face
     // Always draw water top face if neighbor is not water
-    if (currentBlockType == Block::BlockType::WATER && face == Block::Face::TOP && neighborType != Block::BlockType::WATER) return true;
+    if (currentBlockType == WATER && face == Block::Face::TOP && neighborType != WATER) return true;
     if (currentBlockType == neighborType) return false; // Same block type, no need to draw face
 
     const bool currentTransparent = Block::isTransparent(currentBlockType);
@@ -98,7 +105,7 @@ Block::BlockType Mesh::getBlockType(const int localX, const int localY, const in
 }
 
 int Mesh::index(const int x, const int y, const int z) const {
-    const int stride = static_cast<int>(m_size);
+    const auto stride = static_cast<int>(m_size);
     return x * stride * stride + y * stride + z;
 }
 

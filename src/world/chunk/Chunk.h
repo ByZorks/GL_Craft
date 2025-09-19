@@ -25,14 +25,14 @@ public:
     Chunk(int x, int y, int z);
 
     void generateVoxel() override;
-    void generatePendingBlocks(std::list<PendingBlock> &blocks, MeshingResult &outResult);
+    void generatePendingBlocks(const std::list<PendingBlock> &blocks, MeshingResult &outResult);
     void propagateLight();
     void propagateBlockLightFrom(int localX, int localY, int localZ);
     void generateMesh() override;
     void generateNewMesh(MeshingResult &outResult) const;
     void transferPendingBlocksToWorld(WorldManager &world);
     void transferPendingLightsToWorld(WorldManager &world);
-    void generatePendingLights(std::list<PendingLight> &lights, MeshingResult &outResult);
+    void generatePendingLights(const std::list<PendingLight> &lights, MeshingResult &outResult);
     void deleteBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &outResult);
     void addBlock(int localX, int localY, int localZ, Block::BlockType type, MeshingResult &outResult);
     void emitBorderLights();
@@ -52,7 +52,7 @@ public:
 
 private:
     template<typename NoiseFunction>
-    void getDownsampledNoises(int factor, std::span<float> &outNoises, NoiseFunction noiseFunction) const;
+    void getDownsampledNoises(int factor, const std::span<float> &outNoises, NoiseFunction noiseFunction) const;
     void processColumn(int worldX, int worldZ, int localX, int localZ, const std::span<float> &tunnelCavesNoises,
                        const std::span<float> &largeCavesNoises);
     void generateSurfaceFeaturesPositions(const ChunkPosition &position, int worldX, int worldZ, int localX, int localZ,

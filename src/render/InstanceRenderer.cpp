@@ -29,7 +29,7 @@ void InstanceRenderer::resetInstances() {
 void InstanceRenderer::draw() const {
     if (m_instanceCount == 0) return;
 
-    Renderer::drawWithVertexPullingInstanced(m_VAO, m_verticesSSBO, m_instanceSSBO, m_vertices.size() * 6,
+    Renderer::drawWithVertexPullingInstanced(m_VAO, m_verticesSSBO, m_instanceSSBO, static_cast<unsigned int>(m_vertices.size()) * 6u,
                                              m_instanceCount);
 }
 
