@@ -4,6 +4,7 @@
 #include <functional>
 #include <list>
 #include <mutex>
+#include <queue>
 #include <random>
 #include <unordered_map>
 #include <unordered_set>
@@ -27,7 +28,6 @@ public:
     void generateVoxel() override;
     void generatePendingBlocks(const std::list<PendingBlock> &blocks, MeshingResult &outResult);
     void propagateLight();
-    void propagateBlockLightFrom(int localX, int localY, int localZ);
     void generateMesh() override;
     void generateNewMesh(MeshingResult &outResult) const;
     void transferPendingBlocksToWorld(WorldManager &world);
@@ -66,6 +66,10 @@ private:
 
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType);
     void addBlockFaces(int localX, int localY, int localZ, Block::BlockType blockType, MeshingResult &outResult) const;
+
+    void propagateSunLight(std::queue<uint32_t> &sunlightQueue);
+    void propagateBlockLight(std::queue<uint32_t> &blockLightQueue);
+    void propagateBlockLightFrom(int localX, int localY, int localZ);
 
     static uint32_t packLightPos(int x, int y, int z);
     static std::tuple<int, int, int> unpackLightPos(uint32_t v);
