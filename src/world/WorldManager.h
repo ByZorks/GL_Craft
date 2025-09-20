@@ -28,6 +28,14 @@ private:
     void getDistantChunks(const glm::vec3 &cameraChunkPos);
     std::shared_ptr<Chunk> getChunk(const ChunkPosition &position) const;
     void emitNeighborsBorderLights(const std::shared_ptr<Chunk> &chunk);
+    void updateAdjacentChunksAfterDeletion(const std::shared_ptr<Chunk> &chunk, const std::array<int, 3> &blockLocalPos,
+                                                     Block::BlockType blockType, std::unordered_set<ChunkPosition> &outProcessedChunks);
+    void processAdjacentChunkOnDeletion(const ChunkPosition &neighborPos, const std::array<int, 3> &blockLocalPos,
+                                                  const std::array<int, 3> &neighborOffset, Block::BlockType blockType,
+                                                  bool isInstance, bool isLightEmitter, std::unordered_set<ChunkPosition> &outProcessedChunks);
+    void propagateLightRemoval(const std::shared_ptr<Chunk> &chunk, const std::array<int, 3> &blockLocalPos,
+                                         const std::unordered_set<ChunkPosition> &outProcessedChunks);
+    void asyncDeleteBlock(const RaycastResult &hit);
 
 private:
     struct Offset {
