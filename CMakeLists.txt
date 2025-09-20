@@ -133,6 +133,8 @@ add_executable(GL_Craft
         src/world/surfaceFeatures/SurfaceFeature.cpp
         src/world/chunk/RGBLight.h
         src/world/chunk/LightConstants.h
+        src/world/chunk/ChunkLighting.cpp
+        src/world/chunk/ChunkLighting.h
 )
 
 target_link_libraries(GL_Craft PRIVATE ${EXTRA_LIBS})
