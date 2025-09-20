@@ -53,7 +53,7 @@ public:
 private:
     struct LightPos {
         int x, y, z;
-        LightPos(int x, int y, int z) : x(x), y(y), z(z) {}
+        LightPos(const int x, const int y, const int z) : x(x), y(y), z(z) {}
     };
 
 private:

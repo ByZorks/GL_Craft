@@ -252,63 +252,78 @@ void Chunk::addBlock(const int localX, const int localY, const int localZ, const
 }
 
 void Chunk::emitBorderLights() {
-    auto emitFace = [&](const int faceAxis, const bool positive){
+    auto emitXFace = [&](const bool positive) {
         const int sample = positive ? static_cast<int>(SIZE) - 1 : 0;
         const int emitCoord = positive ? -1 : static_cast<int>(SIZE);
         const int offset = (positive ? 1 : -1) * static_cast<int>(SIZE);
         std::list<PendingLight> batch;
 
-        if (faceAxis == 0) { // X faces
-            for (int y = 0; y < static_cast<int>(SIZE); ++y) {
-                for (int z = 0; z < static_cast<int>(SIZE); ++z) {
-                    const uint8_t sunLvl = getSunLightLevelAt(sample, y, z);
-                    const RGBLight blockLight = getBlockLightRGBLevelAt(sample, y, z);
-                    if (sunLvl <= LightConstants::SUN_MIN + 1u && !blockLight.shouldPropagate(LightConstants::SUN_MIN)) continue;
-
-                    batch.emplace_back(emitCoord, y, z, blockLight, sunLvl);
+        for (int y = 0; y < static_cast<int>(SIZE); ++y) {
+            for (int z = 0; z < static_cast<int>(SIZE); ++z) {
+                const uint8_t sunLvl = getSunLightLevelAt(sample, y, z);
+                const RGBLight blockLight = getBlockLightRGBLevelAt(sample, y, z);
+                if (sunLvl <= LightConstants::SUN_MIN + 1u && !blockLight.shouldPropagate(LightConstants::SUN_MIN)) {
+                    continue;
                 }
+                batch.emplace_back(emitCoord, y, z, blockLight, sunLvl);
             }
-            if (!batch.empty()) {
-                const ChunkPosition key{m_x + offset, m_y, m_z};
-                m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
-            }
-        } else if (faceAxis == 1) { // Y faces
-            for (int x = 0; x < static_cast<int>(SIZE); ++x) {
-                for (int z = 0; z < static_cast<int>(SIZE); ++z) {
-                    const uint8_t sunLvl = getSunLightLevelAt(x, sample, z);
-                    const RGBLight blockLight = getBlockLightRGBLevelAt(x, sample, z);
-                    if (sunLvl <= LightConstants::SUN_MIN + 1u && !blockLight.shouldPropagate(LightConstants::SUN_MIN)) continue;
-
-                    batch.emplace_back(x, emitCoord, z, blockLight, sunLvl);
-                }
-            }
-            if (!batch.empty()) {
-                const ChunkPosition key{m_x, m_y + offset, m_z};
-                m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
-            }
-        } else { // Z faces
-            for (int x = 0; x < static_cast<int>(SIZE); ++x) {
-                for (int y = 0; y < static_cast<int>(SIZE); ++y) {
-                    const uint8_t sunLvl = getSunLightLevelAt(x, y, sample);
-                    const RGBLight blockLight = getBlockLightRGBLevelAt(x, y, sample);
-                    if (sunLvl <= LightConstants::SUN_MIN + 1u && !blockLight.shouldPropagate(LightConstants::SUN_MIN)) continue;
-
-                    batch.emplace_back(x, y, emitCoord, blockLight, sunLvl);
-                }
-            }
-            if (!batch.empty()) {
-                const ChunkPosition key{m_x, m_y, m_z + offset};
-                m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
-            }
+        }
+        if (!batch.empty()) {
+            const ChunkPosition key{m_x + offset, m_y, m_z};
+            m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
         }
     };
 
-    emitFace(0, false); // X-
-    emitFace(0, true);  // X+
-    emitFace(1, false); // Y-
-    emitFace(1, true);  // Y+
-    emitFace(2, false); // Z-
-    emitFace(2, true);  // Z+
+    auto emitYFace = [&](const bool positive) {
+        const int sample = positive ? static_cast<int>(SIZE) - 1 : 0;
+        const int emitCoord = positive ? -1 : static_cast<int>(SIZE);
+        const int offset = (positive ? 1 : -1) * static_cast<int>(SIZE);
+        std::list<PendingLight> batch;
+
+        for (int x = 0; x < static_cast<int>(SIZE); ++x) {
+            for (int z = 0; z < static_cast<int>(SIZE); ++z) {
+                const uint8_t sunLvl = getSunLightLevelAt(x, sample, z);
+                const RGBLight blockLight = getBlockLightRGBLevelAt(x, sample, z);
+                if (sunLvl <= LightConstants::SUN_MIN + 1u && !blockLight.shouldPropagate(LightConstants::SUN_MIN)) {
+                    continue;
+                }
+                batch.emplace_back(x, emitCoord, z, blockLight, sunLvl);
+            }
+        }
+        if (!batch.empty()) {
+            const ChunkPosition key{m_x, m_y + offset, m_z};
+            m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
+        }
+    };
+
+    auto emitZFace = [&](const bool positive) {
+        const int sample = positive ? static_cast<int>(SIZE) - 1 : 0;
+        const int emitCoord = positive ? -1 : static_cast<int>(SIZE);
+        const int offset = (positive ? 1 : -1) * static_cast<int>(SIZE);
+        std::list<PendingLight> batch;
+
+        for (int x = 0; x < static_cast<int>(SIZE); ++x) {
+            for (int y = 0; y < static_cast<int>(SIZE); ++y) {
+                const uint8_t sunLvl = getSunLightLevelAt(x, y, sample);
+                const RGBLight blockLight = getBlockLightRGBLevelAt(x, y, sample);
+                if (sunLvl <= LightConstants::SUN_MIN + 1u && !blockLight.shouldPropagate(LightConstants::SUN_MIN)) {
+                    continue;
+                }
+                batch.emplace_back(x, y, emitCoord, blockLight, sunLvl);
+            }
+        }
+        if (!batch.empty()) {
+            const ChunkPosition key{m_x, m_y, m_z + offset};
+            m_pendingLightsForNeighbors[key].splice(m_pendingLightsForNeighbors[key].end(), batch);
+        }
+    };
+
+    emitXFace(false); // X-
+    emitXFace(true);  // X+
+    emitYFace(false); // Y-
+    emitYFace(true);  // Y+
+    emitZFace(false); // Z-
+    emitZFace(true);  // Z+
 }
 
 int Chunk::index(const int x, const int y, const int z) const {
