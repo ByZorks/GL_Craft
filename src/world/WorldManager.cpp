@@ -502,22 +502,31 @@ bool WorldManager::getNeedInstanceUpdate() const {
 }
 
 void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
-    const int maxChunksPerFrame = std::max(static_cast<int>(
-        0.05f * Renderer::s_renderDistance + 0.2f * static_cast<float>(m_threadPool.getNumberOfThreads())), 10);
-    const int maxPendingBlocksPerFrame = std::max(static_cast<int>(static_cast<float>(maxChunksPerFrame) * 0.5f), 5);
-    const int maxPendingLightsPerFrame = std::max(static_cast<int>(static_cast<float>(maxChunksPerFrame) * 0.1f), 2);
-    const int maxUpdatePerFrame = std::max(static_cast<int>(static_cast<float>(maxChunksPerFrame) * 0.3f), 4);
+    const unsigned int maxChunksPerFrame = std::max(static_cast<unsigned int>(
+        0.05f * Renderer::s_renderDistance + 0.2f * static_cast<float>(m_threadPool.getNumberOfThreads())), 10u);
+    const unsigned int maxPendingBlocksPerFrame = std::max(static_cast<unsigned int>(static_cast<float>(maxChunksPerFrame) * 0.5f), 5u);
+    const unsigned int maxPendingLightsPerFrame = std::max(static_cast<unsigned int>(static_cast<float>(maxChunksPerFrame) * 0.1f), 2u);
+    const unsigned int maxUpdatePerFrame = std::max(static_cast<unsigned int>(static_cast<float>(maxChunksPerFrame) * 0.3f), 4u);
 
-    // Destroy chunks that are no longer needed
-    for (int i = 0; i < maxChunksPerFrame; ++i) {
+    deleteQueuedChunks(renderer, maxChunksPerFrame);
+    generateQueuedChunks(maxChunksPerFrame);
+    generateQueuedPendingBlocks(maxPendingBlocksPerFrame);
+    generateQueuedPendingLights(maxPendingLightsPerFrame);
+    updateQueuedChunks(renderer, maxUpdatePerFrame);
+
+}
+
+void WorldManager::deleteQueuedChunks(IndirectRenderer &renderer, const unsigned int maxProcessPerFrame) {
+    for (int i = 0; i < maxProcessPerFrame; ++i) {
         std::shared_ptr<Chunk> chunk;
         if (!m_chunksData.meshesToDelete.try_pop(chunk)) break;
         renderer.removeChunk(chunk);
         m_chunksData.loadedMeshes.erase({chunk->getX(), chunk->getY(), chunk->getZ()});
     }
+}
 
-    // First pass: generate voxel and mesh
-    for (int i = 0; i < maxChunksPerFrame; ++i) {
+void WorldManager::generateQueuedChunks(const unsigned int maxProcessPerFrame) {
+    for (int i = 0; i < maxProcessPerFrame; ++i) {
         ChunkPosition key{};
         if (!m_chunksData.meshesToGenerate.try_pop(key)) break;
 
@@ -539,12 +548,13 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
             p_chunk->transferPendingLightsToWorld(*this);
         });
     }
+}
 
-    // Second pass: generate pending blocks
+void WorldManager::generateQueuedPendingBlocks(const unsigned int maxProcessPerFrame) {
     if (!m_chunksData.pendingBlocks.empty()) {
         int processed = 0;
         std::lock_guard lock(m_chunksData.pendingBlocksMutex);
-        for (auto it = m_chunksData.pendingBlocks.begin(); it != m_chunksData.pendingBlocks.end() && processed < maxPendingBlocksPerFrame;) {
+        for (auto it = m_chunksData.pendingBlocks.begin(); it != m_chunksData.pendingBlocks.end() && processed < maxProcessPerFrame;) {
             const ChunkPosition key = it->first;
 
             if (auto loaded_it = m_chunksData.loadedMeshes.find(key); loaded_it != m_chunksData.loadedMeshes.end()) {
@@ -579,12 +589,13 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
             }
         }
     }
+}
 
-    // Second pass bis: generate pending lights
+void WorldManager::generateQueuedPendingLights(const unsigned int maxProcessPerFrame) {
     if (!m_chunksData.pendingLights.empty()) {
         int processed = 0;
         std::lock_guard lock(m_chunksData.pendingLightsMutex);
-        for (auto it = m_chunksData.pendingLights.begin(); it != m_chunksData.pendingLights.end() && processed < maxPendingLightsPerFrame; ) {
+        for (auto it = m_chunksData.pendingLights.begin(); it != m_chunksData.pendingLights.end() && processed < maxProcessPerFrame; ) {
             const ChunkPosition key = it->first;
 
             if (auto loaded_it = m_chunksData.loadedMeshes.find(key); loaded_it != m_chunksData.loadedMeshes.end()) {
@@ -615,9 +626,10 @@ void WorldManager::processChunksQueues(IndirectRenderer &renderer) {
             }
         }
     }
+}
 
-    // Third pass: update meshes that needs it
-    for (int i = 0; i < maxUpdatePerFrame; ++i) {
+void WorldManager::updateQueuedChunks(IndirectRenderer &renderer, const unsigned int maxProcessPerFrame) {
+    for (int i = 0; i < maxProcessPerFrame; ++i) {
         MeshingResult result;
         if (!m_chunksData.completedMeshes.try_pop(result)) break;
 

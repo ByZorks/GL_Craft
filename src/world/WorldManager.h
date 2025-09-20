@@ -24,6 +24,11 @@ public:
 
 private:
     void processChunksQueues(IndirectRenderer &renderer);
+    void deleteQueuedChunks(IndirectRenderer &renderer, unsigned int maxProcessPerFrame);
+    void generateQueuedChunks(unsigned int maxProcessPerFrame);
+    void generateQueuedPendingBlocks(unsigned int maxProcessPerFrame);
+    void generateQueuedPendingLights(unsigned int maxProcessPerFrame);
+    void updateQueuedChunks(IndirectRenderer &renderer, unsigned int maxProcessPerFrame);
     void generateChunksPositions(int cameraWorldX, int cameraWorldY, int cameraWorldZ);
     void getDistantChunks(const glm::vec3 &cameraChunkPos);
     std::shared_ptr<Chunk> getChunk(const ChunkPosition &position) const;
