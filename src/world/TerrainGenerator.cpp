@@ -26,11 +26,8 @@ bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, c
 
     // Up sample the 3D noise values
     constexpr int step8 = 8;
-    constexpr int gridSizeX8 = (Chunk::SIZE + 2 + step8 - 1) / step8 + 1;
-    constexpr int gridSizeY8 = gridSizeX8;
-    constexpr int gridSizeZ8 = gridSizeX8;
-    const float largeCave = trilinearInterpolation(largeCavesNoises, position, gridSizeX8, gridSizeY8, gridSizeZ8,
-                                                   worldX, worldY, worldZ, step8);
+    constexpr int gridSize8 = (Chunk::SIZE + 2 + step8 - 1) / step8 + 1;
+    const float largeCave = trilinearInterpolation(largeCavesNoises, position, gridSize8, worldX, worldY, worldZ, step8);
 
     constexpr float cheeseThreshold = 0.6f;
     const bool isCheeseCave = largeCave > cheeseThreshold;
@@ -41,11 +38,8 @@ bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, c
         constexpr float tunnelThreshold = 0.83f;
 
         constexpr int step4 = 4;
-        constexpr int gridSizeX4 = (Chunk::SIZE + 2 + step4 - 1) / step4 + 1;
-        constexpr int gridSizeY4 = gridSizeX4;
-        constexpr int gridSizeZ4 = gridSizeX4;
-        const float tunnelCave = trilinearInterpolation(tunnelCavesNoises, position, gridSizeX4, gridSizeY4, gridSizeZ4,
-                                                        worldX, worldY, worldZ, step4);
+        constexpr int gridSize4 = (Chunk::SIZE + 2 + step4 - 1) / step4 + 1;
+        const float tunnelCave = trilinearInterpolation(tunnelCavesNoises, position, gridSize4, worldX, worldY, worldZ, step4);
 
         isTunnel = std::abs(tunnelCave) > tunnelThreshold;
         if (!isTunnel) return false;
@@ -64,6 +58,7 @@ bool TerrainGenerator::isCave(const ChunkPosition &position, const int worldX, c
 }
 
 Biome TerrainGenerator::getBiome(const NoiseValues &noises, const int worldX, const int worldZ) {
+    using enum Biome;
     const float edgeNoise = getSurfaceFeaturesNoiseAt(worldX, worldZ) * 0.02f;
 
     const float continentalness = noises.continentalness + edgeNoise * 0.5f;
@@ -74,39 +69,39 @@ Biome TerrainGenerator::getBiome(const NoiseValues &noises, const int worldX, co
     // Oceans
     if (continentalness < 0.0f) {
         if (continentalness < -0.45f && erosion > 0.2f) {
-            return Biome::DEEP_OCEAN;
+            return DEEP_OCEAN;
         }
         if (erosion > 0.0f) {
-            return Biome::OCEAN;
+            return OCEAN;
         }
-        return Biome::PLAINS;
+        return PLAINS;
     }
 
     // Mountains
-    if (continentalness > 0.85f) return Biome::SNOWY_MOUNTAINS;
-    if (continentalness > 0.4f && erosion < 0.1f) return Biome::MOUNTAINS;
+    if (continentalness > 0.85f) return SNOWY_MOUNTAINS;
+    if (continentalness > 0.4f && erosion < 0.1f) return MOUNTAINS;
 
     // Biomes based on temperature and humidity
-    if (temperature > 0.6f) return Biome::DESERT;
+    if (temperature > 0.6f) return DESERT;
     if (temperature > 0.1f) {
         if (humidity > 0.5f)
-            return Biome::JUNGLE;
+            return JUNGLE;
         if (humidity > 0.1f)
-            return Biome::PLAINS;
+            return PLAINS;
 
-        return Biome::PLAINS;
+        return PLAINS;
     }
     if (temperature > -0.2f) {
         if (humidity > 0.1f)
-            return Biome::FOREST;
+            return FOREST;
         if (humidity > -0.1f)
-            return Biome::PLAINS;
-        return Biome::PLAINS;
+            return PLAINS;
+        return PLAINS;
     }
-    if (temperature > -0.3f && humidity > -0.3f) return Biome::TAIGA;
-    if (temperature > -0.7f && humidity > -0.3f) return Biome::SNOWY_TAIGA;
+    if (temperature > -0.3f && humidity > -0.3f) return TAIGA;
+    if (temperature > -0.7f && humidity > -0.3f) return SNOWY_TAIGA;
 
-    return temperature <= -0.7f ? Biome::SNOWY_PLAINS : Biome::PLAINS;
+    return temperature <= -0.7f ? SNOWY_PLAINS : PLAINS;
 }
 
 std::string_view TerrainGenerator::getBiomeName(const Biome biome) {
@@ -156,151 +151,154 @@ int TerrainGenerator::getSeed() {
     return SEED;
 }
 
-FastNoiseLite TerrainGenerator::makeTerrainNoise() {
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    noise.SetSeed(SEED);
-    noise.SetFrequency(.0055f);
-    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetFractalOctaves(6);
-    noise.SetFractalLacunarity(2.2f);
-    return noise;
-}
-
-FastNoiseLite TerrainGenerator::makeContinentalnessNoise() {
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    noise.SetSeed(SEED);
-    noise.SetFrequency(.001f);
-    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetFractalOctaves(4);
-    noise.SetFractalLacunarity(2.08f);
-    noise.SetFractalGain(0.510f);
-    noise.SetFractalWeightedStrength(0.77f);
-    noise.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
-    noise.SetDomainWarpAmp(15.f);
-    return noise;
-}
-
-FastNoiseLite TerrainGenerator::makeErosionNoise() {
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    noise.SetSeed(SEED);
-    noise.SetFrequency(.0009f);
-    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetFractalOctaves(4);
-    noise.SetFractalLacunarity(2.f);
-    noise.SetFractalGain(0.510f);
-    noise.SetFractalWeightedStrength(1.f);
-    noise.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
-    noise.SetDomainWarpAmp(10.f);
-    return noise;
-}
-
-FastNoiseLite TerrainGenerator::makeTemperatureNoise() {
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
-    noise.SetSeed(SEED);
-    noise.SetFrequency(.0001f);
-    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetFractalOctaves(2);
-    return noise;
-}
-
-FastNoiseLite TerrainGenerator::makeHumidityNoise() {
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
-    noise.SetSeed(SEED);
-    noise.SetFrequency(.0005f);
-    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetFractalOctaves(2);
-    return noise;
-}
-
-
-FastNoiseLite TerrainGenerator::makeSurfaceFeaturesNoise() {
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    noise.SetSeed(SEED);
-    noise.SetFrequency(.5f);
-    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetFractalOctaves(6);
-    return noise;
-}
-
-FastNoiseLite TerrainGenerator::makeLargeCaveNoise() {
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    noise.SetSeed(SEED);
-    noise.SetFrequency(.01f);
-    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetFractalOctaves(2);
-    return noise;
-}
-
-FastNoiseLite TerrainGenerator::makeTunnelCaveNoise() {
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    noise.SetSeed(SEED);
-    noise.SetFrequency(.02f);
-    noise.SetFractalType(FastNoiseLite::FractalType_Ridged);
-    noise.SetFractalOctaves(3);
-    return noise;
-}
-
 FastNoiseLite &TerrainGenerator::getTerrainNoise() {
+    auto makeTerrainNoise = [&] {
+        FastNoiseLite noise;
+        noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+        noise.SetSeed(SEED);
+        noise.SetFrequency(.0055f);
+        noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+        noise.SetFractalOctaves(6);
+        noise.SetFractalLacunarity(2.2f);
+        return noise;
+    };
+
     thread_local FastNoiseLite instance = makeTerrainNoise();
     return instance;
 }
 
 FastNoiseLite &TerrainGenerator::getContinentalnessNoise() {
+    auto makeContinentalnessNoise = [&] {
+        FastNoiseLite noise;
+        noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+        noise.SetSeed(SEED);
+        noise.SetFrequency(.001f);
+        noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+        noise.SetFractalOctaves(4);
+        noise.SetFractalLacunarity(2.08f);
+        noise.SetFractalGain(0.510f);
+        noise.SetFractalWeightedStrength(0.77f);
+        noise.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
+        noise.SetDomainWarpAmp(15.f);
+        return noise;
+    };
+
     thread_local FastNoiseLite instance = makeContinentalnessNoise();
     return instance;
 }
 
 FastNoiseLite &TerrainGenerator::getErosionNoise() {
+    auto makeErosionNoise = [&] {
+        FastNoiseLite noise;
+        noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+        noise.SetSeed(SEED);
+        noise.SetFrequency(.0009f);
+        noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+        noise.SetFractalOctaves(4);
+        noise.SetFractalLacunarity(2.f);
+        noise.SetFractalGain(0.510f);
+        noise.SetFractalWeightedStrength(1.f);
+        noise.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2Reduced);
+        noise.SetDomainWarpAmp(10.f);
+        return noise;
+    };
+
     thread_local FastNoiseLite instance = makeErosionNoise();
     return instance;
 }
 
 FastNoiseLite &TerrainGenerator::getTemperatureNoise() {
+    auto makeTemperatureNoise = [&] {
+        FastNoiseLite noise;
+        noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
+        noise.SetSeed(SEED);
+        noise.SetFrequency(.0001f);
+        noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+        noise.SetFractalOctaves(2);
+        return noise;
+    };
+
     thread_local FastNoiseLite instance = makeTemperatureNoise();
     return instance;
 }
 
 FastNoiseLite &TerrainGenerator::getHumidityNoise() {
+    auto makeHumidityNoise = [&] {
+        FastNoiseLite noise;
+        noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2S);
+        noise.SetSeed(SEED);
+        noise.SetFrequency(.0005f);
+        noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+        noise.SetFractalOctaves(2);
+        return noise;
+    };
+
     thread_local FastNoiseLite instance = makeHumidityNoise();
     return instance;
 }
 
+FastNoiseLite &TerrainGenerator::getSurfaceFeaturesNoise() {
+    auto makeSurfaceFeaturesNoise = [&] {
+        FastNoiseLite noise;
+        noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+        noise.SetSeed(SEED);
+        noise.SetFrequency(.5f);
+        noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+        noise.SetFractalOctaves(6);
+        return noise;
+    };
+
+    thread_local FastNoiseLite instance = makeSurfaceFeaturesNoise();
+    return instance;
+}
 
 FastNoiseLite &TerrainGenerator::getLargeCaveNoise() {
+    auto makeLargeCaveNoise = [&] {
+        FastNoiseLite noise;
+        noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+        noise.SetSeed(SEED);
+        noise.SetFrequency(.01f);
+        noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+        noise.SetFractalOctaves(2);
+        return noise;
+    };
+
     thread_local FastNoiseLite instance = makeLargeCaveNoise();
     return instance;
 }
 
 FastNoiseLite &TerrainGenerator::getTunnelCaveNoise() {
+    auto makeTunnelCaveNoise = [&] {
+        FastNoiseLite noise;
+        noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+        noise.SetSeed(SEED);
+        noise.SetFrequency(.02f);
+        noise.SetFractalType(FastNoiseLite::FractalType_Ridged);
+        noise.SetFractalOctaves(3);
+        return noise;
+    };
+
     thread_local FastNoiseLite instance = makeTunnelCaveNoise();
     return instance;
 }
 
 float TerrainGenerator::trilinearInterpolation(const std::span<const float> &noises, const ChunkPosition &position,
-                                               const int gridSizeX, const int gridSizeY, const int gridSizeZ,
-                                               const int worldX, const int worldY, const int worldZ, const int step) {
+                                               const int gridSize, const int worldX, const int worldY, const int worldZ,
+                                               const int step) {
     const int localX = worldX - position.x;
     const int localY = worldY - position.y;
     const int localZ = worldZ - position.z;
 
-    const int cellX = std::clamp(localX / step, 0, gridSizeX - 2);
-    const int cellY = std::clamp(localY / step, 0, gridSizeY - 2);
-    const int cellZ = std::clamp(localZ / step, 0, gridSizeZ - 2);
+    const int cellX = std::clamp(localX / step, 0, gridSize - 2);
+    const int cellY = std::clamp(localY / step, 0, gridSize - 2);
+    const int cellZ = std::clamp(localZ / step, 0, gridSize - 2);
 
     const float fracX = std::clamp(static_cast<float>(localX - cellX * step) / static_cast<float>(step), 0.f, 1.f);
     const float fracY = std::clamp(static_cast<float>(localY - cellY * step) / static_cast<float>(step), 0.f, 1.f);
     const float fracZ = std::clamp(static_cast<float>(localZ - cellZ * step) / static_cast<float>(step), 0.f, 1.f);
 
     const auto idx = [&](const int i, const int j, const int k) {
-        return i + gridSizeX * (j + gridSizeY * k);
+        return i + gridSize * (j + gridSize * k);
     };
 
     // Cube corners
@@ -325,11 +323,6 @@ float TerrainGenerator::trilinearInterpolation(const std::span<const float> &noi
 
     // Interpolate along z
     return std::lerp(c0, c1, fracZ);
-}
-
-FastNoiseLite &TerrainGenerator::getSurfaceFeaturesNoise() {
-    thread_local FastNoiseLite instance = makeSurfaceFeaturesNoise();
-    return instance;
 }
 
 int TerrainGenerator::getSeaLevel() {
@@ -393,7 +386,7 @@ int TerrainGenerator::getBaseLevel(const NoiseValues &noises) {
     constexpr float continentalnessWeight = 0.8f;
     constexpr float erosionWeight = 0.2f;
 
-    const int baseLevel = static_cast<int>(
+    const auto baseLevel = static_cast<int>(
         continentalnessLevel * continentalnessWeight +
         erosionLevel * erosionWeight
     );

@@ -76,15 +76,6 @@ private:
     static float getErosionLevel(float erosion);
     static Block::BlockType getSurfaceBlockType(Biome biome);
 
-    static FastNoiseLite makeTerrainNoise();
-    static FastNoiseLite makeContinentalnessNoise();
-    static FastNoiseLite makeErosionNoise();
-    static FastNoiseLite makeTemperatureNoise();
-    static FastNoiseLite makeHumidityNoise();
-    static FastNoiseLite makeSurfaceFeaturesNoise();
-    static FastNoiseLite makeLargeCaveNoise();
-    static FastNoiseLite makeTunnelCaveNoise();
-
     static FastNoiseLite &getTerrainNoise();
     static FastNoiseLite &getContinentalnessNoise();
     static FastNoiseLite &getErosionNoise();
@@ -94,8 +85,7 @@ private:
     static FastNoiseLite &getLargeCaveNoise();
     static FastNoiseLite &getTunnelCaveNoise();
     static float trilinearInterpolation(const std::span<const float> &noises, const ChunkPosition &position,
-                                        int gridSizeX, int gridSizeY, int gridSizeZ, int worldX, int worldY, int worldZ,
-                                        int step);
+                                        int gridSize, int worldX, int worldY, int worldZ, int step);
 
 private:
     static constexpr int SEED = 1337;
