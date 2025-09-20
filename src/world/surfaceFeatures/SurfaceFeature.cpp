@@ -15,14 +15,6 @@ SurfaceFeature::SurfaceFeature(const int x, const int y, const int z) : m_x(x), 
                                                                         m_type(SurfaceFeatureType::NONE) {
 }
 
-bool operator==(const SurfaceFeature &lhs, const SurfaceFeature &rhs) {
-    return std::tie(lhs.m_x, lhs.m_y, lhs.m_z) == std::tie(rhs.m_x, rhs.m_y, rhs.m_z);
-}
-
-bool operator!=(const SurfaceFeature &lhs, const SurfaceFeature &rhs) {
-    return !(lhs == rhs);
-}
-
 std::size_t hash_value(const SurfaceFeature &obj) {
     std::size_t seed = 0x6F11962A;
     seed ^= (seed << 6) + (seed >> 2) + 0x5BF05181 + static_cast<std::size_t>(obj.m_x);

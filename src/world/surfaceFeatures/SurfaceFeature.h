@@ -20,8 +20,9 @@ public:
     SurfaceFeature(int x, int y, int z, SurfaceFeatureType type);
     SurfaceFeature(int x, int y, int z);
 
-    friend bool operator==(const SurfaceFeature &lhs, const SurfaceFeature &rhs);
-    friend bool operator!=(const SurfaceFeature &lhs, const SurfaceFeature &rhs);
+    friend bool operator==(const SurfaceFeature &lhs, const SurfaceFeature &rhs) noexcept {
+        return lhs.m_x == rhs.m_x && lhs.m_y == rhs.m_y && lhs.m_z == rhs.m_z;
+    }
 
     static SurfaceFeatureType getSurfaceFeatureType(float noiseValue, const Block::BlockType &blockType, Biome biome);
     static Block::BlockType getBlockTypeOfSurfaceFeature(SurfaceFeatureType type);
