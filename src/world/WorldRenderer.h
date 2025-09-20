@@ -20,6 +20,8 @@ private:
     void sortChunks(const Frustum &frustum, const Camera &camera,
                     const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &loadedChunks,
                     bool needInstanceUpdate);
+    void processChunkVisibility(const std::shared_ptr<Chunk> &chunk, bool isInFrustum);
+    void addVisibleChunkInstances(const std::shared_ptr<Chunk> &chunk, const Camera &camera);
 
 private:
     IndirectRenderer m_indirectRenderer;

@@ -75,9 +75,8 @@ void WorldRenderer::drawInstances(const Shader &instancesShader, unsigned int &d
     Renderer::enableBackFaceCulling();
 }
 
-void WorldRenderer::sortChunks(const Frustum &frustum, const Camera &camera,
-                               const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk> > &loadedChunks,
-                               const bool needInstanceUpdate) {
+void WorldRenderer::sortChunks(const Frustum &frustum, const Camera &camera, const std::unordered_map<ChunkPosition,
+    std::shared_ptr<Chunk>> &loadedChunks, const bool needInstanceUpdate) {
     if (needInstanceUpdate) {
         for (auto &renderer: m_instanceRenderers | std::views::values) {
             if (renderer.getInstancesCount() > 0) {
@@ -89,46 +88,13 @@ void WorldRenderer::sortChunks(const Frustum &frustum, const Camera &camera,
     for (const auto &chunk: loadedChunks | std::views::values) {
         if (chunk->getState() < Mesh::State::READY_TO_DRAW) continue;
 
-        const bool isInFrutum = frustum.isAABBInFrustum(chunk->getBoundingBox());
+        const bool isInFrustum = frustum.isAABBInFrustum(chunk->getBoundingBox());
+        processChunkVisibility(chunk, isInFrustum);
 
-        // Update indirect renderer when chunk exit frustum
-        if (!isInFrutum && chunk->wasInFrustum()) m_indirectRenderer.removeChunk(chunk);
-
-        // Update indirect renderer when chunk enter frustum
-        if (isInFrutum) {
-            if (!chunk->wasInFrustum()) m_indirectRenderer.addChunk(chunk);
+        if (isInFrustum) {
             m_visibleChunksCount++;
-
-            // Surface features
-            if (needInstanceUpdate && camera.distanceToCamera(*chunk) < 512.0f) {
-                // They are no longer visible at this distance event if we draw them
-                for (const auto &feature: chunk->getSurfaceFeatures()) {
-                    switch (feature.getType()) {
-                        using enum SurfaceFeature::SurfaceFeatureType;
-                        case SHORT_GRASS:
-                            m_instanceRenderers.at(SHORT_GRASS).addInstance({
-                                feature.getX() - 1, feature.getY(), feature.getZ() - 1
-                            });
-                            break;
-                        case POPPY:
-                            m_instanceRenderers.at(POPPY).addInstance({
-                                feature.getX() - 1, feature.getY(), feature.getZ() - 1
-                            });
-                            break;
-                        case CORNFLOWER:
-                            m_instanceRenderers.at(CORNFLOWER).addInstance({
-                                feature.getX() - 1, feature.getY(), feature.getZ() - 1
-                            });
-                            break;
-                        case ALLIUM:
-                            m_instanceRenderers.at(ALLIUM).addInstance({
-                                feature.getX() - 1, feature.getY(), feature.getZ() - 1
-                            });
-                            break;
-                        default:
-                            break;
-                    }
-                }
+            if (needInstanceUpdate) {
+                addVisibleChunkInstances(chunk, camera);
             }
         }
     }
@@ -138,6 +104,28 @@ void WorldRenderer::sortChunks(const Frustum &frustum, const Camera &camera,
             if (renderer.getInstancesCount() > 0) {
                 renderer.updateInstanceBuffer();
             }
+        }
+    }
+}
+
+void WorldRenderer::processChunkVisibility(const std::shared_ptr<Chunk> &chunk, const bool isInFrustum) {
+    if (const bool wasInFrustum = chunk->wasInFrustum();
+        isInFrustum && !wasInFrustum) {
+        m_indirectRenderer.addChunk(chunk);
+    } else if (!isInFrustum && wasInFrustum) {
+        m_indirectRenderer.removeChunk(chunk);
+    }
+}
+
+void WorldRenderer::addVisibleChunkInstances(const std::shared_ptr<Chunk> &chunk, const Camera &camera) {
+    if (camera.distanceToCamera(*chunk) >= 512.0f) return;
+
+    for (const auto &feature: chunk->getSurfaceFeatures()) {
+        if (const auto type = feature.getType();
+            m_instanceRenderers.contains(type)) {
+            m_instanceRenderers.at(type).addInstance({
+                feature.getX() - 1, feature.getY(), feature.getZ() - 1
+            });
         }
     }
 }
