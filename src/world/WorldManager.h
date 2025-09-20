@@ -28,6 +28,7 @@ private:
     void getDistantChunks(const glm::vec3 &cameraChunkPos);
     std::shared_ptr<Chunk> getChunk(const ChunkPosition &position) const;
     void emitNeighborsBorderLights(const std::shared_ptr<Chunk> &chunk);
+
     void updateAdjacentChunksAfterDeletion(const std::shared_ptr<Chunk> &chunk, const std::array<int, 3> &blockLocalPos,
                                                      Block::BlockType blockType, std::unordered_set<ChunkPosition> &outProcessedChunks);
     void processAdjacentChunkOnDeletion(const ChunkPosition &neighborPos, const std::array<int, 3> &blockLocalPos,
@@ -36,6 +37,17 @@ private:
     void propagateLightRemoval(const std::shared_ptr<Chunk> &chunk, const std::array<int, 3> &blockLocalPos,
                                          const std::unordered_set<ChunkPosition> &outProcessedChunks);
     void asyncDeleteBlock(const RaycastResult &hit);
+
+    void asyncPlaceBlock(const RaycastResult &hit, Block::BlockType blockToPlace);
+    std::pair<std::shared_ptr<Chunk>, std::array<int, 3>> determineTargetChunkAndPosition(const RaycastResult &hit) const;
+    void updateAdjacentChunksAfterPlacement(const std::shared_ptr<Chunk> &chunk, const std::array<int, 3> &blockLocalPos,
+                                                      Block::BlockType blockType, std::unordered_set<ChunkPosition> &outProcessedChunks);
+    void processAdjacentChunkOnPlacement(const ChunkPosition &neighborPos, const std::array<int, 3> &blockLocalPos,
+                                                   const std::array<int, 3> &neighborOffset, Block::BlockType blockType,
+                                                   bool isInstance, bool isLightEmitter,
+                                                   std::unordered_set<ChunkPosition> &outProcessedChunks);
+    void propagateLightAddition(const std::shared_ptr<Chunk> &chunk, const std::array<int, 3> &blockLocalPos,
+                                          const std::unordered_set<ChunkPosition> &processedChunks);
 
 private:
     struct Offset {
