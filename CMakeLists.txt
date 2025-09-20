@@ -84,24 +84,24 @@ add_executable(GL_Craft
         src/utils/ThreadPool.cpp
         src/world/chunk/Mesh.h
         src/world/chunk/Mesh.cpp
-        src/world/surfaceFeatures/grass/ShortGrass.cpp
-        src/world/surfaceFeatures/grass/ShortGrass.h
-        src/world/surfaceFeatures/flowers/Flower.h
-        src/world/surfaceFeatures/flowers/Flower.cpp
-        src/world/surfaceFeatures/flowers/Poppy.cpp
-        src/world/surfaceFeatures/flowers/Poppy.h
+        src/world/generation/surfaceFeatures/grass/ShortGrass.cpp
+        src/world/generation/surfaceFeatures/grass/ShortGrass.h
+        src/world/generation/surfaceFeatures/flowers/Flower.h
+        src/world/generation/surfaceFeatures/flowers/Flower.cpp
+        src/world/generation/surfaceFeatures/flowers/Poppy.cpp
+        src/world/generation/surfaceFeatures/flowers/Poppy.h
         src/render/InstanceRenderer.cpp
         src/render/InstanceRenderer.h
         src/world/chunk/MeshManager.h
-        src/world/surfaceFeatures/flowers/Cornflower.cpp
-        src/world/surfaceFeatures/flowers/Cornflower.h
-        src/world/surfaceFeatures/flowers/Allium.cpp
-        src/world/surfaceFeatures/flowers/Allium.h
+        src/world/generation/surfaceFeatures/flowers/Cornflower.cpp
+        src/world/generation/surfaceFeatures/flowers/Cornflower.h
+        src/world/generation/surfaceFeatures/flowers/Allium.cpp
+        src/world/generation/surfaceFeatures/flowers/Allium.h
         src/gl/FrameBuffer.cpp
         src/gl/FrameBuffer.h
         src/render/PostProcessingMesh.cpp
         src/render/PostProcessingMesh.h
-        src/world/surfaceFeatures/SurfaceFeature.h
+        src/world/generation/surfaceFeatures/SurfaceFeature.h
         src/world/chunk/ChunkPosition.h
         src/world/chunk/PendingBlock.h
         src/math/Raycast.cpp
@@ -124,13 +124,13 @@ add_executable(GL_Craft
         src/utils/ScopedTimer.h
         src/world/WorldManager.cpp
         src/world/WorldManager.h
-        src/world/TerrainGenerator.cpp
-        src/world/TerrainGenerator.h
-        src/world/WorldRenderer.cpp
-        src/world/WorldRenderer.h
+        src/world/generation/TerrainGenerator.cpp
+        src/world/generation/TerrainGenerator.h
+        src/render/WorldRenderer.cpp
+        src/render/WorldRenderer.h
         src/gl/TextureArray.cpp
         src/gl/TextureArray.h
-        src/world/surfaceFeatures/SurfaceFeature.cpp
+        src/world/generation/surfaceFeatures/SurfaceFeature.cpp
         src/world/chunk/RGBLight.h
         src/world/chunk/LightConstants.h
         src/world/chunk/ChunkLighting.cpp

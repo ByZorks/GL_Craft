@@ -1,13 +1,13 @@
-#include "WorldRenderer.h"
+#include "../render/WorldRenderer.h"
 
 #include <ranges>
 
-#include "WorldManager.h"
-#include "../render/Renderer.h"
-#include "surfaceFeatures/flowers/Allium.h"
-#include "surfaceFeatures/flowers/Cornflower.h"
-#include "surfaceFeatures/flowers/Poppy.h"
-#include "surfaceFeatures/grass/ShortGrass.h"
+#include "../world/WorldManager.h"
+#include "Renderer.h"
+#include "../world/generation/surfaceFeatures/flowers/Allium.h"
+#include "../world/generation/surfaceFeatures/flowers/Cornflower.h"
+#include "../world/generation/surfaceFeatures/flowers/Poppy.h"
+#include "../world/generation/surfaceFeatures/grass/ShortGrass.h"
 
 WorldRenderer::WorldRenderer() {
     using enum SurfaceFeature::SurfaceFeatureType;

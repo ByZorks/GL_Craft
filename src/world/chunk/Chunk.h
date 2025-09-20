@@ -11,8 +11,8 @@
 #include "Mesh.h"
 #include "PendingBlock.h"
 #include "PendingLight.h"
-#include "../TerrainGenerator.h"
-#include "../surfaceFeatures/SurfaceFeature.h"
+#include "../generation/TerrainGenerator.h"
+#include "../generation/surfaceFeatures/SurfaceFeature.h"
 
 class WorldManager;
 

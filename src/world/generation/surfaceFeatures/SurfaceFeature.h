@@ -5,10 +5,10 @@
 #include <random>
 #include <unordered_map>
 
-#include "../Block.h"
-#include "../TerrainGenerator.h"
-#include "../chunk/ChunkPosition.h"
-#include "../chunk/PendingBlock.h"
+#include "../../Block.h"
+#include "../../generation/TerrainGenerator.h"
+#include "../../chunk/ChunkPosition.h"
+#include "../../chunk/PendingBlock.h"
 
 class SurfaceFeature {
 public:

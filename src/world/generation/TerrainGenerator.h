@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <span>
 
-#include "Block.h"
-#include "chunk/ChunkPosition.h"
+#include "../Block.h"
+#include "../chunk/ChunkPosition.h"
 #include "fastNoiseLite/FastNoiseLite.h"
 
 enum class Biome : uint8_t {

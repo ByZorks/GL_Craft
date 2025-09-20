@@ -8,7 +8,7 @@
 
 #include "../render/Camera.h"
 #include "../render/Renderer.h"
-#include "../world/TerrainGenerator.h"
+#include "../world/generation/TerrainGenerator.h"
 #include "../world/chunk/Chunk.h"
 #include "GLFW/glfw3.h"
 #include "imgui/imgui.h"

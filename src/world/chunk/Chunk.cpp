@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-#include "../TerrainGenerator.h"
+#include "../generation/TerrainGenerator.h"
 #include "../WorldManager.h"
 
 Chunk::Chunk(const int x, const int y, const int z) : Mesh(x, y, z, SIZE), m_lighting(*this),

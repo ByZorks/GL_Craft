@@ -1,8 +1,8 @@
 #ifndef WORLD_H
 #define WORLD_H
-#include "TerrainGenerator.h"
+#include "generation/TerrainGenerator.h"
 #include "WorldManager.h"
-#include "WorldRenderer.h"
+#include "../render/WorldRenderer.h"
 
 class World {
 public:

@@ -5,7 +5,7 @@
 #include <iterator>
 #include <utility>
 
-#include "chunk/Chunk.h"
+#include "../chunk/Chunk.h"
 
 int TerrainGenerator::getHeight(const NoiseValues &noises) {
     const int baseHeight = getBaseLevel(noises);

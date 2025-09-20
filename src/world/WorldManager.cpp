@@ -4,7 +4,7 @@
 #include <numbers>
 #include <ranges>
 
-#include "WorldRenderer.h"
+#include "../render/WorldRenderer.h"
 #include "../render/Renderer.h"
 #include "../utils/ScopedTimer.h"
 

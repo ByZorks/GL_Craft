@@ -1,6 +1,6 @@
 #include "SurfaceFeature.h"
 
-#include "../chunk/Chunk.h"
+#include "../../chunk/Chunk.h"
 
 static int index(const int x, const int y, const int z) {
     constexpr int stride = static_cast<int>(Chunk::SIZE) + 2;

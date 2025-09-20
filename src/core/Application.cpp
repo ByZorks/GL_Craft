@@ -101,7 +101,7 @@ void Application::initGL() {
 }
 
 void Application::initResources() {
-    m_textures = std::make_unique<TextureArray>(16, 16, "../res/textures/");
+    m_textures = std::make_unique<TextureArray>(16, 16, "../ressources/textures/");
     m_textures->bind(m_textureSlot);
 
     m_MVPBuffer = std::make_unique<UniformBuffer>();
@@ -116,28 +116,28 @@ void Application::initResources() {
     m_crosshairMesh = std::make_unique<Crosshair>();
     m_highlightedBlockMesh = std::make_unique<HighlightedBlock>();
 
-    m_blockShader = std::make_unique<Shader>("../res/shaders/block.vert", "../res/shaders/block.frag");
+    m_blockShader = std::make_unique<Shader>("../ressources/shaders/block.vert", "../ressources/shaders/block.frag");
     m_blockShader->use();
     m_blockShader->setUniform1i("u_TextureArray", m_textureSlot);
 
-    m_instancesShader = std::make_unique<Shader>("../res/shaders/instances.vert", "../res/shaders/instances.frag");
+    m_instancesShader = std::make_unique<Shader>("../ressources/shaders/instances.vert", "../ressources/shaders/instances.frag");
     m_instancesShader->use();
     m_instancesShader->setUniform1i("u_TextureArray", m_textureSlot);
 
-    m_waterShader = std::make_unique<Shader>("../res/shaders/water.vert", "../res/shaders/water.frag");
+    m_waterShader = std::make_unique<Shader>("../ressources/shaders/water.vert", "../ressources/shaders/water.frag");
     m_waterShader->use();
     m_waterShader->setUniform1i("u_TextureArray", m_textureSlot);
 
-    m_highlightedBlockShader = std::make_unique<Shader>("../res/shaders/highlightBlock.vert",
-                                                        "../res/shaders/highlightBlock.frag");
+    m_highlightedBlockShader = std::make_unique<Shader>("../ressources/shaders/highlightBlock.vert",
+                                                        "../ressources/shaders/highlightBlock.frag");
 
-    m_crosshairShader = std::make_unique<Shader>("../res/shaders/crosshair.vert", "../res/shaders/crosshair.frag");
+    m_crosshairShader = std::make_unique<Shader>("../ressources/shaders/crosshair.vert", "../ressources/shaders/crosshair.frag");
     m_crosshairShader->use();
     m_crosshairShader->setUniform1i("u_TextureArray", m_textureSlot);
     m_crosshairShader->setUniform1f("u_AspectRatio", m_aspectRatio);
 
-    m_postProcessingShader = std::make_unique<Shader>("../res/shaders/postProcessing.vert",
-                                                      "../res/shaders/postProcessing.frag");
+    m_postProcessingShader = std::make_unique<Shader>("../ressources/shaders/postProcessing.vert",
+                                                      "../ressources/shaders/postProcessing.frag");
     m_postProcessingShader->use();
     m_postProcessingShader->setUniform1i("u_SceneTexture", m_postProcessingSceneTextureSlot);
     m_postProcessingShader->setUniform1i("u_DepthTexture", m_postProcessingDepthTextureSlot);

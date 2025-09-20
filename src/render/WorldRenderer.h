@@ -1,9 +1,9 @@
 #ifndef GL_CRAFT_WORLDRENDERER_H
 #define GL_CRAFT_WORLDRENDERER_H
 #include "../gl/Shader.h"
-#include "../render/Camera.h"
-#include "../render/IndirectRenderer.h"
-#include "../render/InstanceRenderer.h"
+#include "Camera.h"
+#include "IndirectRenderer.h"
+#include "InstanceRenderer.h"
 
 class WorldRenderer {
 public:
