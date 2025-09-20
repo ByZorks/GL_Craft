@@ -98,6 +98,8 @@ private:
     void propagateBlockLight(std::queue<uint32_t> &blockLightQueue);
     void propagateBlockLightFrom(int localX, int localY, int localZ);
 
+    std::array<bool, 26> getAdjacentBlocksTransparency(int localX, int localY, int localZ, Block::BlockType blockType) const;
+
     static uint32_t packLightPos(int x, int y, int z);
     static std::tuple<int, int, int> unpackLightPos(uint32_t v);
 

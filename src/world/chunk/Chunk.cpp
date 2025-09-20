@@ -475,15 +475,16 @@ void Chunk::addSurfaceFeatureBlocks(const int worldX, const int columnHeight, co
     if (it == m_surfaceFeatures.end()) return;
 
     switch (it->getType()) {
-        case SurfaceFeature::SurfaceFeatureType::TREE:
+        using enum SurfaceFeature::SurfaceFeatureType;
+        case TREE:
             SurfaceFeature::addTree(m_rng, {m_x, m_y, m_z}, localX, localY, localZ,
                                     biome, m_blocks, m_pendingBlocksForNeighbors);
             break;
-        case SurfaceFeature::SurfaceFeatureType::BUSH:
+        case BUSH:
             SurfaceFeature::addBush(m_rng, {m_x, m_y, m_z}, localX, localY, localZ,
                                     biome, m_blocks, m_pendingBlocksForNeighbors);
             break;
-        case SurfaceFeature::SurfaceFeatureType::POND:
+        case POND:
             SurfaceFeature::addPond(m_rng, {m_x, m_y, m_z}, localX, localY - 1, localZ,
                                     biome, m_blocks, m_pendingBlocksForNeighbors);
             break;
@@ -497,33 +498,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     const auto localZf = static_cast<unsigned int>(localZ);
     const bool isWater = blockType == Block::BlockType::WATER;
 
-    std::array<bool, 26> adjacentFaces{};
-    const bool isTopBlockTransparent = Block::isTransparent(getBlockType(localX, localY + 1, localZ));
-    for (int dx = -1; dx <= 1; ++dx) {
-        const int adjustedDX = dx + 1;
-
-        for (int dy = -1; dy <= 1; ++dy) {
-            const int adjustedDY = dy + 1;
-
-            for (int dz = -1; dz <= 1; ++dz) {
-                if (dx == 0 && dy == 0 && dz == 0) continue;
-                constexpr int STRIDE = 3;
-                constexpr int STRIDE_SQ = STRIDE * STRIDE;
-                constexpr int MIDDLE_INDEX = 13;
-
-                const int adjustedDZ = dz + 1;
-                int index = adjustedDX * STRIDE_SQ + adjustedDY * STRIDE + adjustedDZ;
-                index = index < MIDDLE_INDEX ? index : index - 1;
-                const bool isAdjacentBlockTransparent = Block::isTransparent(
-                    getBlockType(localX + dx, localY + dy, localZ + dz));
-                if (dy == 1 && blockType == Block::BlockType::WATER && !isTopBlockTransparent) {
-                    adjacentFaces[index] = true; // AO is applied when top block is not transparent
-                } else {
-                    adjacentFaces[index] = !isAdjacentBlockTransparent;
-                }
-            }
-        }
-    }
+    const std::array<bool, 26> adjacentFaces = getAdjacentBlocksTransparency(localX, localY, localZ, blockType);
 
     constexpr int NUMBER_OF_FACES = 6;
     for (int i = 0; i < NUMBER_OF_FACES; ++i) {
@@ -556,33 +531,7 @@ void Chunk::addBlockFaces(const int localX, const int localY, const int localZ, 
     const auto localZf = static_cast<unsigned int>(localZ);
     const bool isWater = blockType == Block::BlockType::WATER;
 
-    std::array<bool, 26> adjacentFaces{};
-    const bool isTopBlockTransparent = Block::isTransparent(getBlockType(localX, localY + 1, localZ));
-    for (int dx = -1; dx <= 1; ++dx) {
-        const int adjustedDX = dx + 1;
-
-        for (int dy = -1; dy <= 1; ++dy) {
-            const int adjustedDY = dy + 1;
-
-            for (int dz = -1; dz <= 1; ++dz) {
-                if (dx == 0 && dy == 0 && dz == 0) continue;
-                constexpr int STRIDE = 3;
-                constexpr int STRIDE_SQ = STRIDE * STRIDE;
-                constexpr int MIDDLE_INDEX = 13;
-
-                const int adjustedDZ = dz + 1;
-                int index = adjustedDX * STRIDE_SQ + adjustedDY * STRIDE + adjustedDZ;
-                index = index < MIDDLE_INDEX ? index : index - 1;
-                const bool isAdjacentBlockTransparent = Block::isTransparent(
-                    getBlockType(localX + dx, localY + dy, localZ + dz));
-                if (dy == 1 && blockType == Block::BlockType::WATER && !isTopBlockTransparent) {
-                    adjacentFaces[index] = true; // AO is applied when top block is not transparent
-                } else {
-                    adjacentFaces[index] = !isAdjacentBlockTransparent;
-                }
-            }
-        }
-    }
+    const std::array<bool, 26> adjacentFaces = getAdjacentBlocksTransparency(localX, localY, localZ, blockType);
 
     constexpr int NUMBER_OF_FACES = 6;
     for (int i = 0; i < NUMBER_OF_FACES; ++i) {
@@ -864,6 +813,39 @@ void Chunk::propagateBlockLight(std::queue<uint32_t> &blockLightQueue) {
     }
 
     emitBorderLights();
+}
+
+std::array<bool, 26> Chunk::getAdjacentBlocksTransparency(const int localX, const int localY, const int localZ,
+                                                          const Block::BlockType blockType) const {
+    std::array<bool, 26> adjacentFaces{};
+    const bool isTopBlockTransparent = Block::isTransparent(getBlockType(localX, localY + 1, localZ));
+    for (int dx = -1; dx <= 1; ++dx) {
+        const int adjustedDX = dx + 1;
+
+        for (int dy = -1; dy <= 1; ++dy) {
+            const int adjustedDY = dy + 1;
+
+            for (int dz = -1; dz <= 1; ++dz) {
+                if (dx == 0 && dy == 0 && dz == 0) continue;
+                constexpr int STRIDE = 3;
+                constexpr int STRIDE_SQ = STRIDE * STRIDE;
+                constexpr int MIDDLE_INDEX = 13;
+
+                const int adjustedDZ = dz + 1;
+                int index = adjustedDX * STRIDE_SQ + adjustedDY * STRIDE + adjustedDZ;
+                index = index < MIDDLE_INDEX ? index : index - 1;
+                const bool isAdjacentBlockTransparent = Block::isTransparent(
+                    getBlockType(localX + dx, localY + dy, localZ + dz));
+                if (dy == 1 && blockType == Block::BlockType::WATER && !isTopBlockTransparent) {
+                    adjacentFaces[index] = true; // AO is applied when top block is not transparent
+                } else {
+                    adjacentFaces[index] = !isAdjacentBlockTransparent;
+                }
+            }
+        }
+    }
+
+    return adjacentFaces;
 }
 
 void Chunk::propagateBlockLightFrom(const int localX, const int localY, const int localZ) {
