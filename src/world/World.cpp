@@ -20,18 +20,10 @@ const WorldRenderer &World::getWorldRendererConst() const {
     return m_worldRenderer;
 }
 
-const TerrainGenerator &World::getTerrainGeneratorConst() const {
-    return m_terrainGenerator;
-}
-
 WorldManager &World::getWorldManager() {
     return m_worldManager;
 }
 
 WorldRenderer &World::getWorldRenderer() {
     return m_worldRenderer;
-}
-
-TerrainGenerator &World::getTerrainGenerator() {
-    return m_terrainGenerator;
 }

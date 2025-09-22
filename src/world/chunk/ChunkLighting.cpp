@@ -1,7 +1,3 @@
-//
-// Created by david on 20/09/2025.
-//
-
 #include "ChunkLighting.h"
 
 #include "Chunk.h"

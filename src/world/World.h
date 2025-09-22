@@ -22,7 +22,6 @@ public:
 private:
     WorldManager m_worldManager;
     WorldRenderer m_worldRenderer;
-    TerrainGenerator m_terrainGenerator;
 };
 
 #endif //WORLD_H

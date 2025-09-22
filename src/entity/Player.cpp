@@ -1,12 +1,13 @@
 #include "Player.h"
 
 Player::Player() {
-    m_blocks[0] = Block::BlockType::RED_LIGHT;
-    m_blocks[1] = Block::BlockType::GREEN_LIGHT;
-    m_blocks[2] = Block::BlockType::BLUE_LIGHT;
-    m_blocks[3] = Block::BlockType::PURPLE_LIGHT;
-    m_blocks[4] = Block::BlockType::PINK_LIGHT;
-    m_blocks[5] = Block::BlockType::YELLOW_LIGHT;
+    using enum Block::BlockType;
+    m_blocks[0] = RED_LIGHT;
+    m_blocks[1] = GREEN_LIGHT;
+    m_blocks[2] = BLUE_LIGHT;
+    m_blocks[3] = PURPLE_LIGHT;
+    m_blocks[4] = PINK_LIGHT;
+    m_blocks[5] = YELLOW_LIGHT;
 }
 
 Block::BlockType Player::getSelectedBlockType() const {
