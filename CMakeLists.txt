@@ -106,6 +106,8 @@ add_executable(GL_Craft
         src/world/chunk/PendingBlock.h
         src/math/Raycast.cpp
         src/math/Raycast.h
+        src/math/CollisionDetector.cpp
+        src/math/CollisionDetector.h
         src/render/HighlightedBlock.cpp
         src/render/HighlightedBlock.h
         src/ui/Crosshair.cpp

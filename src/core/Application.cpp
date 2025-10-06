@@ -150,7 +150,9 @@ void Application::initResources() {
 void Application::processInput(const double deltaTime) {
     m_debugUI.processInput(m_window, m_camera); // Tab key for ImGui
 
-    if (m_camera.isInputEnabled()) m_camera.processInput(m_window, deltaTime);
+    if (m_camera.isInputEnabled()) {
+        m_camera.processInput(m_window, deltaTime, m_gravityEnabled, m_world->getWorldManagerConst().getLoadedChunks());
+    }
 }
 
 void Application::update() {
@@ -253,7 +255,7 @@ void Application::render() {
 }
 
 void Application::resetStates(const double deltaTime) {
-    m_camera.updateLastState(deltaTime, m_gravityEnabled);
+    m_camera.updateLastState(deltaTime, m_gravityEnabled, m_world->getWorldManagerConst().getLoadedChunks());
     m_leftClicked = false;
     m_rightClicked = false;
     m_middleClicked = false;

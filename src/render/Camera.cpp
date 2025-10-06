@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "../math/CollisionDetector.h"
 #include "../math/Plane.h"
 #include "../world/generation/TerrainGenerator.h"
 #include "glm/ext/matrix_clip_space.hpp"
@@ -20,7 +21,8 @@ Camera::Camera(const unsigned int windowWidth,
                                                   m_nearPlane(.1f), m_farPlane(2048.0f) {
 }
 
-void Camera::updateLastState(const double deltaTime, const bool applyGravity) {
+void Camera::updateLastState(const double deltaTime, const bool applyGravity,
+                                          const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>>& loadedChunks) {
     constexpr auto chunkSize = static_cast<float>(Chunk::SIZE);
     const float cameraChunkX = std::floor(m_cameraPos.x / chunkSize);
     const float cameraChunkY = std::floor(m_cameraPos.y / chunkSize);
@@ -35,19 +37,42 @@ void Camera::updateLastState(const double deltaTime, const bool applyGravity) {
     if (std::abs(m_lastYaw - m_yaw) > 15.f) m_lastYaw = m_yaw;
     if (std::abs(m_lastPitch - m_pitch) > 15.f) m_lastPitch = m_pitch;
 
-    if (applyGravity) m_cameraPos.y -= 20.f * static_cast<float>(deltaTime);
+    if (applyGravity) {
+        glm::vec3 targetPos = m_cameraPos;
+        targetPos.y -= 20.f * static_cast<float>(deltaTime);
+        m_cameraPos = CollisionDetector::resolveCollision(m_cameraPos, targetPos, m_playerSize, loadedChunks);
+    }
 }
 
-void Camera::processInput(const std::shared_ptr<GLFWwindow> &window, const double deltaTime) {
+void Camera::processInput(const std::shared_ptr<GLFWwindow> &window, const double deltaTime, const bool isGravityEnabled,
+                                       const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>>& loadedChunks) {
     const float cameraSpeed = 50.0f * static_cast<float>(deltaTime);
-    if (glfwGetKey(window.get(), GLFW_KEY_W) == GLFW_PRESS)
-        m_cameraPos += cameraSpeed * m_cameraFront;
-    if (glfwGetKey(window.get(), GLFW_KEY_S) == GLFW_PRESS)
-        m_cameraPos -= cameraSpeed * m_cameraFront;
-    if (glfwGetKey(window.get(), GLFW_KEY_A) == GLFW_PRESS)
-        m_cameraPos -= glm::normalize(glm::cross(m_cameraFront, m_cameraUp)) * cameraSpeed;
-    if (glfwGetKey(window.get(), GLFW_KEY_D) == GLFW_PRESS)
-        m_cameraPos += glm::normalize(glm::cross(m_cameraFront, m_cameraUp)) * cameraSpeed;
+    glm::vec3 targetPos = m_cameraPos;
+
+    if (glfwGetKey(window.get(), GLFW_KEY_W) == GLFW_PRESS) {
+        glm::vec3 forward = m_cameraFront;
+        if (isGravityEnabled) forward.y = 0.0f;
+        if (glm::length(forward) > 0.001f) {
+            if (isGravityEnabled) forward = glm::normalize(forward);
+            targetPos += cameraSpeed * forward;
+        }
+    }
+    if (glfwGetKey(window.get(), GLFW_KEY_S) == GLFW_PRESS) {
+        glm::vec3 forward = m_cameraFront;
+        if (isGravityEnabled) forward.y = 0.0f;
+        if (glm::length(forward) > 0.001f) {
+            if (isGravityEnabled) forward = glm::normalize(forward);
+            targetPos -= cameraSpeed * forward;
+        }
+    }
+    if (glfwGetKey(window.get(), GLFW_KEY_A) == GLFW_PRESS) {
+        targetPos -= glm::normalize(glm::cross(m_cameraFront, m_cameraUp)) * cameraSpeed;
+    }
+    if (glfwGetKey(window.get(), GLFW_KEY_D) == GLFW_PRESS) {
+        targetPos += glm::normalize(glm::cross(m_cameraFront, m_cameraUp)) * cameraSpeed;
+    }
+
+    m_cameraPos = CollisionDetector::resolveCollision(m_cameraPos, targetPos, m_playerSize, loadedChunks);
 }
 
 void Camera::handleMouse(const double xPos, const double yPos) {

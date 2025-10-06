@@ -1,9 +1,11 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 #include <memory>
+#include <unordered_map>
 
 #include "../math/Frustum.h"
 #include "../world/chunk/Chunk.h"
+#include "../world/chunk/ChunkPosition.h"
 #include "GLFW/glfw3.h"
 #include "glm/glm.hpp"
 
@@ -12,7 +14,11 @@ public:
     Camera(unsigned int windowWidth, unsigned int windowHeight);
 
     void updateLastState(double deltaTime, bool applyGravity);
+    void updateLastState(double deltaTime, bool applyGravity,
+                                     const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>>& loadedChunks);
     void processInput(const std::shared_ptr<GLFWwindow> &window, double deltaTime);
+    void processInput(const std::shared_ptr<GLFWwindow> &window, double deltaTime, bool isGravityEnabled,
+                                   const std::unordered_map<ChunkPosition, std::shared_ptr<Chunk>>& loadedChunks);
     void handleMouse(double xPos, double yPos);
     void resetMousePosition(GLFWwindow *window);
     void calculateMVP();
@@ -49,6 +55,7 @@ private:
     glm::vec3 m_lastCameraBlockPos = {
         std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max()
     };
+    glm::vec3 m_playerSize = glm::vec3(0.6f, 1.8f, 0.6f);
 
 };
 
