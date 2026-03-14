@@ -18,13 +18,13 @@ GL_Craft is a small voxel engine/game (inspired by Minecraft) written in C++ and
 - `CMakeLists.txt`: build configuration
 
 ## Dependencies
-- CMake (recommended >= 3.10)
+- CMake (recommended >= 3.31)
 - A modern C++ compiler (g++/clang++ with C++17+ support)
 - OpenGL 4.6
 - GLFW development package (for windowing and input)
-- GLM (math) — if not included in the project
+- GLM (math)
 
-Note: Several dependencies (glad, imgui, stb, fastNoiseLite) are included under `libs/`. You still need system headers and libraries (notably GLFW and OpenGL headers) to link and run the application.
+Note: Several dependencies are included under `libs/`. You still need system headers and libraries (notably GLFW and OpenGL headers) to link and run the application.
 
 ## Run
 - Start the generated binary (`./GL_Craft` or via your IDE)
@@ -39,10 +39,6 @@ Note: Several dependencies (glad, imgui, stb, fastNoiseLite) are included under 
 - Right click: place a block
 - Mouse wheel / Middle click: pick a block (middle click picks the block you're looking at)
 - Number keys 1–9: select hotbar slots
-
-## Resources
-- Shaders: `ressources/shaders/`
-- Textures: `ressources/textures/`
 
 ## Screenshots
 
